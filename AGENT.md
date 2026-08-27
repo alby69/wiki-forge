@@ -1,4 +1,4 @@
-# AGENT.md — LLM Wiki Schema (agent-agnostic)
+# AGENT.md — LLM Wiki Schema v2.0 (agent-agnostic)
 
 > This file is the "operating manual" for any coding agent working on this
 > knowledge base. It is plain prose, not code. The agent reads it at the start
@@ -11,6 +11,7 @@
 >   - OpenAI Codex  -> `AGENTS.md`
 >   - OpenCode      -> `OPENCODE.md`
 >   - Gemini CLI    -> `GEMINI.md`
+>   - Google Jules  -> `JULES.md`
 > Example: `cp AGENT.md CLAUDE.md` (or `ln -s AGENT.md CLAUDE.md`).
 
 ---
@@ -22,9 +23,11 @@ to ingest raw material, maintain a structured wiki, and answer queries with
 accurate, traceable syntheses. The user curates the sources and asks questions;
 you do all the bookkeeping (summarizing, cross-referencing, filing, indexing).
 
-Read `config.toml` first to learn the **project title**, **context**, and
-**folder layout**. Use the `context` field to calibrate tone, taxonomy, and the
-kind of connections you draw.
+Read `config.toml` first to learn the **project title**, **context**, **language**,
+and **folder layout**. Use the `context` field to calibrate tone, taxonomy, and the
+kind of connections you draw. Respect `agent.confirm_destructive` setting.
+
+---
 
 ## 2. Architecture
 
@@ -53,6 +56,12 @@ The knowledge base has three top-level folders with clear, non-overlapping dutie
 - If an output has long-term value, re-archive it as a wiki article and cite the
   original output file.
 
+### `templates/`
+- Standard templates for new articles (`templates/article.md`).
+- You read from here; the user may customize templates.
+
+---
+
 ## 3. Wiki structure
 
 ### Master index: `wiki/index.md`
@@ -79,6 +88,8 @@ Update it whenever you create, substantially change, or rename an article.
 ### Articles: `wiki/<wiki-name>/<article-name>.md`
 - One Markdown file per concept, entity, event, process, or tool.
 - Article naming: lowercase, kebab-case, descriptive (e.g. `claude-code.md`).
+
+---
 
 ## 4. Editorial conventions for articles
 
@@ -108,6 +119,7 @@ sources:
 - Bullet points and short sections aid scanning.
 - No fluff, no repetition, no preambles.
 - Always define technical terms on first use.
+- Match the `project.language` from `config.toml`.
 
 ### Wiki links
 - Always use `[[wiki links]]` to connect related concepts.
@@ -122,26 +134,27 @@ sources:
   the same.
 - If two articles overlap, flag it to the user and propose a merge.
 
-## 5. Workflow: COMPILE
+---
 
-Command: `compile` (or "ingest", or "compile the wiki").
+## 5. COMMAND REFERENCE
 
-This workflow turns raw material into structured knowledge. **It also converts
-new source documents into Markdown first**, so the user only needs to drop files
-into `sources/` (currently `backup/`).
+> This section defines the **standardized command syntax** the user can type.
+> Each command has a clear scope, inputs, outputs, and confirmation rules.
+> **Always** acknowledge the command before executing and summarize results.
 
-Steps:
+### 5.1 Ingestion Commands
+
+#### `compile`
+**Scope:** Full ingestion workflow. Converts new sources, reads raw, builds wiki.
+**Steps:**
 0. **Convert.** Run the converter so any new originals become Markdown in `raw/`:
    - Preferred: `bash run_convert.sh` (uses `config.toml` and the local venv).
    - Docker: `docker compose run --rm wiki convert`.
-   - If neither Python nor pandoc is available in your environment, ask the user
-     to run the conversion first, or instruct them to install dependencies
-     (see README). Do NOT invent conversions.
+   - If neither Python nor pandoc is available, ask the user to run conversion first.
 1. **Read** every file in `raw/` whose name does NOT contain `_COMPILED`.
 2. **Classify**: identify one or more relevant thematic wikis.
 3. **Decide**:
-   - If no existing wiki fits and the material justifies it, create a new
-     thematic wiki.
+   - If no existing wiki fits and the material justifies it, create a new thematic wiki.
    - If the file spans multiple topics, distribute content across wikis.
 4. **Write**:
    - Create new articles for concepts/entities/events not yet covered.
@@ -151,60 +164,261 @@ Steps:
 6. **Update indexes**:
    - The `index.md` of every touched thematic wiki.
    - `wiki/index.md`, if you created a new wiki or changed one's scope.
-7. **Rename** the source file in `raw/` by adding `_COMPILED` before the
-   extension (e.g. `notes.pdf` -> `notes_COMPILED.pdf`).
+7. **Rename** the source file in `raw/` by adding `_COMPILED` before the extension.
 8. **Skip** any file whose name already contains `_COMPILED`.
+**Output:** Structured summary: files processed, wikis created, articles created/updated, ambiguities.
 
-At the end, give a structured summary: files processed, wikis created, articles
-created, articles updated, and any ambiguities to clarify with the user.
+#### `convert-only`
+**Scope:** Conversion sources→raw **without** wiki processing.
+**Use when:** The user wants to preview converted text before compiling.
+**Action:** Run `bash run_convert.sh` or Docker equivalent. Report files converted.
 
-## 6. Workflow: CONSULT
+#### `ingest <file-path>`
+**Scope:** Process a **single** raw file into the wiki.
+**Use when:** The user wants to compile one specific file without re-scanning all raw/.
+**Action:** Read the specified file (ignoring `_COMPILED` status), classify, write/update articles, link, update indexes, rename to `_COMPILED`.
+**Output:** Summary of what was created/updated from this single source.
 
-To answer a user question:
-1. Read `wiki/index.md` to identify relevant wikis.
-2. Read the `index.md` of relevant wikis to locate pertinent articles.
-3. Read only the articles you need, not the whole wiki.
-4. Build the answer by synthesizing the gathered information.
-5. Cite used articles as `[[wiki links]]`.
-6. If the question finds no answer in the KB, say so explicitly and propose
-   which sources the user could ingest to close the gap.
+#### `recompile <file-path>`
+**Scope:** Force re-processing of a file already marked `_COMPILED`.
+**Use when:** The user has updated the source or wants to re-interpret it.
+**Action:** Remove `_COMPILED` suffix, process as `ingest`, then re-add suffix.
+**Confirmation:** Required if `agent.confirm_destructive` is true (default).
 
-When an answer produces a valuable original analysis, comparison, or synthesis,
-propose saving it:
-- In `output/` if it is a one-off result.
-- As a new article in the appropriate thematic wiki if it has long-term value.
+---
 
-## 7. Workflow: AUDIT / LINT
+### 5.2 Knowledge Commands
 
-Command: `audit` or `lint`.
+#### `new-article <article-name> [wiki-name]`
+**Scope:** Create a new article from the standard template.
+**Action:**
+1. Read `templates/article.md` (or use built-in template if missing).
+2. Replace `{{TITLE}}` with `<article-name>` (kebab-case → Title Case).
+3. Set `created` and `updated` to today's date.
+4. Place in `wiki/<wiki-name>/` if specified, else ask the user.
+5. Update the thematic index and master index.
+**Output:** Path of the new article.
 
-Perform a full health-check of the knowledge base. Look for:
+#### `merge <article-a> <article-b>`
+**Scope:** Unify two overlapping articles into one.
+**Action:**
+1. Read both articles.
+2. Present a merge plan to the user (which sections go where, which title wins).
+3. **Wait for explicit confirmation** before proceeding.
+4. Create the merged article under the preferred title.
+5. Update all `[[wikilinks]]` pointing to the removed article.
+6. Delete the secondary article.
+7. Update indexes.
+**Confirmation:** ALWAYS required, regardless of config.
+
+#### `split <article-path> <section-heading>`
+**Scope:** Divide an article into two at the specified H2 section.
+**Action:**
+1. Read the article.
+2. Split content: everything before `<section-heading>` stays, everything from that heading becomes the new article.
+3. Suggest a name for the new article.
+4. **Wait for explicit confirmation**.
+5. Create both articles, update links, update indexes.
+**Confirmation:** ALWAYS required.
+
+#### `stub <concept-name>`
+**Scope:** Create a minimal placeholder article for a cited but missing concept.
+**Action:**
+1. Create `wiki/<appropriate-wiki>/<concept-name>.md` with minimal content:
+   - Frontmatter with tag `stub`.
+   - H1 title.
+   - One-line description: "Stub: <concept> is cited in [[article-x]], [[article-y]]."
+   - `## Related` with backlinks.
+2. Update the thematic index.
+3. Flag in session summary: "Created stub for <concept> — please expand."
+**Use when:** During `compile` or `audit`, you find `[[links]]` pointing to non-existent articles.
+
+#### `retag <article-path> [+tag1 +tag2 ...] [-tag3 -tag4 ...]`
+**Scope:** Modify tags of an existing article.
+**Action:**
+1. Read article frontmatter.
+2. Add tags prefixed with `+`, remove tags prefixed with `-`.
+3. Update `updated` date.
+4. Save.
+**Output:** Before/after tag list.
+
+---
+
+### 5.3 Maintenance Commands
+
+#### `audit` (full)
+**Scope:** Complete health-check of the knowledge base.
+**Checks:**
 - **Duplicates**: overlapping articles that should be merged.
 - **Broken links**: `[[wikilinks]]` pointing to non-existent articles.
 - **Inconsistencies**: contradictory claims across articles.
 - **Orphan articles**: pages with no inbound or outbound links.
 - **Isolated wikis**: thematic wikis disconnected from the rest of the KB.
 - **Coverage gaps**: concepts cited often but lacking their own article.
-- **Index drift**: entries in `index.md` files that don't match real files (and
-  vice versa).
-
-Audit output:
-1. A list of problems found, grouped by category.
-2. A concrete suggestion for each (specific action + files involved).
+- **Index drift**: entries in `index.md` files that don't match real files (and vice versa).
+- **Frontmatter lint**: missing or malformed YAML frontmatter.
+**Output:**
+1. List of problems found, grouped by category.
+2. Concrete suggestion for each (specific action + files involved).
 3. Any structural improvements (reorganization, merge, split).
+**Important:** always wait for explicit user confirmation before applying changes.
 
-**Important:** always wait for the user's explicit confirmation before applying
-changes. Do not autonomously merge, delete, or reorganize.
+#### `audit links`
+**Scope:** Check only broken `[[wikilinks]]`.
+**Output:** List of broken links with source articles and suggested fixes (create stub / remove link / fix typo).
 
-## 8. Guiding principles
+#### `audit orphans`
+**Scope:** Find articles with zero inbound or outbound links.
+**Output:** List of orphan articles with suggestions for linking.
+
+#### `audit duplicates`
+**Scope:** Identify potential duplicate articles.
+**Output:** Pairs of articles with similar titles or overlapping content, suggesting `merge`.
+
+#### `audit indexes`
+**Scope:** Verify alignment between `index.md` files and actual files on disk.
+**Output:** Missing entries, stale entries, and wikis not listed in master index.
+
+#### `reindex [wiki-name]`
+**Scope:** Regenerate index files.
+**Action:**
+- If `wiki-name` provided: regenerate only `wiki/<wiki-name>/index.md`.
+- If omitted: regenerate all thematic indexes AND `wiki/index.md`.
+**Use when:** After bulk renames, moves, or manual edits.
+
+#### `prune`
+**Scope:** Remove orphan articles and empty stubs after confirmation.
+**Action:**
+1. Identify orphans and empty stubs (articles with <50 words and no inbound links).
+2. Present list to user.
+3. **Wait for explicit confirmation**.
+4. Delete confirmed files and update indexes.
+**Confirmation:** ALWAYS required.
+
+#### `lint-frontmatter`
+**Scope:** Validate YAML frontmatter across all articles.
+**Checks:**
+- Required keys: `tags`, `created`, `updated`, `sources`.
+- Date format: `YYYY-MM-DD`.
+- `tags` is a list of strings.
+- `sources` is a list of strings.
+**Output:** List of violations with file paths.
+
+---
+
+### 5.4 Query Commands
+
+#### `consult <question>`
+**Scope:** Answer a user question from the wiki.
+**Steps:**
+1. Read `wiki/index.md` to identify relevant wikis.
+2. Read the `index.md` of relevant wikis to locate pertinent articles.
+3. Read only the articles you need, not the whole wiki.
+4. Build the answer by synthesizing the gathered information.
+5. Cite used articles as `[[wiki links]]`.
+6. If the question finds no answer in the KB, say so explicitly and propose which sources the user could ingest to close the gap.
+**Output:** Synthesis + citations. If valuable, propose saving to `output/` or as a new article.
+
+#### `search <term>`
+**Scope:** Full-text search across all wiki articles.
+**Action:** Scan all `.md` files in `wiki/` for the term (case-insensitive).
+**Output:** List of matching articles with context snippets (2 lines before/after match).
+
+#### `backlinks <article-path>`
+**Scope:** Show all articles that link to the specified article.
+**Action:** Scan all `wiki/**/*.md` for `[[<article-name>]]` or `[[<article-name>|...]]`.
+**Output:** List of source articles with context.
+
+#### `related <article-path>`
+**Scope:** Suggest articles related to the specified one but not yet linked.
+**Action:**
+1. Read the article.
+2. Identify key concepts in the text.
+3. Find other articles mentioning those concepts.
+4. Exclude already-linked articles.
+**Output:** Suggested new `[[links]]` with rationale.
+
+#### `trace <claim>`
+**Scope:** Trace the origin of a specific claim or concept.
+**Action:**
+1. Search wiki articles for the claim.
+2. Follow `## Sources` references to `raw/` files.
+3. Report the primary source(s) and any intermediate synthesis.
+**Output:** Chain: claim → wiki article(s) → raw source(s) → original document.
+
+---
+
+### 5.5 Utility Commands
+
+#### `stats`
+**Scope:** Generate statistics about the knowledge base.
+**Metrics:**
+- Total articles, total wikilinks, broken links, orphan articles.
+- Coverage gaps (concepts cited >3 times without article).
+- Number of thematic wikis, sources ingested.
+- Last compile date, last audit date (from `METRICS.md` or infer).
+- Top 10 most linked articles.
+- Top 10 tags by frequency.
+**Output:** Structured report. Propose saving to `METRICS.md`.
+
+#### `export <format>`
+**Scope:** Export the wiki to another format.
+**Supported formats:** `json`, `html`, `obsidian-vault`.
+**Action:**
+- `json`: Create `output/wiki-export.json` with all articles, metadata, and link graph.
+- `html`: Create `output/wiki-export/` with interlinked HTML pages.
+- `obsidian-vault`: Create `output/obsidian-vault/` with `.obsidian/` config and wiki structure.
+**Output:** Path to exported files.
+
+#### `diff <article-path>`
+**Scope:** Show changes to an article (requires git).
+**Action:** Run `git diff` on the article. If not git-tracked, report last `updated` date and suggest enabling git.
+**Output:** Diff or last-modified info.
+
+#### `template show`
+**Scope:** Display the standard article template.
+**Action:** Read `templates/article.md` or show built-in template.
+**Output:** Template content.
+
+#### `sources regenerate`
+**Scope:** Rebuild `SOURCES.md` from the current wiki state.
+**Action:**
+1. Scan all articles for `sources:` in frontmatter.
+2. Aggregate unique sources.
+3. Group by author (if parseable) and by topic (using tags).
+4. Write updated `SOURCES.md` with proper YAML frontmatter.
+**Output:** Confirmation + summary of sources found.
+
+#### `help [command]`
+**Scope:** Contextual help.
+**Action:** If `[command]` provided, show syntax and description. If omitted, list all commands by category.
+**Output:** Help text.
+
+---
+
+## 6. Workflow Orchestration (Macro-commands)
+
+The commands in §5 are **atomic**. The following are **orchestrated workflows** that chain multiple atomic commands. They exist for convenience but internally call the atomic commands.
+
+### `compile` (orchestrated)
+Equivalent to: `convert-only` → `ingest` (for each new raw file) → `reindex` → `audit indexes` (light).
+
+### `audit` (orchestrated)
+Equivalent to: `audit links` → `audit orphans` → `audit duplicates` → `audit indexes` → `lint-frontmatter` → `stats` (light).
+
+### `consult` (orchestrated)
+Equivalent to: `search` (internal) → read articles → synthesize.
+
+---
+
+## 7. Guiding principles
 
 The knowledge base must be:
 - **Consistent**: naming, structure, and style applied uniformly.
 - **Readable**: every article understandable without revisiting sources.
 - **Well-connected**: `[[wikilinks]]` form a dense network of related concepts.
 - **Traceable**: every claim is attributable to a source in `raw/`.
-- **Optimized for both humans and LLMs**: scannable at a glance by the user,
-  parseable in few tokens by the agent.
+- **Optimized for both humans and LLMs**: scannable at a glance by the user, parseable in few tokens by the agent.
+- **Non-destructive by default**: never delete, merge, or reorganize without explicit user confirmation.
 
-If unsure about structural choices (new wiki, article merge, folder
-reorganization), always ask the user for confirmation before acting.
+If unsure about structural choices (new wiki, article merge, folder reorganization), always ask the user for confirmation before acting.

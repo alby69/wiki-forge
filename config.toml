@@ -27,8 +27,35 @@ raw = "raw"
 wiki = "wiki"
 # Folder for ephemeral query results / reports. Safe to delete.
 output = "output"
+# Folder containing standard article templates.
+templates = "templates"
 
 [conversion]
 # Set to true if your PDFs are scans (photos of pages) and you have an OCR
 # layer available. Usually leave false for native-text PDFs.
 ocr = false
+
+# Agent settings
+[agent]
+model = "claude-sonnet-4"
+temperature = 0.3
+max_tokens = 4096
+confirm_destructive = true
+
+# Naming conventions
+[naming]
+article_case = "kebab-case"
+wiki_folder_case = "kebab-case"
+forbidden_chars = [" ", "_", "/", "\\", ":", "*", "?", "\"", "<", ">", "|"]
+
+# Export settings
+[export]
+formats = ["json", "html"]
+include_raw = false
+include_sources = false
+
+# Web clipping
+[webclip]
+enabled = false
+folder = "sources/web-clips"
+format = "markdown"

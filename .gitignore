@@ -3,6 +3,11 @@ venv/
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+
+# ----- Logs & Output -----
+*.log
+output/
 
 # ----- Editor / OS noise -----
 .obsidian/
@@ -13,11 +18,8 @@ Thumbs.db
 # `backup/` holds the ORIGINAL source files (e.g. copyrighted books/EPUBs).
 #   Do not publish them. Keep them only on your local disk.
 # `raw/`, `output/` are regenerable/ephemeral (rebuild with conv2md / the agent).
-# If you DO want to version-control the knowledge base, uncomment `wiki/` off
-# the list below and remove the leading `# ` from the `raw/` / `output/` lines.
 backup/
 raw/
-output/
 
 # The compiled wiki (your knowledge base) IS kept in git by default so the
 # knowledge base is version-controlled. Comment the next line to exclude it.
