@@ -17,11 +17,12 @@ export class FileStorage implements IStorage {
 
   public async getAllNotes(): Promise<WikiNote[]> {
     // NOTE: `import.meta.glob` requires LITERAL patterns and resolves them
-    // relative to THIS file (src/storage/). The repo-root `wiki/` folder is
-    // therefore `../../wiki/**` (one `../` per directory level up).
-    // To point the UI at a different vault, edit these two strings and rebuild
-    // (`npm run build`). Patterns must stay as literals — Vite rejects variables.
-    const modules = import.meta.glob(['../../wiki/**/*.md', '../../raw/**/*.md'], {
+    // relative to THIS file (src/storage/). The UI presents the *knowledge base*
+    // only (see AGENT.md §2): `wiki/` is the curated, interlinked KB, whereas
+    // `raw/` is the agent's working inbox and is intentionally excluded from the
+    // graph/viewer. To point the UI at a different vault, edit this string and
+    // rebuild (`npm run build`). Patterns must stay literals — Vite rejects variables.
+    const modules = import.meta.glob(['../../wiki/**/*.md'], {
       query: '?raw',
       import: 'default',
       eager: true,
@@ -34,7 +35,10 @@ export class FileStorage implements IStorage {
       const segments = relative.split('/');
       const fileName = segments[segments.length - 1] ?? relative;
       const stem = fileName.replace(/\.md$/i, '');
-      const folder = segments.length > 1 ? segments.slice(0, -1).join('/') : relative;
+      // Folder label without the redundant leading "wiki/" root, so the graph
+      // groups by thematic wiki, e.g. "intelligenza-artificiale".
+      const folder =
+        segments.length > 1 ? segments.slice(1, -1).join('/') || 'wiki' : 'wiki';
       const titleFromName = stem.replace(/[-_]/g, ' ');
 
       notes.push(this.parser.parseNote(stem, titleFromName, content, folder));

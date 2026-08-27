@@ -130,19 +130,21 @@ single-page app (Vite + TypeScript) with a three-column layout:
 - **Editor / Markdown panel** — the selected note's raw Markdown.
 - **Graph viewer** — an interactive node-link map of `[[wikilinks]]` (with
   search and "minimum connections" filters), rendered from the real `wiki/`
-  and `raw/` folders.
+  knowledge base (the `raw/` working inbox is intentionally excluded — see
+  AGENT.md §2).
 
 > The UI is a **read/explore viewer**. It bundles every Markdown file under
-> `wiki/` and `raw/` at build time, so the agent — which edits those files on
+> `wiki/` at build time, so the agent — which edits those files on
 > disk — remains the source of truth. Edits made in the UI are session-only.
 
-**Where is the vault path set?** The UI reads `wiki/` and `raw/` from the
-repository root. The glob patterns live in `src/storage/FileStorage.ts`
-(`import.meta.glob([...])`) and are resolved relative to that file, so the
-root folders are `../../wiki/**` and `../../raw/**`. To point the UI at a
-different vault, edit those two literal strings and rebuild (`npm run build`
-or `docker compose build`). Note: Vite requires the globs to be literal
-strings, not variables.
+**Where is the vault path set?** The UI presents the curated knowledge base
+only: `wiki/` and its subfolders (thematic wikis). The `raw/` folder is the
+agent's working inbox and is deliberately kept out of the viewer. The glob
+pattern lives in `src/storage/FileStorage.ts` (`import.meta.glob([...])`) and
+is resolved relative to that file, so the root folder is `../../wiki/**`. To
+point the UI at a different vault, edit that literal string and rebuild
+(`npm run build` or `docker compose build`). Note: Vite requires the glob to
+be a literal string, not a variable.
 
 ### Run it
 
