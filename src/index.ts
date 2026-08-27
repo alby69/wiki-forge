@@ -213,6 +213,18 @@ Backlink to [[01-index]].
 
 // Bootstrap the application once the DOM is ready.
 const root = document.getElementById('app');
-if (root) {
-  new WikiForgeApp(root);
+function showFatalError(err: unknown): void {
+  const msg = err instanceof Error ? `${err.message}\n\n${err.stack ?? ''}` : String(err);
+  if (root) {
+    root.innerHTML = `<pre style="color:#fc8181;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:12px;">Wiki-Forge failed to start:\n\n${msg}</pre>`;
+  }
+  console.error(err);
 }
+if (root) {
+  try {
+    new WikiForgeApp(root);
+  } catch (err) {
+    showFatalError(err);
+  }
+}
+window.addEventListener('error', e => showFatalError(e.error ?? e.message));

@@ -22,35 +22,43 @@ export class ForceGraphViewer implements IGraphViewer {
   public render(container: HTMLElement, data: GraphData): void {
     this.container = container;
     if (!this.fg) {
-      const width = container.clientWidth || 600;
-      const height = container.clientHeight || 400;
       container.innerHTML = '';
       const factory = ForceGraph as unknown as (el: HTMLElement) => ForceGraph;
-      this.fg = factory(container)
-        .width(width)
-        .height(height)
-        .nodeId('id')
-        .nodeVal('val')
-        .nodeRelSize(1)
-        .linkColor(this.linkColorFn)
-        .linkWidth(this.linkWidthFn)
-        .nodeColor(this.nodeColorFn)
-        .nodeCanvasObject(this.nodeCanvasObj)
-        .nodeCanvasObjectMode(() => 'replace')
-        .nodeLabel((n: any) => this.tooltip(n))
-        .onNodeClick((n: any) => this.handleClick(n))
-        .onNodeHover((n: any) => this.handleHover(n))
-        .onBackgroundClick(() => this.clearHighlight())
-        .minZoom(0.2)
-        .maxZoom(8);
+      // The container may not be laid out yet (0x0); never pass 0 or the canvas
+      // stays invisible. Fall back to a sane size — the ResizeObserver below
+      // snaps it to the real dimensions as soon as layout settles.
+      const init = () => {
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 600;
+        this.fg = factory(container)
+          .width(width)
+          .height(height)
+          .nodeId('id')
+          .nodeVal('val')
+          .nodeRelSize(1)
+          .linkColor(this.linkColorFn)
+          .linkWidth(this.linkWidthFn)
+          .nodeColor(this.nodeColorFn)
+          .nodeCanvasObject(this.nodeCanvasObj)
+          .nodeCanvasObjectMode(() => 'replace')
+          .nodePointerAreaPaint(this.nodePointerArea)
+          .nodeLabel((n: any) => this.tooltip(n))
+          .onNodeClick((n: any) => this.handleClick(n))
+          .onNodeHover((n: any) => this.handleHover(n))
+          .onBackgroundClick(() => this.clearHighlight())
+          .minZoom(0.2)
+          .maxZoom(8);
 
-      // Keep the canvas sized to its (flex) container.
-      this.resizeObs = new ResizeObserver(() => {
-        if (this.fg && container.clientWidth && container.clientHeight) {
-          this.fg.width(container.clientWidth).height(container.clientHeight);
-        }
-      });
-      this.resizeObs.observe(container);
+        this.resizeObs = new ResizeObserver(() => {
+          if (this.fg && container.clientWidth && container.clientHeight) {
+            this.fg.width(container.clientWidth).height(container.clientHeight);
+          }
+        });
+        this.resizeObs.observe(container);
+      };
+
+      if (container.clientWidth && container.clientHeight) init();
+      else requestAnimationFrame(init);
     }
     this.setData(data);
   }
@@ -186,6 +194,15 @@ export class ForceGraphViewer implements IGraphViewer {
     const tags = Array.isArray(node.tags) && node.tags.length ? `  ·  #${node.tags.join('  #')}` : '';
     return `<b>${node.label}</b>  (${node.group || 'wiki'})${tags}`;
   }
+
+  private nodePointerArea = (node: any, paintColor: string, ctx: CanvasRenderingContext2D): void => {
+    const val = typeof node.val === 'number' ? node.val : 1;
+    const r = Math.max(3, Math.sqrt(val) * 2.2) + 2;
+    ctx.fillStyle = paintColor;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fill();
+  };
 
   private handleClick(node: any): void {
     this.highlightedNodeId = node.id;
