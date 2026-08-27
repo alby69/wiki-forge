@@ -1,3 +1,7 @@
+# ----- Node.js / TypeScript -----
+node_modules/
+dist/
+
 # ----- Python -----
 venv/
 .venv/
