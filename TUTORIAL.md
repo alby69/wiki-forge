@@ -213,7 +213,8 @@ viewer** you can open in any browser.
    ```bash
    npm run dev
    ```
-   This opens **http://localhost:5173** automatically.
+   Then open **http://localhost:5173** in your browser.
+   (Via Docker: `docker compose up ui` → **http://localhost:5174**.)
 
 What you see:
 - **Left — Vault:** every note grouped by folder, with a tag cloud and a search box.
