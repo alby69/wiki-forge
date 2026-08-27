@@ -16,6 +16,7 @@ export class WikiForgeApp {
   private storage = new FileStorage();
   private notes: WikiNote[] = [];
   private selectedNote: WikiNote | null = null;
+  private filterTags: string[] = [];
 
   private layout!: MainLayout;
   private header!: Header;
@@ -103,9 +104,16 @@ Backlink to [[01-index]].
       this.layout.setViewMode(mode);
     });
 
-    this.sidebar = new Sidebar(this.layout.sidebarContainer, noteId => {
-      this.selectNote(noteId);
-    });
+    this.sidebar = new Sidebar(
+      this.layout.sidebarContainer,
+      noteId => {
+        this.selectNote(noteId);
+      },
+      tags => {
+        this.filterTags = tags;
+        this.refreshGraph();
+      }
+    );
 
     this.editor = new MarkdownEditor(
       this.layout.editorContainer,
@@ -125,7 +133,10 @@ Backlink to [[01-index]].
 
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, options => {
       const fullData = this.graphService.generateGraphData(this.notes);
-      const filtered = this.graphService.filterGraphData(fullData, options);
+      const filtered = this.graphService.filterGraphData(fullData, {
+        ...options,
+        selectedTags: this.filterTags,
+      });
       this.graphViewer.updateData(filtered);
     });
 
@@ -138,7 +149,14 @@ Backlink to [[01-index]].
     if (this.selectedNote) this.sidebar.setActiveNote(this.selectedNote.id);
     this.editor.setNote(this.selectedNote);
     this.contextPanel.setSelectedNote(this.selectedNote);
-    this.graphViewer.updateData(this.graphService.generateGraphData(this.notes));
+    this.refreshGraph();
+  }
+
+  /** Recompute the graph honouring the current tag filter (from the sidebar). */
+  private refreshGraph(): void {
+    const full = this.graphService.generateGraphData(this.notes);
+    const filtered = this.graphService.filterGraphData(full, { selectedTags: this.filterTags });
+    this.graphViewer.updateData(filtered);
   }
 
   public selectNote(noteId: string): void {
