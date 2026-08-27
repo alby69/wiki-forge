@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "marked": "^12.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "tsx": "^4.19.0",

@@ -128,7 +128,9 @@ single-page app (Vite + TypeScript) with a three-column layout:
 
 - **Vault explorer** — an Obsidian-style collapsible file tree of the `wiki/`
   folder and its subfolders, with search, active-file highlight, and a tag cloud.
-- **Editor / Markdown panel** — the selected note's raw Markdown.
+- **Editor / Markdown panel** — the selected note rendered as formatted HTML
+  (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
+  links and an **Edit** toggle to view/save the raw source.
 - **Graph viewer** — an interactive node-link map of `[[wikilinks]]` (with
   search and "minimum connections" filters), rendered from the real `wiki/`
   knowledge base (the `raw/` working inbox is intentionally excluded — see

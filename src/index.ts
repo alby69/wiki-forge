@@ -107,9 +107,13 @@ Backlink to [[01-index]].
       this.selectNote(noteId);
     });
 
-    this.editor = new MarkdownEditor(this.layout.editorContainer, (noteId, content) => {
-      this.updateNoteContent(noteId, content);
-    });
+    this.editor = new MarkdownEditor(
+      this.layout.editorContainer,
+      (noteId, content) => {
+        this.updateNoteContent(noteId, content);
+      },
+      target => this.openWikilink(target)
+    );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
       this.selectNote(noteId);
@@ -147,6 +151,14 @@ Backlink to [[01-index]].
       this.editor.setNote(found);
       this.contextPanel.setSelectedNote(found);
       this.graphViewer.highlightNode(found.id);
+    }
+  }
+
+  /** Navigate to a note referenced by a [[wikilink]] (same- or cross-folder). */
+  public openWikilink(target: string): void {
+    const found = this.parser.resolveLinkTarget(target, this.notes);
+    if (found) {
+      this.selectNote(found.id);
     }
   }
 
