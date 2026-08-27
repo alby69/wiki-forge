@@ -1,26 +1,40 @@
-# docker-compose.yml — one-command environment, no local Python/pandoc needed.
+# docker-compose.yml — reproducible environment, no local Python/Node install.
 #
 # Common commands (run from the project root):
-#   docker compose build            # build the image once
+#   docker compose build            # build both images
 #   docker compose run --rm wiki convert   # convert sources -> raw/
 #   docker compose run --rm wiki shell     # open a shell inside the env
+#   docker compose up ui            # run the Web UI at http://localhost:5174
+#   docker compose down             # stop and remove containers/networks
 #
-# The current directory is mounted at /wiki, so all generated files (raw/,
-# wiki/, output/) are written back to your machine.
+# The project name is "wiki-forge" (overrides the folder name), so containers
+# and networks are prefixed with `wiki-forge_` instead of `tesi_`.
+# The current directory is mounted at /wiki (converter) and /app (UI) so all
+# generated files (raw/, wiki/, output/) are written back to your machine.
+name: wiki-forge
+
 services:
   wiki:
     build: .
-    image: llm-wiki:latest
+    image: wiki-forge:latest
     volumes:
       - .:/wiki
     working_dir: /wiki
     command: ["shell"]
 
   ui:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    image: wiki-forge-ui:latest
     volumes:
       - .:/app
+      # Keep the container's node_modules isolated from the host (Windows)
+      # so Linux binaries are used inside the container.
+      - /app/node_modules
     working_dir: /app
+    # Host port 5174 -> container port 5173 (5173 is often taken by a local
+    # `npm run dev`). Change the left number back to 5173 once 5173 is free.
     ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host"
+      - "5174:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"

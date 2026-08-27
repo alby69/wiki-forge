@@ -1,0 +1,15 @@
+# Dockerfile.ui — image for the Wiki-Forge Web UI dev server.
+#
+# Based on Node 20 (Alpine). The project sources are mounted at runtime, so this
+# image only provides the Node toolchain. `npm install` runs on first start
+# (installed into an anonymous /app/node_modules volume, isolated from the host).
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Tell Vite/npm to build for a container-friendly environment.
+ENV NODE_ENV=development
+
+EXPOSE 5173
+
+CMD ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
