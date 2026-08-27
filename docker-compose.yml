@@ -1,0 +1,17 @@
+# docker-compose.yml — one-command environment, no local Python/pandoc needed.
+#
+# Common commands (run from the project root):
+#   docker compose build            # build the image once
+#   docker compose run --rm wiki convert   # convert sources -> raw/
+#   docker compose run --rm wiki shell     # open a shell inside the env
+#
+# The current directory is mounted at /wiki, so all generated files (raw/,
+# wiki/, output/) are written back to your machine.
+services:
+  wiki:
+    build: .
+    image: llm-wiki:latest
+    volumes:
+      - .:/wiki
+    working_dir: /wiki
+    command: ["shell"]

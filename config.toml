@@ -1,0 +1,34 @@
+# Project configuration for the LLM Wiki template.
+#
+# This is the single "knob" that turns the generic template into YOUR wiki.
+# Edit the values below to adapt the project to any subject/context.
+# Everything is plain text and key = "value"; no programming knowledge required.
+#
+# The conversion script (conv2md.py) and the agent schema (AGENT.md) both read
+# this file. If the file is missing, safe defaults are used.
+
+[project]
+# Short internal name (used for logs / Docker image). Lowercase, no spaces.
+name = "thesis-wiki"
+# Human-friendly title shown in generated documents and the wiki index.
+title = "Thesis Knowledge Base"
+# Free-form description of the subject / context. The agent reads this to
+# understand what kind of knowledge it is compiling.
+context = "Master's thesis on AI and the transformation of work: sources span anthropology of labor (Graeber), nature of machine learning (Cristianini), AI impact and governance (Amodei, Karpathy), and organizational/HR practice (Gatti)."
+# Language of the generated wiki content, e.g. "en", "it".
+language = "en"
+
+[paths]
+# Folder with your ORIGINAL files (PDF, EPUB, DOCX, MD, TXT). Never modified.
+sources = "backup"
+# Folder where converted Markdown lives (the agent's inbox).
+raw = "raw"
+# Folder where the LLM writes the compiled, interlinked wiki.
+wiki = "wiki"
+# Folder for ephemeral query results / reports. Safe to delete.
+output = "output"
+
+[conversion]
+# Set to true if your PDFs are scans (photos of pages) and you have an OCR
+# layer available. Usually leave false for native-text PDFs.
+ocr = false

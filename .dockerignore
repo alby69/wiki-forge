@@ -1,0 +1,13 @@
+# Patterns ignored when building the Docker image. The actual data
+# (sources, raw, wiki, output) lives on the host and is mounted at runtime,
+# so it does not need to be copied into the image.
+venv/
+.venv/
+.git/
+.gitignore/
+__pycache__/
+*.pyc
+.obsidian/
+output/
+raw/
+backup/
