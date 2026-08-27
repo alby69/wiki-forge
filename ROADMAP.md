@@ -32,6 +32,7 @@
 | 18 | Metrics & analytics | ✅ Done | `wiki_stats.py` -> `METRICS.md` |
 | 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
+| 21 | Web UI & Obsidian Graph Viewer | 🔄 Ongoing | Decoupled TypeScript UI, 3-column layout & Force Graph viewer |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -138,3 +139,16 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 **Deliverables:**
 - `.github/workflows/test.yml` GitHub Actions workflow testing Python 3.11/3.12, pandoc installation, `conv2md.py`, `wiki_stats.py`, and `clip2md.py`.
+
+---
+
+## Phase 21 — Web UI & Obsidian Graph Viewer 🔄 Ongoing
+
+**Goal:** Provide a sleek, professional, decoupled user interface with an Obsidian-like interactive graph viewer.
+
+**Deliverables:**
+- Clean, decoupled architecture contracts: `IStorage`, `IGraphViewer`, `WikiNote`, `GraphData`.
+- Core services for link extraction (`markdownParser.ts`) and knowledge graph generation (`graphService.ts`).
+- Interactive Obsidian-style graph viewer based on `force-graph` with hover highlights, filters, and node navigation.
+- Responsive 3-column UI (Vault Sidebar, Main Editor/Graph container, Node Metadata Context Panel).
+- Unit tests for link parsing and graph payload generation.
