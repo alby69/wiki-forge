@@ -27,8 +27,8 @@ project, a business wiki, personal notes, and so on.
 ├── docs/
 │   └── KARPATHY_LLM_WIKI.md   # The original idea file (offline copy)
 ├── index.html            # Web UI entry point (Vite)
-├── vite.config.ts        # Vite configuration
-├── src/                  # Web UI source (TypeScript, decoupled)
+├── vite.config.ts        # Vite configuration (with Agent API plugin)
+├── src/                  # Web UI source & Agent Server (TypeScript, decoupled)
 ├── package.json          # Web UI dev/build scripts (npm)
 ├── sources/  (named backup/)  # Your ORIGINAL files — never modified
 ├── raw/                 # Converted Markdown (the agent's inbox)
@@ -120,36 +120,22 @@ agents expect their own filename, so create a copy or symlink:
 cp AGENT.md CLAUDE.md      # or: ln -s AGENT.md CLAUDE.md
 ```
 
-## Browse the wiki (optional Web UI)
+## Browse & Interact with the wiki (Web UI v2.1)
 
-A lightweight, dependency-light **web viewer** is included for exploring the
-knowledge base in a browser — no Obsidian required. It is a static
-single-page app (Vite + TypeScript) with a three-column layout:
+A lightweight, dependency-light **web application** is included for exploring,
+editing, and running agent queries directly in a browser — no Obsidian required.
+It is a single-page app (Vite + TypeScript) with a multi-column layout and agent integration:
 
 - **Vault explorer** — an Obsidian-style collapsible file tree of the `wiki/`
   folder and its subfolders, with search, active-file highlight, and a tag cloud.
 - **Editor / Markdown panel** — the selected note rendered as formatted HTML
   (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
-  links and an **Edit** toggle to view/save the raw source.
+  links, an **Edit** toggle to edit source code, and a **Save Changes** button that persists edits directly back to disk.
 - **Graph viewer** — an interactive force-directed map of `[[wikilinks]]`
   (powered by `force-graph`): scroll to **zoom**, drag the background to **pan**,
   drag nodes to rearrange, hover for a tooltip, and **click a node to open the
-  note** (the editor switches to split view). Controls offer + / − / **Fit**
-  buttons, a node search, and a "minimum connections" filter. Tags selected in
-  the explorer also filter the graph.
-
-> The UI is a **read/explore viewer**. It bundles every Markdown file under
-> `wiki/` at build time, so the agent — which edits those files on
-> disk — remains the source of truth. Edits made in the UI are session-only.
-
-**Where is the vault path set?** The UI presents the curated knowledge base
-only: `wiki/` and its subfolders (thematic wikis). The `raw/` folder is the
-agent's working inbox and is deliberately kept out of the viewer. The glob
-pattern lives in `src/storage/FileStorage.ts` (`import.meta.glob([...])`) and
-is resolved relative to that file, so the root folder is `../../wiki/**`. To
-point the UI at a different vault, edit that literal string and rebuild
-(`npm run build` or `docker compose build`). Note: Vite requires the glob to
-be a literal string, not a variable.
+  note** (the editor switches to split view).
+- **Interactive OpenCode Chat Drawer** — a side panel providing live agent workflow triggers (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), markdown responses with `[[wikilinks]]`, and an **Attach to Wiki** button to convert chat responses into new or existing wiki notes on disk.
 
 ### Run it
 
@@ -158,7 +144,7 @@ be a literal string, not a variable.
 ```bash
 docker compose up ui
 ```
-Or using Makefile shortcut: `make ui-docker`. This starts the Vite dev server inside a Node container and exposes it at `http://localhost:5174` (local `npm run dev` uses `http://localhost:5173`). The dev server does not auto-open a browser — open the URL manually.
+Or using Makefile shortcut: `make ui-docker`. This starts the Vite dev server inside a Node container and exposes it at `http://localhost:5174` (local `npm run dev` uses `http://localhost:5173`).
 
 **Via local Node.js install:**
 
@@ -169,23 +155,23 @@ npm run dev        # start the dev server at http://localhost:5173
 
 Other scripts: `npm run build` (production bundle in `dist/`),
 `npm run preview` (serve the built bundle), `npm run typecheck`,
-`npm run test` (link/graph unit tests).
+`npm run test` (test suite covering parser, graph extractor, and agent server endpoints).
 
-If you prefer not to install Node tooling, the knowledge base is also fully
-browsable in **Obsidian** (open the project folder as a vault) — see TUTORIAL.md.
+### Architecture: Interactive OpenCode Chat & Direct Persistence
 
-### Proposed Architecture: Interactive OpenCode Chat & Direct Editor Saving
+Phase 22 bridges the Web UI with live agent execution and filesystem persistence while maintaining **KISS** and **DRY** principles:
 
-To bridge the Web UI with live agent execution while maintaining **KISS** (Keep It Simple, Stupid) and **DRY** (Don't Repeat Yourself) principles, Phase 22 introduces a decoupled Chat and File Persistence layer:
-
-1. **Decoupled Backend API (`src/server/` or lightweight middleware)**:
-   - `POST /api/chat`: Runs OpenCode CLI or local model backend with context from `AGENT.md` and streams responses.
+1. **Decoupled Backend API Server (`src/server/agentServer.ts`)**:
+   - `GET /api/wiki/notes`: Fetches all wiki notes from disk in real time.
+   - `POST /api/chat`: Processes queries and slash commands (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`) based on `AGENT.md` guidelines.
    - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`.
-   - `POST /api/wiki/attach`: Converts chat answers or snippets into new/existing wiki notes and re-triggers indexing.
-2. **UI Component Extensions (`src/components/chat/`)**:
-   - **Chat Panel**: Slide-out drawer or split pane with quick command buttons (`/consult`, `/compile`, `/audit`).
-   - **Attach to Wiki**: One-click action on chat responses to merge knowledge directly into the wiki vault.
-   - **Persistent Editor**: Direct save button in the UI editor that updates on-disk files without requiring a external text editor.
+   - `POST /api/wiki/attach`: Appends or converts chat answers into new/existing wiki notes and re-computes backlinks.
+2. **Storage Abstraction & Adapter (`src/storage/ApiStorage.ts`)**:
+   - Implements `IStorage` interface, calling server REST endpoints when online and falling back gracefully to static `FileStorage` when offline.
+3. **UI Extensions (`src/components/chat/`)**:
+   - **Chat Drawer**: Toggleable panel with quick command buttons and interactive message history.
+   - **Attach to Wiki**: One-click action on chat responses opening a target selection modal to merge knowledge into notes.
+   - **Persistent Editor**: Direct save action with visual confirmation ("Saved to disk! 💾").
 
 ### Tag cloud & tag management
 
@@ -211,7 +197,7 @@ See `AGENT.md` (`tag-suggest` command) for the agent workflow.
 
 - **KISS** — the converter is a ~200-line, single-purpose script with no
   framework. The agent contract is plain prose.
-- **Decoupled** — conversion (`conv2md.py`) and knowledge work (`AGENT.md`) are
+- **Decoupled** — conversion (`conv2md.py`), UI, and knowledge work (`AGENT.md`) are
   separate concerns; one can change without the other.
 - **Config-driven** — a single `config.toml` adapts the template to any context.
 - **Portable** — everything is Markdown files in a folder; readable by Obsidian,

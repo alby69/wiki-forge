@@ -6,6 +6,7 @@ export class MarkdownEditor {
   private container: HTMLElement;
   private currentNote: WikiNote | null = null;
   private mode: 'preview' | 'edit' = 'preview';
+  private saveStatusMessage: string = '';
   private onSaveCb?: (noteId: string, content: string) => void;
   private onOpenLinkCb?: (target: string) => void;
 
@@ -23,7 +24,23 @@ export class MarkdownEditor {
   public setNote(note: WikiNote | null): void {
     this.currentNote = note;
     this.mode = 'preview';
+    this.saveStatusMessage = '';
     this.render();
+  }
+
+  public showSaveStatus(msg: string): void {
+    this.saveStatusMessage = msg;
+    const statusEl = this.container.querySelector('#editor-save-status');
+    if (statusEl) {
+      statusEl.textContent = msg;
+    } else {
+      this.render();
+    }
+    setTimeout(() => {
+      this.saveStatusMessage = '';
+      const statusEl2 = this.container.querySelector('#editor-save-status');
+      if (statusEl2) statusEl2.textContent = '';
+    }, 3000);
   }
 
   public render(): void {
@@ -44,6 +61,7 @@ export class MarkdownEditor {
         <div class="editor-header" style="padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #121316;">
           <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(note.title)}</h2>
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             <button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">${isPreview ? 'Edit' : 'Preview'}</button>
           </div>
@@ -57,7 +75,7 @@ export class MarkdownEditor {
           ${
             isPreview
               ? ''
-              : `<div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+              : `<div style="margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
                    <button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600;">Save Changes</button>
                  </div>`
           }

@@ -1,7 +1,7 @@
 import { WikiNote } from './core/types/wiki';
 import { MarkdownParser } from './services/markdownParser';
 import { GraphService } from './services/graphService';
-import { FileStorage } from './storage/FileStorage';
+import { ApiStorage } from './storage/ApiStorage';
 import { MainLayout } from './components/ui/MainLayout';
 import { Header } from './components/ui/Header';
 import { Sidebar } from './components/ui/Sidebar';
@@ -9,11 +9,12 @@ import { MarkdownEditor } from './components/editor/MarkdownEditor';
 import { ContextPanel } from './components/editor/ContextPanel';
 import { ForceGraphViewer } from './components/graph/ForceGraphViewer';
 import { GraphControls } from './components/graph/GraphControls';
+import { ChatDrawer } from './components/chat/ChatDrawer';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
   private graphService = new GraphService();
-  private storage = new FileStorage();
+  private storage = new ApiStorage();
   private notes: WikiNote[] = [];
   private selectedNote: WikiNote | null = null;
   private filterTags: string[] = [];
@@ -25,11 +26,11 @@ export class WikiForgeApp {
   private contextPanel!: ContextPanel;
   private graphViewer!: ForceGraphViewer;
   private graphControls!: GraphControls;
+  private chatDrawer!: ChatDrawer;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
     this.initUI();
-    // Load the real vault asynchronously (falls back to a demo vault).
     void this.loadVault();
   }
 
@@ -43,10 +44,6 @@ export class WikiForgeApp {
     this.refreshAll();
   }
 
-  /**
-   * Demo vault used only when no Markdown files are found under wiki/ or raw/.
-   * Keeps the UI usable out-of-the-box for first-time exploration.
-   */
   private buildSampleVault(): WikiNote[] {
     const raw = [
       [
@@ -100,9 +97,15 @@ Backlink to [[01-index]].
   }
 
   private initUI(): void {
-    this.header = new Header(this.layout.headerContainer, mode => {
-      this.layout.setViewMode(mode);
-    });
+    this.header = new Header(
+      this.layout.headerContainer,
+      mode => {
+        this.layout.setViewMode(mode);
+      },
+      () => {
+        this.chatDrawer.toggle();
+      }
+    );
 
     this.sidebar = new Sidebar(
       this.layout.sidebarContainer,
@@ -118,7 +121,7 @@ Backlink to [[01-index]].
     this.editor = new MarkdownEditor(
       this.layout.editorContainer,
       (noteId, content) => {
-        this.updateNoteContent(noteId, content);
+        void this.updateAndSaveNote(noteId, content);
       },
       target => this.openWikilink(target)
     );
@@ -131,8 +134,6 @@ Backlink to [[01-index]].
     this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });
     this.graphViewer.onNodeClick(nodeId => {
       this.selectNote(nodeId);
-      // Obsidian-like: clicking a node opens the note, so make sure the editor
-      // pane is visible (it is hidden in pure "graph" view mode).
       this.layout.setViewMode('split');
     });
 
@@ -152,10 +153,19 @@ Backlink to [[01-index]].
       },
     });
 
+    this.chatDrawer = new ChatDrawer(
+      this.layout.chatContainer,
+      this.storage,
+      () => this.notes,
+      () => {
+        void this.loadVault();
+      },
+      target => this.openWikilink(target)
+    );
+
     this.layout.setViewMode('split');
   }
 
-  /** Push the current notes/selection into every UI region. */
   private refreshAll(): void {
     this.sidebar.setNotes(this.notes);
     if (this.selectedNote) this.sidebar.setActiveNote(this.selectedNote.id);
@@ -164,7 +174,6 @@ Backlink to [[01-index]].
     this.refreshGraph();
   }
 
-  /** Recompute the graph honouring the current tag filter (from the sidebar). */
   private refreshGraph(): void {
     const full = this.graphService.generateGraphData(this.notes);
     const filtered = this.graphService.filterGraphData(full, { selectedTags: this.filterTags });
@@ -184,7 +193,6 @@ Backlink to [[01-index]].
     }
   }
 
-  /** Navigate to a note referenced by a [[wikilink]] (same- or cross-folder). */
   public openWikilink(target: string): void {
     const found = this.parser.resolveLinkTarget(target, this.notes);
     if (found) {
@@ -192,22 +200,30 @@ Backlink to [[01-index]].
     }
   }
 
-  private updateNoteContent(noteId: string, newContent: string): void {
+  private async updateAndSaveNote(noteId: string, newContent: string): Promise<void> {
+    const target = this.notes.find(n => n.id === noteId);
+    if (!target) return;
+
+    const saved = await this.storage.saveNote({
+      id: noteId,
+      content: newContent,
+      folder: target.folder,
+      path: target.path,
+      title: target.title,
+    });
+
+    this.editor.showSaveStatus('Saved to disk! 💾');
+
     const idx = this.notes.findIndex(n => n.id === noteId);
     if (idx !== -1) {
-      const refreshed = this.parser.parseNote(
-        this.notes[idx].id,
-        this.notes[idx].title,
-        newContent,
-        this.notes[idx].folder ?? 'wiki'
-      );
-      this.notes[idx] = refreshed;
-      this.notes = this.parser.computeBacklinks(this.notes);
-
-      const updated = this.notes.find(n => n.id === noteId)!;
-      this.selectedNote = updated;
-      this.refreshAll();
+      this.notes[idx] = saved;
+    } else {
+      this.notes.push(saved);
     }
+
+    this.notes = this.parser.computeBacklinks(this.notes);
+    this.selectedNote = this.notes.find(n => n.id === saved.id) ?? saved;
+    this.refreshAll();
   }
 }
 

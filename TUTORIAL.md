@@ -198,45 +198,23 @@ template.
 
 ---
 
----
+## 11. The Web UI with Interactive OpenCode Chat & Direct Persistence
 
-## 11. The optional Web UI (browser viewer)
+The template includes an interactive **Web UI** for exploring, editing, and interacting with your agent:
 
-If you don't want to install Obsidian, the template ships with a small **web
-viewer** you can open in any browser.
-
-1. Install the UI tools once:
-   ```bash
-   npm install
-   ```
-2. Launch it:
+1. Launch it:
    ```bash
    npm run dev
    ```
    Then open **http://localhost:5173** in your browser.
    (Via Docker: `docker compose up ui` → **http://localhost:5174**.)
 
-What you see:
-- **Left — Vault:** every note grouped by folder, with a tag cloud and a search box.
-- **Center — Editor:** the selected note's Markdown text.
-- **Right — Context:** backlinks, outbound links, and tags of the selected note.
-- **Graph:** a node-link map of how notes connect via `[[wikilinks]]`; use the
-  search box and "minimum connections" control above it to focus the view.
-
-The viewer reads the real `wiki/` and `raw/` folders and draws the graph from
-their links. It is **read-only / explore-only** in its current default state: to change a note, tell the
-agent (`compile`, or edit the file directly).
-
-### Upcoming Web UI Enhancements: OpenCode Chat & Direct Saving
-
-To make the Web UI an active creation hub while keeping components decoupled:
-
-1. **Direct Markdown Editing & Saving**: You will be able to click **Edit** in the Markdown panel, edit the raw text, and click **Save** to write changes directly to disk in `wiki/`.
-2. **Embedded OpenCode Chat Drawer**: A dedicated Chat window will allow you to run agent commands like `/consult "question"`, `/compile`, or `/audit` directly from the browser.
-3. **Attach Answers to Wiki**: When the AI answers a question in the chat, an **"Attach to Wiki"** button will let you append the response or create a new note in `wiki/`, automatically running the compile workflow to update all interlinked references.
-
-Alternatives: `npm run build` produces a static `dist/` folder you can host
-anywhere; `npm run preview` serves that build locally.
+What you can do in the Web UI:
+- **Vault Explorer & Graph Viewer:** Browse files, search notes, filter by tags, and visualize node connections via `[[wikilinks]]`.
+- **Direct Editor Saving:** Click **Edit** in the Markdown panel, modify raw source text, and click **Save Changes** to persist updates directly to disk in `wiki/`.
+- **OpenCode Chat Drawer:** Click **💬 OpenCode Chat** in the top bar to open a side assistant drawer.
+- **Agent Command Shortcuts:** Click `/consult`, `/compile`, `/audit`, `/trace`, or `/reindex` to run agent workflows right inside the chat.
+- **Attach Answers to Wiki:** Click **📌 Attach to Wiki** under any AI response to open a modal dialog allowing you to append or create new notes in `wiki/`. The app automatically updates the graph and backlinks in real time.
 
 ---
 
@@ -274,7 +252,7 @@ anywhere; `npm run preview` serves that build locally.
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### "The agent says it can't find raw files"
 - Check that `config.toml` exists and has the correct `paths.raw` value.
@@ -301,7 +279,7 @@ anywhere; `npm run preview` serves that build locally.
 
 ---
 
-## 13. Keeping your wiki healthy over time
+## 14. Keeping your wiki healthy over time
 
 ### Monthly
 - Run `audit` and address any broken links or orphans.
