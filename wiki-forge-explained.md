@@ -80,6 +80,55 @@ flowchart TD
     Audit --> Compile
 ```
 
+---
+
+## 5b. The Web Graphical User Interface (Web UI)
+
+To explore the knowledge base visually without needing third-party tools like Obsidian, Wiki-Forge provides a built-in Web UI built with Vite and TypeScript.
+
+```
++---------------------------------------------------------------------------------+
+|                                 Header Bar                                      |
++---------------------+-------------------------------------+---------------------+
+|   Vault Explorer    |          Markdown Editor            |    Context Panel    |
+| - Folder Tree       | - Rendered HTML Preview             | - Backlinks         |
+| - Tag Cloud         | - Raw Text Editor Toggle            | - Outbound Links    |
+| - Search Filter     | - [[Wikilink]] Navigation           | - Note Tags         |
++---------------------+-------------------------------------+---------------------+
+|                           Force-Directed Link Graph                             |
+|                           (Pan, Zoom, Filter by Tags)                           |
++---------------------------------------------------------------------------------+
+```
+
+- **Vault Sidebar**: View all notes grouped by folder, search notes, and filter by tags using an interactive tag cloud.
+- **Markdown Editor**: Read formatted articles with clickable `[[wikilinks]]`, or toggle into Edit mode.
+- **Context Panel**: See incoming backlinks, outgoing references, and tags for the selected note.
+- **Force-Directed Graph**: Interactively view how knowledge connects, zoom in/out, and click nodes to open notes.
+
+---
+
+## 5c. Proposed Architectural Evolution: OpenCode Chat & Wiki Attachment
+
+To allow asking questions and managing the wiki directly from the browser while adhering to **KISS** (Keep It Simple, Stupid) and **DRY** (Don't Repeat Yourself) principles, we propose adding an **Interactive Chat Window & Agent Persistence Layer**:
+
+```mermaid
+flowchart LR
+    User["👤 User (Web UI)"] -->|Types question or /command| Chat["💬 Chat Window"]
+    Chat -->|REST / API call| Server["⚙️ Decoupled Backend Agent Server"]
+    Server -->|Runs command with AGENT.md| Agent["🤖 OpenCode / Ollama Agent"]
+    Agent -->|Returns response & wikilinks| Server
+    Server -->|Streams answer| Chat
+    Chat -->|Click 'Attach to Wiki'| Server
+    Server -->|Saves/updates .md in wiki/| Vault["🗂️ wiki/ Folder"]
+    Vault -->|Triggers re-index| UI["🖥️ UI Graph & Vault Update"]
+```
+
+### Key Workflow Advantages:
+1. **Direct Agent Chat**: Ask questions or trigger agent commands (`/consult`, `/compile`, `/audit`) directly inside the Web UI.
+2. **Attach Answers to Wiki**: With a single click on any chat answer, attach the generated response to an existing note or create a new article in `wiki/`.
+3. **On-Disk Saving**: Edit Markdown files in the browser editor and save them directly back to your local filesystem.
+4. **Decoupled & Modular Design**: Keeps the frontend UI light and independent while leveraging a clean backend API wrapper around OpenCode / local LLMs.
+
 ### ① Add a source
 You drop a file — a PDF of a book, an article, your own notes — into the `sources/` folder. That's the only manual step.
 

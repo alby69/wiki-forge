@@ -174,6 +174,19 @@ Other scripts: `npm run build` (production bundle in `dist/`),
 If you prefer not to install Node tooling, the knowledge base is also fully
 browsable in **Obsidian** (open the project folder as a vault) — see TUTORIAL.md.
 
+### Proposed Architecture: Interactive OpenCode Chat & Direct Editor Saving
+
+To bridge the Web UI with live agent execution while maintaining **KISS** (Keep It Simple, Stupid) and **DRY** (Don't Repeat Yourself) principles, Phase 22 introduces a decoupled Chat and File Persistence layer:
+
+1. **Decoupled Backend API (`src/server/` or lightweight middleware)**:
+   - `POST /api/chat`: Runs OpenCode CLI or local model backend with context from `AGENT.md` and streams responses.
+   - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`.
+   - `POST /api/wiki/attach`: Converts chat answers or snippets into new/existing wiki notes and re-triggers indexing.
+2. **UI Component Extensions (`src/components/chat/`)**:
+   - **Chat Panel**: Slide-out drawer or split pane with quick command buttons (`/consult`, `/compile`, `/audit`).
+   - **Attach to Wiki**: One-click action on chat responses to merge knowledge directly into the wiki vault.
+   - **Persistent Editor**: Direct save button in the UI editor that updates on-disk files without requiring a external text editor.
+
 ### Tag cloud & tag management
 
 The vault explorer shows a **tag cloud**: tags are sized by frequency, coloured

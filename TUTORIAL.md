@@ -224,8 +224,16 @@ What you see:
   search box and "minimum connections" control above it to focus the view.
 
 The viewer reads the real `wiki/` and `raw/` folders and draws the graph from
-their links. It is **read-only / explore-only**: to change a note, tell the
-agent (`compile`, or edit the file directly) — the viewer just helps you look.
+their links. It is **read-only / explore-only** in its current default state: to change a note, tell the
+agent (`compile`, or edit the file directly).
+
+### Upcoming Web UI Enhancements: OpenCode Chat & Direct Saving
+
+To make the Web UI an active creation hub while keeping components decoupled:
+
+1. **Direct Markdown Editing & Saving**: You will be able to click **Edit** in the Markdown panel, edit the raw text, and click **Save** to write changes directly to disk in `wiki/`.
+2. **Embedded OpenCode Chat Drawer**: A dedicated Chat window will allow you to run agent commands like `/consult "question"`, `/compile`, or `/audit` directly from the browser.
+3. **Attach Answers to Wiki**: When the AI answers a question in the chat, an **"Attach to Wiki"** button will let you append the response or create a new note in `wiki/`, automatically running the compile workflow to update all interlinked references.
 
 Alternatives: `npm run build` produces a static `dist/` folder you can host
 anywhere; `npm run preview` serves that build locally.

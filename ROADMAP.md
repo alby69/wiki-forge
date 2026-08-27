@@ -33,6 +33,7 @@
 | 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
 | 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
+| 22 | Interactive OpenCode Chat & Persistence Layer | ⬜ Todo | Embedded OpenCode chat drawer, agent command runner, response attachment, and server-persisted Markdown editor |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -165,3 +166,24 @@ required.
 - **Tests:** link-extraction and graph-payload unit tests pass (`npm run test`).
 - **Scope note:** the UI is a **read/explore viewer**. The coding agent remains
   the source of truth and owns on-disk edits; UI edits are session-only.
+
+---
+
+## Phase 22 — Interactive OpenCode Chat & Persistence Layer ⬜ Todo
+
+**Goal:** Integrate a dedicated Chat drawer/modal in the Web UI powered by OpenCode (or Ollama/agent API), allowing users to execute agent workflows/commands (`consult`, `compile`, `audit`, etc.), receive structured synthesized responses, directly attach/append responses into the wiki, and edit/save Markdown files back to disk.
+
+**Architecture Proposal (KISS & DRY Principles):**
+
+1. **Decoupled Backend Agent Server (`src/server/` or lightweight Express/FastAPI middleware):**
+   - Provide REST / WebSocket endpoints for executing agent actions: `POST /api/chat` (streams agent response using `OPENCODE` / CLI backend), `POST /api/wiki/save` (writes updated Markdown files to disk under `wiki/`), and `POST /api/wiki/attach` (appends or converts chat response to a note/article).
+   - Keeps browser UI decoupled from filesystem I/O and CLI execution (DRY abstraction extending `IStorage`).
+
+2. **UI Integration (`src/components/chat/`):**
+   - **OpenCode Chat Drawer/Panel**: A collapsible side panel or floating drawer in the main UI layout (`MainLayout.ts`).
+   - **Command Trigger Buttons / Slash Commands**: Pre-filled shortcuts for agent commands (`/consult`, `/compile`, `/audit`, `/trace`).
+   - **Attach to Wiki Action**: Each chat message response includes an "Attach to Wiki" button that opens a target selection dialog (append to existing note or create a new note).
+   - **Direct Editor Saving**: Update `MarkdownEditor` to submit changes through the backend API (`saveNote()`), triggering an automatic re-index and graph refresh without full page reload.
+
+3. **Workflow Loop:**
+   - User asks a question or runs an agent command via Chat → Agent processes query using `AGENT.md` guidelines → AI returns markdown answer with `[[wikilinks]]` → User clicks "Attach to Wiki" → Backend saves file under `wiki/` and triggers `compile`/`reindex` workflow → Graph and Vault UI immediately refresh.
