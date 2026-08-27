@@ -1,4 +1,5 @@
 import { WikiNote } from '../../core/types/wiki';
+import { escapeHtml } from '../../core/utils/html';
 
 export class MarkdownEditor {
   private container: HTMLElement;
@@ -29,11 +30,11 @@ export class MarkdownEditor {
     this.container.innerHTML = `
       <div class="editor-panel-wrapper" style="height: 100%; display: flex; flex-direction: column; background: #18191c; color: #e2e8f0; border-right: 1px solid #2d3748;">
         <div class="editor-header" style="padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; justify-content: space-between; align-items: center; background: #121316;">
-          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6;">${this.currentNote.title}</h2>
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6;">${escapeHtml(this.currentNote.title)}</h2>
           <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${this.currentNote.folder || 'wiki'}</span>
         </div>
         <div style="flex: 1; display: flex; flex-direction: column; padding: 16px;">
-          <textarea id="markdown-textarea" style="width: 100%; flex: 1; background: #121316; border: 1px solid #2d3748; color: #e2e8f0; padding: 12px; font-family: monospace; font-size: 13px; line-height: 1.5; resize: none; border-radius: 6px; box-sizing: border-box;">${this.currentNote.content}</textarea>
+           <textarea id="markdown-textarea" style="width: 100%; flex: 1; background: #121316; border: 1px solid #2d3748; color: #e2e8f0; padding: 12px; font-family: monospace; font-size: 13px; line-height: 1.5; resize: none; border-radius: 6px; box-sizing: border-box;">${escapeHtml(this.currentNote.content)}</textarea>
           <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
             <button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600;">Save Changes</button>
           </div>

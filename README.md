@@ -26,6 +26,10 @@ project, a business wiki, personal notes, and so on.
 ├── SOURCES.md           # Registry of ingested sources (the bibliography)
 ├── docs/
 │   └── KARPATHY_LLM_WIKI.md   # The original idea file (offline copy)
+├── index.html            # Web UI entry point (Vite)
+├── vite.config.ts        # Vite configuration
+├── src/                  # Web UI source (TypeScript, decoupled)
+├── package.json          # Web UI dev/build scripts (npm)
 ├── sources/  (named backup/)  # Your ORIGINAL files — never modified
 ├── raw/                 # Converted Markdown (the agent's inbox)
 ├── wiki/                # The compiled, interlinked knowledge base
@@ -115,6 +119,36 @@ agents expect their own filename, so create a copy or symlink:
 ```bash
 cp AGENT.md CLAUDE.md      # or: ln -s AGENT.md CLAUDE.md
 ```
+
+## Browse the wiki (optional Web UI)
+
+A lightweight, dependency-light **web viewer** is included for exploring the
+knowledge base in a browser — no Obsidian required. It is a static
+single-page app (Vite + TypeScript) with a three-column layout:
+
+- **Vault sidebar** — all notes grouped by folder, plus a tag cloud and search.
+- **Editor / Markdown panel** — the selected note's raw Markdown.
+- **Graph viewer** — an interactive node-link map of `[[wikilinks]]` (with
+  search and "minimum connections" filters), rendered from the real `wiki/`
+  and `raw/` folders.
+
+> The UI is a **read/explore viewer**. It bundles every Markdown file under
+> `wiki/` and `raw/` at build time, so the agent — which edits those files on
+> disk — remains the source of truth. Edits made in the UI are session-only.
+
+### Run it
+
+```bash
+npm install        # install UI dev dependencies (Vite, TypeScript)
+npm run dev        # start the dev server, opens http://localhost:5173
+```
+
+Other scripts: `npm run build` (production bundle in `dist/`),
+`npm run preview` (serve the built bundle), `npm run typecheck`,
+`npm run test` (link/graph unit tests).
+
+If you prefer not to install Node tooling, the knowledge base is also fully
+browsable in **Obsidian** (open the project folder as a vault) — see TUTORIAL.md.
 
 ## Design philosophy
 

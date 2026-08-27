@@ -43,6 +43,21 @@ lint:
 	@echo "Run 'lint-frontmatter' in your agent (AGENT.md §5.3)"
 
 help:
-	@echo "Available targets: convert, convert-docker, build, shell, audit, stats, reindex, clean-output, export-json, lint, help"
+	@echo "Available targets: convert, convert-docker, build, shell, audit, stats, reindex, clean-output, export-json, lint, ui, ui-build, ui-preview, ui-test, ui-typecheck, help"
 
-.PHONY: convert convert-docker build shell audit stats reindex clean-output export-json lint help
+ui:
+	npm run dev
+
+ui-build:
+	npm run build
+
+ui-preview:
+	npm run preview
+
+ui-test:
+	npm run test
+
+ui-typecheck:
+	npm run typecheck
+
+.PHONY: convert convert-docker build shell audit stats reindex clean-output export-json lint help ui ui-build ui-preview ui-test ui-typecheck

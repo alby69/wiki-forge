@@ -1,6 +1,7 @@
 import { WikiNote } from './core/types/wiki';
 import { MarkdownParser } from './services/markdownParser';
 import { GraphService } from './services/graphService';
+import { FileStorage } from './storage/FileStorage';
 import { MainLayout } from './components/ui/MainLayout';
 import { Header } from './components/ui/Header';
 import { Sidebar } from './components/ui/Sidebar';
@@ -12,6 +13,7 @@ import { GraphControls } from './components/graph/GraphControls';
 export class WikiForgeApp {
   private parser = new MarkdownParser();
   private graphService = new GraphService();
+  private storage = new FileStorage();
   private notes: WikiNote[] = [];
   private selectedNote: WikiNote | null = null;
 
@@ -25,15 +27,31 @@ export class WikiForgeApp {
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
-    this.initSampleVault();
     this.initUI();
+    // Load the real vault asynchronously (falls back to a demo vault).
+    void this.loadVault();
   }
 
-  private initSampleVault(): void {
-    const note1 = this.parser.parseNote(
-      '01-index',
-      'System Architecture',
-      `---
+  private async loadVault(): Promise<void> {
+    let notes = await this.storage.getAllNotes();
+    if (notes.length === 0) {
+      notes = this.buildSampleVault();
+    }
+    this.notes = this.parser.computeBacklinks(notes);
+    this.selectedNote = this.notes[0] ?? null;
+    this.refreshAll();
+  }
+
+  /**
+   * Demo vault used only when no Markdown files are found under wiki/ or raw/.
+   * Keeps the UI usable out-of-the-box for first-time exploration.
+   */
+  private buildSampleVault(): WikiNote[] {
+    const raw = [
+      [
+        '01-index',
+        'System Architecture',
+        `---
 title: System Architecture
 tags: [architecture, core]
 ---
@@ -44,13 +62,11 @@ The **Wiki-Forge** project utilizes a decoupled architecture split into UI, Core
 - See [[02-c64-dev]] for assembly details.
 - See [[03-llm-agent]] for agent pipeline.
 `,
-      'wiki'
-    );
-
-    const note2 = this.parser.parseNote(
-      '02-c64-dev',
-      'C64 Development',
-      `---
+      ],
+      [
+        '02-c64-dev',
+        'C64 Development',
+        `---
 title: C64 Development
 tags: [assembly, c64]
 ---
@@ -60,13 +76,11 @@ Commodore 64 assembly programming techniques and memory maps.
 
 Links to [[01-index]].
 `,
-      'wiki'
-    );
-
-    const note3 = this.parser.parseNote(
-      '03-llm-agent',
-      'LLM Agent Pipeline',
-      `---
+      ],
+      [
+        '03-llm-agent',
+        'LLM Agent Pipeline',
+        `---
 title: LLM Agent Pipeline
 tags: [python, agent, llm]
 ---
@@ -76,12 +90,10 @@ Automated wiki compilation and RAG knowledge retrieval.
 
 Backlink to [[01-index]].
 `,
-      'wiki'
-    );
+      ],
+    ];
 
-    const rawNotes = [note1, note2, note3];
-    this.notes = this.parser.computeBacklinks(rawNotes);
-    this.selectedNote = this.notes[0];
+    return raw.map(([id, title, content]) => this.parser.parseNote(id, title, content, 'wiki'));
   }
 
   private initUI(): void {
@@ -102,7 +114,7 @@ Backlink to [[01-index]].
     });
 
     this.graphViewer = new ForceGraphViewer();
-    this.graphViewer.render(this.layout.graphContainer, this.graphService.generateGraphData(this.notes));
+    this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });
     this.graphViewer.onNodeClick(nodeId => this.selectNote(nodeId));
 
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, options => {
@@ -111,14 +123,21 @@ Backlink to [[01-index]].
       this.graphViewer.updateData(filtered);
     });
 
-    this.sidebar.setNotes(this.notes);
-    this.editor.setNote(this.selectedNote);
-    this.contextPanel.setSelectedNote(this.selectedNote);
     this.layout.setViewMode('split');
   }
 
+  /** Push the current notes/selection into every UI region. */
+  private refreshAll(): void {
+    this.sidebar.setNotes(this.notes);
+    this.editor.setNote(this.selectedNote);
+    this.contextPanel.setSelectedNote(this.selectedNote);
+    this.graphViewer.updateData(this.graphService.generateGraphData(this.notes));
+  }
+
   public selectNote(noteId: string): void {
-    const found = this.notes.find(n => n.id === noteId || n.title.toLowerCase() === noteId.toLowerCase());
+    const found = this.notes.find(
+      n => n.id === noteId || n.title.toLowerCase() === noteId.toLowerCase()
+    );
     if (found) {
       this.selectedNote = found;
       this.editor.setNote(found);
@@ -130,21 +149,24 @@ Backlink to [[01-index]].
   private updateNoteContent(noteId: string, newContent: string): void {
     const idx = this.notes.findIndex(n => n.id === noteId);
     if (idx !== -1) {
-      const updated = this.parser.parseNote(
+      const refreshed = this.parser.parseNote(
         this.notes[idx].id,
         this.notes[idx].title,
         newContent,
-        this.notes[idx].folder
+        this.notes[idx].folder ?? 'wiki'
       );
-      this.notes[idx] = updated;
+      this.notes[idx] = refreshed;
       this.notes = this.parser.computeBacklinks(this.notes);
 
-      const refreshed = this.notes.find(n => n.id === noteId)!;
-      this.selectedNote = refreshed;
-      this.sidebar.setNotes(this.notes);
-      this.editor.setNote(refreshed);
-      this.contextPanel.setSelectedNote(refreshed);
-      this.graphViewer.updateData(this.graphService.generateGraphData(this.notes));
+      const updated = this.notes.find(n => n.id === noteId)!;
+      this.selectedNote = updated;
+      this.refreshAll();
     }
   }
+}
+
+// Bootstrap the application once the DOM is ready.
+const root = document.getElementById('app');
+if (root) {
+  new WikiForgeApp(root);
 }

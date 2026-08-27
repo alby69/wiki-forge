@@ -1,4 +1,5 @@
 import { WikiNote } from '../../core/types/wiki';
+import { escapeHtml } from '../../core/utils/html';
 
 export class Sidebar {
   private container: HTMLElement;
@@ -36,8 +37,8 @@ export class Sidebar {
             ${folderNotes
               .map(
                 n => `
-              <li class="sidebar-note-item" data-note-id="${n.id}" style="padding: 4px 8px; font-size: 13px; color: #cbd5e1; cursor: pointer; border-radius: 4px; transition: background 0.15s ease;">
-                📄 ${n.title}
+              <li class="sidebar-note-item" data-note-id="${escapeHtml(n.id)}" style="padding: 4px 8px; font-size: 13px; color: #cbd5e1; cursor: pointer; border-radius: 4px; transition: background 0.15s ease;">
+                📄 ${escapeHtml(n.title)}
               </li>
             `
               )

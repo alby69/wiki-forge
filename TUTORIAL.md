@@ -198,7 +198,40 @@ template.
 
 ---
 
-## 11. Command Cheat Sheet
+---
+
+## 11. The optional Web UI (browser viewer)
+
+If you don't want to install Obsidian, the template ships with a small **web
+viewer** you can open in any browser.
+
+1. Install the UI tools once:
+   ```bash
+   npm install
+   ```
+2. Launch it:
+   ```bash
+   npm run dev
+   ```
+   This opens **http://localhost:5173** automatically.
+
+What you see:
+- **Left — Vault:** every note grouped by folder, with a tag cloud and a search box.
+- **Center — Editor:** the selected note's Markdown text.
+- **Right — Context:** backlinks, outbound links, and tags of the selected note.
+- **Graph:** a node-link map of how notes connect via `[[wikilinks]]`; use the
+  search box and "minimum connections" control above it to focus the view.
+
+The viewer reads the real `wiki/` and `raw/` folders and draws the graph from
+their links. It is **read-only / explore-only**: to change a note, tell the
+agent (`compile`, or edit the file directly) — the viewer just helps you look.
+
+Alternatives: `npm run build` produces a static `dist/` folder you can host
+anywhere; `npm run preview` serves that build locally.
+
+---
+
+## 12. Command Cheat Sheet
 
 > Quick reference of every command you can type to the agent.
 > Grouped by how often you'll use them.

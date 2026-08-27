@@ -32,7 +32,7 @@
 | 18 | Metrics & analytics | ✅ Done | `wiki_stats.py` -> `METRICS.md` |
 | 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
-| 21 | Web UI & Obsidian Graph Viewer | 🔄 Ongoing | Decoupled TypeScript UI, 3-column layout & Force Graph viewer |
+| 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -142,13 +142,26 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 ---
 
-## Phase 21 — Web UI & Obsidian Graph Viewer 🔄 Ongoing
+## Phase 21 — Web UI & Obsidian Graph Viewer ✅ Done
 
-**Goal:** Provide a sleek, professional, decoupled user interface with an Obsidian-like interactive graph viewer.
+**Goal:** Provide a sleek, dependency-light, decoupled web interface for exploring
+the knowledge base, with an interactive `[[wikilink]]` graph viewer — no Obsidian
+required.
 
-**Deliverables:**
-- Clean, decoupled architecture contracts: `IStorage`, `IGraphViewer`, `WikiNote`, `GraphData`.
-- Core services for link extraction (`markdownParser.ts`) and knowledge graph generation (`graphService.ts`).
-- Interactive Obsidian-style graph viewer based on `force-graph` with hover highlights, filters, and node navigation.
-- Responsive 3-column UI (Vault Sidebar, Main Editor/Graph container, Node Metadata Context Panel).
-- Unit tests for link parsing and graph payload generation.
+**Deliverables (implemented and verified):**
+- **Build tooling:** Vite + TypeScript. `npm run dev` (hot-reload at
+  `http://localhost:5173`), `npm run build` (static `dist/`), `npm run preview`.
+- **Entry point:** `index.html` mounts `WikiForgeApp` (`src/index.ts`).
+- **Real-vault loading:** `src/storage/FileStorage.ts` implements `IStorage` and
+  bundles every Markdown file under `wiki/` and `raw/` at build time via
+  `import.meta.glob` — fully backend-free. Falls back to a demo vault when empty.
+- **Three-column layout:** Vault sidebar (notes by folder + tag cloud + search),
+  Markdown editor panel, and a node-metadata context panel (`src/components/*`).
+- **Interactive graph viewer:** `ForceGraphViewer` renders an SVG node-link map
+  of `[[wikilinks]]` with hover highlights, click-to-navigate, and filters
+  (search + minimum-connections) via `GraphControls`. No heavy graph dependency.
+- **Safety:** `escapeHtml` helper hardens all note content rendered via
+  `innerHTML` (sidebar, editor, context panel, graph labels).
+- **Tests:** link-extraction and graph-payload unit tests pass (`npm run test`).
+- **Scope note:** the UI is a **read/explore viewer**. The coding agent remains
+  the source of truth and owns on-disk edits; UI edits are session-only.

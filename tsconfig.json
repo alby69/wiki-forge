@@ -1,14 +1,20 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "outDir": "./dist",
-    "rootDir": "./",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client", "node"]
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
+  "include": ["src/**/*", "tests/**/*", "vite.config.ts"]
 }

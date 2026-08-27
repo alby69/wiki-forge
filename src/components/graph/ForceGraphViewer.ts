@@ -1,5 +1,6 @@
 import { IGraphViewer } from '../../core/interfaces/IGraphViewer';
 import { GraphData, GraphFilterOptions, GraphNode } from '../../core/types/graph';
+import { escapeHtml } from '../../core/utils/html';
 
 export class ForceGraphViewer implements IGraphViewer {
   private container: HTMLElement | null = null;
@@ -107,12 +108,12 @@ export class ForceGraphViewer implements IGraphViewer {
       const nodeColor = node.color || '#90a4ae';
 
       svgContent += `
-        <g class="graph-node-group" data-node-id="${node.id}" style="cursor: pointer;">
+        <g class="graph-node-group" data-node-id="${escapeHtml(node.id)}" style="cursor: pointer;">
           <circle cx="${pos.x}" cy="${pos.y}" r="${size}" fill="${nodeColor}"
                   stroke="${isHighlighted ? '#ffffff' : 'transparent'}" stroke-width="2"
                   style="transition: all 0.2s ease; filter: drop-shadow(0px 0px 6px ${nodeColor});" />
           <text x="${pos.x}" y="${pos.y + size + 14}" fill="${isHighlighted ? '#ffffff' : '#cbd5e1'}"
-                font-size="11" font-family="sans-serif" text-anchor="middle">${node.label}</text>
+                font-size="11" font-family="sans-serif" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
       `;
     });

@@ -1,4 +1,5 @@
 import { WikiNote } from '../../core/types/wiki';
+import { escapeHtml } from '../../core/utils/html';
 
 export class ContextPanel {
   private container: HTMLElement;
@@ -32,7 +33,7 @@ export class ContextPanel {
         ? this.selectedNote.backlinks
             .map(
               b =>
-                `<li class="context-link-item" data-note-id="${b.sourceId}" style="cursor: pointer; color: #64b5f6; margin-bottom: 6px; font-size: 13px;">[[${b.sourceTitle}]]</li>`
+                 `<li class="context-link-item" data-note-id="${escapeHtml(b.sourceId)}" style="cursor: pointer; color: #64b5f6; margin-bottom: 6px; font-size: 13px;">[[${escapeHtml(b.sourceTitle)}]]</li>`
             )
             .join('')
         : `<li style="color: #718096; font-size: 12px; list-style: none;">None</li>`;
@@ -42,7 +43,7 @@ export class ContextPanel {
         ? this.selectedNote.outboundLinks
             .map(
               target =>
-                `<li class="context-link-item" data-note-id="${target}" style="cursor: pointer; color: #81c784; margin-bottom: 6px; font-size: 13px;">[[${target}]]</li>`
+                 `<li class="context-link-item" data-note-id="${escapeHtml(target)}" style="cursor: pointer; color: #81c784; margin-bottom: 6px; font-size: 13px;">[[${escapeHtml(target)}]]</li>`
             )
             .join('')
         : `<li style="color: #718096; font-size: 12px; list-style: none;">None</li>`;
@@ -61,7 +62,7 @@ export class ContextPanel {
       <div class="context-panel" style="padding: 16px; background: #121316; height: 100%; color: #e2e8f0; font-size: 13px; box-sizing: border-box; overflow-y: auto;">
         <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; border-bottom: 1px solid #2d3748; padding-bottom: 8px;">Node Metadata</h3>
         <div style="margin-bottom: 16px;">
-          <strong style="color: #fff; font-size: 15px;">${this.selectedNote.title}</strong>
+          <strong style="color: #fff; font-size: 15px;">${escapeHtml(this.selectedNote.title)}</strong>
           <div style="margin-top: 6px;">${tagsHTML}</div>
         </div>
 
