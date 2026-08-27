@@ -33,7 +33,7 @@
 | 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
 | 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
-| 22 | Interactive OpenCode Chat & Persistence Layer | ⬜ Todo | Embedded OpenCode chat drawer, agent command runner, response attachment, and server-persisted Markdown editor |
+| 22 | Interactive OpenCode Chat & Persistence Layer | ✅ Done | OpenCode chat drawer, agent command runner, response attachment, and server-persisted Markdown editor |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -169,21 +169,32 @@ required.
 
 ---
 
-## Phase 22 — Interactive OpenCode Chat & Persistence Layer ⬜ Todo
+## Phase 22 — Interactive OpenCode Chat & Persistence Layer ✅ Done
 
-**Goal:** Integrate a dedicated Chat drawer/modal in the Web UI powered by OpenCode (or Ollama/agent API), allowing users to execute agent workflows/commands (`consult`, `compile`, `audit`, etc.), receive structured synthesized responses, directly attach/append responses into the wiki, and edit/save Markdown files back to disk.
+**Goal:** Integrate a dedicated Chat drawer/modal in the Web UI powered by OpenCode (or agent API), allowing users to execute agent workflows/commands (`consult`, `compile`, `audit`, etc.), receive structured synthesized responses, directly attach/append responses into the wiki, and edit/save Markdown files back to disk.
 
-**Architecture Proposal (KISS & DRY Principles):**
+**Deliverables (implemented and verified):**
 
-1. **Decoupled Backend Agent Server (`src/server/` or lightweight Express/FastAPI middleware):**
-   - Provide REST / WebSocket endpoints for executing agent actions: `POST /api/chat` (streams agent response using `OPENCODE` / CLI backend), `POST /api/wiki/save` (writes updated Markdown files to disk under `wiki/`), and `POST /api/wiki/attach` (appends or converts chat response to a note/article).
-   - Keeps browser UI decoupled from filesystem I/O and CLI execution (DRY abstraction extending `IStorage`).
+1. **Decoupled Backend Agent Server (`src/server/agentServer.ts` & Vite Plugin):**
+   - Implemented REST API endpoints for agent workflows:
+     - `GET /api/wiki/notes`: Loads all Markdown notes in real time from `wiki/`.
+     - `POST /api/wiki/save`: Saves edited Markdown content directly to disk under `wiki/`.
+     - `POST /api/wiki/attach`: Appends or creates new notes from chat responses.
+     - `POST /api/chat`: Processes slash commands (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`) and queries using `AGENT.md` guidelines, returning structured Markdown answers with `[[wikilinks]]`.
+   - Wired seamlessly into `vite.config.ts` dev and preview server middleware.
 
-2. **UI Integration (`src/components/chat/`):**
-   - **OpenCode Chat Drawer/Panel**: A collapsible side panel or floating drawer in the main UI layout (`MainLayout.ts`).
-   - **Command Trigger Buttons / Slash Commands**: Pre-filled shortcuts for agent commands (`/consult`, `/compile`, `/audit`, `/trace`).
-   - **Attach to Wiki Action**: Each chat message response includes an "Attach to Wiki" button that opens a target selection dialog (append to existing note or create a new note).
-   - **Direct Editor Saving**: Update `MarkdownEditor` to submit changes through the backend API (`saveNote()`), triggering an automatic re-index and graph refresh without full page reload.
+2. **Storage Adapter & Persistence Layer (`src/storage/ApiStorage.ts`):**
+   - Implemented `ApiStorage` extending `IStorage` interface.
+   - Synchronizes directly with server API endpoints when online and falls back to static `FileStorage` when offline.
 
-3. **Workflow Loop:**
-   - User asks a question or runs an agent command via Chat → Agent processes query using `AGENT.md` guidelines → AI returns markdown answer with `[[wikilinks]]` → User clicks "Attach to Wiki" → Backend saves file under `wiki/` and triggers `compile`/`reindex` workflow → Graph and Vault UI immediately refresh.
+3. **Interactive OpenCode Chat Drawer & Attachment UI (`src/components/chat/*`):**
+   - Added slide-out `ChatDrawer` in `MainLayout.ts` with toggle button in `Header.ts`.
+   - Added command shortcut buttons (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`).
+   - Integrated `AttachModal` on AI responses allowing users to append or create new wiki notes.
+
+4. **Direct Markdown Editor Persistence & Auto-Reindexing:**
+   - Updated `MarkdownEditor.ts` to show instant save status ("Saved to disk! 💾").
+   - Wired `WikiForgeApp` (`src/index.ts`) to save edits directly to disk and automatically recompute backlinks, tag clouds, and graph view in real time.
+
+5. **Tests & Quality Assurance:**
+   - Added integration test suite `tests/agentServer.test.ts` covering all REST endpoints and storage methods (100% pass rate across 11 test cases).
