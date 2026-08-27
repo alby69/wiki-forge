@@ -196,5 +196,82 @@ template.
 - **`SOURCES.md`** — the registry of sources.
 - **`wiki/index.md`** — the "front door": every Consult starts here.
 
-*End of tutorial. Now you can rebuild or have someone maintain your second brain
-without knowing how to program.*
+---
+
+## 11. Command Cheat Sheet
+
+> Quick reference of every command you can type to the agent.
+> Grouped by how often you'll use them.
+
+### Daily commands
+| Command | When to use | Example |
+|---------|-------------|---------|
+| `compile` | You dropped new files in `sources/` and want the wiki updated | `compile` |
+| `consult "..."` | You have a question and want an answer from the wiki | `consult "What did Karpathy say about agents?"` |
+| `search <term>` | You know a concept exists but can't find the article | `search "LLM-OS"` |
+| `help` | You forgot a command | `help` |
+
+### Weekly maintenance
+| Command | When to use |
+|---------|-------------|
+| `audit` | General health check (do this every 5-10 new articles) |
+| `audit links` | You renamed an article and suspect broken links |
+| `reindex` | You moved/renamed articles manually |
+| `stats` | You want a snapshot of wiki growth |
+
+### As-needed commands
+| Command | When to use | Requires confirmation? |
+|---------|-------------|----------------------|
+| `merge <a> <b>` | Two articles cover the same topic | ✅ Always |
+| `split <art> <heading>` | One article grew too long | ✅ Always |
+| `stub <concept>` | You want to create a placeholder for a future article | ❌ No |
+| `prune` | Remove empty/orphan articles | ✅ Always |
+| `sources regenerate` | After adding many articles, rebuild the bibliography | ❌ No |
+| `export json` | You want to back up or share the wiki structure | ❌ No |
+| `trace "claim"` | You want to verify where a claim comes from | ❌ No |
+
+---
+
+## 12. Troubleshooting
+
+### "The agent says it can't find raw files"
+- Check that `config.toml` exists and has the correct `paths.raw` value.
+- Run `bash run_convert.sh` manually first to ensure conversion worked.
+- If using Docker, run `docker compose run --rm wiki convert`.
+
+### "Links are broken after I renamed an article"
+1. Run `audit links` to find all broken links.
+2. Run `reindex` to regenerate indexes.
+3. If the old name still appears in many places, consider creating a redirect stub.
+
+### "The compile is too slow / uses too many tokens"
+- Use `ingest <file>` instead of `compile` to process one file at a time.
+- Ensure files in `raw/` are already renamed with `_COMPILED` to avoid re-processing.
+
+### "I have two articles about the same thing"
+- Run `audit duplicates` to confirm.
+- Then run `merge <article-1> <article-2>`. The agent will ask for confirmation.
+
+### "The agent created an article in the wrong wiki"
+- Manually move the file to the correct `wiki/<name>/` folder.
+- Then run `reindex` to fix the indexes.
+- Update `wiki/index.md` if you created a new thematic wiki.
+
+---
+
+## 13. Keeping your wiki healthy over time
+
+### Monthly
+- Run `audit` and address any broken links or orphans.
+- Run `sources regenerate` to keep the bibliography current.
+- Review `stats` to see which areas of your wiki are growing and which are neglected.
+
+### Quarterly
+- Run `audit duplicates` to catch topic drift.
+- Review `wiki/index.md` — does it still reflect your knowledge structure?
+- Export a backup with `export json` or `export obsidian-vault`.
+
+### Yearly
+- Archive old `output/` files.
+- Consider splitting overgrown wikis into sub-wikis.
+- Update `config.toml` if your project context has evolved.
