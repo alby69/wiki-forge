@@ -119,7 +119,7 @@ sources:
 - Bullet points and short sections aid scanning.
 - No fluff, no repetition, no preambles.
 - Always define technical terms on first use.
-- Match the `project.language` from `config.toml`.
+- Match the `project.language` and `i18n` configurations in `config.toml`. When handling multilingual sources, synthesize articles into the target wiki language specified in configuration while preserving original term references where helpful.
 
 ### Wiki links
 - Always use `[[wiki links]]` to connect related concepts.

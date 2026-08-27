@@ -190,7 +190,7 @@ template.
 
 - **`AGENT.md`** — the AI's "manual". To change a rule (e.g. how to name
   articles), edit it here.
-- **`config.toml`** — the single settings knob (title, context, folders).
+- **`config.toml`** — the single settings knob (title, context, folders, i18n/multi-language settings).
 - **`README.md`** — minimal technical guide for conversion.
 - **`conv2md.py`** + **`run_convert.sh`** — tools that turn books/PDFs into text.
 - **`SOURCES.md`** — the registry of sources.

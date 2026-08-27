@@ -59,3 +59,9 @@ include_sources = false
 enabled = false
 folder = "sources/web-clips"
 format = "markdown"
+
+# Internationalization / Multi-language settings
+[i18n]
+default_language = "en"
+supported_languages = ["en", "it", "es", "fr", "de"]
+fallback_language = "en"
