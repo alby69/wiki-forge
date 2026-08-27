@@ -129,15 +129,27 @@ Backlink to [[01-index]].
 
     this.graphViewer = new ForceGraphViewer();
     this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });
-    this.graphViewer.onNodeClick(nodeId => this.selectNote(nodeId));
+    this.graphViewer.onNodeClick(nodeId => {
+      this.selectNote(nodeId);
+      // Obsidian-like: clicking a node opens the note, so make sure the editor
+      // pane is visible (it is hidden in pure "graph" view mode).
+      this.layout.setViewMode('split');
+    });
 
-    this.graphControls = new GraphControls(this.layout.graphControlsContainer, options => {
-      const fullData = this.graphService.generateGraphData(this.notes);
-      const filtered = this.graphService.filterGraphData(fullData, {
-        ...options,
-        selectedTags: this.filterTags,
-      });
-      this.graphViewer.updateData(filtered);
+    this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
+      onFilterChange: options => {
+        const fullData = this.graphService.generateGraphData(this.notes);
+        const filtered = this.graphService.filterGraphData(fullData, {
+          ...options,
+          selectedTags: this.filterTags,
+        });
+        this.graphViewer.updateData(filtered);
+      },
+      onZoom: action => {
+        if (action === 'in') this.graphViewer.zoomBy(1.4);
+        else if (action === 'out') this.graphViewer.zoomBy(1 / 1.4);
+        else this.graphViewer.zoomToFit();
+      },
     });
 
     this.layout.setViewMode('split');

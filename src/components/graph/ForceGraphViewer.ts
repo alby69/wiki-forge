@@ -1,24 +1,80 @@
+import ForceGraph from 'force-graph';
 import { IGraphViewer } from '../../core/interfaces/IGraphViewer';
 import { GraphData, GraphFilterOptions, GraphNode } from '../../core/types/graph';
-import { escapeHtml } from '../../core/utils/html';
+
+interface LinkEnd {
+  source: string | GraphNode;
+  target: string | GraphNode;
+}
 
 export class ForceGraphViewer implements IGraphViewer {
   private container: HTMLElement | null = null;
+  private fg: ForceGraph | null = null;
   private data: GraphData = { nodes: [], links: [] };
+  private adjacency = new Map<string, Set<string>>();
   private activeFilter: GraphFilterOptions = {};
   private onNodeClickCb?: (nodeId: string) => void;
   private onNodeHoverCb?: (nodeId: string | null) => void;
   private highlightedNodeId: string | null = null;
+  private hoverNodeId: string | null = null;
+  private resizeObs: ResizeObserver | null = null;
 
   public render(container: HTMLElement, data: GraphData): void {
     this.container = container;
+    if (!this.fg) {
+      const width = container.clientWidth || 600;
+      const height = container.clientHeight || 400;
+      container.innerHTML = '';
+      const factory = ForceGraph as unknown as (el: HTMLElement) => ForceGraph;
+      this.fg = factory(container)
+        .width(width)
+        .height(height)
+        .nodeId('id')
+        .nodeVal('val')
+        .nodeRelSize(1)
+        .linkColor(this.linkColorFn)
+        .linkWidth(this.linkWidthFn)
+        .nodeColor(this.nodeColorFn)
+        .nodeCanvasObject(this.nodeCanvasObj)
+        .nodeCanvasObjectMode(() => 'replace')
+        .nodeLabel((n: any) => this.tooltip(n))
+        .onNodeClick((n: any) => this.handleClick(n))
+        .onNodeHover((n: any) => this.handleHover(n))
+        .onBackgroundClick(() => this.clearHighlight())
+        .minZoom(0.2)
+        .maxZoom(8);
+
+      // Keep the canvas sized to its (flex) container.
+      this.resizeObs = new ResizeObserver(() => {
+        if (this.fg && container.clientWidth && container.clientHeight) {
+          this.fg.width(container.clientWidth).height(container.clientHeight);
+        }
+      });
+      this.resizeObs.observe(container);
+    }
+    this.setData(data);
+  }
+
+  private setData(data: GraphData): void {
     this.data = data;
-    this.updateCanvas();
+    this.adjacency = new Map();
+    for (const link of data.links as LinkEnd[]) {
+      const s = this.endId(link.source);
+      const t = this.endId(link.target);
+      if (!s || !t) continue;
+      (this.adjacency.get(s) ?? this.adjacency.set(s, new Set()).get(s)!).add(t);
+      (this.adjacency.get(t) ?? this.adjacency.set(t, new Set()).get(t)!).add(s);
+    }
+    if (this.fg) this.fg.graphData(data);
+  }
+
+  private endId(end: string | GraphNode): string {
+    return typeof end === 'object' ? (end as GraphNode).id : end;
   }
 
   public highlightNode(nodeId: string | null): void {
     this.highlightedNodeId = nodeId;
-    this.updateCanvas();
+    this.refresh();
   }
 
   public onNodeClick(callback: (nodeId: string) => void): void {
@@ -30,119 +86,133 @@ export class ForceGraphViewer implements IGraphViewer {
   }
 
   public updateData(data: GraphData): void {
-    this.data = data;
-    this.updateCanvas();
+    this.setData(data);
   }
 
   public applyFilter(options: GraphFilterOptions): void {
     this.activeFilter = options;
-    this.updateCanvas();
+  }
+
+  /** Zoom in / out by a multiplicative factor (Obsidian-style buttons). */
+  public zoomBy(factor: number): void {
+    if (this.fg) this.fg.zoom(this.fg.zoom() * factor, 300);
+  }
+
+  /** Fit the whole graph into view. */
+  public zoomToFit(): void {
+    if (this.fg) this.fg.zoomToFit(400, 40);
   }
 
   public destroy(): void {
-    if (this.container) {
-      this.container.innerHTML = '';
+    this.resizeObs?.disconnect();
+    this.resizeObs = null;
+    if (this.fg) {
+      this.fg.pauseAnimation();
+      (this.fg as any)._destructor?.();
+      this.fg = null;
     }
+    if (this.container) this.container.innerHTML = '';
   }
 
-  private updateCanvas(): void {
-    if (!this.container) return;
+  // --- internals ---------------------------------------------------------
 
-    this.container.innerHTML = `
-      <div class="force-graph-wrapper" style="position: relative; width: 100%; height: 100%; background: #121316; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #a0aec0; overflow: hidden; border-radius: 8px;">
-        <div class="graph-canvas-simulated" style="width: 100%; height: 100%; position: relative;">
-          ${this.renderGraphNodesHTML()}
-        </div>
-      </div>
-    `;
-
-    this.attachEventListeners();
+  private activeId(): string | null {
+    return this.hoverNodeId ?? this.highlightedNodeId;
   }
 
-  private renderGraphNodesHTML(): string {
-    if (this.data.nodes.length === 0) {
-      return `<div style="padding: 2rem; text-align: center;">No graph nodes match the active filter.</div>`;
+  private isActive(nodeId: string): boolean {
+    const active = this.activeId();
+    if (!active) return true;
+    return nodeId === active || (this.adjacency.get(active)?.has(nodeId) ?? false);
+  }
+
+  private refresh(): void {
+    if (!this.fg) return;
+    // Re-assigning the same accessors forces force-graph to repaint.
+    this.fg
+      .nodeColor(this.nodeColorFn)
+      .linkColor(this.linkColorFn)
+      .linkWidth(this.linkWidthFn);
+  }
+
+  private nodeColorFn = (node: any): string => {
+    const color = (node.color as string) || '#90a4ae';
+    return this.isActive(node.id) ? color : this.dim(color);
+  };
+
+  private linkColorFn = (link: any): string => {
+    const active = this.activeId();
+    if (!active) return 'rgba(160,174,192,0.35)';
+    const s = this.endId(link.source);
+    const t = this.endId(link.target);
+    if (s === active || t === active) return 'rgba(100,181,246,0.85)';
+    return 'rgba(160,174,192,0.08)';
+  };
+
+  private linkWidthFn = (link: any): number => {
+    const active = this.activeId();
+    if (!active) return 1;
+    const s = this.endId(link.source);
+    const t = this.endId(link.target);
+    return s === active || t === active ? 2.2 : 0.4;
+  };
+
+  private nodeCanvasObj = (node: any, ctx: CanvasRenderingContext2D, globalScale: number): void => {
+    const val = typeof node.val === 'number' ? node.val : 1;
+    const r = Math.max(3, Math.sqrt(val) * 2.2);
+    const active = this.isActive(node.id);
+    const color = (node.color as string) || '#90a4ae';
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = active ? color : this.dim(color);
+    ctx.fill();
+
+    if (node.id === this.highlightedNodeId) {
+      ctx.lineWidth = 1.5 / globalScale;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
     }
 
-    const width = 800;
-    const height = 500;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(centerX, centerY) - 80;
+    const fontSize = Math.max(2.5, 11 / globalScale);
+    ctx.font = `${fontSize}px Sans-Serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = active ? '#e2e8f0' : 'rgba(203,213,225,0.4)';
+    ctx.fillText(node.label, node.x, node.y + r + 1);
+  };
 
-    const nodePositions = new Map<string, { x: number; y: number }>();
-    const nodeCount = this.data.nodes.length;
-
-    this.data.nodes.forEach((node, idx) => {
-      const angle = (idx / nodeCount) * 2 * Math.PI;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
-      nodePositions.set(node.id, { x, y });
-    });
-
-    let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="position: absolute; top:0; left:0;">`;
-
-    // Render edges
-    this.data.links.forEach(link => {
-      const sourcePos = nodePositions.get(link.source);
-      const targetPos = nodePositions.get(link.target);
-
-      if (sourcePos && targetPos) {
-        const isHighlighted =
-          this.highlightedNodeId === link.source || this.highlightedNodeId === link.target;
-        const strokeColor = isHighlighted ? '#64b5f6' : 'rgba(255, 255, 255, 0.15)';
-        const strokeWidth = isHighlighted ? 2 : 1;
-
-        svgContent += `
-          <line x1="${sourcePos.x}" y1="${sourcePos.y}" x2="${targetPos.x}" y2="${targetPos.y}"
-                stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${isHighlighted ? 'none' : '2,2'}" />
-        `;
-      }
-    });
-
-    // Render nodes
-    this.data.nodes.forEach(node => {
-      const pos = nodePositions.get(node.id)!;
-      const isHighlighted = this.highlightedNodeId === node.id;
-      const size = Math.min(24, Math.max(10, node.val * 3));
-      const nodeColor = node.color || '#90a4ae';
-
-      svgContent += `
-        <g class="graph-node-group" data-node-id="${escapeHtml(node.id)}" style="cursor: pointer;">
-          <circle cx="${pos.x}" cy="${pos.y}" r="${size}" fill="${nodeColor}"
-                  stroke="${isHighlighted ? '#ffffff' : 'transparent'}" stroke-width="2"
-                  style="transition: all 0.2s ease; filter: drop-shadow(0px 0px 6px ${nodeColor});" />
-          <text x="${pos.x}" y="${pos.y + size + 14}" fill="${isHighlighted ? '#ffffff' : '#cbd5e1'}"
-                font-size="11" font-family="sans-serif" text-anchor="middle">${escapeHtml(node.label)}</text>
-        </g>
-      `;
-    });
-
-    svgContent += `</svg>`;
-    return svgContent;
+  private tooltip(node: any): string {
+    const tags = Array.isArray(node.tags) && node.tags.length ? `  ·  #${node.tags.join('  #')}` : '';
+    return `<b>${node.label}</b>  (${node.group || 'wiki'})${tags}`;
   }
 
-  private attachEventListeners(): void {
-    if (!this.container) return;
+  private handleClick(node: any): void {
+    this.highlightedNodeId = node.id;
+    this.refresh();
+    if (this.fg) {
+      this.fg.centerAt(node.x, node.y, 600);
+      this.fg.zoom(2.2, 600);
+    }
+    if (this.onNodeClickCb) this.onNodeClickCb(node.id);
+  }
 
-    const nodeElements = this.container.querySelectorAll('.graph-node-group');
-    nodeElements.forEach(el => {
-      const nodeId = el.getAttribute('data-node-id');
-      if (!nodeId) return;
+  private handleHover(node: any | null): void {
+    this.hoverNodeId = node ? node.id : null;
+    this.refresh();
+    if (this.onNodeHoverCb) this.onNodeHoverCb(node ? node.id : null);
+    if (this.container) this.container.style.cursor = node ? 'pointer' : 'grab';
+  }
 
-      el.addEventListener('click', () => {
-        if (this.onNodeClickCb) this.onNodeClickCb(nodeId);
-      });
+  private clearHighlight(): void {
+    this.highlightedNodeId = null;
+    this.hoverNodeId = null;
+    this.refresh();
+  }
 
-      el.addEventListener('mouseenter', () => {
-        this.highlightNode(nodeId);
-        if (this.onNodeHoverCb) this.onNodeHoverCb(nodeId);
-      });
-
-      el.addEventListener('mouseleave', () => {
-        this.highlightNode(null);
-        if (this.onNodeHoverCb) this.onNodeHoverCb(null);
-      });
-    });
+  private dim(color: string): string {
+    return color.length === 7 && color.startsWith('#')
+      ? `${color}40`
+      : 'rgba(144,164,174,0.25)';
   }
 }

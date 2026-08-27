@@ -131,10 +131,12 @@ single-page app (Vite + TypeScript) with a three-column layout:
 - **Editor / Markdown panel** — the selected note rendered as formatted HTML
   (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
   links and an **Edit** toggle to view/save the raw source.
-- **Graph viewer** — an interactive node-link map of `[[wikilinks]]` (with
-  search and "minimum connections" filters), rendered from the real `wiki/`
-  knowledge base (the `raw/` working inbox is intentionally excluded — see
-  AGENT.md §2).
+- **Graph viewer** — an interactive force-directed map of `[[wikilinks]]`
+  (powered by `force-graph`): scroll to **zoom**, drag the background to **pan**,
+  drag nodes to rearrange, hover for a tooltip, and **click a node to open the
+  note** (the editor switches to split view). Controls offer + / − / **Fit**
+  buttons, a node search, and a "minimum connections" filter. Tags selected in
+  the explorer also filter the graph.
 
 > The UI is a **read/explore viewer**. It bundles every Markdown file under
 > `wiki/` at build time, so the agent — which edits those files on
