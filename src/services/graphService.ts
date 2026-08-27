@@ -1,7 +1,10 @@
 import { GraphData, GraphNode, GraphLink, GraphFilterOptions } from '../core/types/graph';
 import { WikiNote } from '../core/types/wiki';
+import { MarkdownParser } from './markdownParser';
 
 export class GraphService {
+  private parser = new MarkdownParser();
+
   /**
    * Transforms WikiNotes into standard GraphData JSON for Graph Viewer engine
    */
@@ -28,13 +31,10 @@ export class GraphService {
       });
     });
 
-    // 2. Create edges from wiki links
+    // 2. Create edges from wiki links (resolves same- and cross-folder links)
     notes.forEach(note => {
       note.outboundLinks.forEach(target => {
-        // Resolve target ID or Title
-        const targetNote = notes.find(
-          n => n.id === target || n.title.toLowerCase() === target.toLowerCase()
-        );
+        const targetNote = this.parser.resolveLinkTarget(target, notes);
 
         if (targetNote && knownNoteIds.has(targetNote.id)) {
           links.push({

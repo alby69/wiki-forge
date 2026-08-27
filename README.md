@@ -136,6 +136,14 @@ single-page app (Vite + TypeScript) with a three-column layout:
 > `wiki/` and `raw/` at build time, so the agent — which edits those files on
 > disk — remains the source of truth. Edits made in the UI are session-only.
 
+**Where is the vault path set?** The UI reads `wiki/` and `raw/` from the
+repository root. The glob patterns live in `src/storage/FileStorage.ts`
+(`import.meta.glob([...])`) and are resolved relative to that file, so the
+root folders are `../../wiki/**` and `../../raw/**`. To point the UI at a
+different vault, edit those two literal strings and rebuild (`npm run build`
+or `docker compose build`). Note: Vite requires the globs to be literal
+strings, not variables.
+
 ### Run it
 
 **Via Docker (zero Node.js local install):**

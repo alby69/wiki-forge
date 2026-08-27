@@ -16,8 +16,12 @@ export class FileStorage implements IStorage {
   private parser = new MarkdownParser();
 
   public async getAllNotes(): Promise<WikiNote[]> {
-    // eager + ?raw => a map of "path" -> "markdown string"
-    const modules = import.meta.glob(['../wiki/**/*.md', '../raw/**/*.md'], {
+    // NOTE: `import.meta.glob` requires LITERAL patterns and resolves them
+    // relative to THIS file (src/storage/). The repo-root `wiki/` folder is
+    // therefore `../../wiki/**` (one `../` per directory level up).
+    // To point the UI at a different vault, edit these two strings and rebuild
+    // (`npm run build`). Patterns must stay as literals — Vite rejects variables.
+    const modules = import.meta.glob(['../../wiki/**/*.md', '../../raw/**/*.md'], {
       query: '?raw',
       import: 'default',
       eager: true,

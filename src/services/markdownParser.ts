@@ -95,6 +95,36 @@ export class MarkdownParser {
   }
 
   /**
+   * Resolves a [[wikilink]] target to a concrete note.
+   *
+   * Supports several notations actually used in vaults:
+   *   - [[stem]]                      (same folder)
+   *   - [[folder/stem]]               (cross-folder, explicit)
+   *   - [[Some Title]]                (by title)
+   * Matching is case-insensitive and tolerant of a leading folder prefix.
+   */
+  public resolveLinkTarget(target: string, notes: WikiNote[]): WikiNote | null {
+    const t = target.trim();
+    const tLower = t.toLowerCase();
+    const tStem = t.includes('/') ? t.substring(t.lastIndexOf('/') + 1) : t;
+    const tStemLower = tStem.toLowerCase();
+
+    // 1. exact id (with or without folder prefix)
+    let found = notes.find(n => n.id.toLowerCase() === tLower);
+    if (found) return found;
+    // 2. folder/stem form on the note id
+    found = notes.find(n => `${n.folder}/${n.id}`.toLowerCase() === tLower);
+    if (found) return found;
+    // 3. bare stem (folder prefix stripped from the target)
+    found = notes.find(n => n.id.toLowerCase() === tStemLower);
+    if (found) return found;
+    // 4. by title
+    found = notes.find(n => n.title.toLowerCase() === tLower);
+    if (found) return found;
+    return null;
+  }
+
+  /**
    * Computes backlinks across a collection of parsed WikiNotes
    */
   public computeBacklinks(notes: WikiNote[]): WikiNote[] {
@@ -103,10 +133,7 @@ export class MarkdownParser {
 
     notes.forEach(sourceNote => {
       sourceNote.outboundLinks.forEach(targetId => {
-        // Find matching note by ID or title match
-        const targetNote = Array.from(noteMap.values()).find(
-          n => n.id === targetId || n.title.toLowerCase() === targetId.toLowerCase()
-        );
+        const targetNote = this.resolveLinkTarget(targetId, Array.from(noteMap.values()));
 
         if (targetNote) {
           const backlink: Backlink = {
