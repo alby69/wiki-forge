@@ -1,65 +1,65 @@
-# Analisi Tecnica e Architetture d'Uso: `wiki-forge` con LLM Locali e Training From-Scratch
+# Technical Analysis and Usage Architectures: `wiki-forge` with Local LLMs and From-Scratch Training
 
-Questo documento analizza la fattibilità dell'integrazione tra il progetto **`wiki-forge`** e modelli linguistici di piccole dimensioni (LLM locali o addestrati in casa come **nanoGPT** / **nanochat** di Andrej Karpathy). Viene presentata un'analisi teorica del problema e vengono dettagliate due soluzioni architetturali:
-- **Soluzione A (Produzione / Usabilità reale)**: Architettura RAG locale con LLM pre-addestrati e `wiki-forge`.
-- **Soluzione B (Scopo Didattico)**: Pipeline di addestramento *from-scratch* con `nanochat` per comprendere le dinamiche interne di un LLM.
-
----
-
-## 1. Analisi di Fattibilità Tecnica e Concetti Fondamentali
-
-### 1.1 Il Problema di Fondo: Memoria Parametrica vs. Memoria Non-Parametrica
-
-Un errore comune nell'approccio ai Large Language Model (LLM) è considerare il *pre-training* o il *fine-tuning* su un corpus di documenti personalizzati come la creazione di una "memoria interrogabile" o un database ricercabile.
-
-- **Memoria Parametrica (Pre-training e Fine-Tuning)**:
-  La conoscenza risiede nei pesi (pesi/matrici di attenzione) della rete neurale. L'addestramento ottimizza il modello per la predizione statistica del token successivo (*Next-Token Prediction*). Il fine-tuning modifica lo stile, il formato o le associazioni probabilistiche, ma non garantisce il recupero fattuale preciso (*factual recall*).
-
-- **Memoria Non-Parametrica (RAG e LLM-Wiki)**:
-  La conoscenza risiede in documenti esterni (file Markdown, vector database). Il modello agisce come motore di ragionamento e sintesi: gli viene fornito il contesto al momento dell'inferenza (*in-context learning*) ed egli estrae le informazioni senza dover modificare i propri pesi.
-
-### 1.2 Perché `nanoGPT` / `nanochat` non si integrano direttamente come "motore" di `wiki-forge`
-
-1. **Scala dei dati (Data Scale)**:
-   Modelli come `nanochat` richiedono miliardi di token di testo generico (es. *FineWeb*) solo per apprendere la struttura grammaticale, il ragionamento di base e la conoscenza generale del mondo. Pochi megabyte di documenti personali inseriti durante il training o il fine-tuning rappresentano un rumore statistico trascurabile che viene "annegato" dalla massa dei dati.
-
-2. **Capacità Agenti e Instruction-Following**:
-   `wiki-forge` richiede un LLM con forti capacità agentiche (descrittive nel file `AGENT.md`): deve comprendere istruzioni complesse, analizzare documenti in Markdown, creare collegamenti ipertestuali (`[[wikilinks]]`), estrarre entità senza allucinazioni ed eseguire operazioni di manutenzione (merge, split, audit). Modelli di dimensioni inferiori a ~3B-7B parametri addestrati da zero con risorse limitate non possiedono la capacità di ragionamento necessaria per fungere da agente per `wiki-forge`.
-
-3. **Incompatibilità con l'Architettura `wiki-forge`**:
-   `wiki-forge` non fa addestramento. È un compilatore ed un agente informativo basato su file Markdown. Si aspetta un modello di livello *frontier* (o un modello locale adeguato) accessibile via API o CLI.
+This document analyzes the feasibility of integrating the **`wiki-forge`** project with small-scale language models (local LLMs or custom-trained models like Andrej Karpathy's **nanoGPT** / **nanochat**). It provides a theoretical analysis of the problem and details two architectural solutions:
+- **Solution A (Production / Real-World Usability)**: Local RAG architecture with pre-trained LLMs and `wiki-forge`.
+- **Solution B (Educational Purpose)**: *From-scratch* training pipeline with `nanochat` to understand the internal dynamics of an LLM.
 
 ---
 
-## 2. Soluzione A — Operativa e di Produzione: RAG Locale + `wiki-forge`
+## 1. Technical Feasibility Analysis and Core Concepts
 
-### 2.1 Obiettivo
-Ottenere un sistema locale, interrogabile, privato e privo di allucinazioni che gestisca i propri documenti attraverso la metodologia `wiki-forge`.
+### 1.1 The Underlying Issue: Parametric Memory vs. Non-Parametric Memory
 
-### 2.2 Stack Tecnologico
-1. **Inference Engine Locale**:
-   - **Ollama**, **llama.cpp** o **LM Studio**.
-2. **Modelli Open-Weight Consigliati**:
+A common misconception when approaching Large Language Models (LLMs) is considering *pre-training* or *fine-tuning* on a custom corpus of documents as creating a "queryable memory" or a searchable database.
+
+- **Parametric Memory (Pre-training & Fine-Tuning)**:
+  Knowledge resides within the weights (attention matrices/parameters) of the neural network. Training optimizes the model for Next-Token Prediction. Fine-tuning alters style, formatting, or statistical associations, but does not guarantee precise factual recall.
+
+- **Non-Parametric Memory (RAG & LLM-Wiki)**:
+  Knowledge resides in external documents (Markdown files, vector databases). The model acts as a reasoning and synthesis engine: context is supplied at inference time (*in-context learning*), allowing it to extract information without modifying its internal weights.
+
+### 1.2 Why `nanoGPT` / `nanochat` Cannot Act Directly as the Engine for `wiki-forge`
+
+1. **Data Scale**:
+   Models like `nanochat` require billions of generic text tokens (e.g., *FineWeb*) just to acquire grammar, basic reasoning, and general world knowledge. A few megabytes of personal documents introduced during pre-training or fine-tuning represent a negligible statistical signal that gets drowned out by the pre-training dataset.
+
+2. **Agentic Capabilities & Instruction-Following**:
+   `wiki-forge` requires an LLM with strong agentic capabilities (as outlined in `AGENT.md`): it must understand complex instructions, parse Markdown documents, create interlinked `[[wikilinks]]`, extract entities without hallucinating, and perform routine maintenance (merging, splitting, auditing). Models smaller than ~3B-7B parameters trained from scratch with consumer resources lack the reasoning capacity required to function as a `wiki-forge` agent.
+
+3. **Incompatibility with `wiki-forge` Architecture**:
+   `wiki-forge` does not perform training. It is a Markdown-based compiler and knowledge manager. It expects a frontier-class model (or a capable local open-weight model) accessible via API or CLI.
+
+---
+
+## 2. Solution A — Operational & Production: Local RAG + `wiki-forge`
+
+### 2.1 Objective
+Build a local, queryable, private, and hallucination-free system that manages personal documents using the `wiki-forge` methodology.
+
+### 2.2 Technology Stack
+1. **Local Inference Engine**:
+   - **Ollama**, **llama.cpp**, or **LM Studio**.
+2. **Recommended Open-Weight Models**:
    - **Llama 3.1 / 3.2 (8B / 3B)**
    - **Qwen 2.5 (7B / 14B)**
    - **Mistral 7B / Phi-4 (14B)**
-   *Requisiti Hardware*: GPU consumer con 8-16 GB VRAM (es. RTX 3060/4060/4070) oppure Mac Apple Silicon serie M (M1/M2/M3/M4 con 16GB+ RAM unificata).
-3. **Compilazione Wiki (`wiki-forge`)**:
-   - Conversione sorgenti (PDF/EPUB/DOCX) via `conv2md.py` in `raw/`.
-   - L'agente locale (es. via OpenCode, Claude Code o script wrapper con Ollama) legge `AGENT.md` ed esegue il workflow `compile` per generare gli articoli interconnessi in `wiki/`.
-4. **Strato di Indicizzazione e Retrieval (Opzionale / Avanzato)**:
-   - Modello di Embedding locale: `nomic-embed-text` o `bge-m3`.
-   - Vector Database leggero: **ChromaDB** o **LanceDB**.
-   - Gli articoli compilati della cartella `wiki/` vengono suddivisi in chunk ed indicizzati nel Vector DB per velocizzare il comando `consult` ed evitare di saturare la finestra di contesto.
+   *Hardware Requirements*: Consumer GPU with 8-16 GB VRAM (e.g., RTX 3060/4060/4070) or Apple Silicon Mac (M-series with 16GB+ unified memory).
+3. **Wiki Compilation (`wiki-forge`)**:
+   - Source conversion (PDF/EPUB/DOCX) via `conv2md.py` into `raw/`.
+   - Local agent (via OpenCode, Claude Code, or an Ollama wrapper script) reads `AGENT.md` and executes the `compile` workflow to produce interlinked articles in `wiki/`.
+4. **Indexing & Retrieval Layer (Optional / Advanced)**:
+   - Local Embedding Model: `nomic-embed-text` or `bge-m3`.
+   - Lightweight Vector Database: **ChromaDB** or **LanceDB**.
+   - Compiled `wiki/` articles are chunked and indexed in the Vector DB to accelerate `consult` queries and prevent context window exhaustion.
 
 ```
 +------------------+     conv2md.py      +--------------+
-| Documenti Orig.  |  ---------------->  |  raw/ (.md)  |
+| Original Docs    |  ---------------->  |  raw/ (.md)  |
 | (sources/backup) |                     +--------------+
 +------------------+                            |
                                                 v
 +------------------+    AGENT.md Schema   +--------------+
-| Ollama / Local   |  <---------------->  |  wiki/ (.md) |  <--- Compilato dall'Agente
+| Ollama / Local   |  <---------------->  |  wiki/ (.md) |  <--- Compiled by Agent
 | LLM (7B - 14B)   |  (OpenCode / CLI)    +--------------+
 +------------------+                            |
         ^                                       v
@@ -68,75 +68,75 @@ Ottenere un sistema locale, interrogabile, privato e privo di allucinazioni che 
                                         +---------------+
 ```
 
-### 2.3 Vantaggi della Soluzione A
-- **Aggiornabilità istantanea**: L'aggiunta di un nuovo documento richiede solo l'esecuzione di `compile` senza riaddestrare il modello.
-- **Tracciabilità e Nessuna Allucinazione**: Le risposte citano le fonti esatte tramite `[[wikilinks]]` e rinviano ai file in `raw/`.
-- **Efficienza Esecutiva**: Gira interamente su hardware consumer standard.
+### 2.3 Key Benefits of Solution A
+- **Instant Updates**: Adding new documents requires running `compile` without re-training the model.
+- **Traceability & Zero Hallucination**: Answers cite exact sources using `[[wikilinks]]` referencing raw files.
+- **Resource Efficiency**: Runs entirely on standard consumer hardware.
 
 ---
 
-## 3. Soluzione B — Scopo Didattico: Addestramento From-Scratch con `nanochat`
+## 3. Solution B — Educational Purpose: From-Scratch Training with `nanochat`
 
-### 3.1 Obiettivo
-Comprendere il ciclo di vita completo di addestramento di un LLM generativo (dalla tokenizzazione all'inferenza con KV-cache) utilizzando il repository [`karpathy/nanochat`](https://github.com/karpathy/nanochat).
+### 3.1 Objective
+Understand the full lifecycle of training a generative LLM (from tokenization to KV-cache inference) using the [`karpathy/nanochat`](https://github.com/karpathy/nanochat) repository.
 
-### 3.2 La Pipeline di Addestramento di `nanochat`
+### 3.2 The `nanochat` Training Pipeline
 
-La pipeline di `nanochat` riflette il processo di sviluppo dei moderni modelli di frontiera (stile ChatGPT) ed è articolata nei seguenti 6 stadi:
+The `nanochat` pipeline mirrors modern frontier model training (like ChatGPT) across 6 distinct stages:
 
 ```
 [1. Tokenization] -> [2. Pretraining] -> [3. Midtraining] -> [4. SFT] -> [5. RL] -> [6. Inference Engine]
 ```
 
-1. **Tokenizzazione (`tok_train.py`)**:
-   Addestramento di un tokenizer BPE (Byte-Pair Encoding, vocabolario ~65k token) sul corpus di testo grezzo. Il testo viene convertito in token numerici efficienti.
+1. **Tokenization (`tok_train.py`)**:
+   Trains a Byte-Pair Encoding (BPE) tokenizer (~65k token vocabulary) on raw text data, compressing text into numerical tokens.
 
 2. **Pre-training (`base_train.py`)**:
-   - **Corpus**: *FineWeb* (decine di miliardi di token dal web).
-   - **Obiettivo**: Minimizzare la *cross-entropy loss* sulla predizione del token successivo.
-   - **Architettura**: Transformer Causal Decoder-Only (definito in `gpt.py`).
-   - **Risultato**: Un modello "base" che conosce la sintassi e la conoscenza generale del mondo, ma non sa conversare o rispondere a comandi.
+   - **Corpus**: *FineWeb* (tens of billions of web tokens).
+   - **Objective**: Minimize cross-entropy loss for next-token prediction.
+   - **Architecture**: Causal Decoder-Only Transformer (defined in `gpt.py`).
+   - **Output**: A "base" model possessing syntax and world knowledge, but unable to converse or follow instructions.
 
 3. **Mid-training**:
-   Fase intermedia in cui il modello base viene esposto a dati con formattazione strutturata (es. conversazioni, sintassi di tool-use, codice) per preparare i pesi alla fase di instruction-following.
+   Intermediate stage exposing the base model to structured formats (conversations, tool-use syntax, code) to prepare weight representations for instruction tuning.
 
 4. **Supervised Fine-Tuning - SFT (`chat_sft.py`)**:
-   - **Corpus**: *SmolTalk* (dataset di dialoghi utente-assistente curati).
-   - **Obiettivo**: Insegnare al modello il formato di risposta in chat, l'uso dei ruoli (`user`, `assistant`, `system`) e lo stile di risposta.
+   - **Corpus**: *SmolTalk* (curated conversation datasets).
+   - **Objective**: Teaches the model chat multi-turn formatting, role usage (`user`, `assistant`, `system`), and conversational tone.
 
 5. **Reinforcement Learning - RL (`chat_rl.py`)**:
-   Affinamento del comportamento tramite algoritmi di RL (es. PPO / GRPO) su compiti con risposta verificabile (es. quesiti matematici GSM8K) per migliorare le capacità di ragionamento.
+   Behavioral alignment using RL algorithms (e.g., PPO / GRPO) on verifiable tasks (such as GSM8K math problems) to enhance reasoning.
 
-6. **Engine di Inferenza (`engine.py`, `chat_cli.py`)**:
-   Servizio di inferenza ottimizzato con **KV-Cache** per la generazione di testo interattiva da riga di comando.
+6. **Inference Engine (`engine.py`, `chat_cli.py`)**:
+   Optimized inference service featuring **KV-Cache** for interactive generation over CLI.
 
-### 3.3 Gestione dei Parametri: Il Dial `--depth`
-`nanochat` semplifica la configurazione del modello attraverso un unico parametro guida: `--depth` (numero di layer del Transformer). Tutte le altre variabili (larghezza delle matrici, learning rate, num heads, batch size) vengono calcolate automaticamente secondo principi di scaling compute-optimal.
+### 3.3 Scaling Hyperparameters: The `--depth` Dial
+`nanochat` consolidates model configuration into a single hyperparameter dial: `--depth` (number of Transformer layers). All other variables (matrix width, learning rate, head count, batch size) scale automatically according to compute-optimal laws.
 
-Per test didattici locali veloci senza budget elevati:
-- `--depth=12` (eseguibile in pochi minuti su singola GPU o Mac Apple Silicon per verificare la diminuzione della loss).
+For fast local educational runs:
+- `--depth=12` (runs in minutes on a single GPU or Apple Silicon Mac to observe loss convergence).
 
-### 3.4 Limitazioni Hardware e Didattiche
-- Per addestrare un modello realmente usabile (versione *speedrun* ~1.6B equivalenti), servono circa 3 ore su un cluster **8x NVIDIA H100** (~$100).
-- Tentare di inserire i propri documenti aziendali o personali nel mix di dati durante il pretraining/midtraining non renderà il modello un'interfaccia affidabile per quei documenti: il modello mostrerà allucinazioni frequenti sui dettagli fattuali.
+### 3.4 Hardware and Educational Constraints
+- Training a usable speedrun model (~1.6B parameters equivalent) requires ~3 hours on an **8x NVIDIA H100** node (~$100).
+- Injecting personal documents into the pre-training/mid-training mix will not create a reliable QA interface for those documents, as factual recall remains low and prone to hallucinations.
 
 ---
 
-## 4. Matrice Comparativa delle Soluzioni
+## 4. Architectural Comparison Matrix
 
-| Criterio | Soluzione A: `wiki-forge` + RAG Locale | Soluzione B: Training `nanochat` From-Scratch |
+| Feature / Metric | Solution A: `wiki-forge` + Local RAG | Solution B: From-Scratch `nanochat` Training |
 | :--- | :--- | :--- |
-| **Scopo Primario** | Produzione, Gestione Conoscenza Personale | Didattico, Studio dell'Architettura LLM |
-| **Tecnologia Chiave** | RAG, Markdown Interlinkati, `AGENT.md` | Transformer Pre-training, SFT, RL |
-| **Gestione Conoscenza** | Non-parametrica (file esterni `wiki/`) | Parametrica (pesi neurali `.pt` / `.safetensors`) |
-| **Accuratezza Fattuale** | Elevata (citazioni dirette delle fonti) | Bassa sui dettagli (tendenza ad allucinare) |
-| **Costo Computazionale** | Minimo (inferenza locale su 1 GPU/Mac) | Elevato (richiede GPU multi-node per run completi) |
-| **Aggiornamento Dati** | Immediato (basta aggiungere il file `.md`) | Richiede riaddestramento / fine-tuning |
-| **Requisito Modello** | Modelli capaci di seguire istruzioni (7B+) | Modello generato durante il training |
+| **Primary Goal** | Production Knowledge Management | Educational / LLM Architecture Research |
+| **Core Technology** | RAG, Interlinked Markdown, `AGENT.md` | Transformer Pre-training, SFT, RL |
+| **Knowledge Storage** | Non-parametric (external `wiki/` files) | Parametric (neural network weights `.pt`) |
+| **Factual Precision** | High (direct citation of sources) | Low on details (prone to hallucination) |
+| **Compute Cost** | Low (local inference on consumer GPU/Mac) | High (requires multi-GPU clusters for full runs) |
+| **Data Ingestion** | Instant (add `.md` file and compile) | Slow (requires fine-tuning or full pre-training) |
+| **Model Requirement** | Instruction-tuned model (7B+) | Custom model built during training |
 
 ---
 
-## 5. Raccomandazione Finale
+## 5. Final Recommendation
 
-1. Per realizzare un **"LLM-Wiki" interrogabile sui propri documenti**, implementare la **Soluzione A**. Utilizzare `wiki-forge` unitamente ad Ollama (con un modello 7B-14B come Qwen 2.5 o Llama 3.1) per la compilazione e l'interrogazione tramite RAG.
-2. Per **approfondire l'ingegneria dei modelli linguistici**, esplorare la **Soluzione B** eseguendo gli script di `nanochat` (partendo da `--depth=12`) per osservare come si comporta la loss durante la tokenizzazione e il pretraining su un corpus generico.
+1. To build a **queryable "LLM-Wiki" for personal documents**, implement **Solution A**. Use `wiki-forge` alongside Ollama (running a 7B-14B model like Qwen 2.5 or Llama 3.1) for compilation and RAG querying.
+2. To **deepen your understanding of LLM engineering**, explore **Solution B** by running `nanochat` scripts (starting with `--depth=12`) to inspect tokenization, loss curves, and pre-training mechanics.
