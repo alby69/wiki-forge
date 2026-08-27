@@ -12,6 +12,7 @@ export interface WikiNote {
   title: string;            // Display title of the note
   content: string;          // Raw Markdown content
   folder?: string;          // Folder path within vault
+  path: string;             // Full vault path, e.g. "wiki/ai/foo.md" (used by the explorer)
   tags: string[];           // Extracted tags (from YAML frontmatter or #tags)
   frontmatter: Record<string, unknown>; // Parsed YAML frontmatter attributes
   outboundLinks: string[];  // Target node IDs linked from this note via [[WikiLink]]

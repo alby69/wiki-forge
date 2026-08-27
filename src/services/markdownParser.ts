@@ -76,7 +76,13 @@ export class MarkdownParser {
   /**
    * Processes a raw note file to produce a structured WikiNote
    */
-  public parseNote(id: string, title: string, rawContent: string, folder: string = ''): WikiNote {
+  public parseNote(
+    id: string,
+    title: string,
+    rawContent: string,
+    folder: string = '',
+    notePath: string = ''
+  ): WikiNote {
     const { frontmatter, content } = this.parseFrontmatter(rawContent);
     const fTags = Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [];
     const tags = this.extractTags(content, fTags);
@@ -87,6 +93,7 @@ export class MarkdownParser {
       title: (frontmatter.title as string) || title,
       content,
       folder,
+      path: notePath,
       tags,
       frontmatter,
       outboundLinks,

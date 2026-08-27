@@ -93,7 +93,9 @@ Backlink to [[01-index]].
       ],
     ];
 
-    return raw.map(([id, title, content]) => this.parser.parseNote(id, title, content, 'wiki'));
+    return raw.map(([id, title, content]) =>
+      this.parser.parseNote(id, title, content, 'wiki', `wiki/${id}.md`)
+    );
   }
 
   private initUI(): void {
@@ -129,6 +131,7 @@ Backlink to [[01-index]].
   /** Push the current notes/selection into every UI region. */
   private refreshAll(): void {
     this.sidebar.setNotes(this.notes);
+    if (this.selectedNote) this.sidebar.setActiveNote(this.selectedNote.id);
     this.editor.setNote(this.selectedNote);
     this.contextPanel.setSelectedNote(this.selectedNote);
     this.graphViewer.updateData(this.graphService.generateGraphData(this.notes));
@@ -140,6 +143,7 @@ Backlink to [[01-index]].
     );
     if (found) {
       this.selectedNote = found;
+      this.sidebar.setActiveNote(found.id);
       this.editor.setNote(found);
       this.contextPanel.setSelectedNote(found);
       this.graphViewer.highlightNode(found.id);

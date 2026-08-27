@@ -126,7 +126,8 @@ A lightweight, dependency-light **web viewer** is included for exploring the
 knowledge base in a browser — no Obsidian required. It is a static
 single-page app (Vite + TypeScript) with a three-column layout:
 
-- **Vault sidebar** — all notes grouped by folder, plus a tag cloud and search.
+- **Vault explorer** — an Obsidian-style collapsible file tree of the `wiki/`
+  folder and its subfolders, with search, active-file highlight, and a tag cloud.
 - **Editor / Markdown panel** — the selected note's raw Markdown.
 - **Graph viewer** — an interactive node-link map of `[[wikilinks]]` (with
   search and "minimum connections" filters), rendered from the real `wiki/`

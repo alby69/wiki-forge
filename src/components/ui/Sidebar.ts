@@ -1,9 +1,20 @@
 import { WikiNote } from '../../core/types/wiki';
 import { escapeHtml } from '../../core/utils/html';
 
+interface TreeNode {
+  name: string;
+  path: string;
+  isFolder: boolean;
+  note?: WikiNote;
+  children: Map<string, TreeNode>;
+}
+
 export class Sidebar {
   private container: HTMLElement;
   private notes: WikiNote[] = [];
+  private activeId: string | null = null;
+  private query = '';
+  private expanded = new Set<string>(['wiki']);
   private onSelectNoteCb?: (noteId: string) => void;
 
   constructor(container: HTMLElement, onSelectNote?: (noteId: string) => void) {
@@ -17,68 +28,139 @@ export class Sidebar {
     this.render();
   }
 
-  public render(): void {
-    const folders = new Map<string, WikiNote[]>();
+  public setActiveNote(noteId: string): void {
+    this.activeId = noteId;
+    this.render();
+  }
 
-    this.notes.forEach(note => {
-      const folder = note.folder || 'wiki';
-      if (!folders.has(folder)) {
-        folders.set(folder, []);
+  private buildTree(): TreeNode {
+    const root: TreeNode = {
+      name: '',
+      path: '',
+      isFolder: true,
+      children: new Map(),
+    };
+
+    for (const note of this.notes) {
+      const segments = (note.path || `wiki/${note.id}.md`).split('/');
+      let cursor = root;
+      segments.forEach((seg, idx) => {
+        const isFile = idx === segments.length - 1;
+        if (!cursor.children.has(seg)) {
+          cursor.children.set(seg, {
+            name: seg,
+            path: segments.slice(0, idx + 1).join('/'),
+            isFolder: !isFile,
+            children: new Map(),
+          });
+        }
+        const node = cursor.children.get(seg)!;
+        if (isFile) {
+          node.note = note;
+          node.isFolder = false;
+        }
+        cursor = node;
+      });
+    }
+    return root;
+  }
+
+  private folderHasMatch(node: TreeNode, q: string): boolean {
+    if (!node.isFolder) {
+      return (node.note?.title.toLowerCase().includes(q) ?? false) ||
+        node.path.toLowerCase().includes(q);
+    }
+    for (const child of node.children.values()) {
+      if (this.folderHasMatch(child, q)) return true;
+    }
+    return false;
+  }
+
+  private renderNode(node: TreeNode, depth: number): string {
+    const q = this.query.trim().toLowerCase();
+    let html = '';
+
+    if (node.isFolder) {
+      if (q && !this.folderHasMatch(node, q)) return '';
+      const isExpanded = q ? true : this.expanded.has(node.path);
+      const chevron = isExpanded ? '▾' : '▸';
+      const pad = 8 + depth * 14;
+      html += `
+        <div class="tree-folder" data-folder="${escapeHtml(node.path)}"
+             style="padding: 3px 8px 3px ${pad}px; font-size: 13px; color: #cbd5e1; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 4px; user-select: none;">
+          <span class="tree-chevron" style="width: 10px; display: inline-block; color: #718096;">${chevron}</span>
+          <span>📁 ${escapeHtml(node.name)}</span>
+        </div>`;
+      if (isExpanded) {
+        for (const child of node.children.values()) {
+          html += this.renderNode(child, depth + 1);
+        }
       }
-      folders.get(folder)!.push(note);
-    });
+    } else {
+      if (q && !((node.note?.title.toLowerCase().includes(q) ?? false) || node.path.toLowerCase().includes(q))) {
+        return '';
+      }
+      const active = node.note && node.note.id === this.activeId;
+      const pad = 8 + depth * 14;
+      html += `
+        <div class="tree-file${active ? ' tree-file-active' : ''}" data-note-id="${escapeHtml(node.note!.id)}"
+             style="padding: 3px 8px 3px ${pad + 14}px; font-size: 13px; color: ${active ? '#fff' : '#cbd5e1'}; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+          <span>📄 ${escapeHtml(node.note!.title)}</span>
+        </div>`;
+    }
+    return html;
+  }
 
-    let treeHTML = '';
-    folders.forEach((folderNotes, folderName) => {
-      treeHTML += `
-        <div style="margin-bottom: 12px;">
-          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #a0aec0; margin-bottom: 6px;">📁 ${folderName}</div>
-          <ul style="list-style: none; padding-left: 8px; margin: 0;">
-            ${folderNotes
-              .map(
-                n => `
-              <li class="sidebar-note-item" data-note-id="${escapeHtml(n.id)}" style="padding: 4px 8px; font-size: 13px; color: #cbd5e1; cursor: pointer; border-radius: 4px; transition: background 0.15s ease;">
-                📄 ${escapeHtml(n.title)}
-              </li>
-            `
-              )
-              .join('')}
-          </ul>
-        </div>
-      `;
-    });
+  public render(): void {
+    const root = this.buildTree();
+    const treeHTML = Array.from(root.children.values())
+      .map(child => this.renderNode(child, 0))
+      .join('');
 
-    const allTags = Array.from(new Set(this.notes.flatMap(n => n.tags)));
+    const allTags = Array.from(new Set(this.notes.flatMap(n => n.tags))).sort();
     const tagsHTML = allTags
       .map(
         t =>
-          `<span style="background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">#${t}</span>`
+          `<span style="background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">#${escapeHtml(t)}</span>`
       )
       .join('');
 
     this.container.innerHTML = `
-      <div style="width: 240px; background: #121316; height: 100%; border-right: 1px solid #2d3748; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; color: #e2e8f0;">
-        <div style="margin-bottom: 16px;">
-          <input type="text" id="vault-search-input" placeholder="Search notes... (Ctrl+K)" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box;" />
+      <div style="width: 260px; background: #121316; height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
+        <div style="padding: 12px 12px 8px; border-bottom: 1px solid #2d3748;">
+          <input type="text" id="vault-search-input" placeholder="Search files... (Ctrl+K)" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box; outline: none;" />
         </div>
-        <div style="flex: 1; overflow-y: auto;">
-          <div style="font-size: 12px; font-weight: 600; color: #e2e8f0; margin-bottom: 10px;">VAULT EXPLORER</div>
-          ${treeHTML || '<div style="font-size: 12px; color: #718096;">Vault is empty.</div>'}
+        <div style="flex: 1; overflow-y: auto; padding: 8px 4px;">
+          ${treeHTML || '<div style="font-size: 12px; color: #718096; padding: 8px;">Vault is empty.</div>'}
         </div>
-        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #2d3748;">
-          <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 6px;">TAGS</div>
+        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; max-height: 30%; overflow-y: auto;">
+          <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 6px; text-transform: uppercase;">Tags</div>
           <div>${tagsHTML || '<span style="font-size: 11px; color: #718096;">No tags</span>'}</div>
         </div>
       </div>
     `;
 
-    const items = this.container.querySelectorAll('.sidebar-note-item');
-    items.forEach(item => {
+    const search = this.container.querySelector<HTMLInputElement>('#vault-search-input');
+    search?.addEventListener('input', () => {
+      this.query = search.value;
+      this.render();
+    });
+
+    this.container.querySelectorAll('.tree-folder').forEach(item => {
+      item.addEventListener('click', () => {
+        const folderPath = item.getAttribute('data-folder');
+        if (folderPath) {
+          if (this.expanded.has(folderPath)) this.expanded.delete(folderPath);
+          else this.expanded.add(folderPath);
+          this.render();
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.tree-file').forEach(item => {
       item.addEventListener('click', () => {
         const noteId = item.getAttribute('data-note-id');
-        if (noteId && this.onSelectNoteCb) {
-          this.onSelectNoteCb(noteId);
-        }
+        if (noteId && this.onSelectNoteCb) this.onSelectNoteCb(noteId);
       });
     });
   }

@@ -28,21 +28,21 @@ export class FileStorage implements IStorage {
       eager: true,
     }) as Record<string, string>;
 
-    const notes: WikiNote[] = [];
+      const notes: WikiNote[] = [];
 
-    for (const [path, content] of Object.entries(modules)) {
-      const relative = path.replace(/^\.\.\//, ''); // e.g. "wiki/ai/foo.md"
-      const segments = relative.split('/');
-      const fileName = segments[segments.length - 1] ?? relative;
-      const stem = fileName.replace(/\.md$/i, '');
-      // Folder label without the redundant leading "wiki/" root, so the graph
-      // groups by thematic wiki, e.g. "intelligenza-artificiale".
-      const folder =
-        segments.length > 1 ? segments.slice(1, -1).join('/') || 'wiki' : 'wiki';
-      const titleFromName = stem.replace(/[-_]/g, ' ');
+      for (const [path, content] of Object.entries(modules)) {
+        const relative = path.replace(/^\.\.\//, ''); // e.g. "wiki/ai/foo.md"
+        const segments = relative.split('/');
+        const fileName = segments[segments.length - 1] ?? relative;
+        const stem = fileName.replace(/\.md$/i, '');
+        // Folder label without the redundant leading "wiki/" root, so the graph
+        // groups by thematic wiki, e.g. "intelligenza-artificiale".
+        const folder =
+          segments.length > 1 ? segments.slice(1, -1).join('/') || 'wiki' : 'wiki';
+        const titleFromName = stem.replace(/[-_]/g, ' ');
 
-      notes.push(this.parser.parseNote(stem, titleFromName, content, folder));
-    }
+        notes.push(this.parser.parseNote(stem, titleFromName, content, folder, relative));
+      }
 
     return this.parser.computeBacklinks(notes);
   }
