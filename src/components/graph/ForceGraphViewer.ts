@@ -23,36 +23,53 @@ export class ForceGraphViewer implements IGraphViewer {
     this.container = container;
     if (!this.fg) {
       container.innerHTML = '';
-      const factory = ForceGraph as unknown as (el: HTMLElement) => ForceGraph;
+      // force-graph exposes a Kapsule factory: call it once to get the
+      // instance generator, then call that with the DOM node to bind + mount
+      // the canvas. The single-call form returns a generator and never paints.
+      const makeInstance = ForceGraph as unknown as (() => (el: HTMLElement) => ForceGraph);
       // The container may not be laid out yet (0x0); never pass 0 or the canvas
       // stays invisible. Fall back to a sane size — the ResizeObserver below
       // snaps it to the real dimensions as soon as layout settles.
       const init = () => {
         const width = container.clientWidth || 800;
         const height = container.clientHeight || 600;
-        this.fg = factory(container)
-          .width(width)
-          .height(height)
-          .nodeId('id')
-          .nodeVal('val')
-          .nodeRelSize(1)
-          .linkColor(this.linkColorFn)
-          .linkWidth(this.linkWidthFn)
-          .nodeColor(this.nodeColorFn)
-          .nodeCanvasObject(this.nodeCanvasObj)
-          .nodeCanvasObjectMode(() => 'replace')
-          .nodePointerAreaPaint(this.nodePointerArea)
-          .nodeLabel((n: any) => this.tooltip(n))
-          .onNodeClick((n: any) => this.handleClick(n))
-          .onNodeHover((n: any) => this.handleHover(n))
-          .onBackgroundClick(() => this.clearHighlight())
-          .minZoom(0.2)
-          .maxZoom(8);
+        try {
+          this.fg = makeInstance()(container)
+            .width(width)
+            .height(height)
+            .nodeId('id')
+            .nodeVal('val')
+            .nodeRelSize(1)
+            .linkColor(this.linkColorFn)
+            .linkWidth(this.linkWidthFn)
+            .nodeColor(this.nodeColorFn)
+            .nodeCanvasObject(this.nodeCanvasObj)
+            .nodeCanvasObjectMode(() => 'replace')
+            .nodePointerAreaPaint(this.nodePointerArea)
+            .nodeLabel((n: any) => this.tooltip(n))
+            .onNodeClick((n: any) => this.handleClick(n))
+            .onNodeHover((n: any) => this.handleHover(n))
+            .onBackgroundClick(() => this.clearHighlight())
+            .minZoom(0.2)
+            .maxZoom(8);
+        } catch (err) {
+          container.innerHTML = `<pre style="color:#fc8181;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:12px;">Graph failed to initialise:\n\n${err instanceof Error ? err.stack ?? err.message : String(err)}</pre>`;
+          return;
+        }
+
+        // Push whatever data we already hold (render() is often called with the
+        // empty seed before the vault finishes loading) and fit it once the
+        // force simulation has had a tick to assign node coordinates.
+        this.fg.graphData(this.data);
+        this.scheduleFit();
 
         this.resizeObs = new ResizeObserver(() => {
-          if (this.fg && container.clientWidth && container.clientHeight) {
-            this.fg.width(container.clientWidth).height(container.clientHeight);
-          }
+          if (!this.fg) return;
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+          // Guard against 0x0: a zero-sized container would make the canvas
+          // invisible and the graph would drift off-screen. Keep the last size.
+          if (w > 0 && h > 0) this.fg.width(w).height(h);
         });
         this.resizeObs.observe(container);
       };
@@ -63,7 +80,23 @@ export class ForceGraphViewer implements IGraphViewer {
     this.setData(data);
   }
 
+  /** Re-fit the graph a couple of times so it centres correctly even if the
+   *  first frames ran while the canvas had no real size. */
+  private scheduleFit(): void {
+    if (!this.fg) return;
+    const fit = () => {
+      try {
+        this.fg?.zoomToFit(400, 40);
+      } catch {
+        /* canvas not ready yet */
+      }
+    };
+    setTimeout(fit, 60);
+    setTimeout(fit, 400);
+  }
+
   private setData(data: GraphData): void {
+    const firstRealData = this.data.nodes.length === 0 && data.nodes.length > 0;
     this.data = data;
     this.adjacency = new Map();
     for (const link of data.links as LinkEnd[]) {
@@ -71,9 +104,12 @@ export class ForceGraphViewer implements IGraphViewer {
       const t = this.endId(link.target);
       if (!s || !t) continue;
       (this.adjacency.get(s) ?? this.adjacency.set(s, new Set()).get(s)!).add(t);
-      (this.adjacency.get(t) ?? this.adjacency.set(t, new Set()).get(t)!).add(s);
+      (this.adjacency.get(t) ?? this.adjacency.set(t, new Set()).get(s)!).add(s);
     }
-    if (this.fg) this.fg.graphData(data);
+    if (this.fg) {
+      this.fg.graphData(data);
+      if (firstRealData) this.scheduleFit();
+    }
   }
 
   private endId(end: string | GraphNode): string {
