@@ -138,6 +138,15 @@ single-page app (Vite + TypeScript) with a three-column layout:
 
 ### Run it
 
+**Via Docker (zero Node.js local install):**
+
+```bash
+docker compose up ui
+```
+Or using Makefile shortcut: `make ui-docker`. This starts the Vite dev server inside a Node container and exposes it at `http://localhost:5173`.
+
+**Via local Node.js install:**
+
 ```bash
 npm install        # install UI dev dependencies (Vite, TypeScript)
 npm run dev        # start the dev server, opens http://localhost:5173
