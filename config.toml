@@ -65,3 +65,28 @@ format = "markdown"
 default_language = "en"
 supported_languages = ["en", "it", "es", "fr", "de"]
 fallback_language = "en"
+
+# Tag vocabulary (controlled taxonomy) for the knowledge base.
+#
+# The agent draws tags from `allowed` when compiling notes, and `suggest_tags.py`
+# ranks/limits suggestions to this list. Use namespaced tags (`topic/ai`,
+# `author/karpathy`, `type/paper`) so the UI groups them into a coloured,
+# hierarchical tag cloud. Keep `blocked` for noise words never to be suggested.
+[tags]
+allowed = [
+  "topic/ai",
+  "topic/economics",
+  "topic/hr",
+  "topic/anthropology",
+  "type/paper",
+  "type/essay",
+  "type/book",
+  "author/karpathy",
+  "author/amodei",
+  "author/graeber",
+  "author/cristianini",
+  "author/gatti",
+  "status/draft",
+  "status/review",
+]
+blocked = ["the", "and", "of", "a", "to", "in", "on", "for", "is", "are"]

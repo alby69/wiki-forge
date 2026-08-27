@@ -63,4 +63,10 @@ ui-test:
 ui-typecheck:
 	npm run typecheck
 
-.PHONY: convert convert-docker build shell audit stats reindex clean-output export-json lint help ui ui-docker ui-build ui-preview ui-test ui-typecheck
+tags:
+	python suggest_tags.py --all
+
+tags-write:
+	python suggest_tags.py --all --write
+
+.PHONY: convert convert-docker build shell audit stats reindex clean-output export-json lint help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write

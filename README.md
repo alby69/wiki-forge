@@ -172,6 +172,26 @@ Other scripts: `npm run build` (production bundle in `dist/`),
 If you prefer not to install Node tooling, the knowledge base is also fully
 browsable in **Obsidian** (open the project folder as a vault) — see TUTORIAL.md.
 
+### Tag cloud & tag management
+
+The vault explorer shows a **tag cloud**: tags are sized by frequency, coloured
+per namespace (`topic/ai` and `topic/hr` share a hue; `author/…` another), and
+nested tags render as a collapsible hierarchy. Click any tag (or a whole namespace
+root) to filter the explorer **and** the graph; click **clear** to reset.
+
+To keep the taxonomy coherent, tags are drawn from a controlled vocabulary in
+`config.toml` (`[tags].allowed` / `[tags].blocked`). Generate suggestions with:
+
+```bash
+python suggest_tags.py wiki/ai/foo.md            # print suggestions for one note
+python suggest_tags.py --all --write             # append suggestions to every note
+python suggest_tags.py wiki/ai/foo.md --semantic # semantic ranking (needs keybert)
+```
+
+`suggest_tags.py` is dependency-light (pure-Python RAKE by default; optional
+KeyBERT semantic ranking when `keybert` + `sentence-transformers` are installed).
+See `AGENT.md` (`tag-suggest` command) for the agent workflow.
+
 ## Design philosophy
 
 - **KISS** — the converter is a ~200-line, single-purpose script with no

@@ -9,6 +9,18 @@ interface TreeNode {
   children: Map<string, TreeNode>;
 }
 
+interface TagNode {
+  name: string;
+  tag: string;
+  count: number;
+  children: Map<string, TagNode>;
+}
+
+const TAG_PALETTE = [
+  '#63b3ed', '#68d391', '#f6ad55', '#fc8181', '#b794f4',
+  '#76e4f7', '#f687b3', '#f6e05e', '#9ae6b4', '#cbd5e0',
+];
+
 export class Sidebar {
   private container: HTMLElement;
   private notes: WikiNote[] = [];
@@ -40,12 +52,17 @@ export class Sidebar {
     this.render();
   }
 
-  /** Notes visible under the current search query + selected-tag filter. */
+  /** Notes visible under the current search query + selected-tag filter.
+   *  A selected tag may be an exact tag (e.g. `topic/ai`) or a namespace
+   *  prefix (e.g. `topic`); in the latter case any note whose tag starts with
+   *  `topic/` matches. */
   private getVisibleNotes(): WikiNote[] {
     const q = this.query.trim().toLowerCase();
     return this.notes.filter(note => {
       if (this.selectedTags.size > 0) {
-        const hasTag = note.tags.some(t => this.selectedTags.has(t));
+        const hasTag = note.tags.some(t =>
+          Array.from(this.selectedTags).some(sel => t === sel || t.startsWith(`${sel}/`))
+        );
         if (!hasTag) return false;
       }
       if (q) {
@@ -54,6 +71,95 @@ export class Sidebar {
       }
       return true;
     });
+  }
+
+  /** Build a frequency + namespace tree over all tags in the vault. */
+  private getTagTree(): TagNode[] {
+    const counts = new Map<string, number>();
+    for (const note of this.notes) {
+      for (const tag of note.tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+
+    const roots = new Map<string, TagNode>();
+    for (const [tag, count] of counts) {
+      const parts = tag.split('/');
+      const rootName = parts[0];
+      if (!roots.has(rootName)) {
+        roots.set(rootName, { name: rootName, tag: rootName, count: 0, children: new Map() });
+      }
+      const root = roots.get(rootName)!;
+      root.count += count;
+      let cursor = root;
+      for (let i = 1; i < parts.length; i++) {
+        const seg = parts[i];
+        const childTag = `${cursor.tag}/${seg}`;
+        if (!cursor.children.has(seg)) {
+          cursor.children.set(seg, { name: seg, tag: childTag, count: 0, children: new Map() });
+        }
+        cursor = cursor.children.get(seg)!;
+      }
+      cursor.count = count; // leaf carries its own frequency
+    }
+    return Array.from(roots.values()).sort((a, b) => b.count - a.count);
+  }
+
+  /** Index of a tag's root namespace — stable color for the same root. */
+  private rootIndex(tag: string): number {
+    const root = tag.split('/')[0];
+    const roots = Array.from(
+      new Set(this.notes.flatMap(n => n.tags).map(t => t.split('/')[0]))
+    ).sort();
+    return Math.max(0, roots.indexOf(root));
+  }
+
+  /** Highest per-tag frequency, used to scale the cloud font sizes. */
+  private maxTagCount(): number {
+    let max = 1;
+    const seen = new Map<string, number>();
+    for (const note of this.notes) {
+      for (const tag of note.tags) {
+        const c = (seen.get(tag) ?? 0) + 1;
+        seen.set(tag, c);
+        if (c > max) max = c;
+      }
+    }
+    return max;
+  }
+
+  private renderTagNode(node: TagNode, depth: number, palette: string[]): string {
+    const color = palette[this.rootIndex(node.tag) % palette.length];
+    const isLeaf = node.children.size === 0;
+    const size = isLeaf
+      ? 12 + Math.round((Math.log(node.count + 1) / Math.log(this.maxTagCount() + 1)) * 9)
+      : 12;
+    const active = this.selectedTags.has(node.tag);
+    const bg = active ? color : `color-mix(in srgb, ${color} 18%, transparent)`;
+    const fg = active ? '#fff' : color;
+
+    if (isLeaf) {
+      return `<span class="tag-chip" data-tag="${escapeHtml(node.tag)}" title="${escapeHtml(
+        node.tag
+      )} — ${node.count} note${node.count === 1 ? '' : 's'}" style="background: ${bg}; color: ${fg}; padding: 2px 7px; border-radius: 4px; font-size: ${size}px; margin: 0 4px 5px 0; display: inline-block; cursor: pointer; user-select: none; border: 1px solid ${active ? color : 'transparent'};">#${escapeHtml(
+        node.tag
+      )}</span>`;
+    }
+
+    const childrenHTML = Array.from(node.children.values())
+      .sort((a, b) => b.count - a.count)
+      .map(child => this.renderTagNode(child, depth + 1, palette))
+      .join('');
+
+    return `
+      <div style="margin: 0 0 6px ${depth === 0 ? 0 : 10}px;">
+        <div class="tag-chip tag-root" data-tag="${escapeHtml(node.tag)}" title="${escapeHtml(
+      node.tag
+    )} — ${node.count} note${node.count === 1 ? '' : 's'}" style="color: ${color}; font-weight: 700; font-size: ${size}px; margin: 0 4px 4px 0; display: inline-block; cursor: pointer; user-select: none;">▾ ${escapeHtml(
+      node.name
+    )}</div>
+        <div style="padding-left: 12px;">${childrenHTML}</div>
+      </div>`;
   }
 
   private buildTree(notes: WikiNote[]): TreeNode {
@@ -140,19 +246,13 @@ export class Sidebar {
       .map(child => this.renderNode(child, 0))
       .join('');
 
-    const allTags = Array.from(new Set(this.notes.flatMap(n => n.tags))).sort();
-    const tagsHTML = allTags
-      .map(t => {
-        const active = this.selectedTags.has(t);
-        const style = active
-          ? 'background: #3182ce; color: #fff; border-color: #3182ce;'
-          : 'background: #2d3748; color: #a0aec0; border: 1px solid transparent;';
-        return `<span class="tag-chip" data-tag="${escapeHtml(t)}" style="${style} padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; display: inline-block; cursor: pointer; user-select: none;">#${escapeHtml(t)}</span>`;
-      })
+    const tagTree = this.getTagTree();
+    const tagsHTML = tagTree
+      .map(root => this.renderTagNode(root, 0, TAG_PALETTE))
       .join('');
     const clearHTML =
       this.selectedTags.size > 0
-        ? `<span class="tag-clear" style="color: #fc8181; font-size: 11px; cursor: pointer; margin-left: 4px;">clear</span>`
+        ? `<span class="tag-clear" style="color: #fc8181; font-size: 11px; cursor: pointer; margin-left: 4px; text-transform: none;">clear</span>`
         : '';
 
     this.container.innerHTML = `
@@ -163,8 +263,8 @@ export class Sidebar {
         <div style="flex: 1; overflow-y: auto; padding: 8px 4px;">
           ${treeHTML || '<div style="font-size: 12px; color: #718096; padding: 8px;">No notes match the current filter.</div>'}
         </div>
-        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; max-height: 30%; overflow-y: auto;">
-          <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 6px; text-transform: uppercase;">Tags ${clearHTML}</div>
+        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; max-height: 34%; overflow-y: auto;">
+          <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase;">Tag cloud ${clearHTML}</div>
           <div>${tagsHTML || '<span style="font-size: 11px; color: #718096;">No tags</span>'}</div>
         </div>
       </div>

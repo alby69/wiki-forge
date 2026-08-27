@@ -389,6 +389,17 @@ sources:
 4. Write updated `SOURCES.md` with proper YAML frontmatter.
 **Output:** Confirmation + summary of sources found.
 
+#### `tag-suggest [file-or-folder]`
+**Scope:** Propose tags for one note or the whole wiki from the controlled vocabulary
+in `config.toml` (`[tags].allowed`).
+**Action:** Run `python suggest_tags.py <file>` (single note) or
+`python suggest_tags.py --all` (whole `wiki/`). The script ranks the allowed tags
+by RAKE frequency scoring, or semantically via KeyBERT when `keybert` is installed
+(`python suggest_tags.py <file> --semantic`). Use `--write` to append suggestions to
+each note's frontmatter `tags:` (existing tags are preserved, duplicates skipped).
+**Output:** For each note: existing tags, suggested tags, and the resulting `tags:` list.
+**Use when:** Building or rebalancing the taxonomy, or after a large `compile`.
+
 #### `help [command]`
 **Scope:** Contextual help.
 **Action:** If `[command]` provided, show syntax and description. If omitted, list all commands by category.
