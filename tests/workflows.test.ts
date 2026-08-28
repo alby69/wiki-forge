@@ -10,6 +10,9 @@ class MockWorkflowLlmClient implements LlmClient {
     if (params.userMessage.includes('/consult') || params.userMessage.includes('consult')) {
       return '### 🔍 Consult Synthesis\n\nSynthesized response for consult query citing [[sample-note]].';
     }
+    if (params.userMessage.includes('wizard')) {
+      return '### 🪄 Wizard Run\n\nExecuting Academic / Thesis / Paper Review workflow:\n1. Ingest PDFs\n2. Extract Authors/Theories\n3. Compile Literature Review\n4. Audit Wiki Links';
+    }
     return `---
 title: Compiled Note
 tags: [test, compile]
@@ -100,6 +103,19 @@ Links to [[non-existent-note]].
     const response = await agentServer.processChatCommand({ message: '/consult sample' });
     assert.ok(response.includes('Consult Synthesis'));
     assert.ok(response.includes('sample-note'));
+  });
+
+  await t.test('/wizard lists available scenarios', async () => {
+    const response = await agentServer.processChatCommand({ message: '/wizard' });
+    assert.ok(response.includes('Wizard Scenarios'));
+    assert.ok(response.includes('/wizard academic'));
+    assert.ok(response.includes('/wizard creative'));
+  });
+
+  await t.test('/wizard <scenario> runs the scenario workflow', async () => {
+    const response = await agentServer.processChatCommand({ message: '/wizard academic' });
+    assert.ok(response.includes('Wizard Run'));
+    assert.ok(response.includes('Academic'));
   });
 
   await t.test('/trace traces connections for given query', async () => {

@@ -94,7 +94,12 @@ export class MarkdownEditor {
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
-            <button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">${isPreview ? 'Edit' : 'Preview'}</button>
+            ${
+              isPreview
+                ? `<button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✏️ Edit</button>`
+                : `<button id="editor-save-close-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save & Close</button>
+                   <button id="editor-cancel-btn" style="background: #4a5568; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✖ Cancel</button>`
+            }
           </div>
         </div>
         <div style="flex: 1; display: flex; flex-direction: column; padding: 16px; overflow: hidden;">
@@ -102,13 +107,6 @@ export class MarkdownEditor {
             isPreview
               ? `<div id="markdown-preview" class="markdown-body" style="flex: 1; overflow-y: auto; line-height: 1.6; font-size: 14px;">${renderMarkdown(note.content)}</div>`
               : `<div id="codemirror-wrapper" style="flex: 1; display: flex; flex-direction: column; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden;"></div>`
-          }
-          ${
-            isPreview
-              ? ''
-              : `<div style="margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
-                   <button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600;">Save Changes</button>
-                 </div>`
           }
         </div>
       </div>
@@ -173,9 +171,17 @@ export class MarkdownEditor {
         });
       }
 
-      const saveBtn = this.container.querySelector('#editor-save-btn');
-      saveBtn?.addEventListener('click', () => {
+      const saveCloseBtn = this.container.querySelector('#editor-save-close-btn');
+      saveCloseBtn?.addEventListener('click', () => {
         this.saveCurrentContent();
+        this.mode = 'preview';
+        this.render();
+      });
+
+      const cancelBtn = this.container.querySelector('#editor-cancel-btn');
+      cancelBtn?.addEventListener('click', () => {
+        this.mode = 'preview';
+        this.render();
       });
     }
   }

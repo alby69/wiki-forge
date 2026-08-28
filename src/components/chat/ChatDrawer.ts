@@ -58,7 +58,7 @@ export class ChatDrawer {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`.',
+        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -87,7 +87,7 @@ export class ChatDrawer {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`.',
+        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -135,6 +135,19 @@ export class ChatDrawer {
         <button data-cmd="/audit" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
         <button data-cmd="/trace" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
         <button data-cmd="/reindex" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
+        <button data-cmd="/wizard" style="background: #553c9a; color: #f3e8ff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🪄 /wizard</button>
+      </div>
+
+      <div style="padding: 6px 12px; background: #1a1c23; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a0aec0;">
+        <span style="white-space: nowrap;">🪄 Wizard scenario:</span>
+        <select id="chat-wizard-select" title="Choose a wizard scenario to launch in chat" style="flex: 1; background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer;">
+          <option value="">Pick a scenario…</option>
+          <option value="academic">🎓 Academic / Thesis</option>
+          <option value="business">🏢 Business KB</option>
+          <option value="research">📰 Competitive Research</option>
+          <option value="creative">✍️ Fiction / Worldbuilding</option>
+          <option value="existing">🧭 Existing Wiki</option>
+        </select>
       </div>
 
       <div id="chat-messages-list" style="flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.5;">
@@ -212,6 +225,16 @@ export class ChatDrawer {
           input.focus();
         }
       });
+    });
+
+    const wizardSelect = this.container.querySelector('#chat-wizard-select') as HTMLSelectElement;
+    wizardSelect?.addEventListener('change', () => {
+      const scenario = wizardSelect.value;
+      if (scenario) {
+        input.value = `/wizard ${scenario} `;
+        input.focus();
+        wizardSelect.value = '';
+      }
     });
 
     this.container.querySelectorAll('.attach-btn').forEach(btn => {

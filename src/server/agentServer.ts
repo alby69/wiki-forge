@@ -59,6 +59,58 @@ export interface UploadRequest {
   isBase64?: boolean;
 }
 
+export interface WizardScenario {
+  id: string;
+  name: string;
+  description: string;
+  workflow: string[];
+  prompt: string;
+}
+
+export const WIZARD_SCENARIOS: Record<string, WizardScenario> = {
+  academic: {
+    id: 'academic',
+    name: 'Academic / Thesis / Paper Review',
+    description: 'Ingest academic papers, extract authors/theories, and compile a structured literature review.',
+    workflow: ['Ingest PDFs', 'Extract Authors/Theories', 'Compile Literature Review', 'Audit Wiki Links'],
+    prompt: 'Execute ingestion on raw/ directory with context "Thesis Review", compile the literature review, and run audit links.',
+  },
+  business: {
+    id: 'business',
+    name: 'Business KB / Product / Policy',
+    description: 'Ingest SOPs and meeting notes, structure business KB, create stubs, and compile FAQs.',
+    workflow: ['Ingest SOPs/Meetings', 'Structure KB', 'Setup FAQ/Consulting'],
+    prompt: 'Execute ingestion on raw/ directory for business documents, create entity stubs, and compile the business KB.',
+  },
+  research: {
+    id: 'research',
+    name: 'Competitive / News / Dossier',
+    description: 'Ingest articles and reports, cross-reference entities, trace sources, and view wiki statistics.',
+    workflow: ['Ingest Articles/Reports', 'Cross-reference Entities', 'Source Tracing', 'View Stats'],
+    prompt: 'Execute ingestion on raw/ directory for competitive research, trace key entity claims, and run stats.',
+  },
+  creative: {
+    id: 'creative',
+    name: 'Fiction / Worldbuilding / Notes',
+    description: 'Setup character and place entities, interlink worldbuilding notes, compile wiki, and check orphan notes.',
+    workflow: ['Setup Entities (Characters/Places)', 'Interlink Wiki', 'Graph & Orphan Check'],
+    prompt: 'Create entity stubs for main characters and places, compile the worldbuilding wiki, and check for orphan notes.',
+  },
+  existing: {
+    id: 'existing',
+    name: 'Existing Wiki Navigation',
+    description: 'Audit wiki health, search or consult knowledge base, and generate summary report.',
+    workflow: ['Audit health', 'Search / Consult KB', 'Generate Summary Report'],
+    prompt: 'Run a full audit on the existing wiki, search key concepts, and consult the knowledge base for a summary report.',
+  },
+};
+
+function formatWizardList(): string {
+  return Object.values(WIZARD_SCENARIOS)
+    .map(s => `- \`/wizard ${s.id}\` — **${s.name}**: ${s.description}`)
+    .join('\n');
+}
+
 export class AgentServer {
   private parser = new MarkdownParser();
   private rootDir: string;
@@ -557,6 +609,12 @@ export class AgentServer {
       return result;
     }
 
+    if (command === 'wizard' && !WIZARD_SCENARIOS[args.toLowerCase().trim()]) {
+      const text = `### 🪄 Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
+      onChunk(text);
+      return text;
+    }
+
     const notes = await this.readAllWikiNotes();
     let contextNotes: WikiNote[] = [];
     if (args) {
@@ -587,10 +645,17 @@ export class AgentServer {
 
     if (client.completeStream) {
       try {
-        const userMsg = command === 'consult' ? `Perform /consult synthesis for query: "${args}"` : (rawInput || 'Hello');
+        const wizardScenario = command === 'wizard' ? WIZARD_SCENARIOS[args.toLowerCase().trim()] : undefined;
+        const userMsg = command === 'consult'
+          ? `Perform /consult synthesis for query: "${args}"`
+          : wizardScenario
+            ? `Execute the "${wizardScenario.name}" wizard scenario now.`
+            : (rawInput || 'Hello');
         const sysPrompt = command === 'consult'
           ? `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md §5.4. Synthesize relevant notes and cite using [[wikilinks]].`
-          : systemPrompt;
+          : wizardScenario
+            ? `${systemPrompt}\n\nTASK: Execute the "${wizardScenario.name}" wizard scenario according to AGENT.md §/wizard. Follow the workflow steps: ${wizardScenario.workflow.join(' → ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${wizardScenario.prompt}`
+            : systemPrompt;
 
         return await client.completeStream(
           {
@@ -690,9 +755,28 @@ export class AgentServer {
         return this.executeReindexWorkflow();
       }
 
+      case 'wizard': {
+        const scenarioId = args.toLowerCase().trim();
+        const scenario = WIZARD_SCENARIOS[scenarioId];
+        if (!scenario) {
+          return `### 🪄 Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
+        }
+        const systemPrompt = await this.getSystemPrompt();
+        const client = await this.getOrInitLlmClient();
+        try {
+          return await client.complete({
+            systemPrompt: `${systemPrompt}\n\nTASK: Execute the "${scenario.name}" wizard scenario according to AGENT.md §/wizard. Follow the workflow steps: ${scenario.workflow.join(' → ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${scenario.prompt}`,
+            userMessage: `Execute the "${scenario.name}" wizard scenario now.`,
+            contextNotes,
+          });
+        } catch (err) {
+          return `### 🪄 Wizard: ${scenario.name}\n\n**Workflow:** ${scenario.workflow.join(' → ')}\n\n**Prompt:** ${scenario.prompt}\n\n*(LLM provider unavailable (${String(err)}).)*`;
+        }
+      }
+
       default: {
         if (!rawInput) {
-          return `### 🤖 Agent Assistant\n\nAsk any question or use slash shortcuts:\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\``;
+          return `### 🤖 Agent Assistant\n\nAsk any question or use slash shortcuts:\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\`\n- \`/wizard [scenario]\``;
         }
 
         const systemPrompt = await this.getSystemPrompt();
