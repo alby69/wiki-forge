@@ -42,6 +42,16 @@ temperature = 0.3
 max_tokens = 4096
 confirm_destructive = true
 
+[agent.llm]
+provider = "opencode"        # opencode | anthropic | openai_compatible | ollama
+opencode_command = "opencode"
+opencode_args = ["run", "--non-interactive"]
+api_base_url = ""
+api_key_env = "WIKIFORGE_LLM_API_KEY"
+model = "claude-sonnet-4-6"
+max_tokens = 4096
+timeout_seconds = 60
+
 # Naming conventions
 [naming]
 article_case = "kebab-case"

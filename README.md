@@ -157,18 +157,25 @@ Other scripts: `npm run build` (production bundle in `dist/`),
 `npm run preview` (serve the built bundle), `npm run typecheck`,
 `npm run test` (test suite covering parser, graph extractor, and agent server endpoints).
 
-### Architecture: Interactive OpenCode Chat & Direct Persistence
+### Architecture: Multi-Provider LLM Chat & Workflow Persistence
 
-Phase 22 bridges the Web UI with live agent execution and filesystem persistence while maintaining **KISS** and **DRY** principles:
+Phases 22–25 bridge the Web UI with live multi-provider LLM execution, real workflow execution, and security hardening:
 
-1. **Decoupled Backend API Server (`src/server/agentServer.ts`)**:
+1. **Multi-Provider LLM Client (`src/server/llmClient.ts`)**:
+   - Supports OpenCode CLI (`opencode`), Anthropic API (`claude-3-5-sonnet`), OpenAI-compatible REST endpoints (`gpt-4o`), and local Ollama (`llama3`).
+   - Configured via `[agent.llm]` in `config.toml` with safe key handling via environment variables (`api_key_env`).
+2. **Decoupled Backend API Server (`src/server/agentServer.ts`)**:
    - `GET /api/wiki/notes`: Fetches all wiki notes from disk in real time.
-   - `POST /api/chat`: Processes queries and slash commands (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`) based on `AGENT.md` guidelines.
-   - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`.
+   - `POST /api/chat`: Injects `AGENT.md` as system prompt and context notes, routing queries to `LlmClient` or executing real workflow commands (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`).
+   - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`, with path traversal protection (enforcing containment inside `wiki/` directory).
    - `POST /api/wiki/attach`: Appends or converts chat answers into new/existing wiki notes and re-computes backlinks.
-2. **Storage Abstraction & Adapter (`src/storage/ApiStorage.ts`)**:
+3. **Security Hardening**:
+   - Path traversal containment on `save` and `attach` endpoints returning HTTP 400 Bad Request on invalid paths.
+   - XSS HTML sanitization in `renderMarkdown` (`src/core/utils/html.ts`).
+   - Input payload size limits and execution timeouts.
+4. **Storage Abstraction & Adapter (`src/storage/ApiStorage.ts`)**:
    - Implements `IStorage` interface, calling server REST endpoints when online and falling back gracefully to static `FileStorage` when offline.
-3. **UI Extensions (`src/components/chat/`)**:
+5. **UI Extensions (`src/components/chat/`)**:
    - **Chat Drawer**: Toggleable panel with quick command buttons and interactive message history.
    - **Attach to Wiki**: One-click action on chat responses opening a target selection modal to merge knowledge into notes.
    - **Persistent Editor**: Direct save action with visual confirmation ("Saved to disk! 💾").
