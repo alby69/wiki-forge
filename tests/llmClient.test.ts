@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { AgentServer } from '../src/server/agentServer';
-import { LlmClient, LlmCompletionParams, LlmClientFactory, parseConfigToml } from '../src/server/llmClient';
+import {
+  LlmClient,
+  LlmCompletionParams,
+  LlmClientFactory,
+  ensureOpenCodeConfigured,
+  extractResponseText,
+  parseConfigToml,
+  resolveOpenCodeCommand,
+} from '../src/server/llmClient';
 
 class MockLlmClient implements LlmClient {
   public lastParams?: LlmCompletionParams;
@@ -88,5 +96,50 @@ timeout_seconds = 30
 
     const opencodeClient = LlmClientFactory.createClient({ provider: 'opencode' });
     assert.ok(opencodeClient);
+  });
+
+  await t.test('parseConfigToml defaults to valid opencode args when omitted', () => {
+    const parsed = parseConfigToml('[agent.llm]\nprovider = "opencode"\n');
+    assert.equal(parsed.agentLlmConfig.provider, 'opencode');
+    assert.deepEqual(parsed.agentLlmConfig.opencode_args, ['run', '--format', 'json']);
+  });
+
+  await t.test('extractResponseText parses opencode JSON event stream', () => {
+    const jsonStream = [
+      '{"type":"step_start","part":{"type":"step-start"}}',
+      '{"type":"text","part":{"type":"text","text":"First part."}}',
+      '{"type":"text","part":{"type":"text","text":"Second part."}}',
+      '{"type":"step_finish","part":{"type":"step-finish"}}',
+    ].join('\n');
+
+    assert.equal(extractResponseText(jsonStream), 'First part.\nSecond part.');
+    assert.equal(extractResponseText('plain text output'), null);
+  });
+
+  await t.test('ensureOpenCodeConfigured leaves non-opencode config untouched', async () => {
+    const configPath = path.join(tmpDir, 'anthropic.toml');
+    const content = '[agent.llm]\nprovider = "anthropic"\napi_key_env = "X"\n';
+    await fs.writeFile(configPath, content, 'utf-8');
+
+    const result = await ensureOpenCodeConfigured(configPath);
+    assert.equal(result, null);
+    assert.equal(await fs.readFile(configPath, 'utf-8'), content);
+  });
+
+  await t.test('ensureOpenCodeConfigured resolves and persists a valid opencode path', async () => {
+    const resolved = await resolveOpenCodeCommand();
+    if (!resolved) {
+      t.skip('opencode CLI not installed on this machine');
+      return;
+    }
+
+    const configPath = path.join(tmpDir, 'opencode.toml');
+    const content = '[agent.llm]\nprovider = "opencode"\nopencode_command = ""\n';
+    await fs.writeFile(configPath, content, 'utf-8');
+
+    const result = await ensureOpenCodeConfigured(configPath);
+    assert.equal(result, resolved);
+    const updated = await fs.readFile(configPath, 'utf-8');
+    assert.ok(updated.includes(`opencode_command = "${resolved}"`));
   });
 });

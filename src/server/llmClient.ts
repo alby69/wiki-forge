@@ -1,5 +1,7 @@
 import * as fs from 'node:fs/promises';
-import { spawn } from 'node:child_process';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { execFileSync, spawn } from 'node:child_process';
 import { WikiNote } from '../core/types/wiki';
 
 export interface LlmConfig {
@@ -33,7 +35,7 @@ export class OpenCodeCliClient implements LlmClient {
   public complete(params: LlmCompletionParams): Promise<string> {
     return new Promise((resolve, reject) => {
       const command = this.config.opencode_command || 'opencode';
-      const extraArgs = this.config.opencode_args || ['run', '--non-interactive'];
+      const extraArgs = this.config.opencode_args || ['run', '--format', 'json'];
       const timeoutMs = (this.config.timeout_seconds || 60) * 1000;
 
       const promptText = buildFullPromptText(params);
@@ -80,7 +82,19 @@ export class OpenCodeCliClient implements LlmClient {
       child.on('close', code => {
         clearTimeout(timer);
         if (code === 0) {
-          resolve(stdout.trim() || 'No output produced by OpenCode CLI.');
+          const full = stdout.trim();
+          const extraction = extractResponseText(stdout);
+
+          if (!extraction && stdout.includes('run opencode with a message')) {
+            reject(
+              new Error(
+                `OpenCode CLI printed its usage/help instead of a response. Check 'opencode_args' in config.toml (expected e.g. ["run", "--format", "json"]).`
+              )
+            );
+            return;
+          }
+
+          resolve(extraction || full || 'No output produced by OpenCode CLI.');
         } else {
           reject(
             new Error(
@@ -252,12 +266,156 @@ function buildFullPromptText(params: LlmCompletionParams): string {
 }
 
 /**
+ * Parse the JSON event stream emitted by `opencode run --format json` and
+ * concatenate the assistant text messages. Returns null when the output is
+ * not JSON (e.g. plain text output).
+ */
+export function extractResponseText(rawStdout: string): string | null {
+  const texts: string[] = [];
+
+  for (const line of rawStdout.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    try {
+      const event = JSON.parse(trimmed) as {
+        type?: string;
+        part?: { type?: string; text?: string };
+      };
+      if (event.type === 'text' && event.part?.type === 'text' && typeof event.part.text === 'string') {
+        texts.push(event.part.text);
+      }
+    } catch {
+      // Not a JSON line; ignore.
+    }
+  }
+
+  return texts.length > 0 ? texts.join('\n') : null;
+}
+
+async function isFile(p: string): Promise<boolean> {
+  try {
+    return (await fs.stat(p)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Locate the opencode CLI binary on this machine.
+ *
+ * Priority:
+ *   1. An explicit setting in config.toml that points to an existing file.
+ *   2. The `OPENCODE_BIN` environment variable (explicit, e.g. in Docker).
+ *   3. `opencode` resolved through the current PATH.
+ *   4. Well-known install locations (`~/.opencode/bin`, `/usr/local/bin`, ...).
+ */
+export async function resolveOpenCodeCommand(configured?: string): Promise<string | null> {
+  if (configured && configured.includes(path.sep) && (await isFile(configured))) {
+    return configured;
+  }
+
+  const envBin = process.env.OPENCODE_BIN;
+  if (envBin && (await isFile(envBin))) {
+    return envBin;
+  }
+
+  try {
+    const which = execFileSync('which', ['opencode'], { encoding: 'utf-8' }).trim();
+    if (which && (await isFile(which))) {
+      return which;
+    }
+  } catch {
+    // `which` is unavailable or opencode is not on PATH.
+  }
+
+  const candidates = [
+    path.join(os.homedir(), '.opencode', 'bin', 'opencode'),
+    path.join(os.homedir(), '.local', 'bin', 'opencode'),
+    '/usr/local/bin/opencode',
+    '/usr/bin/opencode',
+  ];
+  for (const candidate of candidates) {
+    if (await isFile(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Verify that the opencode CLI is available and, when the project uses the
+ * `opencode` provider, persist the detected absolute path into the
+ * `opencode_command` key of the `[agent.llm]` section of `config.toml`.
+ *
+ * Returns the resolved path, or null when opencode could not be found or the
+ * resolved path is already configured (nothing to update).
+ */
+export async function ensureOpenCodeConfigured(configPath: string): Promise<string | null> {
+  try {
+    const original = await fs.readFile(configPath, 'utf-8');
+    const { agentLlmConfig } = parseConfigToml(original);
+    if (agentLlmConfig.provider !== 'opencode') return null;
+
+    const resolved = await resolveOpenCodeCommand(agentLlmConfig.opencode_command);
+    if (!resolved) return null;
+
+    // When the path was chosen via OPENCODE_BIN (e.g. container override),
+    // keep it out of the shared config.toml so host and container don't clash.
+    if (process.env.OPENCODE_BIN && (await isFile(process.env.OPENCODE_BIN))) {
+      return resolved;
+    }
+
+    if (agentLlmConfig.opencode_command === resolved) return resolved;
+
+    const lines = original.split(/\r?\n/);
+    let section = '';
+    let agentLlmStart = -1;
+    let nextSection = lines.length;
+    let changed = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(/^\s*\[([^\]]+)\]/);
+      if (match) {
+        const name = match[1].trim();
+        if (name === 'agent.llm') {
+          section = name;
+          agentLlmStart = agentLlmStart === -1 ? i : agentLlmStart;
+        } else if (section === 'agent.llm') {
+          nextSection = i;
+          break;
+        }
+        continue;
+      }
+
+      if (section === 'agent.llm' && /^opencode_command\s*=/.test(lines[i].trim())) {
+        lines[i] = `opencode_command = "${resolved}"`;
+        changed = true;
+      }
+    }
+
+    if (!changed && agentLlmStart !== -1) {
+      lines.splice(nextSection, 0, `opencode_command = "${resolved}"`);
+      changed = true;
+    }
+
+    if (changed) {
+      await fs.writeFile(configPath, lines.join('\n'), 'utf-8');
+    }
+    return resolved;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Minimal TOML parser helper for `config.toml` sections
  */
 export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfig; projectContext: string; projectTitle: string } {
   let provider = 'opencode';
   let opencodeCommand = 'opencode';
-  let opencodeArgs = ['run', '--non-interactive'];
+  let opencodeArgs = ['run', '--format', 'json'];
   let apiBaseUrl = '';
   let apiKeyEnv = 'WIKIFORGE_LLM_API_KEY';
   let model = 'claude-sonnet-4-6';
@@ -355,6 +513,7 @@ export class LlmClientFactory {
 
   public static async createFromTomlFile(configPath: string): Promise<{ client: LlmClient; projectContext: string; projectTitle: string }> {
     try {
+      await ensureOpenCodeConfigured(configPath);
       const content = await fs.readFile(configPath, 'utf-8');
       const { agentLlmConfig, projectContext, projectTitle } = parseConfigToml(content);
       return {
@@ -366,7 +525,7 @@ export class LlmClientFactory {
       const defaultConfig: LlmConfig = {
         provider: 'opencode',
         opencode_command: 'opencode',
-        opencode_args: ['run', '--non-interactive'],
+        opencode_args: ['run', '--format', 'json'],
       };
       return {
         client: LlmClientFactory.createClient(defaultConfig),

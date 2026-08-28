@@ -4,6 +4,7 @@ import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { AgentServer } from '../src/server/agentServer';
+import { LlmClient } from '../src/server/llmClient';
 import { ApiStorage } from '../src/storage/ApiStorage';
 
 test('AgentServer & ApiStorage Integration Test Suite', async t => {
@@ -24,7 +25,12 @@ This is a test note linking to [[other-note]].
     'utf-8'
   );
 
-  const serverInstance = new AgentServer(tmpDir);
+  // Deterministic mock so /consult does not spawn the real opencode CLI.
+  const mockClient: LlmClient = {
+    complete: async () => '### 🔍 Consult Synthesis (Mock)\n\nBased on [[sample-note]].',
+  };
+
+  const serverInstance = new AgentServer(tmpDir, mockClient);
 
   const server = http.createServer(async (req, res) => {
     const handled = await serverInstance.handleRequest(req, res);

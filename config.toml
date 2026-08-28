@@ -35,19 +35,27 @@ templates = "templates"
 # layer available. Usually leave false for native-text PDFs.
 ocr = false
 
-# Agent settings
+# Agent behavior settings (read by the Web UI agent / note-taking workflows).
+# NOTE: the Web UI server reads the LLM & CLI wiring from [agent.llm] below,
+# not from this section.
 [agent]
-model = "claude-sonnet-4"
-temperature = 0.3
-max_tokens = 4096
 confirm_destructive = true
 
+# LLM wiring used by the Web UI agent server (src/server/llmClient.ts).
 [agent.llm]
 provider = "opencode"        # opencode | anthropic | openai_compatible | ollama
-opencode_command = "/home/aabate/.opencode/bin/opencode"
-opencode_args = ["run", "--non-interactive"]
+# Path to the opencode CLI. Leave empty ("") for auto-detection: on every server
+# start the program resolves `opencode` (PATH first, then ~/.opencode/bin and
+# other well-known install locations) and writes the absolute path here.
+opencode_command = ""
+# Valid opencode flags only. `--non-interactive` is NOT a valid flag and makes
+# opencode print its help text instead of answering. `--format json` lets the
+# server extract a clean answer from the JSON event stream.
+opencode_args = ["run", "--format", "json"]
 api_base_url = ""
 api_key_env = "WIKIFORGE_LLM_API_KEY"
+# Used only by HTTP providers (anthropic / openai_compatible / ollama).
+# For the "opencode" provider the model is resolved by the opencode CLI itself.
 model = "claude-sonnet-4-6"
 max_tokens = 4096
 timeout_seconds = 60

@@ -207,7 +207,7 @@ The template includes an interactive **Web UI** for exploring, editing, and inte
    npm run dev
    ```
    Then open **http://localhost:5173** in your browser.
-   (Via Docker: `docker compose up ui` → **http://localhost:5174**.)
+   (Via Docker: `docker compose up ui` → **http://localhost:5173**.)
 
 What you can do in the Web UI:
 - **Vault Explorer & Graph Viewer:** Browse files, search notes, filter by tags, and visualize node connections via `[[wikilinks]]`.
@@ -223,8 +223,13 @@ The Web UI chat connects to a multi-provider LLM backend configured in `config.t
 ```toml
 [agent.llm]
 provider = "opencode"        # Options: opencode | anthropic | openai_compatible | ollama
-opencode_command = "opencode"
-opencode_args = ["run", "--non-interactive"]
+# Leave "" for auto-detection: on server start the program resolves the opencode
+# binary (PATH first, then ~/.opencode/bin and other well-known locations) and
+# writes the absolute path here automatically.
+opencode_command = ""
+# Valid opencode flags only. `--non-interactive` is NOT a valid flag (it makes
+# opencode print its help text instead of answering).
+opencode_args = ["run", "--format", "json"]
 api_base_url = ""
 api_key_env = "WIKIFORGE_LLM_API_KEY"
 model = "claude-sonnet-4-6"
