@@ -32,6 +32,15 @@ services:
       # Keep the container's node_modules isolated from the host (Windows)
       # so Linux binaries are used inside the container.
       - /app/node_modules
+      # Share the host's opencode CLI + config/data with the container so the
+      # Agent chat drawer works inside Docker. OPENCODE_BIN (set below) lets
+      # the server resolve the binary without touching the shared config.toml.
+      # Requires opencode installed on the host (e.g. via https://opencode.ai/install).
+      - ${HOME}/.opencode/bin/opencode:/root/.opencode/bin/opencode:ro
+      - ${HOME}/.config/opencode:/root/.config/opencode
+      - ${HOME}/.local/share/opencode:/root/.local/share/opencode
+    environment:
+      - OPENCODE_BIN=/root/.opencode/bin/opencode
     working_dir: /app
     # Host port 5173 -> container port 5173 (the same port used by the
     # documented `npm run dev`). Stop any local dev server first, otherwise the

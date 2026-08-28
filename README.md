@@ -146,6 +146,8 @@ docker compose up ui
 ```
 Or using Makefile shortcut: `make ui-docker`. This starts the Vite dev server inside a Node container and exposes it at `http://localhost:5173` (stop any local `npm run dev` first, otherwise the port is already allocated).
 
+**Chat in Docker requires opencode on the host.** The UI container mounts your local opencode CLI plus its config/data (`${HOME}/.opencode`, `${HOME}/.config/opencode`, `${HOME}/.local/share/opencode`) into the container and points `OPENCODE_BIN` at it. Install opencode on the host once (e.g. `curl -fsSL https://opencode.ai/install | bash`); no image rebuild is needed afterwards — just `docker compose restart ui` if you used an older image.
+
 **Via local Node.js install:**
 
 ```bash

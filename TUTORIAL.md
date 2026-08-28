@@ -207,7 +207,10 @@ The template includes an interactive **Web UI** for exploring, editing, and inte
    npm run dev
    ```
    Then open **http://localhost:5173** in your browser.
-   (Via Docker: `docker compose up ui` → **http://localhost:5173**.)
+   (Via Docker: `docker compose up ui` → **http://localhost:5173**. For the chat to
+   work in Docker, opencode must be installed on the host: the UI container mounts
+   `${HOME}/.opencode`, `${HOME}/.config/opencode` and `${HOME}/.local/share/opencode`
+   and resolves the CLI via `OPENCODE_BIN`.)
 
 What you can do in the Web UI:
 - **Vault Explorer & Graph Viewer:** Browse files, search notes, filter by tags, and visualize node connections via `[[wikilinks]]`.

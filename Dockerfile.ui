@@ -1,9 +1,14 @@
 # Dockerfile.ui — image for the Wiki-Forge Web UI dev server.
 #
-# Based on Node 20 (Alpine). The project sources are mounted at runtime, so this
-# image only provides the Node toolchain. `npm install` runs on first start
-# (installed into an anonymous /app/node_modules volume, isolated from the host).
-FROM node:20-alpine
+# Based on Node 20 (Debian Bookworm slim, glibc). The project sources are
+# mounted at runtime, so this image only provides the Node toolchain.
+# `npm install` runs on first start (installed into an anonymous
+# /app/node_modules volume, isolated from the host).
+#
+# NOTE: the base is glibc (not Alpine/musl) on purpose: the opencode CLI
+# installed on the host machine is a glibc binary and is mounted into the
+# container so the Agent chat drawer can invoke it (see docker-compose.yml).
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 

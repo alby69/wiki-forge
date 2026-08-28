@@ -513,9 +513,17 @@ export class LlmClientFactory {
 
   public static async createFromTomlFile(configPath: string): Promise<{ client: LlmClient; projectContext: string; projectTitle: string }> {
     try {
-      await ensureOpenCodeConfigured(configPath);
+      const resolvedCommand = await ensureOpenCodeConfigured(configPath);
       const content = await fs.readFile(configPath, 'utf-8');
       const { agentLlmConfig, projectContext, projectTitle } = parseConfigToml(content);
+
+      // ensureOpenCodeConfigured may have resolved the binary without persisting
+      // it (when OPENCODE_BIN is set, e.g. inside Docker). Apply it to the
+      // client so the resolved path is always used.
+      if (agentLlmConfig.provider === 'opencode' && resolvedCommand) {
+        agentLlmConfig.opencode_command = resolvedCommand;
+      }
+
       return {
         client: LlmClientFactory.createClient(agentLlmConfig),
         projectContext,
