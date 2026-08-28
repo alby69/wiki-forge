@@ -28,4 +28,29 @@ export interface IStorage {
    * Searches notes by query text
    */
   searchNotes(query: string): Promise<WikiNote[]>;
+
+  /**
+   * Creates a new folder inside the vault
+   */
+  createFolder?(folderPath: string): Promise<boolean>;
+
+  /**
+   * Creates a new file inside a folder
+   */
+  createFile?(folderPath: string, fileName: string, content?: string): Promise<WikiNote>;
+
+  /**
+   * Renames a file or folder
+   */
+  renameItem?(oldPath: string, newName: string): Promise<boolean>;
+
+  /**
+   * Moves a file or folder to a target directory
+   */
+  moveItem?(sourcePath: string, targetFolder: string): Promise<boolean>;
+
+  /**
+   * Uploads a file (text or binary encoded) into target folder
+   */
+  uploadFile?(folderPath: string, fileName: string, content: string | ArrayBuffer): Promise<boolean>;
 }

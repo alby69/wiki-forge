@@ -37,6 +37,7 @@
 | 23 | Real Multi-Provider LLM Integration | ✅ Done | Config-driven `[agent.llm]` supporting OpenCode CLI, Anthropic, OpenAI, and Ollama (`src/server/llmClient.ts`) |
 | 24 | Workflow Command Engine (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`) | ✅ Done | On-disk ingestion, file renaming (`_COMPILED.md`), broken link/orphan audit, and automatic index generation |
 | 25 | Security Hardening & Protection | ✅ Done | Path traversal protection on `save` & `attach` endpoints (400 Bad Request) and XSS HTML sanitization in `renderMarkdown` |
+| 26 | Professional UI & Vault File Management System | ✅ Done | Complete file manager UI with folder/file creation, rename, move, delete, upload, drag-and-drop, and API endpoint integration |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -238,3 +239,16 @@ required.
 - XSS protection in `src/core/utils/html.ts` and `src/core/utils/markdown.ts`, sanitizing script tags, iframes, and inline event handlers (`onerror`, `onload`).
 - Request length limit (50,000 characters) on `/api/chat` and subprocess execution timeouts.
 - Added test suite `tests/security.test.ts`.
+
+---
+
+## Phase 26 — Professional UI & Vault File Management System ✅ Done
+
+**Goal:** Transform the Web UI into a professional IDE-grade knowledge base manager supporting full filesystem control over wiki folders and files.
+
+**Deliverables:**
+- **Full Filesystem Operations API:** REST endpoints (`/api/wiki/folder/create`, `/api/wiki/file/create`, `/api/wiki/rename`, `/api/wiki/move`, `/api/wiki/delete`, `/api/wiki/upload`) implemented with path traversal security containment.
+- **Storage Layer Abstraction:** Updated `IStorage`, `ApiStorage`, and `FileStorage` interfaces with async methods for creating, moving, renaming, deleting, and uploading files/folders.
+- **Professional File Explorer UI:** High-density desktop UI sidebar with action toolbar buttons for 📁 New Folder, 📄 New File, 📤 Upload File, ✏️ Rename, ✂️ Move, and 🗑️ Delete.
+- **Drag-and-Drop & File Upload:** Support for dragging notes/folders within the file tree and dropping local computer files onto the explorer drop zone.
+- **Tests & Verification:** Integration test suite `tests/fsOperations.test.ts` ensuring 100% pass rate.

@@ -27,6 +27,37 @@ export interface AttachNoteRequest {
   mode?: 'append' | 'create' | 'overwrite';
 }
 
+export interface CreateFolderRequest {
+  folderPath: string;
+}
+
+export interface CreateFileRequest {
+  folderPath: string;
+  fileName: string;
+  content?: string;
+}
+
+export interface RenameRequest {
+  oldPath: string;
+  newName: string;
+}
+
+export interface MoveRequest {
+  sourcePath: string;
+  targetFolder: string;
+}
+
+export interface DeleteRequest {
+  targetPath: string;
+}
+
+export interface UploadRequest {
+  folderPath: string;
+  fileName: string;
+  content: string;
+  isBase64?: boolean;
+}
+
 export class AgentServer {
   private parser = new MarkdownParser();
   private rootDir: string;
@@ -173,6 +204,90 @@ export class AgentServer {
       return true;
     }
 
+    if (pathname === '/api/wiki/folder/create' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<CreateFolderRequest>(req);
+        const result = await this.createFolderHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, folder: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/file/create' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<CreateFileRequest>(req);
+        const result = await this.createFileHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/rename' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<RenameRequest>(req);
+        await this.renameHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/move' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<MoveRequest>(req);
+        await this.moveHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/delete' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<DeleteRequest>(req);
+        await this.deleteHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/upload' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<UploadRequest>(req);
+        await this.uploadHandler(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     return false;
   }
 
@@ -251,6 +366,104 @@ export class AgentServer {
       folderName === '.' ? 'wiki' : folderName,
       relativePath
     );
+  }
+
+  private validateSafePath(targetPath: string): void {
+    const wikiDir = path.resolve(this.getWikiDir());
+    const rawDir = path.resolve(this.getRawDir());
+    const absTarget = path.resolve(targetPath);
+
+    const relWiki = path.relative(wikiDir, absTarget);
+    const relRaw = path.relative(rawDir, absTarget);
+
+    const insideWiki = !relWiki.startsWith('..') && !path.isAbsolute(relWiki);
+    const insideRaw = !relRaw.startsWith('..') && !path.isAbsolute(relRaw);
+
+    if (!insideWiki && !insideRaw) {
+      const err = new Error('Access denied: target path must reside inside wiki or raw directory');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+  }
+
+  public async createFolderHandler(data: CreateFolderRequest): Promise<string> {
+    const wikiDir = path.resolve(this.getWikiDir());
+    const target = path.resolve(wikiDir, data.folderPath.replace(/^wiki\/?/, ''));
+    this.validateSafePath(target);
+    await fs.mkdir(target, { recursive: true });
+    return path.relative(this.rootDir, target).replace(/\\/g, '/');
+  }
+
+  public async createFileHandler(data: CreateFileRequest): Promise<WikiNote> {
+    const wikiDir = path.resolve(this.getWikiDir());
+    const folder = data.folderPath ? data.folderPath.replace(/^wiki\/?/, '') : '';
+    const name = data.fileName.endsWith('.md') ? data.fileName : `${data.fileName}.md`;
+    const target = path.resolve(wikiDir, folder, name);
+    this.validateSafePath(target);
+
+    const defaultContent = data.content ?? `# ${data.fileName.replace(/\.md$/i, '').replace(/[-_]/g, ' ')}\n\n`;
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, defaultContent, 'utf-8');
+
+    const id = path.basename(target, '.md');
+    const relativePath = path.relative(this.rootDir, target).replace(/\\/g, '/');
+    const folderName = path.relative(wikiDir, path.dirname(target)).replace(/\\/g, '/') || 'wiki';
+
+    return this.parser.parseNote(id, id.replace(/[-_]/g, ' '), defaultContent, folderName === '.' ? 'wiki' : folderName, relativePath);
+  }
+
+  public async renameHandler(data: RenameRequest): Promise<void> {
+    const absOld = path.isAbsolute(data.oldPath) ? path.resolve(data.oldPath) : path.resolve(this.rootDir, data.oldPath);
+    this.validateSafePath(absOld);
+
+    const parent = path.dirname(absOld);
+    const absNew = path.resolve(parent, data.newName);
+    this.validateSafePath(absNew);
+
+    await fs.rename(absOld, absNew);
+  }
+
+  public async moveHandler(data: MoveRequest): Promise<void> {
+    const absSource = path.isAbsolute(data.sourcePath) ? path.resolve(data.sourcePath) : path.resolve(this.rootDir, data.sourcePath);
+    this.validateSafePath(absSource);
+
+    const wikiDir = path.resolve(this.getWikiDir());
+    const targetDir = path.resolve(wikiDir, data.targetFolder.replace(/^wiki\/?/, ''));
+    this.validateSafePath(targetDir);
+
+    await fs.mkdir(targetDir, { recursive: true });
+    const absDest = path.resolve(targetDir, path.basename(absSource));
+    this.validateSafePath(absDest);
+
+    await fs.rename(absSource, absDest);
+  }
+
+  public async deleteHandler(data: DeleteRequest): Promise<void> {
+    const absTarget = path.isAbsolute(data.targetPath) ? path.resolve(data.targetPath) : path.resolve(this.rootDir, data.targetPath);
+    this.validateSafePath(absTarget);
+
+    const stat = await fs.stat(absTarget);
+    if (stat.isDirectory()) {
+      await fs.rm(absTarget, { recursive: true, force: true });
+    } else {
+      await fs.unlink(absTarget);
+    }
+  }
+
+  public async uploadHandler(data: UploadRequest): Promise<void> {
+    const wikiDir = path.resolve(this.getWikiDir());
+    const folder = data.folderPath ? data.folderPath.replace(/^wiki\/?/, '') : '';
+    const target = path.resolve(wikiDir, folder, data.fileName);
+    this.validateSafePath(target);
+
+    await fs.mkdir(path.dirname(target), { recursive: true });
+
+    if (data.isBase64) {
+      const buffer = Buffer.from(data.content, 'base64');
+      await fs.writeFile(target, buffer);
+    } else {
+      await fs.writeFile(target, data.content, 'utf-8');
+    }
   }
 
   public async attachToNote(data: AttachNoteRequest): Promise<WikiNote> {

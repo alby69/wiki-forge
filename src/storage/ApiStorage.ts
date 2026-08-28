@@ -90,8 +90,119 @@ export class ApiStorage implements IStorage {
     return this.fallback.saveNote({ id: targetId, content: options.content });
   }
 
-  public async deleteNote(_id: string): Promise<boolean> {
+  public async deleteNote(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetPath: id }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
     return false;
+  }
+
+  public async createFolder(folderPath: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/folder/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return this.fallback.createFolder(folderPath);
+  }
+
+  public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/file/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath, fileName, content }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; note?: WikiNote };
+        if (json.success && json.note) return json.note;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return this.fallback.createFile(folderPath, fileName, content);
+  }
+
+  public async renameItem(oldPath: string, newName: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPath, newName }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return this.fallback.renameItem(oldPath, newName);
+  }
+
+  public async moveItem(sourcePath: string, targetFolder: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath, targetFolder }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return this.fallback.moveItem(sourcePath, targetFolder);
+  }
+
+  public async uploadFile(folderPath: string, fileName: string, content: string | ArrayBuffer): Promise<boolean> {
+    try {
+      let payloadContent = '';
+      if (typeof content === 'string') {
+        payloadContent = content;
+      } else {
+        const bytes = new Uint8Array(content);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        payloadContent = btoa(binary);
+      }
+
+      const res = await fetch(`${this.baseUrl}/api/wiki/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath, fileName, content: payloadContent, isBase64: typeof content !== 'string' }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return this.fallback.uploadFile(folderPath, fileName, content);
   }
 
   public async searchNotes(query: string): Promise<WikiNote[]> {
