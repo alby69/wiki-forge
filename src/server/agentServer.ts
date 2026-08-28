@@ -9,6 +9,7 @@ export interface ChatRequest {
   message?: string;
   command?: string;
   contextNoteId?: string;
+  stream?: boolean;
 }
 
 export interface SaveNoteRequest {
@@ -194,12 +195,33 @@ export class AgentServer {
     if (pathname === '/api/chat' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<ChatRequest>(req);
-        const response = await this.processChatCommand(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, response }));
+        const isStream = body.stream === true || (req.headers.accept && req.headers.accept.includes('text/event-stream'));
+
+        if (isStream) {
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+          });
+          await this.processChatCommandStream(body, chunk => {
+            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          });
+          res.write('data: [DONE]\n\n');
+          res.end();
+        } else {
+          const response = await this.processChatCommand(body);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, response }));
+        }
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        } else {
+          res.write(`data: ${JSON.stringify({ error: String(err) })}\n\n`);
+          res.end();
+        }
       }
       return true;
     }
@@ -510,6 +532,84 @@ export class AgentServer {
       folder: data.folder,
       title: data.title,
     });
+  }
+
+  public async processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void): Promise<string> {
+    const rawInput = (req.message || req.command || '').trim();
+    if (rawInput.length > 50000) {
+      throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
+    }
+
+    let command = '';
+    let args = rawInput;
+
+    if (rawInput.startsWith('/')) {
+      const parts = rawInput.slice(1).split(' ');
+      command = parts[0].toLowerCase();
+      args = parts.slice(1).join(' ').trim();
+    } else if (req.command) {
+      command = req.command.toLowerCase().replace(/^\//, '');
+    }
+
+    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex') {
+      const result = await this.processChatCommand(req);
+      onChunk(result);
+      return result;
+    }
+
+    const notes = await this.readAllWikiNotes();
+    let contextNotes: WikiNote[] = [];
+    if (args) {
+      const queryWords = args.toLowerCase().split(/\s+/).filter(Boolean);
+      contextNotes = notes
+        .map(n => {
+          let score = 0;
+          const lowerTitle = n.title.toLowerCase();
+          const lowerContent = n.content.toLowerCase();
+          for (const word of queryWords) {
+            if (lowerTitle.includes(word)) score += 5;
+            if (lowerContent.includes(word)) score += 1;
+          }
+          return { note: n, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(item => item.note);
+    }
+
+    if (contextNotes.length === 0 && notes.length > 0) {
+      contextNotes = notes.slice(0, 3);
+    }
+
+    const systemPrompt = await this.getSystemPrompt();
+    const client = await this.getOrInitLlmClient();
+
+    if (client.completeStream) {
+      try {
+        const userMsg = command === 'consult' ? `Perform /consult synthesis for query: "${args}"` : (rawInput || 'Hello');
+        const sysPrompt = command === 'consult'
+          ? `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md §5.4. Synthesize relevant notes and cite using [[wikilinks]].`
+          : systemPrompt;
+
+        return await client.completeStream(
+          {
+            systemPrompt: sysPrompt,
+            userMessage: userMsg,
+            contextNotes,
+          },
+          onChunk
+        );
+      } catch (err) {
+        const fallback = await this.processChatCommand(req);
+        onChunk(fallback);
+        return fallback;
+      }
+    } else {
+      const full = await this.processChatCommand(req);
+      onChunk(full);
+      return full;
+    }
   }
 
   public async processChatCommand(req: ChatRequest): Promise<string> {

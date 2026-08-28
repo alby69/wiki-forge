@@ -1,3 +1,8 @@
+import './styles/theme.css';
+import './styles/sidebar.css';
+import './styles/chat-drawer.css';
+import './styles/editor.css';
+
 import { WikiNote } from './core/types/wiki';
 import { MarkdownParser } from './services/markdownParser';
 import { GraphService } from './services/graphService';
@@ -154,7 +159,8 @@ Backlink to [[01-index]].
       (noteId, content) => {
         void this.updateAndSaveNote(noteId, content);
       },
-      target => this.openWikilink(target)
+      target => this.openWikilink(target),
+      () => this.notes
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {

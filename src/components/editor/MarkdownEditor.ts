@@ -1,6 +1,13 @@
 import { WikiNote } from '../../core/types/wiki';
 import { escapeHtml } from '../../core/utils/html';
 import { renderMarkdown } from '../../core/utils/markdown';
+import { EditorState } from '@codemirror/state';
+import { EditorView, keymap, drawSelection, highlightActiveLine } from '@codemirror/view';
+import { markdown } from '@codemirror/lang-markdown';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { autocompletion } from '@codemirror/autocomplete';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { wikilinkAutocompleteSource } from './wikilinkAutocomplete';
 
 export class MarkdownEditor {
   private container: HTMLElement;
@@ -9,19 +16,28 @@ export class MarkdownEditor {
   private saveStatusMessage: string = '';
   private onSaveCb?: (noteId: string, content: string) => void;
   private onOpenLinkCb?: (target: string) => void;
+  private getNotesCb?: () => WikiNote[];
+  private editorView: EditorView | null = null;
 
   constructor(
     container: HTMLElement,
     onSave?: (noteId: string, content: string) => void,
-    onOpenLink?: (target: string) => void
+    onOpenLink?: (target: string) => void,
+    getNotes?: () => WikiNote[]
   ) {
     this.container = container;
     this.onSaveCb = onSave;
     this.onOpenLinkCb = onOpenLink;
+    this.getNotesCb = getNotes;
     this.render();
   }
 
+  public setNotesGetter(fn: () => WikiNote[]): void {
+    this.getNotesCb = fn;
+  }
+
   public setNote(note: WikiNote | null): void {
+    this.destroyEditor();
     this.currentNote = note;
     this.mode = 'preview';
     this.saveStatusMessage = '';
@@ -43,7 +59,22 @@ export class MarkdownEditor {
     }, 3000);
   }
 
+  private destroyEditor(): void {
+    if (this.editorView) {
+      this.editorView.destroy();
+      this.editorView = null;
+    }
+  }
+
+  private saveCurrentContent(): void {
+    if (!this.currentNote || !this.onSaveCb) return;
+    const content = this.editorView ? this.editorView.state.doc.toString() : '';
+    this.onSaveCb(this.currentNote.id, content);
+  }
+
   public render(): void {
+    this.destroyEditor();
+
     if (!this.currentNote) {
       this.container.innerHTML = `
         <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: #718096; background: #18191c; font-size: 14px;">
@@ -70,7 +101,7 @@ export class MarkdownEditor {
           ${
             isPreview
               ? `<div id="markdown-preview" class="markdown-body" style="flex: 1; overflow-y: auto; line-height: 1.6; font-size: 14px;">${renderMarkdown(note.content)}</div>`
-              : `<textarea id="markdown-textarea" style="width: 100%; flex: 1; background: #121316; border: 1px solid #2d3748; color: #e2e8f0; padding: 12px; font-family: monospace; font-size: 13px; line-height: 1.5; resize: none; border-radius: 6px; box-sizing: border-box;">${escapeHtml(note.content)}</textarea>`
+              : `<div id="codemirror-wrapper" style="flex: 1; display: flex; flex-direction: column; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden;"></div>`
           }
           ${
             isPreview
@@ -98,15 +129,93 @@ export class MarkdownEditor {
         });
       });
     } else {
-      const saveBtn = this.container.querySelector('#editor-save-btn');
-      const textarea = this.container.querySelector('#markdown-textarea') as HTMLTextAreaElement;
-      if (saveBtn && textarea) {
-        saveBtn.addEventListener('click', () => {
-          if (this.currentNote && this.onSaveCb) {
-            this.onSaveCb(this.currentNote.id, textarea.value);
-          }
+      const cmWrapper = this.container.querySelector('#codemirror-wrapper') as HTMLElement;
+      if (cmWrapper) {
+        const state = EditorState.create({
+          doc: note.content,
+          extensions: [
+            history(),
+            drawSelection(),
+            highlightActiveLine(),
+            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+            markdown(),
+            autocompletion({
+              override: [
+                wikilinkAutocompleteSource(() => (this.getNotesCb ? this.getNotesCb() : [])),
+              ],
+            }),
+            keymap.of([
+              {
+                key: 'Mod-s',
+                run: () => {
+                  this.saveCurrentContent();
+                  return true;
+                },
+              },
+              {
+                key: 'Mod-b',
+                run: (view) => toggleWrapSelection(view, '**'),
+              },
+              {
+                key: 'Mod-i',
+                run: (view) => toggleWrapSelection(view, '*'),
+              },
+              ...defaultKeymap,
+              ...historyKeymap,
+            ]),
+            wikiForgeEditorTheme,
+          ],
+        });
+
+        this.editorView = new EditorView({
+          state,
+          parent: cmWrapper,
         });
       }
+
+      const saveBtn = this.container.querySelector('#editor-save-btn');
+      saveBtn?.addEventListener('click', () => {
+        this.saveCurrentContent();
+      });
     }
   }
 }
+
+function toggleWrapSelection(view: EditorView, wrapper: string): boolean {
+  const range = view.state.selection.main;
+  const selectedText = view.state.sliceDoc(range.from, range.to);
+  const newText = `${wrapper}${selectedText}${wrapper}`;
+  view.dispatch({
+    changes: { from: range.from, to: range.to, insert: newText },
+    selection: { anchor: range.from + wrapper.length, head: range.to + wrapper.length },
+  });
+  return true;
+}
+
+const wikiForgeEditorTheme = EditorView.theme({
+  '&': {
+    height: '100%',
+    backgroundColor: '#121316',
+    color: '#e2e8f0',
+    fontSize: '13px',
+    fontFamily: 'monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+  },
+  '.cm-content': {
+    caretColor: '#64b5f6',
+    padding: '12px',
+  },
+  '&.cm-focused .cm-cursor': {
+    borderLeftColor: '#64b5f6',
+  },
+  '&.cm-focused .cm-selectionBackground, ::selection': {
+    backgroundColor: '#2b6cb0 !important',
+  },
+  '.cm-gutters': {
+    backgroundColor: '#18191c',
+    color: '#718096',
+    borderRight: '1px solid #2d3748',
+  },
+  '.cm-activeLine': {
+    backgroundColor: '#1a1d24',
+  },
+});

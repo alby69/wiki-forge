@@ -23,6 +23,7 @@ export interface LlmCompletionParams {
 
 export interface LlmClient {
   complete(params: LlmCompletionParams): Promise<string>;
+  completeStream?(params: LlmCompletionParams, onChunk: (chunk: string) => void): Promise<string>;
 }
 
 export class OpenCodeCliClient implements LlmClient {
@@ -110,6 +111,12 @@ export class OpenCodeCliClient implements LlmClient {
       }
     });
   }
+
+  public async completeStream(params: LlmCompletionParams, onChunk: (chunk: string) => void): Promise<string> {
+    const full = await this.complete(params);
+    onChunk(full);
+    return full;
+  }
 }
 
 export class HttpLlmClient implements LlmClient {
@@ -120,6 +127,14 @@ export class HttpLlmClient implements LlmClient {
   }
 
   public async complete(params: LlmCompletionParams): Promise<string> {
+    let resultText = '';
+    await this.completeStream(params, chunk => {
+      resultText += chunk;
+    });
+    return resultText;
+  }
+
+  public async completeStream(params: LlmCompletionParams, onChunk: (chunk: string) => void): Promise<string> {
     const apiKeyEnvName = this.config.api_key_env || 'WIKIFORGE_LLM_API_KEY';
     const apiKey = process.env[apiKeyEnvName];
 
@@ -152,6 +167,7 @@ export class HttpLlmClient implements LlmClient {
           body: JSON.stringify({
             model,
             max_tokens: maxTokens,
+            stream: true,
             system: params.systemPrompt,
             messages: [{ role: 'user', content: userContent }],
           }),
@@ -163,9 +179,17 @@ export class HttpLlmClient implements LlmClient {
           throw new Error(`Anthropic API request failed with status ${res.status}: ${errText}`);
         }
 
-        const data = (await res.json()) as { content?: Array<{ type: string; text: string }> };
-        const textBlock = data.content?.find(c => c.type === 'text');
-        return textBlock?.text ?? 'No text response from Anthropic API.';
+        return await readResponseBodyChunks(res, onChunk, line => {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '[DONE]') return null;
+            try {
+              const parsed = JSON.parse(dataStr) as { type?: string; delta?: { text?: string } };
+              if (parsed.delta?.text) return parsed.delta.text;
+            } catch (_e) {}
+          }
+          return null;
+        });
       } else {
         // OpenAI compatible API
         const baseUrl = this.config.api_base_url || 'https://api.openai.com/v1';
@@ -181,6 +205,7 @@ export class HttpLlmClient implements LlmClient {
           body: JSON.stringify({
             model,
             max_tokens: maxTokens,
+            stream: true,
             messages: [
               { role: 'system', content: params.systemPrompt },
               { role: 'user', content: userContent },
@@ -194,8 +219,17 @@ export class HttpLlmClient implements LlmClient {
           throw new Error(`OpenAI compatible API request failed with status ${res.status}: ${errText}`);
         }
 
-        const data = (await res.json()) as { choices?: Array<{ message?: { content: string } }> };
-        return data.choices?.[0]?.message?.content ?? 'No response content from OpenAI compatible API.';
+        return await readResponseBodyChunks(res, onChunk, line => {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '[DONE]') return null;
+            try {
+              const parsed = JSON.parse(dataStr) as { choices?: Array<{ delta?: { content?: string } }> };
+              if (parsed.choices?.[0]?.delta?.content) return parsed.choices[0].delta.content;
+            } catch (_e) {}
+          }
+          return null;
+        });
       }
     } finally {
       clearTimeout(timer);
@@ -211,6 +245,14 @@ export class OllamaClient implements LlmClient {
   }
 
   public async complete(params: LlmCompletionParams): Promise<string> {
+    let resultText = '';
+    await this.completeStream(params, chunk => {
+      resultText += chunk;
+    });
+    return resultText;
+  }
+
+  public async completeStream(params: LlmCompletionParams, onChunk: (chunk: string) => void): Promise<string> {
     const baseUrl = this.config.api_base_url || 'http://localhost:11434';
     const url = baseUrl.endsWith('/api/chat') ? baseUrl : `${baseUrl.replace(/\/+$/, '')}/api/chat`;
     const model = this.config.model || 'llama3';
@@ -226,7 +268,7 @@ export class OllamaClient implements LlmClient {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model,
-          stream: false,
+          stream: true,
           messages: [
             { role: 'system', content: params.systemPrompt },
             { role: 'user', content: userContent },
@@ -240,12 +282,59 @@ export class OllamaClient implements LlmClient {
         throw new Error(`Ollama API request failed with status ${res.status}: ${errText}`);
       }
 
-      const data = (await res.json()) as { message?: { content: string } };
-      return data.message?.content ?? 'No content returned from Ollama.';
+      return await readResponseBodyChunks(res, onChunk, line => {
+        try {
+          const parsed = JSON.parse(line) as { message?: { content?: string } };
+          if (parsed.message?.content) return parsed.message.content;
+        } catch (_e) {}
+        return null;
+      });
     } finally {
       clearTimeout(timer);
     }
   }
+}
+
+async function readResponseBodyChunks(
+  res: Response,
+  onChunk: (chunk: string) => void,
+  parseLine: (line: string) => string | null
+): Promise<string> {
+  let fullText = '';
+  if (!res.body) return fullText;
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const extracted = parseLine(trimmed);
+      if (extracted) {
+        fullText += extracted;
+        onChunk(extracted);
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    const extracted = parseLine(buffer.trim());
+    if (extracted) {
+      fullText += extracted;
+      onChunk(extracted);
+    }
+  }
+
+  return fullText;
 }
 
 function buildUserContentWithContext(userMessage: string, contextNotes?: WikiNote[]): string {
@@ -517,9 +606,6 @@ export class LlmClientFactory {
       const content = await fs.readFile(configPath, 'utf-8');
       const { agentLlmConfig, projectContext, projectTitle } = parseConfigToml(content);
 
-      // ensureOpenCodeConfigured may have resolved the binary without persisting
-      // it (when OPENCODE_BIN is set, e.g. inside Docker). Apply it to the
-      // client so the resolved path is always used.
       if (agentLlmConfig.provider === 'opencode' && resolvedCommand) {
         agentLlmConfig.opencode_command = resolvedCommand;
       }
