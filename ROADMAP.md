@@ -38,6 +38,7 @@
 | 24 | Workflow Command Engine (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`) | ✅ Done | On-disk ingestion, file renaming (`_COMPILED.md`), broken link/orphan audit, and automatic index generation |
 | 25 | Security Hardening & Protection | ✅ Done | Path traversal protection on `save` & `attach` endpoints (400 Bad Request) and XSS HTML sanitization in `renderMarkdown` |
 | 26 | Professional UI & Vault File Management System | ✅ Done | Complete file manager UI with folder/file creation, rename, move, delete, upload, drag-and-drop, and API endpoint integration |
+| 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -252,3 +253,16 @@ required.
 - **Professional File Explorer UI:** High-density desktop UI sidebar with action toolbar buttons for 📁 New Folder, 📄 New File, 📤 Upload File, ✏️ Rename, ✂️ Move, and 🗑️ Delete.
 - **Drag-and-Drop & File Upload:** Support for dragging notes/folders within the file tree and dropping local computer files onto the explorer drop zone.
 - **Tests & Verification:** Integration test suite `tests/fsOperations.test.ts` ensuring 100% pass rate.
+
+---
+
+## Phase 27 — UI & Chat Enhancements (CodeMirror 6, LLM Streaming, Chat History & CSS Refactoring) ✅ Done
+
+**Goal:** Elevate the Web UI writing experience with CodeMirror 6, real-time LLM response streaming, chat history persistence, and clean modular CSS themes.
+
+**Deliverables:**
+- **CodeMirror 6 Markdown Editor:** Integrated `@codemirror` replacing raw `<textarea>` in edit mode with full Markdown syntax highlighting, `[[wikilink]]` autocompletion menu on typing `[[`, and keyboard shortcuts (`Ctrl/Cmd+S`, `Ctrl/Cmd+B`, `Ctrl/Cmd+I`).
+- **LLM Response Streaming:** Implemented Server-Sent Events (SSE) streaming on `/api/chat` and `ApiStorage.sendChatStream()`, with streaming handlers in `LlmClient` for Anthropic API, OpenAI-compatible APIs, and Ollama. Responses stream chunk-by-chunk in `ChatDrawer` without component flickering.
+- **Chat History Persistence:** Automatically persists chat messages in `localStorage` (`wiki-forge:chat-history`), restored across page refreshes, and includes a "Clear history" button in the chat drawer header.
+- **CSS Theme Refactoring:** Extracted inline styles into `src/styles/theme.css` with CSS custom properties (`--bg-primary`, `--border-color`, `--accent-blue`, `--accent-button`) and modular component stylesheets (`sidebar.css`, `chat-drawer.css`, `editor.css`).
+- **Tests & Verification:** Added `tests/editorAutocomplete.test.ts` and `tests/streaming.test.ts` (100% pass rate).

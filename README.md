@@ -142,8 +142,9 @@ layout and live agent integration. The interface is organised into panels:
   the graph; **clear** resets the filter.
 - **Editor / Markdown panel** — the selected note rendered as formatted HTML
   (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
-  links, an **Edit / Preview** toggle to edit the source, and a **Save Changes**
-  button that persists edits directly back to disk ("Saved to disk! 💾").
+  links, an **Edit / Preview** toggle to edit the source powered by **CodeMirror 6**
+  (with syntax highlighting, `[[wikilink]]` autocompletion menu, and `Ctrl+S`, `Ctrl+B`, `Ctrl+I` shortcuts),
+  and a **Save Changes** button that persists edits directly back to disk ("Saved to disk! 💾").
 - **Context panel (right, 280 px)** — node metadata: title, tags, **backlinks**
   and **outbound links** (both clickable) plus an agent status indicator.
 - **Graph view** — an interactive force-directed map of `[[wikilinks]]`
@@ -153,9 +154,9 @@ layout and live agent integration. The interface is organised into panels:
   a **min. connections** filter and **Reset**. Selecting a note highlights it
   and dims the rest; clicking a node switches the editor to split view.
 - **OpenCode Chat Drawer** — a side panel with live agent workflow triggers
-  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), markdown responses
-  with `[[wikilinks]]`, and an **Attach to Wiki** button to convert chat
-  responses into new or existing wiki notes on disk.
+  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), real-time **LLM response streaming** (SSE),
+  persistent session history in `localStorage`, a **Clear history** button, markdown responses with `[[wikilinks]]`,
+  and an **Attach to Wiki** button to convert chat responses into new or existing wiki notes on disk.
 - **Footer** — status bar showing connection/vault and engine state.
 
 ### Run it (Web UI)

@@ -10,6 +10,8 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+const STORAGE_KEY = 'wiki-forge:chat-history';
+
 export class ChatDrawer {
   private container: HTMLElement;
   private apiStorage: ApiStorage;
@@ -32,13 +34,63 @@ export class ChatDrawer {
     this.onAttachSuccessCb = onAttachSuccess;
     this.onOpenLinkCb = onOpenLink;
 
-    this.messages.push({
-      id: 'welcome',
-      sender: 'assistant',
-      text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`.',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    });
+    this.loadHistory();
+    this.render();
+  }
 
+  private loadHistory(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as ChatMessage[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.messages = parsed;
+            return;
+          }
+        }
+      }
+    } catch (_e) {
+      // fallback
+    }
+
+    this.messages = [
+      {
+        id: 'welcome',
+        sender: 'assistant',
+        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ];
+  }
+
+  private saveHistory(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.messages));
+      }
+    } catch (_e) {
+      // fallback
+    }
+  }
+
+  public clearHistory(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (_e) {
+      // fallback
+    }
+
+    this.messages = [
+      {
+        id: 'welcome',
+        sender: 'assistant',
+        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ];
     this.render();
   }
 
@@ -71,7 +123,10 @@ export class ChatDrawer {
         <div style="font-weight: 600; color: #64b5f6; font-size: 14px; display: flex; align-items: center; gap: 6px;">
           <span>💬</span> OpenCode Assistant
         </div>
-        <button id="chat-close-btn" style="background: none; border: none; color: #a0aec0; font-size: 16px; cursor: pointer;">&times;</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="chat-clear-btn" title="Clear history" style="background: none; border: none; color: #a0aec0; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
+          <button id="chat-close-btn" style="background: none; border: none; color: #a0aec0; font-size: 16px; cursor: pointer;">&times;</button>
+        </div>
       </div>
 
       <div style="padding: 8px 12px; background: #1a1c23; border-bottom: 1px solid #2d3748; display: flex; gap: 6px; overflow-x: auto;" class="chat-shortcuts">
@@ -127,6 +182,9 @@ export class ChatDrawer {
   private attachEventListeners(): void {
     const closeBtn = this.container.querySelector('#chat-close-btn');
     closeBtn?.addEventListener('click', () => this.close());
+
+    const clearBtn = this.container.querySelector('#chat-clear-btn');
+    clearBtn?.addEventListener('click', () => this.clearHistory());
 
     const input = this.container.querySelector('#chat-input') as HTMLTextAreaElement;
     const sendBtn = this.container.querySelector('#chat-send-btn');
@@ -195,20 +253,45 @@ export class ChatDrawer {
       timestamp: time,
     });
 
+    this.saveHistory();
     this.render();
 
-    const reply = await this.apiStorage.sendChat(text);
-
-    this.messages.push({
-      id: `msg-${Date.now()}`,
+    const assistantMsgId = `msg-${Date.now() + 1}`;
+    const assistantMsg: ChatMessage = {
+      id: assistantMsgId,
       sender: 'assistant',
-      text: reply,
+      text: '',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    });
+    };
 
+    this.messages.push(assistantMsg);
     this.render();
 
     const list = this.container.querySelector('#chat-messages-list');
-    if (list) list.scrollTop = list.scrollHeight;
+    const attachBtns = this.container.querySelectorAll('.attach-btn');
+    const targetAttachBtn = Array.from(attachBtns).find(b => b.getAttribute('data-msg-id') === assistantMsgId);
+    const msgWrapper = targetAttachBtn?.closest('div')?.parentElement?.querySelector('.markdown-body');
+
+    await this.apiStorage.sendChatStream(
+      text,
+      (chunk: string) => {
+        assistantMsg.text += chunk;
+        if (msgWrapper) {
+          msgWrapper.innerHTML = renderMarkdown(assistantMsg.text);
+          msgWrapper.querySelectorAll('a.wikilink').forEach(link => {
+            link.addEventListener('click', e => {
+              e.preventDefault();
+              const target = link.getAttribute('data-wikilink');
+              if (target && this.onOpenLinkCb) {
+                this.onOpenLinkCb(target);
+              }
+            });
+          });
+        }
+        if (list) list.scrollTop = list.scrollHeight;
+      }
+    );
+
+    this.saveHistory();
   }
 }

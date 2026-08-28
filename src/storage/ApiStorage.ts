@@ -233,4 +233,69 @@ export class ApiStorage implements IStorage {
 
     return `### 🤖 Offline Agent Assistant\n\nReceived: "${message}". Connect to the backend server for live execution.`;
   }
+
+  public async sendChatStream(
+    message: string,
+    onChunk: (chunk: string) => void,
+    command?: string,
+    contextNoteId?: string
+  ): Promise<void> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({ message, command, contextNoteId, stream: true }),
+      });
+
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data: ')) {
+              const dataStr = trimmed.slice(6).trim();
+              if (dataStr === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(dataStr) as { chunk?: string };
+                if (parsed.chunk) {
+                  onChunk(parsed.chunk);
+                }
+              } catch (_e) {
+                // ignore
+              }
+            }
+          }
+        }
+
+        if (buffer.trim().startsWith('data: ')) {
+          const dataStr = buffer.trim().slice(6).trim();
+          if (dataStr !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(dataStr) as { chunk?: string };
+              if (parsed.chunk) onChunk(parsed.chunk);
+            } catch (_e) {}
+          }
+        }
+        return;
+      }
+    } catch (_err) {
+      // Offline fallback
+    }
+
+    const fallbackResponse = await this.sendChat(message, command, contextNoteId);
+    onChunk(fallbackResponse);
+  }
 }
