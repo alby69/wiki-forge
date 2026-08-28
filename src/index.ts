@@ -249,8 +249,6 @@ Backlink to [[01-index]].
       title: target.title,
     });
 
-    this.editor.showSaveStatus('Saved to disk! 💾');
-
     const idx = this.notes.findIndex(n => n.id === noteId);
     if (idx !== -1) {
       this.notes[idx] = saved;
@@ -261,6 +259,7 @@ Backlink to [[01-index]].
     this.notes = this.parser.computeBacklinks(this.notes);
     this.selectedNote = this.notes.find(n => n.id === saved.id) ?? saved;
     this.refreshAll();
+    this.editor.showSaveStatus('Saved to disk! 💾');
   }
 }
 

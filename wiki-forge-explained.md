@@ -135,7 +135,8 @@ It is a multi-panel application:
   **drag-and-drop** to move things around. A search box (**Ctrl+K**) filters
   instantly and a **tag cloud** filters both the list and the graph by topic.
 - **Markdown Editor** — read articles as formatted text with clickable
-  `[[wikilinks]]`; click **✏️ Edit** to edit in a **CodeMirror 6** editor with
+  `[[wikilinks]]`. A **💾 Save** button is always in the header (in preview it just
+  re-persists the note); click **✏️ Edit** to edit in a **CodeMirror 6** editor with
   Markdown highlighting and link autocomplete. **💾 Save & Close** writes your
   changes back to disk, **✖ Cancel** throws them away.
 - **Context Panel** — the selected note's incoming **backlinks**, **outbound

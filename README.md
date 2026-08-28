@@ -162,11 +162,12 @@ layout and live agent integration. The interface is organised into panels:
   the graph; **clear** resets the filter.
 - **Editor / Markdown panel** — the selected note rendered as formatted HTML
   (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
-  links. Switching to **Edit** opens a **CodeMirror 6** editor with syntax
-  highlighting, `[[wikilink]]` autocompletion, and `Ctrl/Cmd+S`, `Ctrl/Cmd+B`,
-  `Ctrl/Cmd+I` shortcuts; the header shows **💾 Save & Close** (persists edits
-  directly back to disk — "Saved to disk! 💾") and **✖ Cancel** (discards unsaved
-  edits).
+  links. A **💾 Save** button is always in the header (in preview it re-persists
+  the note — "Saved to disk! 💾"). Switching to **Edit** opens a **CodeMirror 6**
+  editor with syntax highlighting, `[[wikilink]]` autocompletion, and
+  `Ctrl/Cmd+S`, `Ctrl/Cmd+B`, `Ctrl/Cmd+I` shortcuts; the header shows
+  **💾 Save & Close** (persists edits directly back to disk) and **✖ Cancel**
+  (discards unsaved edits).
 - **Context panel (right, 280 px)** — node metadata: title, tags, **backlinks**
   and **outbound links** (both clickable) plus an agent status indicator.
 - **Graph view** — an interactive force-directed map of `[[wikilinks]]`

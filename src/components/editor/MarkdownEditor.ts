@@ -68,7 +68,7 @@ export class MarkdownEditor {
 
   private saveCurrentContent(): void {
     if (!this.currentNote || !this.onSaveCb) return;
-    const content = this.editorView ? this.editorView.state.doc.toString() : '';
+    const content = this.editorView ? this.editorView.state.doc.toString() : this.currentNote.content;
     this.onSaveCb(this.currentNote.id, content);
   }
 
@@ -96,7 +96,8 @@ export class MarkdownEditor {
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             ${
               isPreview
-                ? `<button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✏️ Edit</button>`
+                ? `<button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save</button>
+                   <button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✏️ Edit</button>`
                 : `<button id="editor-save-close-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save & Close</button>
                    <button id="editor-cancel-btn" style="background: #4a5568; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✖ Cancel</button>`
             }
@@ -111,6 +112,11 @@ export class MarkdownEditor {
         </div>
       </div>
     `;
+
+    const saveBtn = this.container.querySelector('#editor-save-btn');
+    saveBtn?.addEventListener('click', () => {
+      this.saveCurrentContent();
+    });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');
     toggleBtn?.addEventListener('click', () => {

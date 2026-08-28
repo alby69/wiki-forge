@@ -232,10 +232,12 @@ make ui-docker     # = docker compose up ui  →  open http://localhost:5173
   toolbar** (`📁+` new folder, `📄+` new file, `📤` upload, `✏️` rename, `🗑️`
   delete) manages the vault from the browser, and **drag-and-drop** moves files
   or folders between directories (or imports files from your computer).
-- **Editor (centre)** — click **✏️ Edit** to open the article in a **CodeMirror 6**
-  editor (Markdown highlighting, `[[wikilink]]` autocompletion). **💾 Save & Close**
-  writes your changes straight back to disk ("Saved to disk! 💾"); **✖ Cancel**
-  discards them. `Ctrl/Cmd+S` saves at any time.
+- **Editor (centre)** — a **💾 Save** button is always in the header (in preview it
+  just re-persists the note; "Saved to disk! 💾" confirms). Click **✏️ Edit** to open
+  the article in a **CodeMirror 6** editor (Markdown highlighting,
+  `[[wikilink]]` autocompletion). There, **💾 Save & Close** writes your changes
+  straight back to disk; **✖ Cancel** discards them, and `Ctrl/Cmd+S` saves at any
+  time.
 - **Context panel (right)** — incoming **backlinks**, **outbound links** and the
   tags of the selected note, all clickable.
 - **Graph view** — an interactive map of the wiki's `[[wikilinks]]`. Zoom, pan,
