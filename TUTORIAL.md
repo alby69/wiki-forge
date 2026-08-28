@@ -190,38 +190,71 @@ template.
 
 - **`AGENT.md`** — the AI's "manual". To change a rule (e.g. how to name
   articles), edit it here.
-- **`config.toml`** — the single settings knob (title, context, folders, i18n/multi-language settings, and `[agent.llm]` configuration).
+- **`config.toml`** — the single settings knob (title, context, folders, i18n/multi-language settings, `[tags]` vocabulary, and `[agent.llm]` configuration).
 - **`README.md`** — minimal technical guide for conversion.
 - **`conv2md.py`** + **`run_convert.sh`** — tools that turn books/PDFs into text.
+- **`scripts/wizard.py`** + **`config/scenarios.toml`** — the Scenario Wizard and its presets (§12).
+- **`suggest_tags.py`** — suggests namespaced tags (e.g. `topic/ai`) for your notes.
 - **`SOURCES.md`** — the registry of sources.
 - **`wiki/index.md`** — the "front door": every Consult starts here.
 
 ---
 
-## 11. The Web UI with Interactive OpenCode Chat & Direct Persistence
+## 11. The Web UI — your second brain in the browser
 
-The template includes an interactive **Web UI** for exploring, editing, and interacting with your agent:
+The template ships with an interactive **Web UI** (Vite + TypeScript) that turns
+the wiki into an application you can *see*: browse the vault, edit articles,
+manage files, and chat with your agent — no Obsidian required.
 
-1. Launch it:
-   ```bash
-   npm run dev
-   ```
-   Then open **http://localhost:5173** in your browser.
-   (Via Docker: `docker compose up ui` → **http://localhost:5173**. For the chat to
-   work in Docker, opencode must be installed on the host: the UI container mounts
-   `${HOME}/.opencode`, `${HOME}/.config/opencode` and `${HOME}/.local/share/opencode`
-   and resolves the CLI via `OPENCODE_BIN`.)
+### Launch it
 
-What you can do in the Web UI:
-- **Vault Explorer & Graph Viewer:** Browse files, search notes, filter by tags, and visualize node connections via `[[wikilinks]]`.
-- **Direct Editor Saving:** Click **Edit** in the Markdown panel, modify raw source text, and click **Save Changes** to persist updates directly to disk in `wiki/`.
-- **OpenCode Chat Drawer:** Click **💬 OpenCode Chat** in the top bar to open a side assistant drawer.
-- **Agent Command Shortcuts:** Click `/consult`, `/compile`, `/audit`, `/trace`, or `/reindex` to run agent workflows right inside the chat.
-- **Attach Answers to Wiki:** Click **📌 Attach to Wiki** under any AI response to open a modal dialog allowing you to append or create new notes in `wiki/`. The app automatically updates the graph and backlinks in real time.
+```bash
+npm install        # first time only
+npm run dev        # then open http://localhost:5173
+```
 
-### Configuring the LLM Provider in `config.toml`
+Or via Docker (no local Node.js install):
 
-The Web UI chat connects to a multi-provider LLM backend configured in `config.toml` under `[agent.llm]`:
+```bash
+make ui-docker     # = docker compose up ui  →  open http://localhost:5173
+```
+
+> **Chat in Docker requires opencode on the host.** The UI container mounts your
+> local opencode CLI plus its config/data (`${HOME}/.opencode`,
+> `${HOME}/.config/opencode`, `${HOME}/.local/share/opencode`) and resolves the
+> CLI via `OPENCODE_BIN`. Install opencode once on the host (e.g.
+> `curl -fsSL https://opencode.ai/install | bash`); no image rebuild is needed.
+
+### What you can do
+
+- **Vault Explorer (left sidebar)** — a file tree of `wiki/` plus an instant
+  search (**Ctrl+K**) and a **tag cloud** to filter by topic. The **file
+  toolbar** (`📁+` new folder, `📄+` new file, `📤` upload, `✏️` rename, `🗑️`
+  delete) manages the vault from the browser, and **drag-and-drop** moves files
+  or folders between directories (or imports files from your computer).
+- **Editor (centre)** — click **✏️ Edit** to open the article in a **CodeMirror 6**
+  editor (Markdown highlighting, `[[wikilink]]` autocompletion). **💾 Save & Close**
+  writes your changes straight back to disk ("Saved to disk! 💾"); **✖ Cancel**
+  discards them. `Ctrl/Cmd+S` saves at any time.
+- **Context panel (right)** — incoming **backlinks**, **outbound links** and the
+  tags of the selected note, all clickable.
+- **Graph view** — an interactive map of the wiki's `[[wikilinks]]`. Zoom, pan,
+  click a node to open the note, filter by tag or minimum number of connections.
+- **OpenCode Chat Drawer (💬, top bar)** — the agent assistant. Quick buttons
+  for `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, plus **🪄
+  /wizard** and a **scenario selector** to launch a wizard scenario directly in
+  chat (§12). Answers **stream in live**, show `[[wikilinks]]`, and any reply can
+  be saved to the wiki with **📌 Attach to Wiki**. Your conversation survives
+  page reloads (🗑️ **Clear** resets it).
+
+### How the chat reaches an LLM
+
+The Web UI talks to a small agent server shipped with the template
+(`src/server/agentServer.ts`): `GET /api/wiki/notes` lists the vault,
+`POST /api/chat` answers in streaming, and the `/api/wiki/*` routes
+(`save`, `attach`, `folder/create`, `file/create`, `rename`, `move`, `delete`,
+`upload`) persist everything you do in the editor and file manager. Which LLM
+the chat uses is configured in `config.toml` under `[agent.llm]`:
 
 ```toml
 [agent.llm]
@@ -240,14 +273,44 @@ max_tokens = 4096
 timeout_seconds = 60
 ```
 
-- **OpenCode CLI:** set `provider = "opencode"`. Requires `opencode` CLI in PATH.
-- **Anthropic API:** set `provider = "anthropic"`, `model = "claude-3-5-sonnet-20241022"`, and export key variable (`export WIKIFORGE_LLM_API_KEY="your-key"`).
-- **OpenAI Compatible API:** set `provider = "openai_compatible"`, `api_base_url = "https://api.openai.com/v1"`, and `model = "gpt-4o"`.
-- **Ollama (Local):** set `provider = "ollama"`, `api_base_url = "http://localhost:11434"`, and `model = "llama3"`.
+- **OpenCode CLI:** `provider = "opencode"` (needs the `opencode` CLI in PATH).
+- **Anthropic API:** `provider = "anthropic"`, `model = "claude-3-5-sonnet-20241022"`,
+  key via the environment (e.g. `export WIKIFORGE_LLM_API_KEY="your-key"`).
+- **OpenAI-compatible API:** `provider = "openai_compatible"`,
+  `api_base_url = "https://api.openai.com/v1"`, `model = "gpt-4o"`.
+- **Ollama (local):** `provider = "ollama"`, `api_base_url = "http://localhost:11434"`,
+  `model = "llama3"`.
 
 ---
 
-## 12. Command Cheat Sheet
+## 12. The Scenario Wizard — a head start for your project
+
+A *scenario* is a ready-made plan for a whole project type. Instead of explaining
+from scratch what you want, you pick a preset and the agent executes the full
+workflow, step by step, confirming each step. Presets live in
+`config/scenarios.toml`:
+
+| Scenario                    | `id`        | What it sets up                                          |
+|-----------------------------|-------------|----------------------------------------------------------|
+| Academic / Thesis           | `academic`  | Ingest PDFs, extract authors/theories, literature review |
+| Business KB                 | `business`  | SOPs/meetings → structured KB, stubs, FAQs               |
+| Competitive research        | `research`  | Articles/reports → dossier, source tracing, stats        |
+| Creative fiction            | `creative`  | Character/place stubs, interlinked worldbuilding         |
+| Existing wiki               | `existing`  | Health audit, search/consult, summary report             |
+
+Two ways to run one:
+
+1. **Interactive CLI** (needs Python): `python scripts/wizard.py` (shortcut
+   `make wizard`) shows a menu — pick a preset; or run one directly:
+   `python scripts/wizard.py --preset academic`.
+2. **In the Web UI chat:** click **🪄 /wizard** to list the scenarios, then pick
+   one in the **scenario selector** — the agent runs it immediately and streams
+   the progress. The same works in any plain agent chat: `/wizard` alone lists
+   the five scenarios, `/wizard academic` launches the Academic one.
+
+---
+
+## 13. Command Cheat Sheet
 
 > Quick reference of every command you can type to the agent.
 > Grouped by how often you'll use them.
@@ -278,10 +341,15 @@ timeout_seconds = 60
 | `sources regenerate` | After adding many articles, rebuild the bibliography | ❌ No |
 | `export json` | You want to back up or share the wiki structure | ❌ No |
 | `trace "claim"` | You want to verify where a claim comes from | ❌ No |
+| `/wizard [scenario]` | Start a whole project workflow from a preset (§12) | ❌ No |
+
+> In the **Web UI**, the slash commands are one click away: `/consult`, `/compile`,
+> `/audit`, `/trace`, `/reindex` and `/wizard` have dedicated buttons in the chat
+> drawer, and the scenario selector fills in `/wizard <scenario>` for you.
 
 ---
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 ### "The agent says it can't find raw files"
 - Check that `config.toml` exists and has the correct `paths.raw` value.
@@ -308,7 +376,7 @@ timeout_seconds = 60
 
 ---
 
-## 14. Keeping your wiki healthy over time
+## 15. Keeping your wiki healthy over time
 
 ### Monthly
 - Run `audit` and address any broken links or orphans.

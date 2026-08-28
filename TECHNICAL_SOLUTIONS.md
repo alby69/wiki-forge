@@ -4,6 +4,13 @@ This document analyzes the feasibility of integrating the **`wiki-forge`** proje
 - **Solution A (Production / Real-World Usability)**: Local RAG architecture with pre-trained LLMs and `wiki-forge`.
 - **Solution B (Educational Purpose)**: *From-scratch* training pipeline with `nanochat` to understand the internal dynamics of an LLM.
 
+> **Update (v2.3+):** Solution A is no longer only a proposal — `wiki-forge` now
+> ships a **built-in multi-provider LLM client** (`[agent.llm]` in `config.toml`)
+> and a decoupled agent backend (`src/server/agentServer.ts`) that implement the
+> architecture described in §2 and expose it through the bundled Web UI. Sections
+> 2 and 5 have been aligned with this implemented reality; Solution B remains the
+> educational path with the external `nanochat` codebase.
+
 ---
 
 ## 1. Technical Feasibility Analysis and Core Concepts
@@ -44,9 +51,16 @@ Build a local, queryable, private, and hallucination-free system that manages pe
    - **Qwen 2.5 (7B / 14B)**
    - **Mistral 7B / Phi-4 (14B)**
    *Hardware Requirements*: Consumer GPU with 8-16 GB VRAM (e.g., RTX 3060/4060/4070) or Apple Silicon Mac (M-series with 16GB+ unified memory).
-3. **Wiki Compilation (`wiki-forge`)**:
+3. **Wiki Compilation & Querying (`wiki-forge`)**:
    - Source conversion (PDF/EPUB/DOCX) via `conv2md.py` into `raw/`.
-   - Local agent (via OpenCode, Claude Code, or an Ollama wrapper script) reads `AGENT.md` and executes the `compile` workflow to produce interlinked articles in `wiki/`.
+   - **Built-in multi-provider agent backend** configured in `[agent.llm]`
+     (`provider = "opencode" | "anthropic" | "openai_compatible" | "ollama"`).
+     The agent reads `AGENT.md` and executes the workflow commands
+     (`/compile`, `/consult`, `/audit`, `/trace`, `/reindex`, `/wizard`) to
+     build and maintain the interlinked articles in `wiki/`.
+   - The **Web UI** (`src/server/agentServer.ts` + `src/components/**`) exposes
+     this backend in the browser: streaming chat, direct editing, and a file
+     manager (create/rename/move/delete/upload with drag-and-drop).
 4. **Indexing & Retrieval Layer (Optional / Advanced)**:
    - Local Embedding Model: `nomic-embed-text` or `bge-m3`.
    - Lightweight Vector Database: **ChromaDB** or **LanceDB**.
@@ -59,16 +73,61 @@ Build a local, queryable, private, and hallucination-free system that manages pe
 +------------------+                            |
                                                 v
 +------------------+    AGENT.md Schema   +--------------+
-| Ollama / Local   |  <---------------->  |  wiki/ (.md) |  <--- Compiled by Agent
-| LLM (7B - 14B)   |  (OpenCode / CLI)    +--------------+
+| Local LLM        |  <---------------->  |  wiki/ (.md) |  <--- Compiled by Agent
+| (7B - 14B)       |  ([agent.llm] ~      +--------------+
+|  Ollama / ...    |   opencode|anthropic|openai|ollama)
 +------------------+                            |
         ^                                       v
         | Vector Search                 +---------------+
         +-----------------------------> | Vector DB     | (Chroma / LanceDB)
                                         +---------------+
+
+Bundled Web UI (Solution A, out of the box):
++------------------+   REST + SSE    +----------------------+
+| Browser UI       | <-------------> | Agent Server         |   GET  /api/wiki/notes
+| (Chat / Editor / |    /api/chat    | (agentServer.ts)     |   POST /api/chat
+|  File manager )  |                 | LLM Client (llmClient)|  POST /api/wiki/*  (save,
++------------------+                 +----------------------+    attach, create, rename,
+     (move/delete/upload)                                          move, delete, upload)
 ```
 
-### 2.3 Key Benefits of Solution A
+### 2.3 What Is Already Implemented in `wiki-forge`
+
+The architecture above is not just a design — since v2.3 it exists as working
+code inside the template:
+
+- **Multi-Provider LLM Client** (`src/server/llmClient.ts`): one interface for
+  OpenCode CLI, Anthropic API, OpenAI-compatible REST endpoints, and local
+  Ollama. Selected via `[agent.llm]` in `config.toml`; API keys are referenced by
+  environment variable (`api_key_env`) and never stored in the repo. The opencode
+  binary path is auto-detected (PATH → `~/.opencode/bin` → known locations) and
+  persisted back into `config.toml`.
+- **Decoupled Agent Backend** (`src/server/agentServer.ts`):
+  - `GET /api/wiki/notes` — real-time vault listing straight from disk;
+  - `POST /api/chat` — streaming (SSE) answers with `AGENT.md` injected as the
+    system prompt;
+  - workflow commands `/compile`, `/audit`, `/trace`, `/reindex` executed on
+    disk (real ingestion, broken-link/orphan audit, index generation),
+    `/consult` LLM synthesis, and `/wizard <scenario>` scenario workflows;
+  - vault filesystem API — `/api/wiki/save`, `/api/wiki/attach`,
+    `/api/wiki/folder/create`, `/api/wiki/file/create`, `/api/wiki/rename`,
+    `/api/wiki/move`, `/api/wiki/delete`, `/api/wiki/upload` — every path
+    validated against traversal (must stay inside `wiki/` or `raw/`).
+- **Security Hardening**: path-traversal containment (HTTP 400 on invalid
+  paths), XSS sanitization in `renderMarkdown`, input size limits (50,000
+  characters), subprocess execution timeouts.
+- **Storage Abstraction** (`src/storage/ApiStorage.ts`): `IStorage` calls the
+  REST endpoints when online and falls back to static `FileStorage` when offline.
+- **Web UI** (Vite + TypeScript): vault explorer with a file manager and
+  drag-and-drop, CodeMirror 6 editor (Save & Close / Cancel actions), a
+  force-directed graph, a context panel, and a chat drawer with live streaming,
+  chat history, **Attach to Wiki**, and the `/wizard` scenario selector.
+
+Practical result for Solution A: install Ollama (or point `[agent.llm]` at your
+preferred provider), start the UI (`make ui-docker`), and the local-RAG
+architecture of §2.2 is running natively — no glue code required.
+
+### 2.4 Key Benefits of Solution A
 - **Instant Updates**: Adding new documents requires running `compile` without re-training the model.
 - **Traceability & Zero Hallucination**: Answers cite exact sources using `[[wikilinks]]` referencing raw files.
 - **Resource Efficiency**: Runs entirely on standard consumer hardware.
@@ -133,10 +192,17 @@ For fast local educational runs:
 | **Compute Cost** | Low (local inference on consumer GPU/Mac) | High (requires multi-GPU clusters for full runs) |
 | **Data Ingestion** | Instant (add `.md` file and compile) | Slow (requires fine-tuning or full pre-training) |
 | **Model Requirement** | Instruction-tuned model (7B+) | Custom model built during training |
+| **Out-of-the-box in `wiki-forge`** | ✅ Native (`[agent.llm]` + agent server + Web UI) | ⬜ External repo (`nanochat`) |
 
 ---
 
 ## 5. Final Recommendation
 
-1. To build a **queryable "LLM-Wiki" for personal documents**, implement **Solution A**. Use `wiki-forge` alongside Ollama (running a 7B-14B model like Qwen 2.5 or Llama 3.1) for compilation and RAG querying.
+1. To build a **queryable "LLM-Wiki" for personal documents**, use **Solution A**
+   — it is already built into `wiki-forge`. Set `provider = "ollama"` in
+   `config.toml` (or choose `anthropic` / `openai_compatible` / `opencode`),
+   start the Web UI with `make ui-docker`, and use the `/compile`, `/consult`,
+   `/audit`, `/trace`, and `/wizard` commands for compilation and RAG querying.
+   Optionally add a local embedding model plus ChromaDB/LanceDB for vector
+   retrieval on top of the compiled `wiki/` articles.
 2. To **deepen your understanding of LLM engineering**, explore **Solution B** by running `nanochat` scripts (starting with `--depth=12`) to inspect tokenization, loss curves, and pre-training mechanics.

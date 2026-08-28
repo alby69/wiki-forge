@@ -82,52 +82,107 @@ flowchart TD
 
 ---
 
-## 5b. The Web Graphical User Interface (Web UI)
+## 5a. The fifth button: the Wizard
 
-To explore the knowledge base visually without needing third-party tools like Obsidian, Wiki-Forge provides a built-in Web UI built with Vite and TypeScript.
+Occasionally you're starting a *whole new project* — a thesis, a business
+archive, a research dossier. Instead of describing everything from scratch,
+Wiki-Forge ships ready-made **wizard scenarios** (a plain list in
+`config/scenarios.toml`):
 
-```
-+---------------------------------------------------------------------------------+
-|                                 Header Bar                                      |
-+---------------------+-------------------------------------+---------------------+
-|   Vault Explorer    |          Markdown Editor            |    Context Panel    |
-| - Folder Tree       | - Rendered HTML Preview             | - Backlinks         |
-| - Tag Cloud         | - Raw Text Editor Toggle            | - Outbound Links    |
-| - Search Filter     | - [[Wikilink]] Navigation           | - Note Tags         |
-+---------------------+-------------------------------------+---------------------+
-|                           Force-Directed Link Graph                             |
-|                           (Pan, Zoom, Filter by Tags)                           |
-+---------------------------------------------------------------------------------+
-```
+| Scenario | What the wizard sets up |
+|---|---|
+| 🎓 **Academic / Thesis** | Ingest papers, extract authors/theories, literature review |
+| 🏢 **Business KB** | SOPs + meeting notes → structured company wiki with FAQs |
+| 📰 **Competitive research** | Articles/reports → cross-referenced dossier with sources |
+| ✍️ **Creative fiction** | Character/place stubs + an interlinked worldbuilding wiki |
+| 🧭 **Existing wiki** | Health audit, search/consult, summary report |
 
-- **Vault Sidebar**: View all notes grouped by folder, search notes, and filter by tags using an interactive tag cloud.
-- **Markdown Editor**: Read formatted articles with clickable `[[wikilinks]]`, or toggle into Edit mode.
-- **Context Panel**: See incoming backlinks, outgoing references, and tags for the selected note.
-- **Force-Directed Graph**: Interactively view how knowledge connects, zoom in/out, and click nodes to open notes.
+You can launch one from the terminal — `python scripts/wizard.py` (or `make
+wizard`) for the interactive menu, or `python scripts/wizard.py --preset
+academic` to run one directly — or right in the Web UI chat by picking a
+scenario in the **🪄 Wizard** selector. The agent then runs the whole workflow
+step by step and confirms each step as it goes.
 
 ---
 
-## 5c. Proposed Architectural Evolution: OpenCode Chat & Wiki Attachment
+## 5b. The Web Graphical User Interface (Web UI)
 
-To allow asking questions and managing the wiki directly from the browser while adhering to **KISS** (Keep It Simple, Stupid) and **DRY** (Don't Repeat Yourself) principles, we propose adding an **Interactive Chat Window & Agent Persistence Layer**:
+To explore the knowledge base visually without needing third-party tools like
+Obsidian, Wiki-Forge provides a built-in Web UI built with Vite and TypeScript.
+It is a multi-panel application:
+
+```
++---------------------+-------------------------------------+---------------------+---------------------+
+|    Header · Editor | Graph View | Split View ·  💬 OpenCode Chat                    |                     |
++---------------------+-------------------------------------+---------------------+---------------------+
+|  Vault Explorer     |        Markdown Editor              |   Context Panel     |   Chat Drawer       |
+|  · file toolbar     |  · clean rendered preview           |   · backlinks       |   · shortcuts       |
+|    📁+ 📄+ 📤 ✏️ 🗑️ |  · CodeMirror 6 edit mode            |   · outbound links  |     /consult … /x  |
+|  · file tree, drag&drop | · 💾 Save & Close / ✖ Cancel   |   · note tags       |   · 🪄 wizard sel.  |
+|  · search (Ctrl+K)  |  · clickable [[wikilinks]]           |                     |   · streaming answers|
+|  · tag cloud filter |                                     |                     |   · 📌 Attach to Wiki|
++---------------------+-------------------------------------+---------------------+---------------------+
+|  Graph view · controls (zoom, node search, min-connections, reset) — click a node to open it |
++-----------------------------------------------------------------------------------------------+
+|  Footer · status bar (vault & engine state)                                                     |
++-----------------------------------------------------------------------------------------------+
+```
+
+- **Header bar** — Wiki-Forge branding, the **Editor / Graph View / Split View**
+  switch, and the **💬 OpenCode Chat** toggle that opens the assistant drawer.
+- **Vault Explorer** — the file tree of `wiki/`, a **file toolbar** to create
+  folders/files, upload, rename and delete (all right from the browser), and
+  **drag-and-drop** to move things around. A search box (**Ctrl+K**) filters
+  instantly and a **tag cloud** filters both the list and the graph by topic.
+- **Markdown Editor** — read articles as formatted text with clickable
+  `[[wikilinks]]`; click **✏️ Edit** to edit in a **CodeMirror 6** editor with
+  Markdown highlighting and link autocomplete. **💾 Save & Close** writes your
+  changes back to disk, **✖ Cancel** throws them away.
+- **Context Panel** — the selected note's incoming **backlinks**, **outbound
+  links** and **tags**, all clickable to jump around.
+- **Graph view** — an interactive force-directed map of how articles link to each
+  other: zoom, pan, drag, click a node to open the article, filter by tag or
+  minimum number of connections.
+- **Chat Drawer** — the agent assistant. One-click shortcuts run
+  `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, and the **🪄 wizard
+  scenario selector** launches a scenario (§5a). Answers **stream in live** and
+  can be saved into the wiki with **📌 Attach to Wiki**.
+
+---
+
+## 5c. Implemented: the Agent Chat, Its Backend, and Wiki Attachment
+
+What used to be a proposed architecture is now built in: a **decoupled backend
+agent server** lets you ask questions and manage the wiki straight from the
+browser without bloating the interface (KISS/DRY):
 
 ```mermaid
 flowchart LR
-    User["👤 User (Web UI)"] -->|Types question or /command| Chat["💬 Chat Window"]
-    Chat -->|REST / API call| Server["⚙️ Decoupled Backend Agent Server"]
-    Server -->|Runs command with AGENT.md| Agent["🤖 OpenCode / Ollama Agent"]
-    Agent -->|Returns response & wikilinks| Server
-    Server -->|Streams answer| Chat
-    Chat -->|Click 'Attach to Wiki'| Server
-    Server -->|Saves/updates .md in wiki/| Vault["🗂️ wiki/ Folder"]
-    Vault -->|Triggers re-index| UI["🖥️ UI Graph & Vault Update"]
+    User["👤 User (Web UI)"] -->|"types question or /command"| Chat["💬 Chat Drawer"]
+    Chat -->|"REST + SSE · POST /api/chat"| Server["⚙️ Agent Server (agentServer.ts)"]
+    Server -->|"LLM client: opencode / anthropic / openai / ollama"| LLM["🤖 LLM Provider"]
+    Server -->|"workflow commands: /compile /audit /trace /reindex /consult /wizard"| Vault["🗂️ wiki/ + raw/"]
+    LLM -->|"response with [[wikilinks]]"| Server
+    Server -->|"streams answer"| Chat
+    Chat -->|"📌 Attach to Wiki"| Server
+    Server -->|"POST /api/wiki/save · attach · create · rename · move · delete · upload"| Vault
+    Vault -->|"re-index"| UI["🖥️ UI graph & vault update"]
 ```
 
-### Key Workflow Advantages:
-1. **Direct Agent Chat**: Ask questions or trigger agent commands (`/consult`, `/compile`, `/audit`) directly inside the Web UI.
-2. **Attach Answers to Wiki**: With a single click on any chat answer, attach the generated response to an existing note or create a new article in `wiki/`.
-3. **On-Disk Saving**: Edit Markdown files in the browser editor and save them directly back to your local filesystem.
-4. **Decoupled & Modular Design**: Keeps the frontend UI light and independent while leveraging a clean backend API wrapper around OpenCode / local LLMs.
+### Key features (now implemented)
+1. **Direct Agent Chat** — ask questions or trigger `/consult`, `/compile`,
+   `/audit`, `/trace`, `/reindex` with one click in the drawer.
+2. **Scenario Wizards** — pick a 🪄 scenario and the agent runs the whole
+   workflow, streaming progress; `/wizard` lists them, `/wizard <scenario>`
+   launches one.
+3. **Attach Answers to Wiki** — one click saves any answer to an existing note
+   or as a brand-new article in `wiki/`.
+4. **On-Disk Saving** — the editor writes your changes straight back to `wiki/`
+   (Save & Close / Cancel).
+5. **Full File Manager** — create, rename, move, delete and upload files and
+   folders, with drag-and-drop, all backed by vault REST endpoints.
+6. **Decoupled & Modular** — a lean frontend speaking to a clean backend that
+   wraps the LLM client and `AGENT.md` workflows.
 
 ### ① Add a source
 You drop a file — a PDF of a book, an article, your own notes — into the `sources/` folder. That's the only manual step.
@@ -155,6 +210,12 @@ Every so often, you ask the AI to *"audit"* the wiki. It checks for:
 - Duplicate articles about the same topic that should be merged.
 - Indexes that are out of date.
 - Topics that are mentioned often but still have no dedicated article.
+
+### ⑤ Wizard — "start a project the right way"
+Choosing a scenario (academic, business, research, creative, existing) tells
+the AI the plan for your whole project, and it executes each step in order,
+stopping to confirm as it goes. In the Web UI just pick a scenario in the
+**🪄 Wizard** selector — the agent does the rest (see §5a).
 
 ---
 
@@ -233,6 +294,8 @@ You don't need to understand code to use Wiki-Forge, but here's what's happening
 - **One settings file (`config.toml`)** tells the whole system three things: what to call your project, what it's about, and where your folders are. Change this file once and the entire template can be reused for a completely different subject (a business archive, a book club, a personal journal…).
 - **A small conversion tool** (`conv2md.py`) acts like a universal translator: it takes PDFs, e-books (EPUB), and Word documents (DOCX) and turns them into plain text the AI can read easily.
 - **A "librarian's manual" (`AGENT.md`)** — plain English instructions — tells whichever AI assistant you use (there are several compatible ones) exactly how to behave. This makes the system **AI-agnostic**: it isn't locked to one specific AI provider.
+- **A small web app plus a small server** — the Web UI chats through a decoupled agent server that feeds the AI your `AGENT.md` instructions and the relevant wiki notes, streams the answer back live, and turns every edit (save, attach, rename, move, delete, upload) into a simple file operation on your disk. Which AI *engine* is used is chosen in `config.toml` (`[agent.llm]`): a local one like Ollama, a cloud API, or the OpenCode CLI.
+- **The wizard presets (`config/scenarios.toml`)** — one more plain-text file that lists five ready-made project plans (thesis, business KB, research, fiction, existing wiki) so you can start a project with a single choice.
 - **Everything is stored as plain text files** in ordinary folders — no databases, no proprietary formats, nothing you can't open in a basic text editor. This makes the whole system easy to back up (for example, with the free version-control tool Git) and impossible to get "locked into."
 
 ```mermaid
@@ -272,7 +335,7 @@ flowchart LR
 - It replaces "ask the AI to reread everything every time" with **"the AI writes it down once, then reuses what it wrote."**
 - Your original files are **never modified**; the AI only adds new, organized copies.
 - The output — the `wiki/` folder — is **plain text you own forever**, readable with or without AI, and easy to back up.
-- Everyday use comes down to four simple actions: **add a source, compile, consult, audit.**
+- Everyday use comes down to four simple actions: **add a source, compile, consult, audit** — plus a **wizard** to kick-start a whole project from a preset.
 - Because the "rules" live in one plain-English file (`AGENT.md`) and one settings file (`config.toml`), the whole system can be **reused for any subject** without touching any code.
 
 ---
