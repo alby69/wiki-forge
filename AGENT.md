@@ -407,6 +407,29 @@ each note's frontmatter `tags:` (existing tags are preserved, duplicates skipped
 
 ---
 
+### 5.6 Wizard Commands
+
+#### `/wizard`
+**Scope:** Interactive scenario guidance and step-by-step workflow execution.
+**Action:**
+1. Interactively ask the user what domain goal they want to achieve (or present available presets from `config/scenarios.toml`: `academic`, `business`, `research`, `creative`, `existing`).
+2. Recommend a target workflow sequence.
+3. Execute the corresponding atomic commands step-by-step.
+
+#### `/wizard [scenario]`
+**Scope:** Instantly start a predefined scenario workflow (e.g. `/wizard academic`, `/wizard business`, `/wizard research`, `/wizard creative`, `/wizard existing`).
+**Action:**
+1. Read the specified scenario definition from `config/scenarios.toml`.
+2. Announce the scenario goals and primary workflow steps.
+3. Execute the workflow commands sequentially.
+
+#### Agent Behavior Guidelines for `/wizard`:
+1. **Explicit Step Announcement:** The agent MUST explicitly state the step being performed before executing any tool or script.
+2. **User Confirmation:** The agent MUST wait for explicit user confirmation before executing major destructive or heavy operations (e.g., full `compile` or destructive `prune`/`recompile`).
+3. **Uniform Header Formatting:** Progress updates MUST be formatted with a uniform header structure: `[WIZARD STEP X/Y: Step Name]`.
+
+---
+
 ## 6. Workflow Orchestration (Macro-commands)
 
 The commands in §5 are **atomic**. The following are **orchestrated workflows** that chain multiple atomic commands. They exist for convenience but internally call the atomic commands.

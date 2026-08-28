@@ -2,6 +2,7 @@
 #
 #   make convert          Convert sources -> raw/ (local Python + pandoc)
 #   make convert-docker   Convert sources -> raw/ (Docker, no local install)
+#   make wizard           Run scenario-driven wizard script (local Python)
 #   make build            Build the Docker image
 #   make shell            Open a shell inside the Docker environment
 #   make audit            Reminder for agent audit command
@@ -17,6 +18,9 @@ convert:
 
 convert-docker:
 	docker compose run --rm wiki convert
+
+wizard:
+	python3 scripts/wizard.py
 
 build:
 	docker compose build
@@ -43,7 +47,7 @@ lint:
 	@echo "Run 'lint-frontmatter' in your agent (AGENT.md §5.3)"
 
 help:
-	@echo "Available targets: convert, convert-docker, build, shell, audit, stats, reindex, clean-output, export-json, lint, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, clean-output, export-json, lint, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
 
 ui:
 	npm run dev
@@ -69,4 +73,4 @@ tags:
 tags-write:
 	python suggest_tags.py --all --write
 
-.PHONY: convert convert-docker build shell audit stats reindex clean-output export-json lint help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write
+.PHONY: convert convert-docker wizard build shell audit stats reindex clean-output export-json lint help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write
