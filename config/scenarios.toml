@@ -1,0 +1,41 @@
+# Scenario Presets for wiki-forge Wizard System
+
+[scenarios.academic]
+id = "academic"
+name = "Academic / Thesis / Paper Review"
+description = "Ingest academic papers, extract authors/theories, and compile a structured literature review."
+workflow = ["Ingest PDFs", "Extract Authors/Theories", "Compile Literature Review", "Audit Wiki Links"]
+actions = ["conv2md.py", "ingest", "compile", "audit links"]
+prompt = "Execute ingestion on raw/ directory with context 'Thesis Review', compile the literature review, and run audit links."
+
+[scenarios.business]
+id = "business"
+name = "Business KB / Product / Policy"
+description = "Ingest SOPs and meeting notes, structure business KB, create stubs, and compile FAQs."
+workflow = ["Ingest SOPs/Meetings", "Structure KB", "Setup FAQ/Consulting"]
+actions = ["conv2md.py", "ingest", "stub", "compile"]
+prompt = "Execute ingestion on raw/ directory for business documents, create entity stubs, and compile the business KB."
+
+[scenarios.research]
+id = "research"
+name = "Competitive / News / Dossier"
+description = "Ingest articles and reports, cross-reference entities, trace sources, and view wiki statistics."
+workflow = ["Ingest Articles/Reports", "Cross-reference Entities", "Source Tracing", "View Stats"]
+actions = ["conv2md.py", "ingest", "trace", "stats"]
+prompt = "Execute ingestion on raw/ directory for competitive research, trace key entity claims, and run stats."
+
+[scenarios.creative]
+id = "creative"
+name = "Fiction / Worldbuilding / Notes"
+description = "Setup character and place entities, interlink worldbuilding notes, compile wiki, and check orphan notes."
+workflow = ["Setup Entities (Characters/Places)", "Interlink Wiki", "Graph & Orphan Check"]
+actions = ["stub", "compile", "audit orphans"]
+prompt = "Create entity stubs for main characters and places, compile the worldbuilding wiki, and check for orphan notes."
+
+[scenarios.existing]
+id = "existing"
+name = "Existing Wiki Navigation"
+description = "Audit wiki health, search or consult knowledge base, and generate summary report."
+workflow = ["Audit health", "Search / Consult KB", "Generate Summary Report"]
+actions = ["audit", "search", "consult"]
+prompt = "Run a full audit on the existing wiki, search key concepts, and consult the knowledge base for a summary report."

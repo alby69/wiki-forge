@@ -39,6 +39,7 @@
 | 25 | Security Hardening & Protection | ✅ Done | Path traversal protection on `save` & `attach` endpoints (400 Bad Request) and XSS HTML sanitization in `renderMarkdown` |
 | 26 | Professional UI & Vault File Management System | ✅ Done | Complete file manager UI with folder/file creation, rename, move, delete, upload, drag-and-drop, and API endpoint integration |
 | 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
+| 28 | Scenario-Driven Interactive Wizard System | ✅ Done | Interactive CLI wizard (`scripts/wizard.py`), scenario presets (`config/scenarios.toml`), `/wizard` contract extension in `AGENT.md` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -256,7 +257,7 @@ required.
 
 ---
 
-## Phase 27 — UI & Chat Enhancements (CodeMirror 6, LLM Streaming, Chat History & CSS Refactoring) ✅ Done
+## Phase 27 — UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) ✅ Done
 
 **Goal:** Elevate the Web UI writing experience with CodeMirror 6, real-time LLM response streaming, chat history persistence, and clean modular CSS themes.
 
@@ -266,3 +267,15 @@ required.
 - **Chat History Persistence:** Automatically persists chat messages in `localStorage` (`wiki-forge:chat-history`), restored across page refreshes, and includes a "Clear history" button in the chat drawer header.
 - **CSS Theme Refactoring:** Extracted inline styles into `src/styles/theme.css` with CSS custom properties (`--bg-primary`, `--border-color`, `--accent-blue`, `--accent-button`) and modular component stylesheets (`sidebar.css`, `chat-drawer.css`, `editor.css`).
 - **Tests & Verification:** Added `tests/editorAutocomplete.test.ts` and `tests/streaming.test.ts` (100% pass rate).
+
+---
+
+## Phase 28 — Scenario-Driven Interactive Wizard System ✅ Done
+
+**Goal:** Provide scenario-driven wizard workflows for domain-specific use cases (Academic/Thesis, Business KB, Research, Creative Fiction, Existing Wiki).
+
+**Deliverables:**
+- **Scenario Presets (`config/scenarios.toml`):** Defined steps, descriptions, and prompts for domain scenarios (`academic`, `business`, `research`, `creative`, `existing`).
+- **CLI Wizard (`scripts/wizard.py`):** Rich interactive menu and `--preset` command-line execution for source checking, transparent `conv2md.py` conversion, and formatted agent prompt hand-offs.
+- **Agent Contract Extension (`AGENT.md`):** Documented `/wizard` and `/wizard [scenario]` commands with uniform progress headers `[WIZARD STEP X/Y: Step Name]` and confirmation rules.
+- **Documentation & Build:** Updated `README.md`, `ROADMAP.md`, and added `make wizard` shortcut in `Makefile`.

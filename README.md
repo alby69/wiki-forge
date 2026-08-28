@@ -20,8 +20,12 @@ project, a business wiki, personal notes, and so on.
 ```
 .
 ├── config.toml          # THE ONLY KNOB: title, context, folder layout
+├── config/
+│   └── scenarios.toml   # Scenario presets (Academic, Business, Research, etc.)
 ├── conv2md.py            # Convert PDF/EPUB/DOCX/MD/TXT -> Markdown (raw/)
 ├── run_convert.sh        # One-command wrapper around conv2md.py
+├── scripts/
+│   └── wizard.py        # Scenario-Driven Interactive Wizard CLI
 ├── AGENT.md             # Operating manual for the LLM agent (agent-agnostic)
 ├── SOURCES.md           # Registry of ingested sources (the bibliography)
 ├── docs/
@@ -37,10 +41,26 @@ project, a business wiki, personal notes, and so on.
 ├── Dockerfile           # Reproducible toolchain (Python + pandoc)
 ├── docker-compose.yml   # One-command Docker workflow
 ├── Makefile             # Convenience shortcuts (Linux/macOS)
-└── requirements.txt     # Python dependency: pymupdf4llm
+└── requirements.txt     # Python dependencies
 ```
 
 ## Quick start (choose one)
+
+### Scenario Wizard (Recommended for New Users)
+
+Run the interactive scenario wizard to guide you step-by-step through setting up your wiki for specific domains (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation):
+
+```bash
+python scripts/wizard.py
+```
+
+Or run directly with a scenario preset:
+
+```bash
+python scripts/wizard.py --preset academic
+```
+
+You can also launch scenarios directly in agent chat using `/wizard` or `/wizard academic`.
 
 ### Option A — Docker (recommended, zero local install)
 
@@ -154,7 +174,7 @@ layout and live agent integration. The interface is organised into panels:
   a **min. connections** filter and **Reset**. Selecting a note highlights it
   and dims the rest; clicking a node switches the editor to split view.
 - **OpenCode Chat Drawer** — a side panel with live agent workflow triggers
-  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), real-time **LLM response streaming** (SSE),
+  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`), real-time **LLM response streaming** (SSE),
   persistent session history in `localStorage`, a **Clear history** button, markdown responses with `[[wikilinks]]`,
   and an **Attach to Wiki** button to convert chat responses into new or existing wiki notes on disk.
 - **Footer** — status bar showing connection/vault and engine state.
@@ -214,7 +234,7 @@ Phases 22–25 bridge the Web UI with live multi-provider LLM execution, real wo
    - Configured via `[agent.llm]` in `config.toml` with safe key handling via environment variables (`api_key_env`).
 2. **Decoupled Backend API Server (`src/server/agentServer.ts`)**:
    - `GET /api/wiki/notes`: Fetches all wiki notes from disk in real time.
-   - `POST /api/chat`: Injects `AGENT.md` as system prompt and context notes, routing queries to `LlmClient` or executing real workflow commands (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`).
+   - `POST /api/chat`: Injects `AGENT.md` as system prompt and context notes, routing queries to `LlmClient` or executing real workflow commands (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`, `/wizard`).
    - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`, with path traversal protection (enforcing containment inside `wiki/` directory).
    - `POST /api/wiki/attach`: Appends or converts chat answers into new/existing wiki notes and re-computes backlinks.
    - Vault filesystem management (Phase 26): `POST /api/wiki/folder/create`,
@@ -268,5 +288,6 @@ See `AGENT.md` (`tag-suggest` command) for the agent workflow.
 - Python 3.11+ (for `tomllib`; older versions still work with built-in defaults)
 - `pandoc` for `.docx` / `.epub` (system install, or use the Docker image)
 - `pymupdf4llm` for `.pdf` (in `requirements.txt`)
-- A coding agent (Claude Code, OpenCode, Codex, Gemini CLI, Cursor, …)
+- `rich` and `questionary` for CLI Wizard (in `requirements.txt`)
+- A coding agent (Claude Code, OpenCode, Codex, Gemini CLI, Jules, Cursor, …)
 - Optional: [Obsidian](https://obsidian.md) for browsing the wiki (graph view)
