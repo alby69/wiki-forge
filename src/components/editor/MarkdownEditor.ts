@@ -89,8 +89,8 @@ export class MarkdownEditor {
 
     this.container.innerHTML = `
       <div class="editor-panel-wrapper" style="height: 100%; display: flex; flex-direction: column; background: #18191c; color: #e2e8f0; border-right: 1px solid #2d3748;">
-        <div class="editor-header" style="padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #121316;">
-          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(note.title)}</h2>
+        <div class="editor-header" style="padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: #121316;">
+          <h2 style="flex: 1; min-width: 0; margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(note.title)}</h2>
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
@@ -141,6 +141,7 @@ export class MarkdownEditor {
             history(),
             drawSelection(),
             highlightActiveLine(),
+            EditorView.lineWrapping,
             syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
             markdown(),
             autocompletion({
@@ -207,10 +208,16 @@ function toggleWrapSelection(view: EditorView, wrapper: string): boolean {
 const wikiForgeEditorTheme = EditorView.theme({
   '&': {
     height: '100%',
+    width: '100%',
+    minWidth: '0',
     backgroundColor: '#121316',
     color: '#e2e8f0',
     fontSize: '13px',
     fontFamily: 'monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+  },
+  '.cm-scroller': {
+    overflow: 'auto',
+    minWidth: '0',
   },
   '.cm-content': {
     caretColor: '#64b5f6',
