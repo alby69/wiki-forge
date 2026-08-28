@@ -190,7 +190,7 @@ template.
 
 - **`AGENT.md`** — the AI's "manual". To change a rule (e.g. how to name
   articles), edit it here.
-- **`config.toml`** — the single settings knob (title, context, folders, i18n/multi-language settings).
+- **`config.toml`** — the single settings knob (title, context, folders, i18n/multi-language settings, and `[agent.llm]` configuration).
 - **`README.md`** — minimal technical guide for conversion.
 - **`conv2md.py`** + **`run_convert.sh`** — tools that turn books/PDFs into text.
 - **`SOURCES.md`** — the registry of sources.
@@ -215,6 +215,27 @@ What you can do in the Web UI:
 - **OpenCode Chat Drawer:** Click **💬 OpenCode Chat** in the top bar to open a side assistant drawer.
 - **Agent Command Shortcuts:** Click `/consult`, `/compile`, `/audit`, `/trace`, or `/reindex` to run agent workflows right inside the chat.
 - **Attach Answers to Wiki:** Click **📌 Attach to Wiki** under any AI response to open a modal dialog allowing you to append or create new notes in `wiki/`. The app automatically updates the graph and backlinks in real time.
+
+### Configuring the LLM Provider in `config.toml`
+
+The Web UI chat connects to a multi-provider LLM backend configured in `config.toml` under `[agent.llm]`:
+
+```toml
+[agent.llm]
+provider = "opencode"        # Options: opencode | anthropic | openai_compatible | ollama
+opencode_command = "opencode"
+opencode_args = ["run", "--non-interactive"]
+api_base_url = ""
+api_key_env = "WIKIFORGE_LLM_API_KEY"
+model = "claude-sonnet-4-6"
+max_tokens = 4096
+timeout_seconds = 60
+```
+
+- **OpenCode CLI:** set `provider = "opencode"`. Requires `opencode` CLI in PATH.
+- **Anthropic API:** set `provider = "anthropic"`, `model = "claude-3-5-sonnet-20241022"`, and export key variable (`export WIKIFORGE_LLM_API_KEY="your-key"`).
+- **OpenAI Compatible API:** set `provider = "openai_compatible"`, `api_base_url = "https://api.openai.com/v1"`, and `model = "gpt-4o"`.
+- **Ollama (Local):** set `provider = "ollama"`, `api_base_url = "http://localhost:11434"`, and `model = "llama3"`.
 
 ---
 

@@ -34,6 +34,9 @@
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
 | 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
 | 22 | Interactive OpenCode Chat & Persistence Layer | ✅ Done | OpenCode chat drawer, agent command runner, response attachment, and server-persisted Markdown editor |
+| 23 | Real Multi-Provider LLM Integration | ✅ Done | Config-driven `[agent.llm]` supporting OpenCode CLI, Anthropic, OpenAI, and Ollama (`src/server/llmClient.ts`) |
+| 24 | Workflow Command Engine (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`) | ✅ Done | On-disk ingestion, file renaming (`_COMPILED.md`), broken link/orphan audit, and automatic index generation |
+| 25 | Security Hardening & Protection | ✅ Done | Path traversal protection on `save` & `attach` endpoints (400 Bad Request) and XSS HTML sanitization in `renderMarkdown` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -198,3 +201,40 @@ required.
 
 5. **Tests & Quality Assurance:**
    - Added integration test suite `tests/agentServer.test.ts` covering all REST endpoints and storage methods (100% pass rate across 11 test cases).
+
+---
+
+## Phase 23 — Real Multi-Provider LLM Integration ✅ Done
+
+**Goal:** Replace mock chat string matching with real LLM completions driven by system prompt guidelines from `AGENT.md` and `config.toml`.
+
+**Deliverables:**
+- Added `[agent.llm]` configuration in `config.toml` supporting `provider` (`"opencode"`, `"anthropic"`, `"openai_compatible"`, `"ollama"`), model parameters, timeouts, and API key environment variable references.
+- Implemented `src/server/llmClient.ts` with `OpenCodeCliClient` (safe `spawn`), `HttpLlmClient` (Anthropic & OpenAI REST API), `OllamaClient`, and `LlmClientFactory`.
+- Integrated `LlmClient` into `AgentServer` (`src/server/agentServer.ts`) with note context retrieval and graceful error fallback.
+- Added test suite `tests/llmClient.test.ts`.
+
+---
+
+## Phase 24 — Workflow Command Engine ✅ Done
+
+**Goal:** Execute real filesystem operations on disk when running agent slash commands from the Web UI.
+
+**Deliverables:**
+- Real `/compile`: scans `raw/`, invokes LLM synthesis, creates compiled notes in `wiki/`, renames raw sources with `_COMPILED.md`, and updates indexes.
+- Real `/audit`: computes orphan notes, broken `[[wikilinks]]`, YAML frontmatter linting (skipping index files), and index alignment.
+- Real `/reindex`: programmatically regenerates `wiki/index.md` and `wiki/<theme>/index.md`.
+- Real `/consult` & `/trace`: relevance scoring for top 3–5 context articles and claim tracing across outbound links.
+- Added test suite `tests/workflows.test.ts`.
+
+---
+
+## Phase 25 — Security Hardening & Protection ✅ Done
+
+**Goal:** Ensure safe operation before exposing the Web UI beyond local environments.
+
+**Deliverables:**
+- Path traversal protection in `saveWikiNote` and `attachToNote` endpoints in `AgentServer`, enforcing target path containment within `wiki/` directory and rejecting `..` traversal paths with HTTP 400 Bad Request.
+- XSS protection in `src/core/utils/html.ts` and `src/core/utils/markdown.ts`, sanitizing script tags, iframes, and inline event handlers (`onerror`, `onload`).
+- Request length limit (50,000 characters) on `/api/chat` and subprocess execution timeouts.
+- Added test suite `tests/security.test.ts`.

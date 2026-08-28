@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as http from 'node:http';
 import { MarkdownParser } from '../services/markdownParser';
 import { WikiNote } from '../core/types/wiki';
+import { LlmClient, LlmClientFactory } from './llmClient';
 
 export interface ChatRequest {
   message?: string;
@@ -29,13 +30,60 @@ export interface AttachNoteRequest {
 export class AgentServer {
   private parser = new MarkdownParser();
   private rootDir: string;
+  private llmClient?: LlmClient;
+  private systemPromptCache?: string;
 
-  constructor(rootDir: string = process.cwd()) {
+  constructor(rootDir: string = process.cwd(), llmClient?: LlmClient) {
     this.rootDir = rootDir;
+    this.llmClient = llmClient;
   }
 
   public getWikiDir(): string {
     return path.join(this.rootDir, 'wiki');
+  }
+
+  public getRawDir(): string {
+    return path.join(this.rootDir, 'raw');
+  }
+
+  public setLlmClient(client: LlmClient): void {
+    this.llmClient = client;
+  }
+
+  private async getOrInitLlmClient(): Promise<LlmClient> {
+    if (!this.llmClient) {
+      const configPath = path.join(this.rootDir, 'config.toml');
+      const { client } = await LlmClientFactory.createFromTomlFile(configPath);
+      this.llmClient = client;
+    }
+    return this.llmClient;
+  }
+
+  public async getSystemPrompt(): Promise<string> {
+    if (this.systemPromptCache) {
+      return this.systemPromptCache;
+    }
+
+    let agentMd = '';
+    try {
+      agentMd = await fs.readFile(path.join(this.rootDir, 'AGENT.md'), 'utf-8');
+    } catch (_e) {
+      agentMd = 'You are the librarian of a personal knowledge base (an LLM Wiki). Synthesize answers from wiki notes in Markdown with [[wikilinks]].';
+    }
+
+    let projectContext = '';
+    try {
+      const configPath = path.join(this.rootDir, 'config.toml');
+      const { projectContext: ctx, projectTitle } = await LlmClientFactory.createFromTomlFile(configPath);
+      if (projectTitle || ctx) {
+        projectContext = `Project Title: ${projectTitle}\nProject Context: ${ctx}\n\n`;
+      }
+    } catch (_e) {
+      // Ignore
+    }
+
+    this.systemPromptCache = `${projectContext}=== OPERATING MANUAL (AGENT.md) ===\n${agentMd}`;
+    return this.systemPromptCache;
   }
 
   private parseJsonBody<T>(req: http.IncomingMessage): Promise<T> {
@@ -91,7 +139,8 @@ export class AgentServer {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, note: result }));
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
@@ -104,7 +153,8 @@ export class AgentServer {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, note: result }));
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
@@ -165,17 +215,25 @@ export class AgentServer {
   }
 
   public async saveWikiNote(data: SaveNoteRequest): Promise<WikiNote> {
-    const wikiDir = this.getWikiDir();
+    const wikiDir = path.resolve(this.getWikiDir());
     let targetPath: string;
 
     if (data.path) {
       targetPath = path.isAbsolute(data.path)
-        ? data.path
-        : path.join(this.rootDir, data.path);
+        ? path.resolve(data.path)
+        : path.resolve(this.rootDir, data.path);
     } else {
       const folder = data.folder && data.folder !== 'wiki' ? data.folder : '';
       const filename = `${data.id.endsWith('.md') ? data.id : `${data.id}.md`}`;
-      targetPath = path.join(wikiDir, folder, filename);
+      targetPath = path.resolve(wikiDir, folder, filename);
+    }
+
+    // Path traversal containment check
+    const rel = path.relative(wikiDir, targetPath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      const err = new Error('Access denied: target path must reside inside wiki directory');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
     }
 
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
@@ -207,7 +265,15 @@ export class AgentServer {
 
     const folder = data.folder && data.folder !== 'wiki' ? data.folder : '';
     const filename = `${targetId.endsWith('.md') ? targetId : `${targetId}.md`}`;
-    const targetPath = path.join(wikiDir, folder, filename);
+    const targetPath = path.resolve(wikiDir, folder, filename);
+
+    // Path traversal containment check
+    const rel = path.relative(wikiDir, targetPath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      const err = new Error('Access denied: target path must reside inside wiki directory');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
 
     let finalContent = data.content;
     const mode = data.mode ?? 'append';
@@ -235,6 +301,9 @@ export class AgentServer {
 
   public async processChatCommand(req: ChatRequest): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
+    if (rawInput.length > 50000) {
+      throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
+    }
     const notes = await this.readAllWikiNotes();
 
     let command = '';
@@ -248,63 +317,260 @@ export class AgentServer {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
+    // Select context notes based on input
+    let contextNotes: WikiNote[] = [];
+    if (args) {
+      const queryWords = args.toLowerCase().split(/\s+/).filter(Boolean);
+      contextNotes = notes
+        .map(n => {
+          let score = 0;
+          const lowerTitle = n.title.toLowerCase();
+          const lowerContent = n.content.toLowerCase();
+
+          for (const word of queryWords) {
+            if (lowerTitle.includes(word)) score += 5;
+            if (lowerContent.includes(word)) score += 1;
+          }
+          return { note: n, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(item => item.note);
+    }
+
+    if (contextNotes.length === 0 && notes.length > 0) {
+      contextNotes = notes.slice(0, 3);
+    }
+
+    // Handle commands or general freeform query
     switch (command) {
       case 'consult': {
-        const query = args.toLowerCase();
-        const matches = notes.filter(
-          n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)
-        );
-
-        if (matches.length === 0) {
-          return `### 🔍 Consult Workflow\n\nNo exact matches found for query: **"${args}"**.\n\nHere are some available articles in the vault:\n` +
-            notes.slice(0, 5).map(n => `- [[${n.id}]] — ${n.title}`).join('\n');
+        const systemPrompt = await this.getSystemPrompt();
+        const client = await this.getOrInitLlmClient();
+        try {
+          return await client.complete({
+            systemPrompt: `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md §5.4. Synthesize relevant notes and cite using [[wikilinks]].`,
+            userMessage: `Perform /consult synthesis for query: "${args}"`,
+            contextNotes,
+          });
+        } catch (err) {
+          return `### 🔍 Consult Synthesis for "${args}" (Fallback)\n\nFound **${contextNotes.length}** matching article(s):\n\n` +
+            contextNotes.map(n => `- [[${n.id}]] (${n.folder}): ${n.title}`).join('\n') +
+            `\n\n*Note: LLM provider unavailable (${String(err)}).*`;
         }
-
-        const list = matches.map(n => `- [[${n.id}]] (${n.folder}): ${n.title}`).join('\n');
-        return `### 🔍 Consult Synthesis for "${args}"\n\nFound **${matches.length}** matching article(s):\n\n${list}\n\n**Summary:**\n${matches[0].content.slice(0, 300)}...`;
       }
 
       case 'compile': {
-        return `### ⚡ Compile Workflow Completed\n\n- **Wiki Articles Analyzed**: ${notes.length}\n- **Status**: Knowledge base fully interlinked and compiled according to \`AGENT.md\` guidelines.\n- **Suggested Links**: All \`[[wikilinks]]\` verified.`;
+        return this.executeCompileWorkflow();
       }
 
       case 'audit': {
-        const orphans = notes.filter(n => (n.backlinks?.length ?? 0) === 0);
-        const orphanList = orphans.map(n => `- [[${n.id}]]`).join('\n') || 'None';
-        return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Frontmatter Status**: All notes contain required tags/title metadata.`;
+        return this.executeAuditWorkflow(notes);
       }
 
       case 'trace': {
-        const target = args.toLowerCase();
-        const connected = notes.filter(n =>
-          n.outboundLinks.some((l: string) => l.toLowerCase().includes(target)) ||
-          n.id.toLowerCase().includes(target)
-        );
-        const list = connected.map(n => `- [[${n.id}]] -> links: ${n.outboundLinks.map((l: string) => `[[${l}]]`).join(', ')}`).join('\n') || 'No target connections traced.';
-        return `### 🕸️ Connection Trace for "${args}"\n\n${list}`;
+        return this.executeTraceWorkflow(args, notes);
       }
 
       case 'reindex': {
-        return `### 🔄 Reindex Complete\n\n- **Indexed Notes**: ${notes.length}\n- **Backlinks Computed**: Re-evaluated across all Markdown notes.`;
+        return this.executeReindexWorkflow();
       }
 
       default: {
         if (!rawInput) {
-          return `### 🤖 Agent Assistant (OpenCode)\n\nAsk any question or use slash commands:\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\``;
+          return `### 🤖 Agent Assistant\n\nAsk any question or use slash shortcuts:\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\``;
         }
 
-        const matches = notes.filter(n =>
-          n.title.toLowerCase().includes(rawInput.toLowerCase()) ||
-          n.content.toLowerCase().includes(rawInput.toLowerCase())
-        );
+        const systemPrompt = await this.getSystemPrompt();
+        const client = await this.getOrInitLlmClient();
 
-        if (matches.length > 0) {
-          const mainMatch = matches[0];
-          return `### 💡 Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${mainMatch.id}]] (${mainMatch.title}):\n\n${mainMatch.content.slice(0, 400)}...\n\nRelated articles: ${matches.slice(0, 4).map(n => `[[${n.id}]]`).join(', ')}`;
+        try {
+          return await client.complete({
+            systemPrompt,
+            userMessage: rawInput,
+            contextNotes,
+          });
+        } catch (err) {
+          // Fallback response if LLM provider fails
+          const match = contextNotes[0];
+          if (match) {
+            return `### 💡 Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${match.id}]] (${match.title}):\n\n${match.content.slice(0, 400)}...\n\nRelated articles: ${contextNotes.slice(0, 4).map(n => `[[${n.id}]]`).join(', ')}\n\n*(LLM completion error: ${String(err)})*`;
+          }
+          return `### 💡 Answer for "${rawInput}"\n\nProcessed query using agent guidelines. You can compile new findings into your wiki notes using the **Attach to Wiki** button below.\n\n*(LLM completion error: ${String(err)})*`;
         }
-
-        return `### 💡 Answer for "${rawInput}"\n\nProcessed query using OpenCode agent guidelines. You can compile new findings into your wiki notes using the **Attach to Wiki** button below.`;
       }
     }
+  }
+
+  private async executeCompileWorkflow(): Promise<string> {
+    const rawDir = this.getRawDir();
+    const uncompiledFiles: string[] = [];
+
+    try {
+      const entries = await fs.readdir(rawDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md') && !entry.name.includes('_COMPILED')) {
+          uncompiledFiles.push(entry.name);
+        }
+      }
+    } catch (_e) {
+      // raw directory might not exist
+    }
+
+    if (uncompiledFiles.length === 0) {
+      const notes = await this.readAllWikiNotes();
+      return `### ⚡ Compile Workflow Completed\n\n- **Uncompiled Files in \`raw/\`**: 0\n- **Wiki Articles Analyzed**: ${notes.length}\n- **Status**: Knowledge base fully interlinked and compiled according to \`AGENT.md\` guidelines.`;
+    }
+
+    const client = await this.getOrInitLlmClient();
+    const systemPrompt = await this.getSystemPrompt();
+    const compiledResults: string[] = [];
+
+    for (const fileName of uncompiledFiles) {
+      const rawPath = path.join(rawDir, fileName);
+      const content = await fs.readFile(rawPath, 'utf-8');
+
+      try {
+        const prompt = `Ingest raw file '${fileName}' into the wiki following AGENT.md §5.1 compile guidelines. Generate article content in Markdown with YAML frontmatter, H1 title, summary, related [[wikilinks]], and sources section.`;
+        const response = await client.complete({
+          systemPrompt,
+          userMessage: prompt,
+          contextNotes: [{ id: fileName, title: fileName, content, folder: 'raw', path: `raw/${fileName}`, outboundLinks: [], tags: [], frontmatter: {}, backlinks: [] }],
+        });
+
+        // Determine title / note ID
+        const stem = fileName.replace(/\.md$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const folder = 'general';
+        await this.saveWikiNote({
+          id: stem,
+          folder,
+          content: response,
+          title: stem.replace(/[-_]/g, ' '),
+        });
+
+        // Rename file in raw/ to _COMPILED.md
+        const compiledPath = path.join(rawDir, fileName.replace(/\.md$/i, '_COMPILED.md'));
+        await fs.rename(rawPath, compiledPath);
+
+        compiledResults.push(`- Ingested \`${fileName}\` -> created \`wiki/${folder}/${stem}.md\` & renamed to \`_COMPILED.md\``);
+      } catch (err) {
+        compiledResults.push(`- Error processing \`${fileName}\`: ${String(err)}`);
+      }
+    }
+
+    await this.executeReindexWorkflow();
+
+    return `### ⚡ Compile Workflow Execution Report\n\n**Processed ${uncompiledFiles.length} file(s):**\n${compiledResults.join('\n')}\n\n- **Indexes updated**: Regenerated \`wiki/index.md\` and thematic indexes.`;
+  }
+
+  private async executeAuditWorkflow(notes: WikiNote[]): Promise<string> {
+    const wikiDir = this.getWikiDir();
+
+    // 1. Orphan notes
+    const orphans = notes.filter(n => (n.backlinks?.length ?? 0) === 0 && !n.id.endsWith('index'));
+
+    // 2. Broken links
+    const knownIdentifiers = new Set<string>();
+    for (const n of notes) {
+      knownIdentifiers.add(n.id.toLowerCase());
+      knownIdentifiers.add(n.title.toLowerCase());
+      const stem = path.basename(n.path, '.md').toLowerCase();
+      knownIdentifiers.add(stem);
+      knownIdentifiers.add(stem.replace(/[-_]/g, ' '));
+    }
+
+    const brokenLinks: Array<{ source: string; target: string }> = [];
+
+    for (const note of notes) {
+      for (const link of note.outboundLinks) {
+        const cleanLink = link.toLowerCase().trim();
+        if (cleanLink && !knownIdentifiers.has(cleanLink) && !cleanLink.endsWith('/index') && cleanLink !== 'index') {
+          brokenLinks.push({ source: note.id, target: link });
+        }
+      }
+    }
+
+    // 3. Frontmatter status
+    const missingFrontmatter: string[] = [];
+    for (const note of notes) {
+      const isIndex = note.id.endsWith('index') || note.path.endsWith('index.md') || path.basename(note.path) === 'index.md';
+      if (isIndex) {
+        continue; // skip index files
+      }
+      const hasYaml = note.content.trim().startsWith('---');
+      if (!hasYaml || !note.tags || note.tags.length === 0) {
+        missingFrontmatter.push(note.id);
+      }
+    }
+
+    const orphanList = orphans.map(n => `- [[${n.id}]]`).join('\n') || 'None';
+    const brokenList = brokenLinks.map(b => `- [[${b.source}]] -> [[${b.target}]]`).join('\n') || 'None';
+    const missingFmList = missingFrontmatter.map(id => `- [[${id}]]`).join('\n') || 'None (All notes contain tags/metadata)';
+
+    return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter / Tags (${missingFrontmatter.length})**:\n${missingFmList}`;
+  }
+
+  private executeTraceWorkflow(target: string, notes: WikiNote[]): string {
+    const q = target.toLowerCase();
+    const connected = notes.filter(n =>
+      n.id.toLowerCase().includes(q) ||
+      n.title.toLowerCase().includes(q) ||
+      n.outboundLinks.some((l: string) => l.toLowerCase().includes(q))
+    );
+
+    const list = connected
+      .map(n => `- [[${n.id}]] (${n.folder}) -> links: ${n.outboundLinks.map((l: string) => `[[${l}]]`).join(', ') || 'none'}`)
+      .join('\n') || 'No target connections traced.';
+
+    return `### 🕸️ Connection Trace for "${target}"\n\n${list}`;
+  }
+
+  private async executeReindexWorkflow(): Promise<string> {
+    const wikiDir = this.getWikiDir();
+    const notes = await this.readAllWikiNotes();
+
+    // Group notes by folder
+    const folderMap = new Map<string, WikiNote[]>();
+    for (const note of notes) {
+      const folder = note.folder || 'wiki';
+      if (!folderMap.has(folder)) {
+        folderMap.set(folder, []);
+      }
+      folderMap.get(folder)!.push(note);
+    }
+
+    let thematicIndexesCount = 0;
+
+    // Write thematic index files
+    for (const [folder, folderNotes] of folderMap.entries()) {
+      if (folder === 'wiki' || folder === '.') continue;
+
+      const subIndexDir = path.join(wikiDir, folder);
+      const subIndexPath = path.join(subIndexDir, 'index.md');
+
+      const nonIndexNotes = folderNotes.filter(n => n.id !== `${folder}/index` && !n.path.endsWith('index.md'));
+      const articleList = nonIndexNotes
+        .map(n => `- [[${n.id}]] — ${n.title}`)
+        .join('\n');
+
+      const indexContent = `# ${folder.replace(/[-_]/g, ' ').toUpperCase()} Index\n\nThematic index for **${folder}**.\n\n## Articles\n\n${articleList || 'No articles yet.'}\n`;
+
+      await fs.mkdir(subIndexDir, { recursive: true });
+      await fs.writeFile(subIndexPath, indexContent, 'utf-8');
+      thematicIndexesCount++;
+    }
+
+    // Write master index wiki/index.md
+    const folderList = Array.from(folderMap.keys())
+      .filter(f => f !== 'wiki' && f !== '.')
+      .map(f => `- [[${f}/index|${f.replace(/[-_]/g, ' ')}]]`)
+      .join('\n');
+
+    const masterIndexContent = `# Wiki Master Index\n\nWelcome to the knowledge base.\n\n## Thematic Wikis\n\n${folderList || 'No thematic folders yet.'}\n\n## All Notes\n\n${notes.map(n => `- [[${n.id}]]`).join('\n')}\n`;
+
+    await fs.writeFile(path.join(wikiDir, 'index.md'), masterIndexContent, 'utf-8');
+
+    return `### 🔄 Reindex Complete\n\n- **Master Index Written**: \`wiki/index.md\`\n- **Thematic Indexes Updated**: ${thematicIndexesCount}\n- **Indexed Notes**: ${notes.length}\n- **Backlinks Re-evaluated**: Done.`;
   }
 }
