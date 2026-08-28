@@ -72,4 +72,29 @@ export class FileStorage implements IStorage {
       n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
     );
   }
+
+  public async createFolder(_folderPath: string): Promise<boolean> {
+    return true;
+  }
+
+  public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
+    const id = fileName.replace(/\.md$/i, '');
+    const title = id.replace(/[-_]/g, ' ');
+    const noteContent = content || `# ${title}\n\nNew wiki note.`;
+    const folder = folderPath.replace(/^wiki\/?/, '') || 'wiki';
+    const filePath = `wiki/${folder}/${fileName.endsWith('.md') ? fileName : `${fileName}.md`}`;
+    return this.parser.parseNote(id, title, noteContent, folder, filePath);
+  }
+
+  public async renameItem(_oldPath: string, _newName: string): Promise<boolean> {
+    return true;
+  }
+
+  public async moveItem(_sourcePath: string, _targetFolder: string): Promise<boolean> {
+    return true;
+  }
+
+  public async uploadFile(_folderPath: string, _fileName: string, _content: string | ArrayBuffer): Promise<boolean> {
+    return true;
+  }
 }

@@ -115,6 +115,37 @@ Backlink to [[01-index]].
       tags => {
         this.filterTags = tags;
         this.refreshGraph();
+      },
+      {
+        onCreateFolder: async (parent, name) => {
+          const folderPath = `${parent}/${name}`;
+          await this.storage.createFolder(folderPath);
+          await this.loadVault();
+        },
+        onCreateFile: async (parent, fileName) => {
+          await this.storage.createFile(parent, fileName);
+          await this.loadVault();
+        },
+        onRename: async (oldPath, newName) => {
+          await this.storage.renameItem(oldPath, newName);
+          await this.loadVault();
+        },
+        onMove: async (sourcePath, targetFolder) => {
+          await this.storage.moveItem(sourcePath, targetFolder);
+          await this.loadVault();
+        },
+        onDelete: async (path) => {
+          await this.storage.deleteNote(path);
+          await this.loadVault();
+        },
+        onUpload: async (folderPath, files) => {
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const text = await file.text();
+            await this.storage.uploadFile(folderPath, file.name, text);
+          }
+          await this.loadVault();
+        },
       }
     );
 
