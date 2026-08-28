@@ -120,33 +120,76 @@ agents expect their own filename, so create a copy or symlink:
 cp AGENT.md CLAUDE.md      # or: ln -s AGENT.md CLAUDE.md
 ```
 
-## Browse & Interact with the wiki (Web UI v2.1)
+## Browse & Interact with the wiki (Web UI v2.2)
 
 A lightweight, dependency-light **web application** is included for exploring,
 editing, and running agent queries directly in a browser — no Obsidian required.
-It is a single-page app (Vite + TypeScript) with a multi-column layout and agent integration:
+It is a single-page app (Vite + TypeScript, no framework) with a multi-column
+layout and live agent integration. The interface is organised into panels:
 
-- **Vault explorer** — an Obsidian-style collapsible file tree of the `wiki/`
-  folder and its subfolders, with search, active-file highlight, and a tag cloud.
+- **Header** — Wiki-Forge branding, a view-mode switcher (**Editor** /
+  **Graph View** / **Split View**) and the **💬 OpenCode Chat** toggle button.
+- **Vault Explorer (sidebar, 280 px)** — an Obsidian-style collapsible file tree
+  of the `wiki/` folder and its subfolders, a search box (**Ctrl+K**) that
+  filters files in real time, and a **tag cloud** at the bottom. A **file
+  operations toolbar** (`📁+` new folder, `📄+` new file, `📤` upload, `✏️`
+  rename, `🗑️` delete) manages the vault directly from the browser, selected
+  items are highlighted, and **drag-and-drop** moves files/folders between
+  directories while the explorer dropzone imports files from your computer.
+- **Tag cloud** — tags are sized by frequency, coloured per namespace
+  (`topic/ai`, `author/…`, …) and nested tags render as a collapsible
+  hierarchy. Clicking a tag (or a namespace root) filters both the explorer and
+  the graph; **clear** resets the filter.
 - **Editor / Markdown panel** — the selected note rendered as formatted HTML
   (headings, lists, code, tables), with `[[wikilinks]]` shown as clickable
-  links, an **Edit** toggle to edit source code, and a **Save Changes** button that persists edits directly back to disk.
-- **Graph viewer** — an interactive force-directed map of `[[wikilinks]]`
+  links, an **Edit / Preview** toggle to edit the source, and a **Save Changes**
+  button that persists edits directly back to disk ("Saved to disk! 💾").
+- **Context panel (right, 280 px)** — node metadata: title, tags, **backlinks**
+  and **outbound links** (both clickable) plus an agent status indicator.
+- **Graph view** — an interactive force-directed map of `[[wikilinks]]`
   (powered by `force-graph`): scroll to **zoom**, drag the background to **pan**,
   drag nodes to rearrange, hover for a tooltip, and **click a node to open the
-  note** (the editor switches to split view).
-- **Interactive OpenCode Chat Drawer** — a side panel providing live agent workflow triggers (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), markdown responses with `[[wikilinks]]`, and an **Attach to Wiki** button to convert chat responses into new or existing wiki notes on disk.
+  note**. The toolbar above it offers zoom in/out/**Fit**, a node **search box**,
+  a **min. connections** filter and **Reset**. Selecting a note highlights it
+  and dims the rest; clicking a node switches the editor to split view.
+- **OpenCode Chat Drawer** — a side panel with live agent workflow triggers
+  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`), markdown responses
+  with `[[wikilinks]]`, and an **Attach to Wiki** button to convert chat
+  responses into new or existing wiki notes on disk.
+- **Footer** — status bar showing connection/vault and engine state.
 
-### Run it
+### Run it (Web UI)
 
 **Via Docker (zero Node.js local install):**
 
 ```bash
-docker compose up ui
+docker compose up ui              # build image + start the UI on :5173
+docker compose build ui           # rebuild the image (e.g. after Dockerfile change)
+docker compose restart ui         # restart after editing config.toml
+docker compose logs -f ui         # follow the dev server logs
+docker compose down               # stop and remove the container
 ```
-Or using Makefile shortcut: `make ui-docker`. This starts the Vite dev server inside a Node container and exposes it at `http://localhost:5173` (stop any local `npm run dev` first, otherwise the port is already allocated).
 
-**Chat in Docker requires opencode on the host.** The UI container mounts your local opencode CLI plus its config/data (`${HOME}/.opencode`, `${HOME}/.config/opencode`, `${HOME}/.local/share/opencode`) into the container and points `OPENCODE_BIN` at it. Install opencode on the host once (e.g. `curl -fsSL https://opencode.ai/install | bash`); no image rebuild is needed afterwards — just `docker compose restart ui` if you used an older image.
+Or with the Makefile shortcuts:
+
+| Target           | Command                          | What it does                             |
+|------------------|----------------------------------|------------------------------------------|
+| `make ui-docker` | `docker compose up ui`           | UI in a Node container on **:5173**      |
+| `make ui`        | `npm run dev`                    | UI with the local Node install on :5173  |
+| `make ui-build`  | `npm run build`                  | Production bundle in `dist/`             |
+| `make ui-preview`| `npm run preview`                | Serve the built bundle                   |
+| `make ui-test`   | `npm run test`                   | Test suite (parser, graph, agent server) |
+| `make ui-typecheck` | `npm run typecheck`           | TypeScript type checking                 |
+
+The UI is served at **http://localhost:5173**. Stop any local `npm run dev` first,
+otherwise the port is already allocated and Docker will fail to publish it.
+
+**Chat in Docker requires opencode on the host.** The UI container mounts your
+local opencode CLI plus its config/data (`${HOME}/.opencode`,
+`${HOME}/.config/opencode`, `${HOME}/.local/share/opencode`) into the container
+and points `OPENCODE_BIN` at it, so the `/consult` chat works inside Docker too.
+Install opencode on the host once (e.g. `curl -fsSL https://opencode.ai/install |
+bash`); no image rebuild is needed afterwards — just `docker compose restart ui`.
 
 **Via local Node.js install:**
 
@@ -157,7 +200,9 @@ npm run dev        # start the dev server at http://localhost:5173
 
 Other scripts: `npm run build` (production bundle in `dist/`),
 `npm run preview` (serve the built bundle), `npm run typecheck`,
-`npm run test` (test suite covering parser, graph extractor, and agent server endpoints).
+`npm run test` (test suite covering the parser, graph extractor, and agent server
+endpoints). Remember to stop the Docker container if you switch back to the local
+server — both use port 5173.
 
 ### Architecture: Multi-Provider LLM Chat & Workflow Persistence
 
@@ -171,12 +216,17 @@ Phases 22–25 bridge the Web UI with live multi-provider LLM execution, real wo
    - `POST /api/chat`: Injects `AGENT.md` as system prompt and context notes, routing queries to `LlmClient` or executing real workflow commands (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`).
    - `POST /api/wiki/save`: Accepts raw Markdown from the UI editor and writes directly to disk under `wiki/`, with path traversal protection (enforcing containment inside `wiki/` directory).
    - `POST /api/wiki/attach`: Appends or converts chat answers into new/existing wiki notes and re-computes backlinks.
+   - Vault filesystem management (Phase 26): `POST /api/wiki/folder/create`,
+     `POST /api/wiki/file/create`, `POST /api/wiki/rename`, `POST /api/wiki/move`,
+     `POST /api/wiki/delete`, `POST /api/wiki/upload` — every path is validated
+     against traversal and must stay inside `wiki/` or `raw/`.
 3. **Security Hardening**:
    - Path traversal containment on `save` and `attach` endpoints returning HTTP 400 Bad Request on invalid paths.
    - XSS HTML sanitization in `renderMarkdown` (`src/core/utils/html.ts`).
    - Input payload size limits and execution timeouts.
 4. **Storage Abstraction & Adapter (`src/storage/ApiStorage.ts`)**:
    - Implements `IStorage` interface, calling server REST endpoints when online and falling back gracefully to static `FileStorage` when offline.
+   - `IStorage` now also exposes async filesystem operations (create folder/file, move, rename, delete, upload) backed by the new API endpoints — or by local `fs` calls when offline.
 5. **UI Extensions (`src/components/chat/`)**:
    - **Chat Drawer**: Toggleable panel with quick command buttons and interactive message history.
    - **Attach to Wiki**: One-click action on chat responses opening a target selection modal to merge knowledge into notes.

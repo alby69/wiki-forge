@@ -21,7 +21,7 @@ export class Header {
           <div style="font-weight: 700; font-size: 16px; color: #64b5f6; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 18px;">⚒️</span> Wiki-Forge
           </div>
-          <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px;">v2.1 Agent UI</span>
+          <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px;">v2.2 Agent UI</span>
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px;">
