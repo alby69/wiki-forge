@@ -44,7 +44,7 @@ confirm_destructive = true
 
 [agent.llm]
 provider = "opencode"        # opencode | anthropic | openai_compatible | ollama
-opencode_command = "opencode"
+opencode_command = "/home/aabate/.opencode/bin/opencode"
 opencode_args = ["run", "--non-interactive"]
 api_base_url = ""
 api_key_env = "WIKIFORGE_LLM_API_KEY"
