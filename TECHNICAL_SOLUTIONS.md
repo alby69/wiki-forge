@@ -122,6 +122,10 @@ code inside the template:
   drag-and-drop, CodeMirror 6 editor (Save & Close / Cancel actions), a
   force-directed graph, a context panel, and a chat drawer with live streaming,
   chat history, **Attach to Wiki**, and the `/wizard` scenario selector.
+- **Modular Agent Skills Architecture**: command definitions are structured as
+  discoverable Agent Skill packages under `skills/` (YAML frontmatter +
+  Markdown body), loaded progressively by the lightweight `AGENT.md` router and
+  mirrored into `.claude/skills/` for Claude Code compatibility.
 
 Practical result for Solution A: install Ollama (or point `[agent.llm]` at your
 preferred provider), start the UI (`make ui-docker`), and the local-RAG

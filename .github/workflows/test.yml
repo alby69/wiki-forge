@@ -37,3 +37,6 @@ jobs:
 
       - name: Test clip2md CLI
         run: python clip2md.py --help
+
+      - name: Test docs-sync consistency
+        run: python scripts/check_docs_sync.py

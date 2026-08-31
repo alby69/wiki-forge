@@ -14,3 +14,8 @@ repos:
         entry: python3 wiki_stats.py
         language: system
         pass_filenames: false
+      - id: docs-sync
+        name: Documentation & Skills Sync Check
+        entry: python3 scripts/check_docs_sync.py
+        language: system
+        pass_filenames: false

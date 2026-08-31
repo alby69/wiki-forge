@@ -61,8 +61,11 @@ mindmap:
 note:
 	@echo "Run '/note <text>' in chat drawer or agent CLI"
 
+docs-sync:
+	python3 scripts/check_docs_sync.py
+
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
 
 ui:
 	npm run dev
@@ -88,4 +91,15 @@ tags:
 tags-write:
 	python suggest_tags.py --all --write
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex clean-output export-json lint help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write
+skills-link:
+	@mkdir -p .claude/skills
+	@for dir in skills/*/; do \
+		skill_name=$$(basename $$dir); \
+		if [ -d "$$dir" ]; then \
+			rm -rf .claude/skills/$$skill_name; \
+			cp -r "$$dir" .claude/skills/$$skill_name; \
+		fi \
+	done
+	@echo "Linked skills into .claude/skills/"
+
+.PHONY: convert convert-docker wizard build shell audit stats reindex clean-output export-json lint docs-sync help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
