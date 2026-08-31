@@ -321,9 +321,17 @@ Two ways to run one:
 | Command | When to use | Example |
 |---------|-------------|---------|
 | `compile` | You dropped new files in `sources/` and want the wiki updated | `compile` |
+| `ingest <file>` | Process a single raw file into the wiki | `ingest raw/paper.md` |
+| `convert-only` | Preview converted sources without compiling | `convert-only` |
+| `recompile <file>` | Force re-processing of a compiled file | `recompile raw/paper_COMPILED.md` |
 | `consult "..."` | You have a question and want an answer from the wiki | `consult "What did Karpathy say about agents?"` |
 | `study-guide <topic>` | Generate comprehensive study guide in `output/` | `study-guide ai-tools` |
 | `quiz <topic> [n]` | Generate interactive Markdown quiz in `output/` | `quiz ai-tools 5` |
+| `mindmap <art>` | Generate hierarchical mind map in `output/` | `mindmap ai-tools/claude-code` |
+| `audio-overview <target>` | Generate 2-speaker podcast dialogue script in `output/` | `audio-overview ai-tools` |
+| `deep-research <q>` | Conduct multi-source synthesis research report | `deep-research "agent architectures"` |
+| `note <text>` | Record a quick scratchpad note in `notes/` | `note "check Karpathy paper on LLM OS"` |
+| `promote-note <id>` | Promote quick scratchpad note to full wiki article | `promote-note note-1 ai-tools` |
 | `search <term>` | You know a concept exists but can't find the article | `search "LLM-OS"` |
 | `help` | You forgot a command | `help` |
 
@@ -334,16 +342,22 @@ Two ways to run one:
 | `audit links` | You renamed an article and suspect broken links |
 | `reindex` | You moved/renamed articles manually |
 | `stats` | You want a snapshot of wiki growth |
+| `lint-frontmatter` | Validate YAML frontmatter across all articles |
 
 ### As-needed commands
 | Command | When to use | Requires confirmation? |
 |---------|-------------|----------------------|
+| `new-article <name>` | Create a new article from template | ❌ No |
 | `merge <a> <b>` | Two articles cover the same topic | ✅ Always |
 | `split <art> <heading>` | One article grew too long | ✅ Always |
 | `stub <concept>` | You want to create a placeholder for a future article | ❌ No |
+| `retag <art> [+tag]` | Modify article tags | ❌ No |
 | `prune` | Remove empty/orphan articles | ✅ Always |
 | `sources regenerate` | After adding many articles, rebuild the bibliography | ❌ No |
+| `tag-suggest [file]` | Suggest tags from controlled vocabulary | ❌ No |
 | `export json` | You want to back up or share the wiki structure | ❌ No |
+| `diff <art>` | Show git diff of an article | ❌ No |
+| `template show` | Display standard article template | ❌ No |
 | `trace "claim"` | You want to verify where a claim comes from | ❌ No |
 | `/wizard [scenario]` | Start a whole project workflow from a preset (§12) | ❌ No |
 
@@ -377,6 +391,10 @@ Two ways to run one:
 - Manually move the file to the correct `wiki/<name>/` folder.
 - Then run `reindex` to fix the indexes.
 - Update `wiki/index.md` if you created a new thematic wiki.
+
+### "Claude Code does not automatically load skills"
+- Run `make skills-link` to ensure `.claude/skills/` is populated with skill packages from `skills/`.
+- Verify that `.claude/skills/*/SKILL.md` exists in your repository root.
 
 ---
 

@@ -5,6 +5,27 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-08-28
+
+### Added
+- Modular Agent Skills Refactor (Phases 30–34):
+  - Created `skills/` directory containing self-contained skill packages with YAML frontmatter metadata (`wiki-ingest`, `wiki-curate`, `wiki-audit`, `wiki-query`, `wiki-study`, `wiki-onboarding`).
+  - Converted `AGENT.md` into a lightweight progressive disclosure router referencing `skills/`, reducing token footprint by 75–85% per session.
+  - `.claude/skills/` integration and `make skills-link` target in `Makefile` for Claude Code compatibility.
+  - Automated doc & skill consistency check script `scripts/check_docs_sync.py` integrated into pre-commit hooks, GitHub Actions CI, and `make docs-sync`.
+
+## [2.5.0] - 2026-08-28
+
+### Added
+- NotebookLM-Inspired Study & Knowledge Synthesis Suite (Phase 29):
+  - Passage-level grounding with `#L<start>-L<end>` line-anchor citations in frontmatter and wikilinks.
+  - `/study-guide`: generates structured study guides with executive summaries, section breakdowns, glossaries, and self-assessment QA in `output/study-guide-*.md`.
+  - `/quiz`: generates interactive multi-choice quizzes with answer keys and explanations in `output/quiz-*.md`.
+  - `/mindmap`: generates hierarchical Markdown concept trees and JSON node-link mindmaps in `output/mindmap-*.md`.
+  - `/audio-overview`: generates Host A / Host B conversational dialogue scripts in `output/audio-script-*.md` with optional TTS integration.
+  - `/note` and `/promote-note`: scratchpad logging in `notes/` and promoting notes to full wiki articles.
+  - `/deep-research`: multi-source synthesis reports with claim attribution matrix and knowledge gap analysis in `output/research-*.md`.
+
 ## [2.4.0] - 2026-08-28
 
 ### Added

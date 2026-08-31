@@ -26,7 +26,10 @@ project, a business wiki, personal notes, and so on.
 ├── run_convert.sh        # One-command wrapper around conv2md.py
 ├── scripts/
 │   └── wizard.py        # Scenario-Driven Interactive Wizard CLI
-├── AGENT.md             # Operating manual for the LLM agent (agent-agnostic)
+├── AGENT.md             # Router operating manual for the LLM agent (agent-agnostic)
+├── skills/              # Modular Agent Skill packages (ingest, curate, audit, query, study, onboarding)
+│   └── README.md        # Human-readable index & progressive disclosure rationale
+├── .claude/skills/      # Auto-linked Claude Code skill discovery directory
 ├── SOURCES.md           # Registry of ingested sources (the bibliography)
 ├── docs/
 │   └── KARPATHY_LLM_WIKI.md   # The original idea file (offline copy)
@@ -177,7 +180,12 @@ layout and live agent integration. The interface is organised into panels:
   a **min. connections** filter and **Reset**. Selecting a note highlights it
   and dims the rest; clicking a node switches the editor to split view.
 - **OpenCode Chat Drawer** — a side panel with live agent workflow triggers
-  (`/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`), a **🪄
+  grouped by category: Ingestion (`/compile`, `/convert-only`, `/ingest`, `/recompile`),
+  Knowledge/Curation (`/new-article`, `/merge`, `/split`, `/stub`, `/retag`),
+  Maintenance (`/audit`, `/reindex`, `/prune`, `/lint-frontmatter`),
+  Query (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`),
+  Study & Synthesis (`/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`),
+  Wizard (`/wizard`), and Utility (`/stats`, `/export`, `/diff`, `/template show`, `/sources regenerate`, `/tag-suggest`, `/help`), alongside a **🪄
   wizard scenario selector** (Academic/Thesis, Business KB, Competitive Research,
   Fiction/Worldbuilding, Existing Wiki) that launches `/wizard <scenario>`
   directly in chat, real-time **LLM response streaming** (SSE), persistent
@@ -279,6 +287,18 @@ python suggest_tags.py wiki/ai/foo.md --semantic # semantic ranking (needs keybe
 `suggest_tags.py` is dependency-light (pure-Python RAKE by default; optional
 KeyBERT semantic ranking when `keybert` + `sentence-transformers` are installed).
 See `AGENT.md` (`tag-suggest` command) for the agent workflow.
+
+### Study & Research Suite
+
+`wiki-forge` includes a NotebookLM-inspired study and knowledge synthesis suite for transforming compiled wiki notes into structured learning materials:
+- **`study-guide <wiki|article>`**: Generates comprehensive study guides with executive summaries, section breakdowns, key terms, and self-assessment QA in `output/study-guide-*.md`.
+- **`quiz <wiki|article> [n]`**: Generates interactive self-test quizzes in `output/quiz-*.md`.
+- **`mindmap <article>`**: Extracts concept hierarchies into Markdown tree representations and JSON node-link structures in `output/mindmap-*.md`.
+- **`audio-overview <target>`**: Synthesizes 2-speaker Host A / Host B conversational dialogue scripts in `output/audio-script-*.md` with optional TTS audio generation.
+- **`deep-research <question>`**: Executes multi-source research synthesis reports with claim attribution matrices and knowledge gap identification in `output/research-*.md`.
+- **`note <text>` & `promote-note <id>`**: Records scratchpad quick notes in `notes/` and promotes them into formal indexed wiki articles.
+
+See `AGENT.md` §5.7–§5.8 for full command contracts and options.
 
 ## Design philosophy
 

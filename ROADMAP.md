@@ -41,6 +41,11 @@
 | 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
 | 28 | Scenario-Driven Interactive Wizard System | ✅ Done | Interactive CLI wizard (`scripts/wizard.py`), scenario presets (`config/scenarios.toml`), `/wizard` contract extension in `AGENT.md` |
 | 29 | NotebookLM-Inspired Study & Knowledge Synthesis Suite | ✅ Done | Passage-level grounding (`#L<start>-L<end>`), `/study-guide`, `/quiz`, `/deep-research`, `/mindmap`, `/note` & `/promote-note`, `/audio-overview` |
+| 30 | Documentation Reconciliation Pass | ✅ Done | Added `[2.5.0]` to `CHANGELOG.md`, bumped `package.json`, aligned command reference in `README.md` & `TUTORIAL.md` |
+| 31 | Modular Agent Skills Extraction & Router Conversion | ✅ Done | Extracted verbatim commands to `skills/*/SKILL.md` packages; converted `AGENT.md` to progressive disclosure router |
+| 32 | Claude Code / Claude Skills Native Compatibility | ✅ Done | Added `.claude/skills/` syncing (`make skills-link`) and updated setup/troubleshooting guides |
+| 33 | Automated Doc/Skill Consistency Verification | ✅ Done | Added `scripts/check_docs_sync.py`, `.pre-commit-config.yaml` hook, CI workflow job, and `make docs-sync` |
+| 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 

@@ -1,6 +1,6 @@
 {
   "name": "wiki-forge-ui",
-  "version": "2.0.0",
+  "version": "2.6.0",
   "private": true,
   "description": "Decoupled Web User Interface & Obsidian-style Graph Viewer for Wiki-Forge",
   "scripts": {
