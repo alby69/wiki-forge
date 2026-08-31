@@ -46,8 +46,23 @@ export-json:
 lint:
 	@echo "Run 'lint-frontmatter' in your agent (AGENT.md §5.3)"
 
+study-guide:
+	@echo "Run '/study-guide <topic>' in chat drawer or agent CLI"
+
+quiz:
+	@echo "Run '/quiz <topic>' in chat drawer or agent CLI"
+
+deep-research:
+	@echo "Run '/deep-research <question>' in chat drawer or agent CLI"
+
+mindmap:
+	@echo "Run '/mindmap <article-path>' in chat drawer or agent CLI"
+
+note:
+	@echo "Run '/note <text>' in chat drawer or agent CLI"
+
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, clean-output, export-json, lint, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
 
 ui:
 	npm run dev

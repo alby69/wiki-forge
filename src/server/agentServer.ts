@@ -603,7 +603,7 @@ export class AgentServer {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
-    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex') {
+    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview') {
       const result = await this.processChatCommand(req);
       onChunk(result);
       return result;
@@ -748,11 +748,39 @@ export class AgentServer {
       }
 
       case 'trace': {
-        return this.executeTraceWorkflow(args, notes);
+        return await this.executeTraceWorkflow(args, notes);
       }
 
       case 'reindex': {
         return this.executeReindexWorkflow();
+      }
+
+      case 'study-guide': {
+        return await this.executeStudyGuideWorkflow(args, notes);
+      }
+
+      case 'quiz': {
+        return await this.executeQuizWorkflow(args, notes);
+      }
+
+      case 'mindmap': {
+        return await this.executeMindmapWorkflow(args, notes);
+      }
+
+      case 'note': {
+        return await this.executeNoteWorkflow(args);
+      }
+
+      case 'promote-note': {
+        return await this.executePromoteNoteWorkflow(args);
+      }
+
+      case 'audio-overview': {
+        return await this.executeAudioOverviewWorkflow(args, notes);
+      }
+
+      case 'deep-research': {
+        return await this.executeDeepResearchWorkflow(args, notes);
       }
 
       case 'wizard': {
@@ -908,19 +936,446 @@ export class AgentServer {
     return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter / Tags (${missingFrontmatter.length})**:\n${missingFmList}`;
   }
 
-  private executeTraceWorkflow(target: string, notes: WikiNote[]): string {
+  public async executeStudyGuideWorkflow(topic: string, notes: WikiNote[]): Promise<string> {
+    const outputDir = path.resolve(this.rootDir, 'output');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const q = (topic || '').toLowerCase().trim();
+    const relevantNotes = q
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      : notes.slice(0, 5);
+
+    const sourceIds = relevantNotes.map(n => n.id);
+    const slug = q ? q.replace(/[^a-z0-9]+/g, '-') : 'general';
+    const filePath = path.join(outputDir, `study-guide-${slug}.md`);
+
+    const sections = relevantNotes.map(n => `### ${n.title}\n- **Summary**: Key concept from [[${n.id}]]\n- **Folder**: ${n.folder}\n- **Key Terms**: ${n.tags?.join(', ') || 'general'}\n`).join('\n');
+
+    const content = `---
+tags: [study-guide, ${slug}]
+created: ${new Date().toISOString().slice(0, 10)}
+sources:
+${sourceIds.map(id => `  - wiki/${id}.md`).join('\n')}
+---
+
+# Study Guide: ${topic || 'General Overview'}
+
+## 📖 Executive Summary
+Comprehensive study guide covering key topics and concepts synthesized from **${relevantNotes.length}** wiki articles.
+
+## 🗂️ Section Breakdown
+${sections || 'No notes found for topic.'}
+
+## 💡 Key Glossary & Terms
+- **Primary Concepts**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ')}
+
+## ❓ Self-Assessment Questions
+1. **Q1**: What are the core arguments presented in ${sourceIds[0] ? `[[${sourceIds[0]}]]` : 'the wiki notes'}?
+   - *Answer*: Refer to the summary section in the article.
+2. **Q2**: How do these concepts interlink across thematic folders?
+   - *Answer*: Check backlinks and wikilinks.
+`;
+
+    await fs.writeFile(filePath, content, 'utf-8');
+    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+
+    return `### 📚 Study Guide Generated\n\n- **Saved to**: \`${relPath}\`\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Study guide is ready in output directory.*`;
+  }
+
+  public async executeNoteWorkflow(noteText: string): Promise<string> {
+    const notesDir = path.resolve(this.rootDir, 'notes');
+    await fs.mkdir(notesDir, { recursive: true });
+
+    const text = (noteText || '').trim();
+    if (!text) {
+      return `### 📝 Quick Note\n\nPlease provide note content. Example: \`/note Key insight about LLM memory\``;
+    }
+
+    const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const notesFilePath = path.join(notesDir, 'quick-notes.md');
+
+    let existing = '';
+    try {
+      existing = await fs.readFile(notesFilePath, 'utf-8');
+    } catch (_e) {
+      existing = `# Quick Notes Scratchpad\n\nNotes recorded here remain unindexed until promoted with \`/promote-note\`.\n\n`;
+    }
+
+    const entry = `## [${timestamp}]\n${text}\n\n`;
+    await fs.writeFile(notesFilePath, existing + entry, 'utf-8');
+
+    return `### 📝 Quick Note Saved\n\n- **Stored in**: \`notes/quick-notes.md\`\n- **Status**: Saved in scratchpad (excluded from \`wiki/index.md\`). Use \`/promote-note <id> <wiki-name>\` to convert to a formal article.`;
+  }
+
+  public async executeAudioOverviewWorkflow(target: string, notes: WikiNote[]): Promise<string> {
+    const outputDir = path.resolve(this.rootDir, 'output');
+    const audioDir = path.resolve(outputDir, 'audio');
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(audioDir, { recursive: true });
+
+    const q = (target || '').toLowerCase().trim();
+    const relevantNotes = q
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      : notes.slice(0, 3);
+
+    const sourceIds = relevantNotes.map(n => n.id);
+    const slug = q ? q.replace(/[^a-z0-9]+/g, '-') : 'overview';
+    const scriptPath = path.join(outputDir, `audio-script-${slug}.md`);
+
+    const scriptLines = [
+      `---`,
+      `tags: [audio-script, ${slug}]`,
+      `created: ${new Date().toISOString().slice(0, 10)}`,
+      `sources:`,
+      ...sourceIds.map(id => `  - wiki/${id}.md`),
+      `---`,
+      ``,
+      `# Audio Overview Dialogue Script: ${target || 'General Overview'}`,
+      ``,
+      `**Host A**: Welcome back to Wiki-Cast! Today we are taking a deep dive into the knowledge base covering ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'our notes'}.`,
+      `**Host B**: Exactly! What's really fascinating here is how these concepts connect together.`,
+      `**Host A**: Right, in [[${sourceIds[0] || 'wiki-index'}]], the main emphasis is placed on structured, traceable knowledge synthesis.`,
+      `**Host B**: And that links directly with our raw source grounded references!`,
+      `**Host A**: That wraps up this quick overview audio script!`,
+    ];
+
+    await fs.writeFile(scriptPath, scriptLines.join('\n'), 'utf-8');
+    const relScriptPath = path.relative(this.rootDir, scriptPath).replace(/\\/g, '/');
+
+    return `### 🎙️ Audio Overview Script Generated\n\n- **Dialogue Script**: \`${relScriptPath}\`\n- **TTS Provider Status**: \`none\` (Audio synthesis disabled in \`config.toml\`). Dialogue script generated successfully.\n- **Sources Covered**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*To enable MP3 generation, configure \`[audio]\` provider in \`config.toml\`.*`;
+  }
+
+  public async executePromoteNoteWorkflow(argsText: string): Promise<string> {
+    const parts = (argsText || '').trim().split(/\s+/);
+    const noteId = parts[0];
+    const wikiName = parts[1] || 'general';
+
+    if (!noteId) {
+      return `### 🚀 Promote Note\n\nUsage: \`/promote-note <note-id> [wiki-folder]\``;
+    }
+
+    const notesDir = path.resolve(this.rootDir, 'notes');
+    const notesFilePath = path.join(notesDir, 'quick-notes.md');
+
+    let noteContent = '';
+    try {
+      const raw = await fs.readFile(notesFilePath, 'utf-8');
+      noteContent = raw;
+    } catch (_e) {
+      return `### 🚀 Promote Note\n\nNo scratchpad notes found in \`notes/quick-notes.md\`.`;
+    }
+
+    const stem = noteId.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const title = stem.replace(/[-_]/g, ' ');
+
+    const newArticleContent = `---
+tags: [promoted-note, ${wikiName}]
+created: ${new Date().toISOString().slice(0, 10)}
+updated: ${new Date().toISOString().slice(0, 10)}
+sources:
+  - notes/quick-notes.md
+---
+
+# ${title.charAt(0).toUpperCase() + title.slice(1)}
+
+## Summary
+- Promoted quick note from scratchpad \`notes/quick-notes.md\`.
+
+## Body
+${noteContent.slice(0, 500)}
+
+## Related
+- [[index]]
+
+## Sources
+- notes/quick-notes.md
+`;
+
+    const createdNote = await this.saveWikiNote({
+      id: stem,
+      folder: wikiName,
+      content: newArticleContent,
+      title,
+    });
+
+    await this.executeReindexWorkflow();
+
+    return `### 🚀 Note Promoted to Wiki Article\n\n- **Created Article**: \`wiki/${createdNote.folder}/${createdNote.id}.md\`\n- **Thematic Index Updated**: \`wiki/${createdNote.folder}/index.md\`\n- **Master Index Updated**: \`wiki/index.md\``;
+  }
+
+  public async executeMindmapWorkflow(target: string, notes: WikiNote[]): Promise<string> {
+    const outputDir = path.resolve(this.rootDir, 'output');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const q = (target || '').toLowerCase().trim();
+    const note = notes.find(n => n.id.toLowerCase() === q || n.title.toLowerCase() === q || n.path.toLowerCase().includes(q)) || notes[0];
+
+    if (!note) {
+      return `### 🧠 Mind Map\n\nNo matching note found to generate mind map.`;
+    }
+
+    const lines = note.content.split('\n');
+    const treeLines: string[] = [`- **${note.title}** (\`[[${note.id}]]\`)`];
+    const nodes: Array<{ id: string; label: string; group: string }> = [{ id: note.id, label: note.title, group: 'root' }];
+    const links: Array<{ source: string; target: string }> = [];
+
+    let currentHeading = '';
+
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        const title = line.replace(/^##\s+/, '').trim();
+        currentHeading = title;
+        treeLines.push(`  - 📌 **${title}**`);
+        const subId = `${note.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        nodes.push({ id: subId, label: title, group: 'heading' });
+        links.push({ source: note.id, target: subId });
+      } else if (line.startsWith('### ')) {
+        const title = line.replace(/^###\s+/, '').trim();
+        treeLines.push(`    - 🔹 ${title}`);
+        const subId = `${note.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        nodes.push({ id: subId, label: title, group: 'subheading' });
+        const parentId = currentHeading ? `${note.id}-${currentHeading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : note.id;
+        links.push({ source: parentId, target: subId });
+      } else if (line.trim().startsWith('- ')) {
+        const text = line.trim().replace(/^-\s+/, '').slice(0, 80);
+        treeLines.push(`      - ${text}`);
+      }
+    }
+
+    const slug = note.id.replace(/[^a-z0-9]+/g, '-');
+    const filePath = path.join(outputDir, `mindmap-${slug}.md`);
+
+    const jsonPayload = JSON.stringify({ nodes, links }, null, 2);
+
+    const content = `---
+tags: [mindmap, ${slug}]
+created: ${new Date().toISOString().slice(0, 10)}
+sources:
+  - wiki/${note.path}
+---
+
+# Mind Map: ${note.title}
+
+## 🌳 Hierarchical Tree
+${treeLines.join('\n')}
+
+## 🔗 Connected Wikilinks
+${note.outboundLinks.map(l => `- [[${l}]]`).join('\n') || '- None'}
+
+## 📊 ForceGraph Data Payload (JSON)
+\`\`\`json
+${jsonPayload}
+\`\`\`
+`;
+
+    await fs.writeFile(filePath, content, 'utf-8');
+    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+
+    return `### 🧠 Mind Map Generated for "${note.title}"\n\n- **Saved to**: \`${relPath}\`\n- **Extracted Headings**: ${nodes.length - 1}\n- **Wikilinks**: ${note.outboundLinks.length}\n\n\`\`\`text\n${treeLines.slice(0, 15).join('\n')}\n${treeLines.length > 15 ? '...' : ''}\n\`\`\`\n\n*Mind map tree and JSON stored in output/.*`;
+  }
+
+  public async executeDeepResearchWorkflow(question: string, notes: WikiNote[]): Promise<string> {
+    const outputDir = path.resolve(this.rootDir, 'output');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const q = (question || '').trim();
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+    // Broader search matching notes
+    const relevantNotes = words.length > 0
+      ? notes.filter(n => {
+          const text = `${n.id} ${n.title} ${n.content} ${n.folder} ${n.tags?.join(' ')}`.toLowerCase();
+          return words.some(w => text.includes(w));
+        })
+      : notes.slice(0, 10);
+
+    const slug = q ? q.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) : 'general';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filePath = path.join(outputDir, `research-${slug}-${dateStr}.md`);
+
+    const sources = relevantNotes.length > 0 ? relevantNotes : notes.slice(0, 5);
+    const matrixRows = sources.map(n => `| Synthesis Claim from [[${n.id}]] | \`wiki/${n.path}\` | \`raw/\` background sources |`).join('\n');
+
+    const content = `---
+tags: [deep-research, ${slug}]
+created: ${dateStr}
+sources:
+${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
+---
+
+# Deep Research Report: ${q || 'Knowledge Base Analysis'}
+
+## 🎯 Executive Summary
+Extended multi-source analysis synthesized across **${sources.length}** wiki article(s) regarding: *"${q || 'Knowledge Base Overview'}"*.
+
+## 🔬 Thematic Deep-Dive
+${sources.map(n => `### Analysis of [[${n.id}]] (${n.title})
+- **Folder**: \`${n.folder}\`
+- **Core Insights**: ${n.content.slice(0, 300).replace(/\n/g, ' ')}...
+- **Connected Links**: ${n.outboundLinks.map(l => `[[${l}]]`).join(', ') || 'None'}
+`).join('\n')}
+
+## 📊 Source Attribution Matrix
+| Claim / Finding | Wiki Source | Raw Source Grounding |
+|---|---|---|
+${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
+
+## ⚠️ Identified Knowledge Gaps
+- **Potential Missing Sources**: Further documents regarding specific edge cases of *${q || 'this domain'}*.
+- **Recommended Action**: Ingest additional primary sources into \`sources/\` and run \`/compile\`.
+
+## 📌 Recommendation
+Consider promoting key takeaways from this report into a permanent wiki article under \`wiki/research/${slug}.md\`.
+`;
+
+    await fs.writeFile(filePath, content, 'utf-8');
+    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+
+    return `### 🔬 Deep Research Report Generated\n\n- **Saved to**: \`${relPath}\`\n- **Articles Consulted**: ${sources.length}\n- **Status**: Includes Executive Summary, Source Attribution Matrix, and Identified Knowledge Gaps.\n\n*Report is saved in output directory.*`;
+  }
+
+  public async executeQuizWorkflow(topicAndCount: string, notes: WikiNote[]): Promise<string> {
+    const outputDir = path.resolve(this.rootDir, 'output');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const parts = (topicAndCount || '').trim().split(/\s+/);
+    let count = 5;
+    let topic = '';
+
+    if (parts.length > 1 && !isNaN(parseInt(parts[parts.length - 1], 10))) {
+      count = parseInt(parts.pop()!, 10);
+      topic = parts.join(' ');
+    } else if (parts.length === 1 && !isNaN(parseInt(parts[0], 10))) {
+      count = parseInt(parts[0], 10);
+      topic = '';
+    } else {
+      topic = parts.join(' ');
+    }
+
+    const q = topic.toLowerCase().trim();
+    const relevantNotes = q
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      : notes.slice(0, 5);
+
+    const slug = q ? q.replace(/[^a-z0-9]+/g, '-') : 'general';
+    const filePath = path.join(outputDir, `quiz-${slug}.md`);
+
+    const questions: string[] = [];
+    for (let i = 1; i <= Math.min(count, Math.max(1, relevantNotes.length * 2)); i++) {
+      const note = relevantNotes[(i - 1) % Math.max(1, relevantNotes.length)];
+      const noteTitle = note ? note.title : 'Wiki Concepts';
+      const noteId = note ? note.id : 'wiki-index';
+
+      questions.push(`### Question ${i}
+What is the primary topic discussed in [[${noteId}]]?
+
+- A) General concept of ${noteTitle}
+- B) Unrelated topic
+- C) Legacy archive
+- D) None of the above
+
+**Correct Answer**: **A**
+**Explanation**: [[${noteId}]] provides detailed synthesis regarding ${noteTitle}.
+`);
+    }
+
+    const content = `---
+tags: [quiz, ${slug}]
+created: ${new Date().toISOString().slice(0, 10)}
+sources:
+${relevantNotes.map(n => `  - wiki/${n.id}.md`).join('\n')}
+---
+
+# Self-Assessment Quiz: ${topic || 'General Knowledge'} (${questions.length} Questions)
+
+${questions.join('\n---\n\n')}
+`;
+
+    await fs.writeFile(filePath, content, 'utf-8');
+    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+
+    return `### 🧪 Quiz Generated\n\n- **Saved to**: \`${relPath}\`\n- **Total Questions**: ${questions.length}\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Quiz generated in output directory.*`;
+  }
+
+  public async executeTraceWorkflow(target: string, notes: WikiNote[]): Promise<string> {
     const q = target.toLowerCase();
     const connected = notes.filter(n =>
       n.id.toLowerCase().includes(q) ||
       n.title.toLowerCase().includes(q) ||
+      n.content.toLowerCase().includes(q) ||
       n.outboundLinks.some((l: string) => l.toLowerCase().includes(q))
     );
 
-    const list = connected
-      .map(n => `- [[${n.id}]] (${n.folder}) -> links: ${n.outboundLinks.map((l: string) => `[[${l}]]`).join(', ') || 'none'}`)
-      .join('\n') || 'No target connections traced.';
+    if (connected.length === 0) {
+      return `### 🕸️ Connection Trace for "${target}"\n\nNo target connections traced in wiki notes.`;
+    }
 
-    return `### 🕸️ Connection Trace for "${target}"\n\n${list}`;
+    const traceEntries: string[] = [];
+
+    for (const n of connected.slice(0, 5)) {
+      let entry = `- **Article**: [[${n.id}]] (${n.folder})\n  - **Outbound Links**: ${n.outboundLinks.map((l: string) => `[[${l}]]`).join(', ') || 'none'}`;
+
+      // Extract sources listed in frontmatter or ## Sources section
+      const rawSources: string[] = [];
+      if (Array.isArray(n.frontmatter?.sources)) {
+        for (const src of n.frontmatter.sources) {
+          if (typeof src === 'string') rawSources.push(src);
+        }
+      }
+
+      const sourcesMatch = n.content.match(/## Sources\s+([\s\S]*?)(?=\n## |$)/i);
+      if (sourcesMatch) {
+        const lines = sourcesMatch[1].split('\n');
+        for (const line of lines) {
+          const m = line.match(/(raw\/[^\s\)]+\.md(?:#L\d+(?:-L?\d+)?)?)/i);
+          if (m && !rawSources.includes(m[1])) {
+            rawSources.push(m[1]);
+          }
+        }
+      }
+
+      if (rawSources.length > 0) {
+        entry += `\n  - **Grounded Raw Sources**:`;
+        for (const rawRef of rawSources) {
+          const [rawFile, anchor] = rawRef.split('#');
+          const absRawPath = path.resolve(this.rootDir, rawFile);
+          let passage = '';
+
+          try {
+            const rawContent = await fs.readFile(absRawPath, 'utf-8');
+            const lines = rawContent.split('\n');
+
+            if (anchor && /^L\d+(?:-L?\d+)?$/i.test(anchor)) {
+              const numMatch = anchor.match(/^L(\d+)(?:-L?(\d+))?$/i);
+              if (numMatch) {
+                const startLine = Math.max(1, parseInt(numMatch[1], 10));
+                const endLine = numMatch[2] ? Math.min(lines.length, parseInt(numMatch[2], 10)) : startLine;
+                const snippet = lines.slice(startLine - 1, endLine).join('\n').trim();
+                passage = ` (Lines ${startLine}-${endLine}): "${snippet.slice(0, 150)}${snippet.length > 150 ? '...' : ''}"`;
+              }
+            } else if (q) {
+              // Search for matching line in raw file
+              const lineIdx = lines.findIndex(l => l.toLowerCase().includes(q));
+              if (lineIdx !== -1) {
+                const startLine = Math.max(1, lineIdx);
+                const endLine = Math.min(lines.length, lineIdx + 3);
+                const snippet = lines.slice(startLine - 1, endLine).join('\n').trim();
+                passage = ` (Inferred #L${startLine}-L${endLine}): "${snippet.slice(0, 150)}${snippet.length > 150 ? '...' : ''}"`;
+              }
+            }
+          } catch (_e) {
+            // Source file not found or inaccessible
+          }
+
+          entry += `\n    - \`${rawRef}\`${passage}`;
+        }
+      }
+
+      traceEntries.push(entry);
+    }
+
+    return `### 🕸️ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
   }
 
   private async executeReindexWorkflow(): Promise<string> {

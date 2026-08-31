@@ -21,13 +21,24 @@ export function renderMarkdown(raw: string): string {
   // Sanitize HTML output to neutralize XSS payloads
   html = sanitizeHtml(html);
 
-  // Turn [[wikilinks]] into navigable anchors
+  // Turn [[wikilinks]] into navigable anchors (supporting optional line/section anchor, e.g. [[article#L12-L24]])
   html = html.replace(
-    /\[\[([^\]\|#]+)(?:\|([^\]]+))?\]\]/g,
-    (_match, target: string, label?: string) => {
+    /\[\[([^\]\|#]+)(?:#([^\]\|]+))?(?:\|([^\]]+))?\]\]/g,
+    (_match, target: string, anchor?: string, label?: string) => {
       const t = target.trim();
       const text = (label ?? target).trim();
-      return `<a href="#" class="wikilink" data-wikilink="${escapeHtml(t)}">${escapeHtml(text)}</a>`;
+      const anchorAttr = anchor ? ` data-anchor="${escapeHtml(anchor.trim())}"` : '';
+      return `<a href="#" class="wikilink" data-wikilink="${escapeHtml(t)}"${anchorAttr}>${escapeHtml(text)}</a>`;
+    }
+  );
+
+  // Turn raw/ source references like raw/file.md#L10-L20 into clickable source anchors
+  html = html.replace(
+    /\b(raw\/[^\s\)]+?\.md)(#L\d+(?:-L?\d+)?)?\b/gi,
+    (_match, filePath: string, lineAnchor?: string) => {
+      const fullRef = `${filePath}${lineAnchor || ''}`;
+      const anchorAttr = lineAnchor ? ` data-line-anchor="${escapeHtml(lineAnchor.replace(/^#/, ''))}"` : '';
+      return `<a href="#" class="source-link" data-source-file="${escapeHtml(filePath)}"${anchorAttr}>${escapeHtml(fullRef)}</a>`;
     }
   );
 
