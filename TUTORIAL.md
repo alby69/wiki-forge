@@ -322,6 +322,8 @@ Two ways to run one:
 |---------|-------------|---------|
 | `compile` | You dropped new files in `sources/` and want the wiki updated | `compile` |
 | `consult "..."` | You have a question and want an answer from the wiki | `consult "What did Karpathy say about agents?"` |
+| `study-guide <topic>` | Generate comprehensive study guide in `output/` | `study-guide ai-tools` |
+| `quiz <topic> [n]` | Generate interactive Markdown quiz in `output/` | `quiz ai-tools 5` |
 | `search <term>` | You know a concept exists but can't find the article | `search "LLM-OS"` |
 | `help` | You forgot a command | `help` |
 

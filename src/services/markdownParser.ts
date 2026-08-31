@@ -5,7 +5,7 @@ export class MarkdownParser {
    * Extracts WikiLinks formatted as [[target]] or [[target|label]]
    */
   public extractWikiLinks(content: string): string[] {
-    const wikiLinkRegex = /\[\[([^\]\|#]+)(?:\|[^\]]+)?\]\]/g;
+    const wikiLinkRegex = /\[\[([^\]\|#]+)(?:#[^\]\|]+)?(?:\|[^\]]+)?\]\]/g;
     const links: string[] = [];
     let match: RegExpExecArray | null;
 

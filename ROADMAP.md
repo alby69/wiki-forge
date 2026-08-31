@@ -40,6 +40,7 @@
 | 26 | Professional UI & Vault File Management System | ✅ Done | Complete file manager UI with folder/file creation, rename, move, delete, upload, drag-and-drop, and API endpoint integration |
 | 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
 | 28 | Scenario-Driven Interactive Wizard System | ✅ Done | Interactive CLI wizard (`scripts/wizard.py`), scenario presets (`config/scenarios.toml`), `/wizard` contract extension in `AGENT.md` |
+| 29 | NotebookLM-Inspired Study & Knowledge Synthesis Suite | ✅ Done | Passage-level grounding (`#L<start>-L<end>`), `/study-guide`, `/quiz`, `/deep-research`, `/mindmap`, `/note` & `/promote-note`, `/audio-overview` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -271,6 +272,21 @@ required.
 ---
 
 ## Phase 28 — Scenario-Driven Interactive Wizard System ✅ Done
+
+---
+
+## Phase 29 — NotebookLM-Inspired Study & Knowledge Synthesis Suite ✅ Done
+
+**Goal:** Integrate NotebookLM-inspired synthesis and study workflows without sacrificing file-based, agent-agnostic, git-friendly principles.
+
+**Deliverables:**
+- **Precise Source Grounding (4.1):** Line-anchored source citation support (`raw/file.md#L10-L20`) in `AGENT.md`, line passage extraction in `/trace`, and Web UI source link data attributes.
+- **Study Guide & Quiz Generator (4.2):** Implemented `/study-guide` and `/quiz` workflow commands producing structured Markdown files in `output/`.
+- **Deep Research Synthesis (4.3):** Implemented `/deep-research` command producing multi-source reports with attribution matrix and knowledge gap identification.
+- **Per-Article Mind Maps (4.5):** Implemented `/mindmap` command extracting heading tree hierarchies and JSON node-link structures into `output/`.
+- **Quick Notes Scratchpad (4.6):** Added `notes` directory configuration in `config.toml`, `/note` for scratchpad logging, and `/promote-note` for promoting scratchpad notes to formal wiki articles.
+- **Audio Overview Dialogue Scripts (4.4):** Added `[audio]` config section and `/audio-overview` command generating Host A / Host B conversational dialogue scripts.
+- **Automated Testing:** Added `tests/notebooklmFeatures.test.ts` integration test suite.
 
 **Goal:** Provide scenario-driven wizard workflows for domain-specific use cases (Academic/Thesis, Business KB, Research, Creative Fiction, Existing Wiki).
 

@@ -27,6 +27,8 @@ raw = "raw"
 wiki = "wiki"
 # Folder for ephemeral query results / reports. Safe to delete.
 output = "output"
+# Folder for quick scratchpad notes prior to compilation into full wiki articles.
+notes = "notes"
 # Folder containing standard article templates.
 templates = "templates"
 
@@ -77,6 +79,13 @@ include_sources = false
 enabled = false
 folder = "sources/web-clips"
 format = "markdown"
+
+# Optional audio / podcast synthesis configuration
+[audio]
+provider = "none"            # Options: "none" | "local" | "openai_tts" | "elevenlabs"
+voice_host_a = "alloy"
+voice_host_b = "echo"
+output_folder = "output/audio"
 
 # Internationalization / Multi-language settings
 [i18n]

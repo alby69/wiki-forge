@@ -120,7 +120,7 @@ Links to [[non-existent-note]].
 
   await t.test('/trace traces connections for given query', async () => {
     const response = await agentServer.processChatCommand({ message: '/trace sample' });
-    assert.ok(response.includes('Connection Trace for "sample"'));
+    assert.ok(response.includes('Trace for "sample"'));
     assert.ok(response.includes('sample-note'));
   });
 });
