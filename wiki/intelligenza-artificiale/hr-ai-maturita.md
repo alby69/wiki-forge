@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, hr, maturita]
+tags:
+- intelligenza-artificiale
+- gatti
+- hr
+- maturita
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-hr-ai-maturita_COMPILED.md
+type: Concept
+title: 'HR e AI: dopo l''esplosione, la prova di maturità? (#226)'
+description: 'Nel luglio 2026 Gatti pubblica l''esplicito seguito del #105. Il mercato
+  degli strumenti HR/AI è maturato, ma alcune soluzioni rischiano di s...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-hr-ai-maturita_COMPILED.md
+  title: Gatti Hr Ai Maturita
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # HR e AI: dopo l'esplosione, la prova di maturità? (#226)
 
 Nel luglio 2026 Gatti pubblica l'esplicito seguito del #105. Il mercato degli strumenti HR/AI è maturato, ma alcune soluzioni rischiano di snaturare processi che dovrebbero restare fortemente umani; HR potrebbe dover occuparsi anche delle tipologie di agenti AI e dei loro comportamenti.

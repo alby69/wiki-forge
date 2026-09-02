@@ -1,3 +1,15 @@
+---
+type: Concept
+title: 'Indice wiki: Antropologia economica'
+description: Wiki tematica sulle opere di David Graeber (e David Wengrow) che indagano
+  il lavoro, il debito e le origini della società umana. Raccoglie s...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources: []
+---
 # Indice wiki: Antropologia economica
 
 Wiki tematica sulle opere di David Graeber (e David Wengrow) che indagano il lavoro, il debito e le origini della società umana. Raccoglie sintesi e concetti chiave estratti dai libri convertiti in `raw/`.

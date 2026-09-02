@@ -1,11 +1,26 @@
 ---
-tags: [archivio, off-topic, karpathy]
+tags:
+- archivio
+- off-topic
+- karpathy
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-chemical-hygiene_COMPILED.md
+type: Concept
+title: Chemical Hygiene (archivio fuori tema)
+description: Guida personale di Karpathy a igiene/idratazione/cibo/aria/tessuti. **Fuori
+  tema** per la tesi (impatto AI su HR), archiviata come riferimen...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-chemical-hygiene_COMPILED.md
+  title: Karpathy Chemical Hygiene
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Chemical Hygiene (archivio fuori tema)
 
 Guida personale di Karpathy a igiene/idratazione/cibo/aria/tessuti. **Fuori tema** per la tesi (impatto AI su HR), archiviata come riferimento biografico dell'autore.

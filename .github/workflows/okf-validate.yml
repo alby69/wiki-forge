@@ -1,0 +1,29 @@
+name: OKF Validation & Quality Check
+
+on:
+  push:
+    branches: [ main, master, "jules-*" ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  okf-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run OKF Linter
+        run: make okf-lint
+
+      - name: Verify Documentation & Skills Sync
+        run: make docs-sync

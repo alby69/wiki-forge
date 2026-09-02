@@ -1,11 +1,27 @@
 ---
-tags: [antropologia, archeologia, storia, società]
+tags:
+- antropologia
+- archeologia
+- storia
+- società
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/graeber-wengrow-alba-di-tutto_COMPILED.md
+type: Concept
+title: L'alba di tutto
+description: '*L''alba di tutto: una nuova storia dell''umanità* (2021, ed. it. 2022)
+  è scritto da David Graeber e David Wengrow. Rifiuta il racconto linear...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/graeber-wengrow-alba-di-tutto_COMPILED.md
+  title: Graeber Wengrow Alba Di Tutto
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # L'alba di tutto
 
 *L'alba di tutto: una nuova storia dell'umanità* (2021, ed. it. 2022) è scritto da David Graeber e David Wengrow. Rifiuta il racconto lineare che va da cacciatori-raccoglitori "infantili" a civiltà gerarchiche, mostrando che i nostri antenati sperimentavano già libertà, eguaglianza e forme complesse di organizzazione.

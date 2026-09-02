@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, llm, chatgpt, test-di-turing]
+tags:
+- intelligenza-artificiale
+- llm
+- chatgpt
+- test-di-turing
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/cristianini-machina-sapiens_COMPILED.md
+type: Concept
+title: Machina sapiens
+description: '*Machina sapiens* racconta l''incontro tra esseri umani e modelli linguistici
+  (ChatGPT e simili) attraverso tre punti di vista: gli scienziat...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/cristianini-machina-sapiens_COMPILED.md
+  title: Cristianini Machina Sapiens
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Machina sapiens
 
 *Machina sapiens* racconta l'incontro tra esseri umani e modelli linguistici (ChatGPT e simili) attraverso tre punti di vista: gli scienziati che li costruiscono, le persone che li usano, le macchine stesse. Il titolo gioca su *Homo sapiens* e sulla nuova "specie" di intelligenza artificiale.

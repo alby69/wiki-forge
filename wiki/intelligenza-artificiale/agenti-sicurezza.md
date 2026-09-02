@@ -1,11 +1,28 @@
 ---
-tags: [intelligenza-artificiale, gatti, agenti, sicurezza, governance]
+tags:
+- intelligenza-artificiale
+- gatti
+- agenti
+- sicurezza
+- governance
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-agenti-sicurezza_COMPILED.md
+type: Concept
+title: 'Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225)'
+description: 'Nel 2026 Gatti sintetizza l''analisi di Ben Lorica sulla sicurezza degli
+  agenti AI: il passaggio dall''AI che assiste all''AI che agisce porta ...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-agenti-sicurezza_COMPILED.md
+  title: Gatti Agenti Sicurezza
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225)
 
 Nel 2026 Gatti sintetizza l'analisi di Ben Lorica sulla sicurezza degli agenti AI: il passaggio dall'AI che assiste all'AI che agisce porta nuovi problemi di identità, autorizzazioni, governance, shadow AI, supervisione umana e controllo.

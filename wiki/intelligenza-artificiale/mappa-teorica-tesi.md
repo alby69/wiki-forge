@@ -1,28 +1,112 @@
 ---
-tags: [tesi, mappa-teorica, risorse-umane, sintesi]
+tags:
+- tesi
+- mappa-teorica
+- risorse-umane
+- sintesi
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/machines-of-loving-grace_COMPILED.md
-  - raw/the-adolescence-of-technology_COMPILED.md
-  - raw/graeber-bullshit-jobs_COMPILED.md
-  - raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
-  - raw/gatti-intelligenza-collettiva_COMPILED.md
-  - raw/gatti-alfabetizzazione-riqualificazione_COMPILED.md
-  - raw/gatti-trasformazione-output-first_COMPILED.md
-  - raw/gatti-dati-ai-scenari_COMPILED.md
-  - raw/gatti-visione-sistemica-manager_COMPILED.md
-  - raw/gatti-modello-migliore_COMPILED.md
-  - raw/gatti-adozione-integrazione_COMPILED.md
-  - raw/gatti-ignoranza-critica_COMPILED.md
-  - raw/gatti-agenti-sicurezza_COMPILED.md
-  - raw/gatti-hr-ai-maturita_COMPILED.md
-  - raw/cristianini-sovrumano_COMPILED.md
-  - raw/karpathy-sequoia-ascent-2026_COMPILED.md
-  - raw/karpathy-verifiability_COMPILED.md
-  - raw/karpathy-power-to-the-people_COMPILED.md
+type: Concept
+title: 'Mappa teorica della tesi: LLM-OS per l''HR'
+description: Sintesi dei riferimenti teorici della tesi sull'impatto dell'IA nelle
+  Risorse Umane. Mostra come cinque autori si concatenano dal problema d...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/machines-of-loving-grace_COMPILED.md
+  title: Machines Of Loving Grace
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/the-adolescence-of-technology_COMPILED.md
+  title: The Adolescence Of Technology
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-3
+  resource: raw/graeber-bullshit-jobs_COMPILED.md
+  title: Graeber Bullshit Jobs
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-4
+  resource: raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
+  title: Gatti Dietro Le Quinte Hr Ai
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-5
+  resource: raw/gatti-intelligenza-collettiva_COMPILED.md
+  title: Gatti Intelligenza Collettiva
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-6
+  resource: raw/gatti-alfabetizzazione-riqualificazione_COMPILED.md
+  title: Gatti Alfabetizzazione Riqualificazione
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-7
+  resource: raw/gatti-trasformazione-output-first_COMPILED.md
+  title: Gatti Trasformazione Output First
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-8
+  resource: raw/gatti-dati-ai-scenari_COMPILED.md
+  title: Gatti Dati Ai Scenari
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-9
+  resource: raw/gatti-visione-sistemica-manager_COMPILED.md
+  title: Gatti Visione Sistemica Manager
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-10
+  resource: raw/gatti-modello-migliore_COMPILED.md
+  title: Gatti Modello Migliore
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-11
+  resource: raw/gatti-adozione-integrazione_COMPILED.md
+  title: Gatti Adozione Integrazione
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-12
+  resource: raw/gatti-ignoranza-critica_COMPILED.md
+  title: Gatti Ignoranza Critica
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-13
+  resource: raw/gatti-agenti-sicurezza_COMPILED.md
+  title: Gatti Agenti Sicurezza
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-14
+  resource: raw/gatti-hr-ai-maturita_COMPILED.md
+  title: Gatti Hr Ai Maturita
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-15
+  resource: raw/cristianini-sovrumano_COMPILED.md
+  title: Cristianini Sovrumano
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-16
+  resource: raw/karpathy-sequoia-ascent-2026_COMPILED.md
+  title: Karpathy Sequoia Ascent 2026
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-17
+  resource: raw/karpathy-verifiability_COMPILED.md
+  title: Karpathy Verifiability
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-18
+  resource: raw/karpathy-power-to-the-people_COMPILED.md
+  title: Karpathy Power To The People
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Mappa teorica della tesi: LLM-OS per l'HR
 
 Sintesi dei riferimenti teorici della tesi sull'impatto dell'IA nelle Risorse Umane. Mostra come cinque autori si concatenano dal problema del lavoro alla soluzione tecnica, e dove si colloca il contributo originale (l'LLM-OS HR).

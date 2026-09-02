@@ -93,6 +93,33 @@ default_language = "en"
 supported_languages = ["en", "it", "es", "fr", "de"]
 fallback_language = "en"
 
+# Open Knowledge Format (OKF v0.2) Configuration
+[okf]
+version = "0.2"
+type_vocabulary = [
+  "Concept",
+  "Paper",
+  "Book",
+  "Tool",
+  "Process",
+  "Playbook",
+  "Reference",
+  "StudyGuide",
+  "Quiz",
+  "Attested Computation"
+]
+
+[okf.migration]
+folder_type_map = [
+  { folder = "intelligenza-artificiale", type = "Concept" },
+  { folder = "antropologia-economica", type = "Concept" },
+  { folder = "papers", type = "Paper" },
+  { folder = "tools", type = "Tool" },
+  { folder = "processes", type = "Process" },
+  { folder = "playbooks", type = "Playbook" }
+]
+default_type = "Concept"
+
 # Tag vocabulary (controlled taxonomy) for the knowledge base.
 #
 # The agent draws tags from `allowed` when compiling notes, and `suggest_tags.py`

@@ -1,21 +1,77 @@
 ---
-tags: [intelligenza-artificiale, autore, hr, organizzazione]
+tags:
+- intelligenza-artificiale
+- autore
+- hr
+- organizzazione
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
-  - raw/gatti-intelligenza-collettiva_COMPILED.md
-  - raw/gatti-alfabetizzazione-riqualificazione_COMPILED.md
-  - raw/gatti-trasformazione-output-first_COMPILED.md
-  - raw/gatti-dati-ai-scenari_COMPILED.md
-  - raw/gatti-visione-sistemica-manager_COMPILED.md
-  - raw/gatti-modello-migliore_COMPILED.md
-  - raw/gatti-adozione-integrazione_COMPILED.md
-  - raw/gatti-ignoranza-critica_COMPILED.md
-  - raw/gatti-agenti-sicurezza_COMPILED.md
-  - raw/gatti-hr-ai-maturita_COMPILED.md
+type: Concept
+title: Stefano Gatti
+description: Stefano Gatti (Head of Data & Analytics in Nexi, professore all'Università
+  Cattolica, publisher di *LaCulturaDelDato*) è il punto di osserva...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
+  title: Gatti Dietro Le Quinte Hr Ai
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/gatti-intelligenza-collettiva_COMPILED.md
+  title: Gatti Intelligenza Collettiva
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-3
+  resource: raw/gatti-alfabetizzazione-riqualificazione_COMPILED.md
+  title: Gatti Alfabetizzazione Riqualificazione
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-4
+  resource: raw/gatti-trasformazione-output-first_COMPILED.md
+  title: Gatti Trasformazione Output First
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-5
+  resource: raw/gatti-dati-ai-scenari_COMPILED.md
+  title: Gatti Dati Ai Scenari
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-6
+  resource: raw/gatti-visione-sistemica-manager_COMPILED.md
+  title: Gatti Visione Sistemica Manager
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-7
+  resource: raw/gatti-modello-migliore_COMPILED.md
+  title: Gatti Modello Migliore
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-8
+  resource: raw/gatti-adozione-integrazione_COMPILED.md
+  title: Gatti Adozione Integrazione
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-9
+  resource: raw/gatti-ignoranza-critica_COMPILED.md
+  title: Gatti Ignoranza Critica
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-10
+  resource: raw/gatti-agenti-sicurezza_COMPILED.md
+  title: Gatti Agenti Sicurezza
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-11
+  resource: raw/gatti-hr-ai-maturita_COMPILED.md
+  title: Gatti Hr Ai Maturita
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Stefano Gatti
 
 Stefano Gatti (Head of Data & Analytics in Nexi, professore all'Università Cattolica, publisher di *LaCulturaDelDato*) è il punto di osservazione più concreto della tesi: come dati, AI, agenti e nuove competenze vengono tradotti dentro le organizzazioni e, in particolare, dentro l'HR. Nella mappa teorica occupa una posizione intermedia tra la tecnica e la critica sociale.

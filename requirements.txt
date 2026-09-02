@@ -1,3 +1,4 @@
 pymupdf4llm
 rich
 questionary
+pyyaml

@@ -1,11 +1,28 @@
 ---
-tags: [intelligenza-artificiale, gatti, trasformazione, governance]
+tags:
+- intelligenza-artificiale
+- gatti
+- trasformazione
+- governance
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-trasformazione-output-first_COMPILED.md
+type: Concept
+title: 'Trasformazione con l''AI: meglio controllare tutto o puntare all''output?
+  (#196)'
+description: Nel 2025 Gatti contrappone una trasformazione che parte dalla mappatura
+  dei processi a un paradigma "output first", nel quale si definisce i...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-trasformazione-output-first_COMPILED.md
+  title: Gatti Trasformazione Output First
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Trasformazione con l'AI: meglio controllare tutto o puntare all'output? (#196)
 
 Nel 2025 Gatti contrappone una trasformazione che parte dalla mappatura dei processi a un paradigma "output first", nel quale si definisce il risultato desiderato e si lascia maggiore autonomia agli agenti.

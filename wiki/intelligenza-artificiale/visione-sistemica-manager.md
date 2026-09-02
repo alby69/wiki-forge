@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, manager, competenze]
+tags:
+- intelligenza-artificiale
+- gatti
+- manager
+- competenze
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-visione-sistemica-manager_COMPILED.md
+type: Concept
+title: 'Dalla Growth al dato: la visione "sistemica" del manager del futuro (#202)'
+description: 'Nel 2026 Gatti presenta la visione di Matteo Aliotta: le competenze
+  più difficili da automatizzare non sono le hard skill, ma la visione d''i...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-visione-sistemica-manager_COMPILED.md
+  title: Gatti Visione Sistemica Manager
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Dalla Growth al dato: la visione "sistemica" del manager del futuro (#202)
 
 Nel 2026 Gatti presenta la visione di Matteo Aliotta: le competenze più difficili da automatizzare non sono le hard skill, ma la visione d'insieme, il collegare elementi diversi e produrre valore. L'AI può rendere disponibile a chiunque un "data analyst personale".

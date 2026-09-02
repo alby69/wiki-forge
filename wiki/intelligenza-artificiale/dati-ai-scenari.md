@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, panoramica, context-engineering]
+tags:
+- intelligenza-artificiale
+- gatti
+- panoramica
+- context-engineering
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-dati-ai-scenari_COMPILED.md
+type: Concept
+title: 'Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200)'
+description: 'Nel gennaio 2026, numero speciale #200, Gatti fa il punto della maturazione
+  del suo pensiero: da ChatGPT ai reasoning models, il ruolo cresc...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-dati-ai-scenari_COMPILED.md
+  title: Gatti Dati Ai Scenari
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200)
 
 Nel gennaio 2026, numero speciale #200, Gatti fa il punto della maturazione del suo pensiero: da ChatGPT ai reasoning models, il ruolo crescente di dati e context engineering, e i temi di responsabilità, organizzazione enterprise, AI agentica e carriere nei dati.

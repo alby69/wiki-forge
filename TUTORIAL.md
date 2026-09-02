@@ -342,7 +342,11 @@ Two ways to run one:
 | `audit links` | You renamed an article and suspect broken links |
 | `reindex` | You moved/renamed articles manually |
 | `stats` | You want a snapshot of wiki growth |
-| `lint-frontmatter` | Validate YAML frontmatter across all articles |
+| `lint-frontmatter` | Validate YAML frontmatter across all articles against OKF v0.2 |
+| `okf-validate` | Full OKF v0.2 bundle validation (`make okf-validate`) |
+| `okf-stats` | OKF metrics report & trust tier breakdown (`make okf-stats`) |
+| `okf-reindex` | Regenerate index.md conforming to OKF §8 (`make okf-reindex`) |
+| `okf-log` | Append entry to wiki/log.md conforming to OKF §9 (`make okf-log`) |
 
 ### As-needed commands
 | Command | When to use | Requires confirmation? |

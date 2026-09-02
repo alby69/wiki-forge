@@ -67,10 +67,10 @@ confirm_destructive: true
 **Confirmation:** ALWAYS required.
 
 ### `lint-frontmatter`
-**Scope:** Validate YAML frontmatter across all articles.
+**Scope:** Validate YAML frontmatter across all articles against OKF v0.2 standard.
 **Checks:**
-- Required keys: `tags`, `created`, `updated`, `sources`.
-- Date format: `YYYY-MM-DD`.
-- `tags` is a list of strings.
-- `sources` is a list of strings.
+- Executes `python3 scripts/okf_lint.py wiki/`.
+- Required keys: `type`, `title`, `description`, `generated`, `status`.
+- ISO 8601 timestamps and actor conventions (<producer>/<version>, human:<id>, process:<id>).
+- Reserved files `index.md` (§8 OKF) and `log.md` (§9 OKF) formatting.
 **Output:** List of violations with file paths.

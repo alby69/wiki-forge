@@ -1,11 +1,27 @@
 ---
-tags: [economia, antropologia, denaro, debito]
+tags:
+- economia
+- antropologia
+- denaro
+- debito
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/graeber-debito_COMPILED.md
+type: Concept
+title: 'Debito: i primi 5000 anni'
+description: '*Debito: i primi 5000 anni* (2011, ed. it. 2024 con prefazione di Thomas
+  Piketty) è una storia globale del debito che capovolge la teoria ec...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/graeber-debito_COMPILED.md
+  title: Graeber Debito
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Debito: i primi 5000 anni
 
 *Debito: i primi 5000 anni* (2011, ed. it. 2024 con prefazione di Thomas Piketty) è una storia globale del debito che capovolge la teoria economica tradizionale: il debito non è nato dallo scambio, ma è la forma più antica di relazione umana, precedente a moneta e mercati.

@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, agi, asi, misurazione]
+tags:
+- intelligenza-artificiale
+- agi
+- asi
+- misurazione
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/cristianini-sovrumano_COMPILED.md
+type: Concept
+title: 'Sovrumano: ANI, AGI, ASI'
+description: '*Sovrumano* esplora se e quando le macchine supereranno l''intelligenza
+  umana. Cristianini distingue tre gradi — **ANI**, **AGI**, **ASI** — ...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/cristianini-sovrumano_COMPILED.md
+  title: Cristianini Sovrumano
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Sovrumano: ANI, AGI, ASI
 
 *Sovrumano* esplora se e quando le macchine supereranno l'intelligenza umana. Cristianini distingue tre gradi — **ANI**, **AGI**, **ASI** — e soprattutto mette al centro il problema difficile: *come si misura l'intelligenza?*

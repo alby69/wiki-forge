@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, automazione, verificabilita]
+tags:
+- intelligenza-artificiale
+- karpathy
+- automazione
+- verificabilita
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-verifiability_COMPILED.md
+type: Concept
+title: 'Verifiability: cosa si automatizza con l''AI'
+description: La **verificabilità** è la feature predittiva chiave di ciò che si automatizza
+  con l'AI, parallela alla "specificabilità" che governava il S...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-verifiability_COMPILED.md
+  title: Karpathy Verifiability
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Verifiability: cosa si automatizza con l'AI
 
 La **verificabilità** è la feature predittiva chiave di ciò che si automatizza con l'AI, parallela alla "specificabilità" che governava il Software 1.0.

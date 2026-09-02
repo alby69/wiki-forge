@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, multi-agent, organizzazione]
+tags:
+- intelligenza-artificiale
+- gatti
+- multi-agent
+- organizzazione
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-intelligenza-collettiva_COMPILED.md
+type: Concept
+title: 'Intelligenza Collettiva: quando l''IA imita le nostre organizzazioni (#124)'
+description: 'Nel luglio 2024 Gatti commenta Cristiano De Nobili (*Beyond Entropy*):
+  l''intelligenza collettiva che emerge dalla cooperazione di agenti LLM...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-intelligenza-collettiva_COMPILED.md
+  title: Gatti Intelligenza Collettiva
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Intelligenza Collettiva: quando l'IA imita le nostre organizzazioni (#124)
 
 Nel luglio 2024 Gatti commenta Cristiano De Nobili (*Beyond Entropy*): l'intelligenza collettiva che emerge dalla cooperazione di agenti LLM riflette le dinamiche delle organizzazioni umane.

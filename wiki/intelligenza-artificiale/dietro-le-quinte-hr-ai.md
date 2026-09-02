@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, hr, risorse-umane]
+tags:
+- intelligenza-artificiale
+- gatti
+- hr
+- risorse-umane
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
+type: Concept
+title: 'Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105)'
+description: Nel marzo 2024 Gatti commenta l'articolo di Bernard Marr su come dati
+  e intelligenza artificiale stiano ridisegnando l'HR, ma prendendo le d...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-dietro-le-quinte-hr-ai_COMPILED.md
+  title: Gatti Dietro Le Quinte Hr Ai
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105)
 
 Nel marzo 2024 Gatti commenta l'articolo di Bernard Marr su come dati e intelligenza artificiale stiano ridisegnando l'HR, ma prendendo le distanze dall'ottimismo dell'autore: integrazione con i sistemi legacy, usabilità e conoscenza dei limiti restano problemi aperti.

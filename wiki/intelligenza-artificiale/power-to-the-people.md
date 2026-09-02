@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, diffusione-tecnologica, lavoro]
+tags:
+- intelligenza-artificiale
+- karpathy
+- diffusione-tecnologica
+- lavoro
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-power-to-the-people_COMPILED.md
+type: Concept
+title: 'Power to the People: come gli LLM ribaltano la diffusione tecnologica'
+description: 'Karpathy osserva che gli LLM invertiscono il tradizionale percorso di
+  diffusione della tecnologia: il beneficio sproporzionato va all''**indi...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-power-to-the-people_COMPILED.md
+  title: Karpathy Power To The People
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Power to the People: come gli LLM ribaltano la diffusione tecnologica
 
 Karpathy osserva che gli LLM invertiscono il tradizionale percorso di diffusione della tecnologia: il beneficio sproporzionato va all'**individuo**, non ad aziende e governi.

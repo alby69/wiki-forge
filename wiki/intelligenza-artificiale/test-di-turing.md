@@ -1,12 +1,31 @@
 ---
-tags: [intelligenza-artificiale, filosofia, misurazione]
+tags:
+- intelligenza-artificiale
+- filosofia
+- misurazione
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/cristianini-machina-sapiens_COMPILED.md
-  - raw/cristianini-sovrumano_COMPILED.md
+type: Concept
+title: Test di Turing
+description: Il **test di Turing** (o "gioco dell'imitazione", 1950) è la proposta
+  di Alan Turing di sostituire la domanda metafisica "le macchine posson...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/cristianini-machina-sapiens_COMPILED.md
+  title: Cristianini Machina Sapiens
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/cristianini-sovrumano_COMPILED.md
+  title: Cristianini Sovrumano
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Test di Turing
 
 Il **test di Turing** (o "gioco dell'imitazione", 1950) è la proposta di Alan Turing di sostituire la domanda metafisica "le macchine possono pensare?" con una domanda operazionale: *una macchina può comportarsi bene nel gioco dell'imitazione?* Cioè, può farci credere di essere umana in una conversazione a distanza?

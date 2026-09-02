@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, panoramica, rlvr]
+tags:
+- intelligenza-artificiale
+- karpathy
+- panoramica
+- rlvr
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-2025-llm-year-in-review_COMPILED.md
+type: Concept
+title: 2025 LLM Year in Review
+description: 'Sintesi dei "paradigm change" del 2025 nei LLM secondo Karpathy: sei
+  spostamenti che ridefiniscono il panorama.'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-2025-llm-year-in-review_COMPILED.md
+  title: Karpathy 2025 Llm Year In Review
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # 2025 LLM Year in Review
 
 Sintesi dei "paradigm change" del 2025 nei LLM secondo Karpathy: sei spostamenti che ridefiniscono il panorama.
