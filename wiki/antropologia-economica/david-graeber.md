@@ -1,13 +1,36 @@
 ---
-tags: [antropologia, economia, autore]
+tags:
+- antropologia
+- economia
+- autore
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/graeber-bullshit-jobs_COMPILED.md
-  - raw/graeber-debito_COMPILED.md
-  - raw/graeber-wengrow-alba-di-tutto_COMPILED.md
+type: Concept
+title: David Graeber
+description: David Rolfe Graeber (1961-2020) è stato un antropologo, attivista e intellettuale
+  pubblico statunitense. I suoi lavori collegano antropologi...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/graeber-bullshit-jobs_COMPILED.md
+  title: Graeber Bullshit Jobs
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/graeber-debito_COMPILED.md
+  title: Graeber Debito
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-3
+  resource: raw/graeber-wengrow-alba-di-tutto_COMPILED.md
+  title: Graeber Wengrow Alba Di Tutto
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # David Graeber
 
 David Rolfe Graeber (1961-2020) è stato un antropologo, attivista e intellettuale pubblico statunitense. I suoi lavori collegano antropologia, critica dell'economia e teoria politica, puntando a smontare i racconti dominanti su lavoro, denaro e "civilizzazione".

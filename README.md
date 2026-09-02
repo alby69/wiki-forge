@@ -216,6 +216,11 @@ Or with the Makefile shortcuts:
 | `make ui-preview`| `npm run preview`                | Serve the built bundle                   |
 | `make ui-test`   | `npm run test`                   | Test suite (parser, graph, agent server) |
 | `make ui-typecheck` | `npm run typecheck`           | TypeScript type checking                 |
+| `make okf-validate` | `python3 scripts/okf_lint.py wiki/` | Validate OKF v0.2 frontmatter & rules |
+| `make okf-lint`    | `python3 scripts/okf_lint.py wiki/` | Lint OKF frontmatter schema & timestamps |
+| `make okf-reindex` | `python3 scripts/okf_reindex.py wiki/` | Regenerate index.md conforming to OKF §8 |
+| `make okf-log`     | `python3 scripts/okf_log.py wiki/` | Append log entry conforming to OKF §9 |
+| `make okf-stats`   | `python3 scripts/okf_stats.py wiki/` | Print OKF metrics & trust tier breakdown |
 
 The UI is served at **http://localhost:5173**. Stop any local `npm run dev` first,
 otherwise the port is already allocated and Docker will fail to publish it.
@@ -304,6 +309,7 @@ See `AGENT.md` §5.7–§5.8 for full command contracts and options.
 
 - **KISS** — the converter is a ~200-line, single-purpose script with no
   framework. The agent contract is plain prose.
+- **Open Knowledge Format (OKF v0.2) Standard** — `wiki/` complies with Google's vendor-neutral OKF v0.2 standard, featuring automatic frontmatter linting, structured provenance signals (`sources`), trust tier tracking (`unverified`, `machine-confirmed`, `human-reviewed`), lifecycle status, reserved indexes (§8), and chronological logs (§9).
 - **Decoupled** — conversion (`conv2md.py`), UI, and knowledge work (`AGENT.md`) are
   separate concerns; one can change without the other.
 - **Config-driven** — a single `config.toml` adapts the template to any context.

@@ -1,11 +1,26 @@
 ---
-tags: [machine-learning, intelligenza-artificiale, pattern]
+tags:
+- machine-learning
+- intelligenza-artificiale
+- pattern
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/cristianini-la-scorciatoia_COMPILED.md
+type: Concept
+title: 'La scorciatoia: l''apprendimento automatico'
+description: '*La scorciatoia* spiega come l''intelligenza artificiale moderna abbia
+  abbandonato la programmazione simbolica ("vecchia maniera") per la **s...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/cristianini-la-scorciatoia_COMPILED.md
+  title: Cristianini La Scorciatoia
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # La scorciatoia: l'apprendimento automatico
 
 *La scorciatoia* spiega come l'intelligenza artificiale moderna abbia abbandonato la programmazione simbolica ("vecchia maniera") per la **scorciatoia statistica**: invece di codificare regole, si lascia emergere il *pattern* dai dati. Titolo del libro: "Come le macchine sono diventate intelligenti".

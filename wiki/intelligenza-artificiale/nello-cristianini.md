@@ -1,13 +1,36 @@
 ---
-tags: [intelligenza-artificiale, autore, machine-learning]
+tags:
+- intelligenza-artificiale
+- autore
+- machine-learning
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/cristianini-la-scorciatoia_COMPILED.md
-  - raw/cristianini-machina-sapiens_COMPILED.md
-  - raw/cristianini-sovrumano_COMPILED.md
+type: Concept
+title: Nello Cristianini
+description: Nello Cristianini è un ricercatore di *machine learning* da circa trent'anni,
+  passato da conferenze con poche centinaia di partecipanti a qu...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/cristianini-la-scorciatoia_COMPILED.md
+  title: Cristianini La Scorciatoia
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/cristianini-machina-sapiens_COMPILED.md
+  title: Cristianini Machina Sapiens
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-3
+  resource: raw/cristianini-sovrumano_COMPILED.md
+  title: Cristianini Sovrumano
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Nello Cristianini
 
 Nello Cristianini è un ricercatore di *machine learning* da circa trent'anni, passato da conferenze con poche centinaia di partecipanti a quelle con migliaia. Ha scritto tre libri divulgativi — *La scorciatoia*, *Machina sapiens*, *Sovrumano* — che accompagnano il lettore dalla nascita dell'IA statistica al possibile sorpasso dell'intelligenza umana.

@@ -1,12 +1,32 @@
 ---
-tags: [intelligenza-artificiale, autore, policy, anthropic]
+tags:
+- intelligenza-artificiale
+- autore
+- policy
+- anthropic
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/machines-of-loving-grace_COMPILED.md
-  - raw/the-adolescence-of-technology_COMPILED.md
+type: Concept
+title: Dario Amodei
+description: Dario Amodei è il CEO di Anthropic e una delle voci più influenti sul
+  futuro dell'IA. Con i due saggi *Machines of Loving Grace* (2024) e *T...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/machines-of-loving-grace_COMPILED.md
+  title: Machines Of Loving Grace
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/the-adolescence-of-technology_COMPILED.md
+  title: The Adolescence Of Technology
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Dario Amodei
 
 Dario Amodei è il CEO di Anthropic e una delle voci più influenti sul futuro dell'IA. Con i due saggi *Machines of Loving Grace* (2024) e *The Adolescence of Technology* (2026) offre una visione bilanciata: il potenziale benefico dell'IA potente e il piano per gestirne i rischi.

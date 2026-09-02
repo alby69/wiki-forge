@@ -1,11 +1,28 @@
 ---
-tags: [intelligenza-artificiale, karpathy, software-3.0, llm-os, agentic-engineering]
+tags:
+- intelligenza-artificiale
+- karpathy
+- software-3.0
+- llm-os
+- agentic-engineering
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-sequoia-ascent-2026_COMPILED.md
+type: Concept
+title: 'Sequoia Ascent 2026: Software 3.0 e Agentic Engineering'
+description: Fireside chat a Sequoia Ascent 2026. Karpathy espone **Software 3.0**,
+  l'**agentic engineering** e l'AI come nuovo layer programmabile per i...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-sequoia-ascent-2026_COMPILED.md
+  title: Karpathy Sequoia Ascent 2026
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Sequoia Ascent 2026: Software 3.0 e Agentic Engineering
 
 Fireside chat a Sequoia Ascent 2026. Karpathy espone **Software 3.0**, l'**agentic engineering** e l'AI come nuovo layer programmabile per il lavoro digitale. È il saggio più centrale per l'architettura dell'LLM-OS HR.

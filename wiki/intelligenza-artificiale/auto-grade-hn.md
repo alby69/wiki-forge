@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, valutazione, esperimento]
+tags:
+- intelligenza-artificiale
+- karpathy
+- valutazione
+- esperimento
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-auto-grade-hn_COMPILED.md
+type: Concept
+title: 'Auto-grading HN: valutare il passato con il senno di poi'
+description: Esperimento in cui Karpathy usa un LLM per valutare, con il senno di
+  poi, discussioni di Hacker News di 10 anni prima, assegnando "prescienc...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-auto-grade-hn_COMPILED.md
+  title: Karpathy Auto Grade Hn
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Auto-grading HN: valutare il passato con il senno di poi
 
 Esperimento in cui Karpathy usa un LLM per valutare, con il senno di poi, discussioni di Hacker News di 10 anni prima, assegnando "prescience grades" ai commentatori.

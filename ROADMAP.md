@@ -46,6 +46,9 @@
 | 32 | Claude Code / Claude Skills Native Compatibility | ✅ Done | Added `.claude/skills/` syncing (`make skills-link`) and updated setup/troubleshooting guides |
 | 33 | Automated Doc/Skill Consistency Verification | ✅ Done | Added `scripts/check_docs_sync.py`, `.pre-commit-config.yaml` hook, CI workflow job, and `make docs-sync` |
 | 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
+| 35 | Open Knowledge Format (OKF v0.2) Integration & Tooling Suite | ✅ Done | Adoption of OKF v0.2 standard across `wiki/`, frontmatter taxonomy validation, migration script, reserved files, Makefile targets, and CI |
+| 36 | Web UI OKF Trust Badges & Lifecycle Filters | ⬜ Todo | Render trust tier badges (unverified/machine-confirmed/human-reviewed) and filter notes by OKF status/stale status |
+| 37 | OKF MCP Server Integration for External Agents | ⬜ Todo | Expose OKF bundle querying via Model Context Protocol (MCP) server for external multi-agent ecosystems |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -300,3 +303,40 @@ required.
 - **CLI Wizard (`scripts/wizard.py`):** Rich interactive menu and `--preset` command-line execution for source checking, transparent `conv2md.py` conversion, and formatted agent prompt hand-offs.
 - **Agent Contract Extension (`AGENT.md`):** Documented `/wizard` and `/wizard [scenario]` commands with uniform progress headers `[WIZARD STEP X/Y: Step Name]` and confirmation rules.
 - **Documentation & Build:** Updated `README.md`, `ROADMAP.md`, and added `make wizard` shortcut in `Makefile`.
+
+---
+
+## Phase 35 — Open Knowledge Format (OKF v0.2) Integration & Tooling Suite ✅ Done
+
+**Goal:** Adopt Google's Open Knowledge Format (OKF v0.2) standard for `wiki/`, providing validation, structured provenance signals, trust tiers, lifecycle tracking, and vendor-neutral interoperability.
+
+**Deliverables:**
+- **Offline OKF v0.2 Specification (`docs/OKF_SPEC.md`):** Offline copy of the canonical Google OKF v0.2 specification.
+- **Configuration Taxonomy (`config.toml`):** Added `[okf]` and `[okf.migration]` sections defining the controlled vocabulary for concept `type` (`Concept`, `Paper`, `Book`, `Tool`, `Process`, `Playbook`, `Reference`, `StudyGuide`, `Quiz`, `Attested Computation`) and folder-to-type migration mapping.
+- **One-Shot Migration Script (`scripts/migrate_to_okf.py`):** Converted existing `wiki/` Markdown articles to OKF v0.2 frontmatter, setting `type`, `title`, `description`, `status`, ISO UTC timestamps in `generated`, `verified` array, and standardizing source credibility signals.
+- **Linter & Validator (`scripts/okf_lint.py`):** Validates required `type`, ISO timestamps, actor conventions (<producer>/<version>, human:<id>, process:<id>), lifecycle status (`draft`, `stable`, `deprecated`), source resources, and reserved files (`index.md` §8 OKF, `log.md` §9 OKF).
+- **Index & Log Tooling (`scripts/okf_reindex.py`, `scripts/okf_log.py`):** Auto-generates topic indexes (§8 OKF) and bundle-root index (with `okf_version: "0.2"`), and appends chronological updates to `wiki/log.md` (§9 OKF).
+- **OKF Metrics & Analytics (`scripts/okf_stats.py`):** Analytics on OKF types, trust tiers (unverified, machine-confirmed, human-reviewed), status, and stale concepts.
+- **Makefile Shortcuts & CI/CD:** Added `make okf-validate`, `make okf-lint`, `make okf-reindex`, `make okf-log`, `make okf-stats`, and `.github/workflows/okf-validate.yml` for automated CI checks.
+- **Agent Contract & Skills Update:** Updated `AGENT.md` and `skills/` skill packages (`wiki-curate`, `wiki-audit`, `wiki-ingest`) with OKF frontmatter schema, credibility signals, and OKF compliance checklist.
+
+---
+
+## Phase 36 — Web UI OKF Trust Badges & Lifecycle Filters ⬜ Todo
+
+**Goal:** Enhance the Web UI context panel and vault explorer to visually reflect OKF metadata.
+
+**Planned Deliverables:**
+- **Trust Tier Badges:** Display visual badges (`unverified`, `machine-confirmed`, `human-reviewed`) in the Context Panel based on `verified` frontmatter array.
+- **Lifecycle Filters:** Add filters in Vault Explorer for `status` (`draft`, `stable`, `deprecated`) and stale content (`now >= stale_after`).
+- **OKF Version Header:** Display OKF version (`v0.2`) in the Web UI header bar.
+
+---
+
+## Phase 37 — OKF MCP Server Integration ⬜ Todo
+
+**Goal:** Enable external agent ecosystems to query the OKF bundle directly over Model Context Protocol (MCP).
+
+**Planned Deliverables:**
+- **MCP Server Service:** Integrate `okft serve wiki/` or custom Python MCP server in Docker Compose.
+- **Agent Interoperability:** Provide standard MCP endpoints for external AI agents to query concept graphs, inspect provenance, and fetch line-anchored citations.

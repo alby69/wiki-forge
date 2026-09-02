@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, metafora, natura-llm]
+tags:
+- intelligenza-artificiale
+- karpathy
+- metafora
+- natura-llm
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-animals-vs-ghosts_COMPILED.md
+type: Concept
+title: 'Animals vs Ghosts: LLM come "fantasmi" statistici'
+description: 'Commento di Karpathy al podcast di Dwarkesh con Rich Sutton. Il pezzo
+  distingue due tipi di intelligenza nello spazio delle menti: gli **ani...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-animals-vs-ghosts_COMPILED.md
+  title: Karpathy Animals Vs Ghosts
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Animals vs Ghosts: LLM come "fantasmi" statistici
 
 Commento di Karpathy al podcast di Dwarkesh con Rich Sutton. Il pezzo distingue due tipi di intelligenza nello spazio delle menti: gli **animali** (evolutivi) e i **fantasmi** (LLM, distillati statistici dell'umanità).

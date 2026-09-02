@@ -1,20 +1,64 @@
 ---
 tags:
-  - intelligenza-artificiale
+- intelligenza-artificiale
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-vibe-coding-menugen_COMPILED.md
-  - raw/karpathy-power-to-the-people_COMPILED.md
-  - raw/karpathy-animals-vs-ghosts_COMPILED.md
-  - raw/karpathy-verifiability_COMPILED.md
-  - raw/karpathy-the-space-of-minds_COMPILED.md
-  - raw/karpathy-auto-grade-hn_COMPILED.md
-  - raw/karpathy-chemical-hygiene_COMPILED.md
-  - raw/karpathy-2025-llm-year-in-review_COMPILED.md
-  - raw/karpathy-sequoia-ascent-2026_COMPILED.md
+type: Concept
+title: Andrej Karpathy
+description: Andrej Karpathy (ex Tesla Autopilot, co-fondatore OpenAI, fondatore Eureka
+  Labs) è uno dei divulgatori e ricercatori AI più influenti. Dopo ...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-vibe-coding-menugen_COMPILED.md
+  title: Karpathy Vibe Coding Menugen
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-2
+  resource: raw/karpathy-power-to-the-people_COMPILED.md
+  title: Karpathy Power To The People
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-3
+  resource: raw/karpathy-animals-vs-ghosts_COMPILED.md
+  title: Karpathy Animals Vs Ghosts
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-4
+  resource: raw/karpathy-verifiability_COMPILED.md
+  title: Karpathy Verifiability
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-5
+  resource: raw/karpathy-the-space-of-minds_COMPILED.md
+  title: Karpathy The Space Of Minds
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-6
+  resource: raw/karpathy-auto-grade-hn_COMPILED.md
+  title: Karpathy Auto Grade Hn
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-7
+  resource: raw/karpathy-chemical-hygiene_COMPILED.md
+  title: Karpathy Chemical Hygiene
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-8
+  resource: raw/karpathy-2025-llm-year-in-review_COMPILED.md
+  title: Karpathy 2025 Llm Year In Review
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
+- id: src-9
+  resource: raw/karpathy-sequoia-ascent-2026_COMPILED.md
+  title: Karpathy Sequoia Ascent 2026
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Andrej Karpathy
 
 Andrej Karpathy (ex Tesla Autopilot, co-fondatore OpenAI, fondatore Eureka Labs) è uno dei divulgatori e ricercatori AI più influenti. Dopo il celebre post sul **vibe coding** (febbraio 2025), ha pubblicato una serie di saggi brevi su `karpathy.bearblog.dev` che tracciano l'evoluzione del suo pensiero: dall'coding assistito dagli LLM agli agenti autonomi, fino alla trasformazione del lavoro cognitivo. Nella tesi fornisce l'**architettura tecnica** dell'LLM-OS HR.

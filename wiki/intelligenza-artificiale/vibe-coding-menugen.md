@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, vibe-coding, llm-os]
+tags:
+- intelligenza-artificiale
+- karpathy
+- vibe-coding
+- llm-os
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-vibe-coding-menugen_COMPILED.md
+type: Concept
+title: 'Vibe Coding: MenuGen'
+description: 'MenuGen è la prima app "vibe coded" end-to-end di Andrej Karpathy: un''applicazione
+  reale (foto del menù di un ristorante → immagini dei piat...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-vibe-coding-menugen_COMPILED.md
+  title: Karpathy Vibe Coding Menugen
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Vibe Coding: MenuGen
 
 MenuGen è la prima app "vibe coded" end-to-end di Andrej Karpathy: un'applicazione reale (foto del menù di un ristorante → immagini dei piatti) costruita senza scrivere codice manuale, solo descrivendo cosa si voleva a Cursor+Claude.

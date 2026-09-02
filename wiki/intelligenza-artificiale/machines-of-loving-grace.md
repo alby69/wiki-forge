@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, futuro, società, lavoro]
+tags:
+- intelligenza-artificiale
+- futuro
+- società
+- lavoro
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/machines-of-loving-grace_COMPILED.md
+type: Concept
+title: Machines of Loving Grace
+description: '*Machines of Loving Grace* (ottobre 2024) è il saggio in cui Dario Amodei
+  disegna il mondo che potrebbe nascere se l''IA potente venisse usat...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/machines-of-loving-grace_COMPILED.md
+  title: Machines Of Loving Grace
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Machines of Loving Grace
 
 *Machines of Loving Grace* (ottobre 2024) è il saggio in cui Dario Amodei disegna il mondo che potrebbe nascere se l'IA potente venisse usata bene. Il titolo (da una poesia di Richard Brautigan) sintetizza l'idea: macchine che amplificano, non sostituiscono, la grazia umana.

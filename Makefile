@@ -64,8 +64,23 @@ note:
 docs-sync:
 	python3 scripts/check_docs_sync.py
 
+okf-validate:
+	@python3 scripts/okf_lint.py wiki/
+
+okf-lint:
+	@python3 scripts/okf_lint.py wiki/
+
+okf-reindex:
+	@python3 scripts/okf_reindex.py wiki/
+
+okf-log:
+	@python3 scripts/okf_log.py wiki/ "$(MSG)"
+
+okf-stats:
+	@python3 scripts/okf_stats.py wiki/
+
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
 
 ui:
 	npm run dev
@@ -102,4 +117,4 @@ skills-link:
 	done
 	@echo "Linked skills into .claude/skills/"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex clean-output export-json lint docs-sync help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats clean-output export-json lint docs-sync help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link

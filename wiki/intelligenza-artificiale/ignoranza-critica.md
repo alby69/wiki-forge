@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, competenze, post-llm]
+tags:
+- intelligenza-artificiale
+- gatti
+- competenze
+- post-llm
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-ignoranza-critica_COMPILED.md
+type: Concept
+title: 'Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223)'
+description: Nel 2026 Gatti propone che il valore professionale non risieda nell'accumulare
+  sempre più informazioni, ma nel sapere cosa ignorare, cosa de...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-ignoranza-critica_COMPILED.md
+  title: Gatti Ignoranza Critica
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223)
 
 Nel 2026 Gatti propone che il valore professionale non risieda nell'accumulare sempre più informazioni, ma nel sapere cosa ignorare, cosa delegare e dove concentrare l'attenzione.

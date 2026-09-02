@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, rischi, lavoro, governance]
+tags:
+- intelligenza-artificiale
+- rischi
+- lavoro
+- governance
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/the-adolescence-of-technology_COMPILED.md
+type: Concept
+title: The Adolescence of Technology
+description: '*The Adolescence of Technology* (gennaio 2026) è la "metà complementare"
+  di *Machines of Loving Grace*: mappa i rischi dell''IA potente e pro...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/the-adolescence-of-technology_COMPILED.md
+  title: The Adolescence Of Technology
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # The Adolescence of Technology
 
 *The Adolescence of Technology* (gennaio 2026) è la "metà complementare" di *Machines of Loving Grace*: mappa i rischi dell'IA potente e propone un piano per superare la "pubertà tecnologica" senza autodistruggersi. Il titolo evoca la scena di *Contact* di Sagan: "come avete superato questa adolescenza tecnologica?".

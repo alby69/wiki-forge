@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, gatti, valutazione-llm, benchmark]
+tags:
+- intelligenza-artificiale
+- gatti
+- valutazione-llm
+- benchmark
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/gatti-modello-migliore_COMPILED.md
+type: Concept
+title: 'Il modello migliore (di AI) non è quello #1 in classifica (#209)'
+description: Nel 2026 Gatti sposta la valutazione degli LLM dal benchmark astratto
+  al fit con il lavoro reale dell'organizzazione, sottolineando la neces...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/gatti-modello-migliore_COMPILED.md
+  title: Gatti Modello Migliore
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Il modello migliore (di AI) non è quello #1 in classifica (#209)
 
 Nel 2026 Gatti sposta la valutazione degli LLM dal benchmark astratto al fit con il lavoro reale dell'organizzazione, sottolineando la necessità di valutazione e monitoraggio continui.

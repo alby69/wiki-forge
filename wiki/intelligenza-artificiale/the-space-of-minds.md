@@ -1,11 +1,27 @@
 ---
-tags: [intelligenza-artificiale, karpathy, natura-llm, spazio-delle-menti]
+tags:
+- intelligenza-artificiale
+- karpathy
+- natura-llm
+- spazio-delle-menti
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/karpathy-the-space-of-minds_COMPILED.md
+type: Concept
+title: 'The Space of Minds: l''LLM come punto nello spazio delle intelligenze'
+description: L'intelligenza animale è un solo punto (o una piccola nuvola) nello spazio
+  delle menti; gli LLM ne abitano un altro, plasmato da pressione d...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/karpathy-the-space-of-minds_COMPILED.md
+  title: Karpathy The Space Of Minds
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # The Space of Minds: l'LLM come punto nello spazio delle intelligenze
 
 L'intelligenza animale è un solo punto (o una piccola nuvola) nello spazio delle menti; gli LLM ne abitano un altro, plasmato da pressione di ottimizzazione **commerciale**, non evolutiva.

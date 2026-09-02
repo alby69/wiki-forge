@@ -1,11 +1,26 @@
 ---
-tags: [lavoro, sociologia, economia]
+tags:
+- lavoro
+- sociologia
+- economia
 data_creazione: 2026-08-26
 data_aggiornamento: 2026-08-26
-fonti:
-  - raw/graeber-bullshit-jobs_COMPILED.md
+type: Concept
+title: Bullshit jobs
+description: Un *bullshit job* (lavoro senza senso) è un'occupazione che il lavoratore
+  stesso percepisce come priva di utilità sociale, superflua o addir...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-09-02T10:42:12Z'
+verified: []
+sources:
+- id: src-1
+  resource: raw/graeber-bullshit-jobs_COMPILED.md
+  title: Graeber Bullshit Jobs
+  author: process:conv2md
+  last_modified: '2026-09-02T10:53:19Z'
 ---
-
 # Bullshit jobs
 
 Un *bullshit job* (lavoro senza senso) è un'occupazione che il lavoratore stesso percepisce come priva di utilità sociale, superflua o addirittura dannosa, e che continua a svolgere solo per necessità. Graeber parte da un sospetto poi confermato da migliaia di testimonianze: ampie fette della popolazione passano la vita lavorativa a compiti che in cuor loro ritengono non dovrebbero esistere.

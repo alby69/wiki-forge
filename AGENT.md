@@ -66,11 +66,22 @@ The knowledge base has three top-level folders with clear, non-overlapping dutie
 ## 3. Wiki structure
 
 ### Master index: `wiki/index.md`
-The main entry point. It must contain:
-1. A list of every thematic wiki (subfolder of `wiki/`).
-2. A one-line description of each.
-3. A link to each thematic index, e.g. `[[clienti/index|Clienti]]`.
+The main entry point conforming to OKF §8. It must contain:
+1. Optional YAML frontmatter with `okf_version: "0.2"` at bundle root.
+2. Section `# Wiki Index — Knowledge Base`.
+3. A list of every thematic wiki subfolder and article counts.
+4. A `## Recently Updated` section with Markdown links and one-line summaries.
 Update it whenever you create a new thematic wiki or substantially change one.
+
+### Master change log: `wiki/log.md`
+The chronological update log conforming to OKF §9. It records creation, update, and deprecation events formatted as:
+```markdown
+# Wiki Update Log
+
+## YYYY-MM-DD
+* **Creation**: Added [Concept Title](path/concept.md) concept.
+* **Update**: Regenerated [Concept Title](path/concept.md) with updated sources.
+```
 
 ### Thematic wikis: `wiki/<wiki-name>/`
 - Each subfolder is a self-contained wiki on one subject
@@ -103,17 +114,46 @@ Update it whenever you create, substantially change, or rename an article.
 6. A final `## Related` section with `[[wiki links]]`.
 7. A final `## Sources` section with traceable references to files in `raw/`. Rationale and claim-level quotes SHOULD include line-number anchors when available (e.g. `raw/interview-claude_COMPILED.md#L12-L24`).
 
-### Example frontmatter
+### Example frontmatter (OKF v0.2 Compliant)
 ```yaml
 ---
-tags: [ai-tools, agents, ide]
-created: 2026-04-29
-updated: 2026-04-29
+type: Concept
+title: "LLM Wiki Pattern"
+description: "Andrej Karpathy's pattern for persistent, agent-maintained knowledge bases."
+resource: "https://karpathy.ai/blog/llm-wiki.html"
+tags: [topic/ai, status/stable]
+status: stable
+stale_after: 2027-12-31T00:00:00Z
+generated:
+  by: wiki-forge-agent/v2.7
+  at: 2026-09-02T12:00:00Z
+verified:
+  - by: human:alby69
+    at: 2026-09-02T12:30:00Z
 sources:
-  - raw/interview-claude_COMPILED.md#L12-L24
-  - raw/tool-ai-article_COMPILED.md#L50-L65
+  - id: karpathy-blog
+    resource: https://karpathy.ai/blog/llm-wiki.html
+    title: "LLM Wiki — Karpathy Blog"
+    author: human:karpathy
+    last_modified: 2024-01-15T00:00:00Z
+  - id: raw-sources
+    resource: raw/llm-wiki-sources_COMPILED.md#L10-L25
+    title: "Compiled raw sources on LLM Wiki"
+    author: process:conv2md
+    last_modified: 2026-09-01T00:00:00Z
 ---
 ```
+
+### OKF Compliance Checklist
+Before declaring any article complete or finishing a compilation pass, verify:
+- [ ] `type` field present and drawn from controlled vocabulary in `config.toml`.
+- [ ] `title` and concise `description` present.
+- [ ] `generated.by` (actor convention) and `generated.at` (ISO 8601 UTC) populated.
+- [ ] `sources` array present with `id`, `resource`, `title`, `author`, `last_modified`.
+- [ ] Body citations/footnotes match `sources[].id`.
+- [ ] `status` set to `draft`, `stable`, or `deprecated`.
+- [ ] `wiki/log.md` updated with entry under current date (`## YYYY-MM-DD`).
+- [ ] Reserved files `index.md` and `log.md` checked with `make okf-lint`.
 
 ### Writing style
 - Clear, concise, high information density.
