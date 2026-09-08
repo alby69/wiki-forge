@@ -90,7 +90,7 @@ export class Sidebar {
   private getTagTree(): TagNode[] {
     const counts = new Map<string, number>();
     for (const note of this.notes) {
-      for (const tag of note.tags) {
+      for (const tag of note.tags) { if (String(tag).match(/^[0-9]+$/)) continue;
         counts.set(tag, (counts.get(tag) ?? 0) + 1);
       }
     }
@@ -132,7 +132,7 @@ export class Sidebar {
     let max = 1;
     const seen = new Map<string, number>();
     for (const note of this.notes) {
-      for (const tag of note.tags) {
+      for (const tag of note.tags) { if (String(tag).match(/^[0-9]+$/)) continue;
         const c = (seen.get(tag) ?? 0) + 1;
         seen.set(tag, c);
         if (c > max) max = c;

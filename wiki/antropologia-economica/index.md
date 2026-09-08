@@ -1,3 +1,7 @@
+---
+tags: ['antropologia-economica', 'index']
+---
+
 # Antropologia Economica — Topic Index
 
 ## Articles

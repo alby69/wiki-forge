@@ -340,3 +340,4 @@ required.
 **Planned Deliverables:**
 - **MCP Server Service:** Integrate `okft serve wiki/` or custom Python MCP server in Docker Compose.
 - **Agent Interoperability:** Provide standard MCP endpoints for external AI agents to query concept graphs, inspect provenance, and fetch line-anchored citations.
+Roadmap update: 1) Separa core/API 2) Cache layer 3) Build vite 4) Tests auto

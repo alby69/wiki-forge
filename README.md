@@ -324,3 +324,10 @@ See `AGENT.md` §5.7–§5.8 for full command contracts and options.
 - `rich` and `questionary` for CLI Wizard (in `requirements.txt`)
 - A coding agent (Claude Code, OpenCode, Codex, Gemini CLI, Jules, Cursor, …)
 - Optional: [Obsidian](https://obsidian.md) for browsing the wiki (graph view)
+
+## Stato attuale (2026-09-08)
+- Architettura: core/API separato (src/api/core.py)
+- Cache layer attivo (src/cache.py)
+- Build Vite ottimizzato
+- Test auto (tests/auto/)
+- Codice verificato e funzionante

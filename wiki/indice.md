@@ -1,14 +1,22 @@
 ---
+tags: ['indice']
+---
+
+---
 type: Concept
 title: Indice delle wiki
 description: Elenco delle wiki nell'ordine in cui sono state create.
 status: stable
-generated:
-  by: process:migrate-script
-  at: '2026-09-02T10:42:12Z'
+generated: []
+by: process:migrate-script
+at: 2026-09-02T10:42:12Z
 verified: []
 sources: []
+tags:
+  - author/graeber
+  - author/cristianini
 ---
+
 # Indice delle wiki
 
 Elenco delle wiki nell'ordine in cui sono state create.

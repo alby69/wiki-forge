@@ -1,27 +1,7 @@
 ---
-tags:
-- intelligenza-artificiale
-- gatti
-- adozione
-- metodologia
-data_creazione: 2026-08-26
-data_aggiornamento: 2026-08-26
-type: Concept
-title: L'AI in azienda non si adotta, si integra prova dopo prova (#215)
-description: 'Nel 2026 Gatti commenta il saggio di Jack Dorsey *From Hierarchy to
-  Intelligence*: il problema non è scegliere tool o licenze, ma modificare...'
-status: stable
-generated:
-  by: process:migrate-script
-  at: '2026-09-02T10:42:12Z'
-verified: []
-sources:
-- id: src-1
-  resource: raw/gatti-adozione-integrazione_COMPILED.md
-  title: Gatti Adozione Integrazione
-  author: process:conv2md
-  last_modified: '2026-09-02T10:53:19Z'
+tags: ['intelligenza-artificiale', 'adozione-integrazione']
 ---
+
 # L'AI in azienda non si adotta, si integra prova dopo prova (#215)
 
 Nel 2026 Gatti commenta il saggio di Jack Dorsey *From Hierarchy to Intelligence*: il problema non è scegliere tool o licenze, ma modificare il funzionamento dell'organizzazione e portare l'AI in produzione. Ribadisce MVP > POC e l'apprendimento sul campo.

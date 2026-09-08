@@ -1,15 +1,26 @@
 ---
+tags: ['intelligenza-artificiale', 'indice_wiki']
+---
+
+---
 type: Concept
-title: 'Indice wiki: Intelligenza artificiale'
+title: Indice wiki: Intelligenza artificiale
 description: Wiki tematica sulla divulgazione di Nello Cristianini (e i temi affini)
-  dedicata al machine learning, ai grandi modelli linguistici e al pos...
 status: stable
-generated:
-  by: process:migrate-script
-  at: '2026-09-02T10:42:12Z'
+generated: []
+by: process:migrate-script
+at: 2026-09-02T10:42:12Z
 verified: []
 sources: []
+tags:
+  - topic/ai
+  - topic/hr
+  - author/karpathy
+  - author/cristianini
+  - author/amodei
+  - author/graeber
 ---
+
 # Indice wiki: Intelligenza artificiale
 
 Wiki tematica sulla divulgazione di Nello Cristianini (e i temi affini) dedicata al machine learning, ai grandi modelli linguistici e al possibile sorpasso dell'intelligenza umana. Fonti convertite in `raw/`.

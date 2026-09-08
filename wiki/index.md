@@ -1,5 +1,12 @@
 ---
-okf_version: "0.2"
+tags: ['index']
+---
+
+---
+okf_version: 0.2
+tags:
+  - author/gatti
+  - author/karpathy
 ---
 
 # Wiki Index — Knowledge Base

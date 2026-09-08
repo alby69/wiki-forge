@@ -1,3 +1,7 @@
+---
+tags: ['log']
+---
+
 # Wiki Update Log
 
 ## 2026-09-02

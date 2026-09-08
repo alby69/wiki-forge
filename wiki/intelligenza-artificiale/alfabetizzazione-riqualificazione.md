@@ -1,28 +1,7 @@
 ---
-tags:
-- intelligenza-artificiale
-- gatti
-- competenze
-- upskilling
-data_creazione: 2026-08-26
-data_aggiornamento: 2026-08-26
-type: Concept
-title: 'AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali
-  (#141)'
-description: Nel 2024 Gatti sottolinea che integrare l'AI nei workflow richiede investimenti
-  in upskilling e reskilling, e sposta il problema da "adottar...
-status: stable
-generated:
-  by: process:migrate-script
-  at: '2026-09-02T10:42:12Z'
-verified: []
-sources:
-- id: src-1
-  resource: raw/gatti-alfabetizzazione-riqualificazione_COMPILED.md
-  title: Gatti Alfabetizzazione Riqualificazione
-  author: process:conv2md
-  last_modified: '2026-09-02T10:53:19Z'
+tags: ['intelligenza-artificiale', 'alfabetizzazione-riqualificazione']
 ---
+
 # AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali (#141)
 
 Nel 2024 Gatti sottolinea che integrare l'AI nei workflow richiede investimenti in upskilling e reskilling, e sposta il problema da "adottare o non adottare" a "imparare a usare l'AI con consapevolezza".

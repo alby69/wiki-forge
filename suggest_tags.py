@@ -316,3 +316,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# Auto-tag: suggerisce e inserisce tag da wiki/
