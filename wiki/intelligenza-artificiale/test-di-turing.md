@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'test-di-turing']
+type: note
 ---
 
 # Test di Turing

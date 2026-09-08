@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'intelligenza-collettiva']
+type: note
 ---
 
 # Intelligenza Collettiva: quando l'IA imita le nostre organizzazioni (#124)

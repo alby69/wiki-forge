@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'verifiability']
+type: note
 ---
 
 # Verifiability: cosa si automatizza con l'AI

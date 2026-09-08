@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'andrej-karpathy']
+type: note
 ---
 
 # Andrej Karpathy

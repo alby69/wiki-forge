@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'adozione-integrazione']
+type: note
 ---
 
 # L'AI in azienda non si adotta, si integra prova dopo prova (#215)

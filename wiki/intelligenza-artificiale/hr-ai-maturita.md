@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'hr-ai-maturita']
+type: note
 ---
 
 # HR e AI: dopo l'esplosione, la prova di maturità? (#226)

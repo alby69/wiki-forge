@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'auto-grade-hn']
+type: note
 ---
 
 # Auto-grading HN: valutare il passato con il senno di poi

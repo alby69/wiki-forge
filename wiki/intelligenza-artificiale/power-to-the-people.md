@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'power-to-the-people']
+type: note
 ---
 
 # Power to the People: come gli LLM ribaltano la diffusione tecnologica

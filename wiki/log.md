@@ -1,5 +1,6 @@
 ---
 tags: ['log']
+type: note
 ---
 
 # Wiki Update Log

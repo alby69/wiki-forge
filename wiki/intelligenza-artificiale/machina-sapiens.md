@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'machina-sapiens']
+type: note
 ---
 
 # Machina sapiens

@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'nello-cristianini']
+type: note
 ---
 
 # Nello Cristianini

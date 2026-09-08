@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'the-space-of-minds']
+type: note
 ---
 
 # The Space of Minds: l'LLM come punto nello spazio delle intelligenze

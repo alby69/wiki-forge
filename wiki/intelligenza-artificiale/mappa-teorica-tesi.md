@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'mappa-teorica-tesi']
+type: note
 ---
 
 # Mappa teorica della tesi: LLM-OS per l'HR

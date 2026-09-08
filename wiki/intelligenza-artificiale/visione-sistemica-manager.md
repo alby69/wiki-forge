@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'visione-sistemica-manager']
+type: note
 ---
 
 # Dalla Growth al dato: la visione "sistemica" del manager del futuro (#202)

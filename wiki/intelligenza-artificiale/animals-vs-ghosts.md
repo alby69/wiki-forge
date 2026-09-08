@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'animals-vs-ghosts']
+type: note
 ---
 
 # Animals vs Ghosts: LLM come "fantasmi" statistici

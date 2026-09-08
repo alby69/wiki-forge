@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'alfabetizzazione-riqualificazione']
+type: note
 ---
 
 # AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali (#141)

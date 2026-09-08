@@ -1,5 +1,6 @@
 ---
 tags: ['antropologia-economica', 'bullshit-jobs']
+type: note
 ---
 
 # Bullshit jobs

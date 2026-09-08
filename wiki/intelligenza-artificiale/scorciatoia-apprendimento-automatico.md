@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'scorciatoia-apprendimento-automatico']
+type: note
 ---
 
 # La scorciatoia: l'apprendimento automatico

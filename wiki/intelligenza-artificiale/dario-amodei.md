@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'dario-amodei']
+type: note
 ---
 
 # Dario Amodei

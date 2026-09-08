@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'sovrumano-ani-agi-asi']
+type: note
 ---
 
 # Sovrumano: ANI, AGI, ASI

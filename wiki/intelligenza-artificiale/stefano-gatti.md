@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'stefano-gatti']
+type: note
 ---
 
 # Stefano Gatti

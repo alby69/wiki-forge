@@ -1,7 +1,3 @@
----
-tags: ['intelligenza-artificiale', 'index']
----
-
 # Intelligenza Artificiale — Topic Index
 
 ## Articles

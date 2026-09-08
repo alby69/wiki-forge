@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'modello-migliore']
+type: note
 ---
 
 # Il modello migliore (di AI) non è quello #1 in classifica (#209)

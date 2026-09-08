@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
+type: note
 ---
 
 # Vibe Coding: MenuGen

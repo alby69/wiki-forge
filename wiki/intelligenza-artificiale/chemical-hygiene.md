@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'chemical-hygiene']
+type: note
 ---
 
 # Chemical Hygiene (archivio fuori tema)

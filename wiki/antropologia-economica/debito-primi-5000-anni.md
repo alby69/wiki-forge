@@ -1,5 +1,6 @@
 ---
 tags: ['antropologia-economica', 'debito-primi-5000-anni']
+type: note
 ---
 
 # Debito: i primi 5000 anni

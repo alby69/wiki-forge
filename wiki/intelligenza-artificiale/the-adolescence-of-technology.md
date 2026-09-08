@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'the-adolescence-of-technology']
+type: note
 ---
 
 # The Adolescence of Technology

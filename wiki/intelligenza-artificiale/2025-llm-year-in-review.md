@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale']
+type: note
 ---
 
 # 2025 LLM Year in Review

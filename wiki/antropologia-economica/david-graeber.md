@@ -1,5 +1,6 @@
 ---
 tags: ['antropologia-economica', 'david-graeber']
+type: note
 ---
 
 # David Graeber

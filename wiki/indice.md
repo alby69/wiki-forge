@@ -1,8 +1,4 @@
 ---
-tags: ['indice']
----
-
----
 type: Concept
 title: Indice delle wiki
 description: Elenco delle wiki nell'ordine in cui sono state create.

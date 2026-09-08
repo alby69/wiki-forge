@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'ai-lavoro-tre-letture']
+type: note
 ---
 
 # AI e lavoro: tre letture, tante domande (sezione HR/Etica di #226)

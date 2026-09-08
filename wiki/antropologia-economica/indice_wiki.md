@@ -1,5 +1,6 @@
 ---
 tags: ['antropologia-economica', 'indice_wiki']
+type: note
 ---
 
 ---

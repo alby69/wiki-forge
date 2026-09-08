@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'dietro-le-quinte-hr-ai']
+type: note
 ---
 
 # Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105)

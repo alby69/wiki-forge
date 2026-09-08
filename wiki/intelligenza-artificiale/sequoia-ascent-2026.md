@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'sequoia-ascent-2026']
+type: note
 ---
 
 # Sequoia Ascent 2026: Software 3.0 e Agentic Engineering

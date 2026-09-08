@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'trasformazione-output-first']
+type: note
 ---
 
 # Trasformazione con l'AI: meglio controllare tutto o puntare all'output? (#196)

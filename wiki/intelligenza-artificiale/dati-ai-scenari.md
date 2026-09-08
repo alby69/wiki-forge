@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'dati-ai-scenari']
+type: note
 ---
 
 # Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200)

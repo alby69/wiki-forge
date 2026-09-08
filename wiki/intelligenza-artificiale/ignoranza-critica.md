@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'ignoranza-critica']
+type: note
 ---
 
 # Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223)

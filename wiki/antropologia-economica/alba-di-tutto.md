@@ -1,5 +1,6 @@
 ---
 tags: ['antropologia-economica', 'alba-di-tutto']
+type: note
 ---
 
 # L'alba di tutto

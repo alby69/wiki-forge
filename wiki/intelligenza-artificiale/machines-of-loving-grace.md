@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'machines-of-loving-grace']
+type: note
 ---
 
 # Machines of Loving Grace

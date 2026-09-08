@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'agenti-sicurezza']
+type: note
 ---
 
 # Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225)

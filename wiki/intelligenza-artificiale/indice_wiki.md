@@ -1,5 +1,6 @@
 ---
 tags: ['intelligenza-artificiale', 'indice_wiki']
+type: note
 ---
 
 ---
