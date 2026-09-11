@@ -49,6 +49,8 @@
 | 35 | Open Knowledge Format (OKF v0.2) Integration & Tooling Suite | ✅ Done | Adoption of OKF v0.2 standard across `wiki/`, frontmatter taxonomy validation, migration script, reserved files, Makefile targets, and CI |
 | 36 | Web UI OKF Trust Badges & Lifecycle Filters | ⬜ Todo | Render trust tier badges (unverified/machine-confirmed/human-reviewed) and filter notes by OKF status/stale status |
 | 37 | OKF MCP Server Integration for External Agents | ⬜ Todo | Expose OKF bundle querying via Model Context Protocol (MCP) server for external multi-agent ecosystems |
+| 38 | Core/API Separation, Caching & Auto-Tests | ✅ Done | `src/api/core.py`, `src/cache.py`, optimized Vite build, `tests/auto/` |
+| 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -340,4 +342,26 @@ required.
 **Planned Deliverables:**
 - **MCP Server Service:** Integrate `okft serve wiki/` or custom Python MCP server in Docker Compose.
 - **Agent Interoperability:** Provide standard MCP endpoints for external AI agents to query concept graphs, inspect provenance, and fetch line-anchored citations.
-Roadmap update: 1) Separa core/API 2) Cache layer 3) Build vite 4) Tests auto
+
+---
+
+## Phase 38 — Core/API Separation, Caching & Auto-Tests ✅ Done
+
+**Goal:** Clean separation of core domain logic and API interfaces, introducing active caching and automated tests for core operations.
+
+**Deliverables:**
+- **Core API Separation (`src/api/core.py`):** Modularized core API execution logic into dedicated module.
+- **Cache Layer (`src/cache.py`):** Active cache layer for optimized content/indexing performance.
+- **Vite Build Optimization:** Optimized Web UI build pipeline and bundle configuration.
+- **Automated Core Tests (`tests/auto/`):** Added automated test suite `tests/auto/test_core.py`.
+
+---
+
+## Phase 39 — DRY/KISS Skills Symlink Refactoring ✅ Done
+
+**Goal:** Eliminate skill duplication across agent folders by replacing physical file copies with symbolic links, enforcing a Single Source of Truth (`skills/`).
+
+**Deliverables:**
+- **Makefile Refactoring:** Updated `skills-link` target in `Makefile` to use `ln -sf ../../skills/$$skill_name .claude/skills/$$skill_name` instead of `cp -r`.
+- **Documentation Alignment:** Updated `skills/README.md` to document symlink behavior, rationale, and multi-agent compatibility under DRY/KISS principles.
+- **Roadmap & Doc Sync:** Aligned `ROADMAP.md` and verified command consistency with `scripts/check_docs_sync.py`.

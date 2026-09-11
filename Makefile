@@ -112,9 +112,9 @@ skills-link:
 		skill_name=$$(basename $$dir); \
 		if [ -d "$$dir" ]; then \
 			rm -rf .claude/skills/$$skill_name; \
-			cp -r "$$dir" .claude/skills/$$skill_name; \
+			ln -sf ../../skills/$$skill_name .claude/skills/$$skill_name; \
 		fi \
 	done
-	@echo "Linked skills into .claude/skills/"
+	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
 .PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats clean-output export-json lint docs-sync help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
