@@ -26,11 +26,16 @@ project, a business wiki, personal notes, and so on.
 ├── run_convert.sh        # One-command wrapper around conv2md.py
 ├── scripts/
 │   └── wizard.py        # Scenario-Driven Interactive Wizard CLI
-├── AGENT.md             # Router operating manual for the LLM agent (agent-agnostic)
+├── AGENT.md             # Router operating manual for the LLM agent (symlink to docs/AGENT.md)
 ├── skills/              # Modular Agent Skill packages (ingest, curate, audit, query, study, onboarding)
 │   └── README.md        # Human-readable index & progressive disclosure rationale
 ├── .claude/skills/      # Auto-linked Claude Code skill discovery directory
-├── SOURCES.md           # Registry of ingested sources (the bibliography)
+├── docs/
+│   ├── AGENT.md         # Single source of truth for agent operating manual
+│   ├── TUTORIAL.md      # User guide & walkthrough
+│   ├── SOURCES.md       # Registry of ingested sources (the bibliography)
+│   ├── CHANGELOG.md     # Release history
+│   ├── METRICS.md       # Wiki statistics & metrics
 ├── docs/
 │   └── KARPATHY_LLM_WIKI.md   # The original idea file (offline copy)
 ├── index.html            # Web UI entry point (Vite)
@@ -124,7 +129,7 @@ values; no code changes required.
 4. **Consult** — ask questions; the agent answers from the wiki with citations.
 5. **Audit** — occasionally run `audit`/`lint` to keep the wiki healthy.
 
-See `TUTORIAL.md` for a plain-language walkthrough and `AGENT.md` for the full
+See [`docs/TUTORIAL.md`](docs/TUTORIAL.md) for a plain-language walkthrough and [`docs/AGENT.md`](docs/AGENT.md) for the full
 agent contract. See `ROADMAP.md` for the implementation plan and progress.
 
 ## Configure the agent

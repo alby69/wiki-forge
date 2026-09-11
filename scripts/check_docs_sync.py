@@ -5,8 +5,8 @@ Automated documentation and Agent Skills consistency checker for wiki-forge.
 
 Checks:
 1. Parses `skills/*/SKILL.md` frontmatter `triggers.commands` lists to build canonical command set.
-2. Verifies that every trigger command is mentioned at least once in `README.md` and `TUTORIAL.md`.
-3. Verifies version parity between `package.json` ("version") and top-most version in `CHANGELOG.md`.
+2. Verifies that every trigger command is mentioned at least once in `README.md` and `docs/TUTORIAL.md`.
+3. Verifies version parity between `package.json` ("version") and top-most version in `docs/CHANGELOG.md`.
 """
 
 import os
@@ -72,13 +72,13 @@ def check_doc_mentions(commands: set[str], doc_path: Path, doc_name: str) -> lis
 def check_version_sync(repo_root: Path) -> list[str]:
     errors = []
     pkg_path = repo_root / "package.json"
-    changelog_path = repo_root / "CHANGELOG.md"
+    changelog_path = repo_root / "docs" / "CHANGELOG.md"
 
     if not pkg_path.exists():
         errors.append("package.json missing")
         return errors
     if not changelog_path.exists():
-        errors.append("CHANGELOG.md missing")
+        errors.append("docs/CHANGELOG.md missing")
         return errors
 
     try:
@@ -115,8 +115,8 @@ def main():
     readme_errors = check_doc_mentions(commands, repo_root / "README.md", "README.md")
     all_errors.extend(readme_errors)
 
-    # Check TUTORIAL.md
-    tutorial_errors = check_doc_mentions(commands, repo_root / "TUTORIAL.md", "TUTORIAL.md")
+    # Check docs/TUTORIAL.md
+    tutorial_errors = check_doc_mentions(commands, repo_root / "docs" / "TUTORIAL.md", "docs/TUTORIAL.md")
     all_errors.extend(tutorial_errors)
 
     # Check version parity

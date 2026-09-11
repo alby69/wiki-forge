@@ -9,7 +9,7 @@ Scans the `wiki/` and `raw/` directories to generate metrics such as:
 - Thematic wiki folders
 - Ingested sources
 
-Outputs a summary report to stdout and writes/updates `METRICS.md`.
+Outputs a summary report to stdout and writes/updates `docs/METRICS.md`.
 """
 
 from __future__ import annotations
@@ -112,7 +112,7 @@ def analyze_wiki(wiki_dir: Path, raw_dir: Path) -> dict:
     }
 
 
-def generate_metrics_md(stats: dict, output_path: Path = Path("METRICS.md")) -> None:
+def generate_metrics_md(stats: dict, output_path: Path = Path("docs/METRICS.md")) -> None:
     today = date.today().isoformat()
     top_linked_str = "\n".join(
         f"| [[{item[0]}]] | {item[1]} |" for item in stats["top_linked"]
@@ -159,7 +159,7 @@ def main() -> None:
     print(f"Sources ingested: {stats['sources_ingested']}")
 
     generate_metrics_md(stats)
-    print("\nReport written to METRICS.md")
+    print("\nReport written to docs/METRICS.md")
 
 
 if __name__ == "__main__":
