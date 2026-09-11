@@ -11,25 +11,25 @@
 
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
-| 0 | Understand the LLM Wiki concept | ✅ Done | `docs/KARPATHY_LLM_WIKI.md`, `TUTORIAL.md` |
+| 0 | Understand the LLM Wiki concept | ✅ Done | `docs/KARPATHY_LLM_WIKI.md`, `docs/TUTORIAL.md` |
 | 1 | Scaffold project & single config knob | ✅ Done | `config.toml` |
 | 2 | Dependency setup (Docker + classic) | ✅ Done | `Dockerfile`, `docker-compose.yml`, `requirements.txt` |
 | 3 | Source ingestion & conversion | ✅ Done | `conv2md.py`, `run_convert.sh` |
-| 4 | Agent schema & COMPILE integration | ✅ Done | `AGENT.md` v1.0 |
+| 4 | Agent schema & COMPILE integration | ✅ Done | `docs/AGENT.md` v1.0 |
 | 5 | Compile the existing knowledge base | ✅ Done | Run `compile` on current `raw/` |
-| 6 | Sources registry | ✅ Done | `SOURCES.md` |
+| 6 | Sources registry | ✅ Done | `docs/SOURCES.md` |
 | 7 | Daily use: Consult & Audit | ✅ Done | Three workflows tested |
-| 8 | Documentation pass | ✅ Done | `README.md`, `TUTORIAL.md`, `ROADMAP.md` |
+| 8 | Documentation pass | ✅ Done | `README.md`, `docs/TUTORIAL.md`, `ROADMAP.md` |
 | 9 | Publish to GitHub | ✅ Done | Repo: `alby69/wiki-forge` |
 | 10 | Reuse template | ✅ Done | Configured `config.toml`, modular structure |
 | 11 | Command Reference system (v2.0) | ✅ Done | 15+ atomic commands in `AGENT.md` |
-| 12 | TUTORIAL command cheat sheet | ✅ Done | §11-13 in `TUTORIAL.md` |
+| 12 | TUTORIAL command cheat sheet | ✅ Done | §8 in `docs/TUTORIAL.md` |
 | 13 | Article template system | ✅ Done | `templates/article.md` standard template |
-| 14 | Project hygiene files | ✅ Done | `.gitignore`, `CHANGELOG.md` |
+| 14 | Project hygiene files | ✅ Done | `.gitignore`, `docs/CHANGELOG.md` |
 | 15 | Enhanced Makefile | ✅ Done | Targets for `stats`, `audit`, `reindex`, `clean-output`, etc. |
 | 16 | Web clipping support | ✅ Done | `clip2md.py` script |
-| 17 | Multi-language wiki support | ✅ Done | `[i18n]` section in `config.toml` & `AGENT.md` guidelines |
-| 18 | Metrics & analytics | ✅ Done | `wiki_stats.py` -> `METRICS.md` |
+| 17 | Multi-language wiki support | ✅ Done | `[i18n]` section in `config.toml` & `docs/AGENT.md` guidelines |
+| 18 | Metrics & analytics | ✅ Done | `wiki_stats.py` -> `docs/METRICS.md` |
 | 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
 | 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
 | 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
@@ -41,11 +41,11 @@
 | 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
 | 28 | Scenario-Driven Interactive Wizard System | ✅ Done | Interactive CLI wizard (`scripts/wizard.py`), scenario presets (`config/scenarios.toml`), `/wizard` contract extension in `AGENT.md` |
 | 29 | NotebookLM-Inspired Study & Knowledge Synthesis Suite | ✅ Done | Passage-level grounding (`#L<start>-L<end>`), `/study-guide`, `/quiz`, `/deep-research`, `/mindmap`, `/note` & `/promote-note`, `/audio-overview` |
-| 30 | Documentation Reconciliation Pass | ✅ Done | Added `[2.5.0]` to `CHANGELOG.md`, bumped `package.json`, aligned command reference in `README.md` & `TUTORIAL.md` |
+| 30 | Documentation Reconciliation Pass | ✅ Done | Added `[2.5.0]` to `docs/CHANGELOG.md`, bumped `package.json`, aligned command reference in `README.md` & `docs/TUTORIAL.md` |
 | 31 | Modular Agent Skills Extraction & Router Conversion | ✅ Done | Extracted verbatim commands to `skills/*/SKILL.md` packages; converted `AGENT.md` to progressive disclosure router |
 | 32 | Claude Code / Claude Skills Native Compatibility | ✅ Done | Added `.claude/skills/` syncing (`make skills-link`) and updated setup/troubleshooting guides |
 | 33 | Automated Doc/Skill Consistency Verification | ✅ Done | Added `scripts/check_docs_sync.py`, `.pre-commit-config.yaml` hook, CI workflow job, and `make docs-sync` |
-| 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
+| 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `docs/CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
 | 35 | Open Knowledge Format (OKF v0.2) Integration & Tooling Suite | ✅ Done | Adoption of OKF v0.2 standard across `wiki/`, frontmatter taxonomy validation, migration script, reserved files, Makefile targets, and CI |
 | 36 | Web UI OKF Trust Badges & Lifecycle Filters | ⬜ Todo | Render trust tier badges (unverified/machine-confirmed/human-reviewed) and filter notes by OKF status/stale status |
 | 37 | OKF MCP Server Integration for External Agents | ⬜ Todo | Expose OKF bundle querying via Model Context Protocol (MCP) server for external multi-agent ecosystems |
