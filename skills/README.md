@@ -25,9 +25,13 @@ Loading all command definitions in every session incurs unnecessary token overhe
 
 The `skills/` directory is shared across all agent configurations. Per-agent files (`CLAUDE.md`, `AGENTS.md`, `OPENCODE.md`, `GEMINI.md`, `JULES.md`) point to `AGENT.md` as the router, while all skill packages reside centrally in `skills/`.
 
-### Claude Code Support (`.claude/skills/`)
-Claude Code natively discovers project skills placed in `.claude/skills/`. Run `make skills-link` (or `make skills-link` during setup) to populate `.claude/skills/` from `skills/`:
+### Native Agent Support via Symlinks (DRY & KISS)
+
+Agent like Claude Code natively discover project skills placed in `.claude/skills/`.
+Instead of duplicating files, run `make skills-link` to create **symbolic links** from `skills/` to `.claude/skills/`:
+
 ```bash
 make skills-link
 ```
-This copies/syncs `skills/*` into `.claude/skills/*`, enabling immediate automatic trigger resolution when running Claude Code sessions.
+
+This ensures a **Single Source of Truth**: any modification made in `skills/` is instantly available to the agent without manual synchronization, preventing drift and adhering to DRY/KISS principles. The same logic applies to other agent-specific folders (e.g., `.jules/skills/`) if needed.
