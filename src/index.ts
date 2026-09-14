@@ -15,6 +15,7 @@ import { ContextPanel } from './components/editor/ContextPanel';
 import { ForceGraphViewer } from './components/graph/ForceGraphViewer';
 import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
+import { ConfigManager } from './components/ConfigManager';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -32,6 +33,7 @@ export class WikiForgeApp {
   private graphViewer!: ForceGraphViewer;
   private graphControls!: GraphControls;
   private chatDrawer!: ChatDrawer;
+  private configManager!: ConfigManager;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
@@ -40,8 +42,12 @@ export class WikiForgeApp {
   }
 
   private async loadVault(): Promise<void> {
+    const projects = await this.storage.getProjects();
+    const activeId = this.storage.getActiveProjectId();
+    this.header.setProjects(projects, activeId);
+
     let notes = await this.storage.getAllNotes();
-    if (notes.length === 0) {
+    if (notes.length === 0 && activeId === 'default') {
       notes = this.buildSampleVault();
     }
     this.notes = this.parser.computeBacklinks(notes);
@@ -102,6 +108,10 @@ Backlink to [[01-index]].
   }
 
   private initUI(): void {
+    this.configManager = new ConfigManager(this.storage, () => {
+      void this.loadVault();
+    });
+
     this.header = new Header(
       this.layout.headerContainer,
       mode => {
@@ -109,6 +119,13 @@ Backlink to [[01-index]].
       },
       () => {
         this.chatDrawer.toggle();
+      },
+      () => {
+        void this.configManager.open();
+      },
+      projectId => {
+        this.storage.setActiveProjectId(projectId);
+        void this.loadVault();
       }
     );
 

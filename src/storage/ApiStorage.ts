@@ -10,17 +10,135 @@ export interface AttachOptions {
   mode?: 'append' | 'create' | 'overwrite';
 }
 
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  path: string;
+}
+
 export class ApiStorage implements IStorage {
   private fallback = new FileStorage();
   private baseUrl: string;
+  private activeProjectIdMemory: string = 'default';
 
   constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl;
   }
 
+  public getActiveProjectId(): string {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('wiki-forge:active-project') || this.activeProjectIdMemory || 'default';
+    }
+    return this.activeProjectIdMemory || 'default';
+  }
+
+  public setActiveProjectId(id: string): void {
+    this.activeProjectIdMemory = id;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('wiki-forge:active-project', id);
+    }
+  }
+
+  private getHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'X-Project-Id': this.getActiveProjectId(),
+    };
+  }
+
+  public async getProjects(): Promise<ProjectInfo[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/projects`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; projects?: ProjectInfo[] };
+        if (json.success && json.projects) {
+          return json.projects;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return [{ id: 'default', name: 'Default Wiki', path: '.' }];
+  }
+
+  public async createProject(id: string, name: string): Promise<ProjectInfo | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/projects`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ id, name }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; project?: ProjectInfo };
+        if (json.success && json.project) {
+          return json.project;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return null;
+  }
+
+  public async getProjectConfig(projectId?: string): Promise<Record<string, unknown> | null> {
+    const id = projectId || this.getActiveProjectId();
+    try {
+      const res = await fetch(`${this.baseUrl}/api/projects/${id}/config`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; config?: Record<string, unknown> };
+        if (json.success && json.config) {
+          return json.config;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return null;
+  }
+
+  public async updateProjectConfig(config: Record<string, unknown>, projectId?: string): Promise<boolean> {
+    const id = projectId || this.getActiveProjectId();
+    try {
+      const res = await fetch(`${this.baseUrl}/api/projects/${id}/config`, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify(config),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return false;
+  }
+
+  public async deleteProject(projectId: string, deleteFolder: boolean = false): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/projects/${projectId}?deleteFolder=${deleteFolder}`, {
+        method: 'DELETE',
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success;
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return false;
+  }
+
   public async getAllNotes(): Promise<WikiNote[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/notes`);
+      const res = await fetch(`${this.baseUrl}/api/wiki/notes`, {
+        headers: this.getHeaders(),
+      });
       if (res.ok) {
         const json = (await res.json()) as { success: boolean; notes?: WikiNote[] };
         if (json.success && Array.isArray(json.notes) && json.notes.length > 0) {
@@ -45,7 +163,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({
           id: note.id,
           content: note.content ?? '',
@@ -72,7 +190,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/attach`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify(options),
       });
 
@@ -94,7 +212,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/delete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ targetPath: id }),
       });
       if (res.ok) {
@@ -111,7 +229,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/folder/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ folderPath }),
       });
       if (res.ok) {
@@ -128,7 +246,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/file/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ folderPath, fileName, content }),
       });
       if (res.ok) {
@@ -145,7 +263,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/rename`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ oldPath, newName }),
       });
       if (res.ok) {
@@ -162,7 +280,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/wiki/move`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ sourcePath, targetFolder }),
       });
       if (res.ok) {
@@ -191,7 +309,7 @@ export class ApiStorage implements IStorage {
 
       const res = await fetch(`${this.baseUrl}/api/wiki/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ folderPath, fileName, content: payloadContent, isBase64: typeof content !== 'string' }),
       });
 
@@ -217,7 +335,7 @@ export class ApiStorage implements IStorage {
     try {
       const res = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ message, command, contextNoteId }),
       });
 
@@ -244,7 +362,7 @@ export class ApiStorage implements IStorage {
       const res = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          ...this.getHeaders(),
           'Accept': 'text/event-stream',
         },
         body: JSON.stringify({ message, command, contextNoteId, stream: true }),

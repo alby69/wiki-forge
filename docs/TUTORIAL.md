@@ -156,7 +156,49 @@ make ui-docker     # Open http://localhost:5173
 
 ---
 
-## 7. The Scenario Wizard — Domain Presets
+## 7. Multi-Project Management & GUI Config Manager
+
+Wiki-Forge supports managing multiple wiki projects simultaneously without modifying source code.
+
+### Structure of `projects/`
+Multiple projects live in the `projects/` directory at the root level. Each project acts as an isolated knowledge base vault with its own settings and folders:
+
+```
+projects/
+├── thesis/
+│   ├── config.toml
+│   ├── sources/
+│   ├── raw/
+│   ├── wiki/
+│   ├── output/
+│   └── notes/
+└── business-kb/
+    ├── config.toml
+    └── ...
+```
+
+A central `projects.json` file in the root directory registers all available projects:
+```json
+[
+  { "id": "default", "name": "Default Wiki", "path": "." },
+  { "id": "thesis", "name": "Thesis Wiki", "path": "projects/thesis" }
+]
+```
+
+### Project Switcher & GUI Config Manager in Web UI
+- **Project Switcher**: The header includes a **Project:** dropdown allowing you to switch between active projects instantly. The active project selection is persisted in `localStorage` (`wiki-forge:active-project`).
+- **GUI Config Manager**: Click the **⚙️ Config** button in the header to open a visual tabbed modal interface:
+  - **Generale**: Edit project `name`, `title`, `language`, and `context`.
+  - **Percorsi**: Configure custom directory paths for `sources`, `raw`, `wiki`, `output`, and `notes`.
+  - **LLM & Agent**: Configure `provider` (`opencode`, `anthropic`, `openai_compatible`, `ollama`), `model`, `api_key_env`, and `timeout_seconds`.
+  - **OKF & Tag**: Manage Open Knowledge Format version and `type_vocabulary`.
+  - **Project Actions**: Create a new project directly from the interface or delete secondary projects.
+
+All configuration updates are written to `config.toml` safely formatted using `smol-toml`.
+
+---
+
+## 8. The Scenario Wizard — Domain Presets
 
 A *scenario* is a ready-made setup for specific project types. Presets live in `config/scenarios.toml`:
 
@@ -177,7 +219,7 @@ Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
 
 ---
 
-## 8. Command Cheat Sheet
+## 9. Command Cheat Sheet
 
 ### Daily Commands
 | Command | Purpose | Example |
@@ -226,7 +268,7 @@ Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### "The agent says it can't find raw files"
 - Check that `config.toml` exists and `paths.raw` points to `raw`.
@@ -242,7 +284,7 @@ Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
 
 ---
 
-## 10. Keeping Your Wiki Healthy
+## 11. Keeping Your Wiki Healthy
 
 - **Monthly**: Run `audit` to fix broken links, run `sources regenerate` to keep `docs/SOURCES.md` updated, and run `stats` to review wiki growth.
 - **Quarterly**: Run `audit` for duplicate detection, check `wiki/index.md` organization, and backup with `export json`.
