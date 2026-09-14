@@ -88,6 +88,16 @@ flowchart TD
 2. Run `bash run_convert.sh` (or `python conv2md.py`).
 3. Converted Markdown files appear in `raw/`, ready to be processed.
 
+#### Alternative: Import from Google NotebookLM (Importazione da NotebookLM)
+If you study documents or videos on Google NotebookLM and generate Study Guides, FAQs, or Briefings:
+1. Export or copy the Markdown generated in NotebookLM to a local file (e.g. `notebook_export.md`).
+2. Run the import tool:
+   ```bash
+   python scripts/notebooklm_import.py notebook_export.md --source "Research Topic X"
+   ```
+3. The file will be cleaned, annotated with OKF v0.2 YAML frontmatter, and placed in `raw/notebook_export_NOTEBOOKLM.md`.
+4. Run `/compile` in your agent to integrate the knowledge directly into `wiki/`.
+
 ### Step 2 — Compile (Build the wiki)
 When you tell the agent `compile` (or `/compile`):
 1. Runs conversion for any newly added documents in `sources/`.
