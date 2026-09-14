@@ -53,6 +53,7 @@
 | 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
 | 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
 | 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 15 Python CLI scripts with real-time SSE log streaming |
+| 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities, interaction modes, and quality/error handling sections |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -379,6 +380,17 @@ required.
 - **Makefile Refactoring:** Updated `skills-link` target in `Makefile` to use `ln -sf ../../skills/$$skill_name .claude/skills/$$skill_name` instead of `cp -r`.
 - **Documentation Alignment:** Updated `skills/README.md` to document symlink behavior, rationale, and multi-agent compatibility under DRY/KISS principles.
 - **Roadmap & Doc Sync:** Aligned `ROADMAP.md` and verified command consistency with `scripts/check_docs_sync.py`.
+
+---
+
+## Phase 42 — Knowledge Engineer Role Evolution & Operating Manual v3.0 ✅ Done
+
+**Goal:** Transform the agent operating model from a passive librarian to an active Knowledge Engineer capable of deep research, tutoring, critical source analysis, and domain scenario adaptation.
+
+**Deliverables:**
+- **Operating Manual v3.0 (`docs/AGENT.md`):** Updated agent operating manual defining 6 core capabilities (Research & Synthesis, Knowledge Construction, Teaching & Tutoring, Critical Analysis, Interactive Collaboration, Scenario Adaptation).
+- **Expanded Interaction & Quality Rules:** Added interaction modes (§6), error handling & edge cases (§8), quality metrics (§9), and security/privacy guidelines (§10).
+- **Documentation Synchronization:** Updated `README.md` and verified doc/skill consistency using `scripts/check_docs_sync.py`.
 
 ---
 

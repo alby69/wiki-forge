@@ -5,9 +5,11 @@
 > [LLM Wiki](docs/KARPATHY_LLM_WIKI.md) pattern.
 
 Instead of re-answering questions from raw documents every time (classic RAG),
-the LLM **incrementally builds a persistent, interlinked wiki** of Markdown
-files that sits between you and your sources. You curate the material and ask
-questions; the agent does the summarizing, cross-referencing, and bookkeeping.
+the LLM acts as an active **Knowledge Engineer** — an intellectual partner that
+**incrementally builds, evaluates, and maintains a persistent, interlinked wiki** of
+Markdown files. Beyond basic indexing, the agent performs multi-source deep research,
+critical source analysis, interactive tutoring (study guides, quizzes, mind maps, audio overviews),
+and domain scenario adaptation.
 
 This repository is a **reusable template**: change a single config file
 (`config.toml`) to point it at any subject — a thesis, a book club, a research
