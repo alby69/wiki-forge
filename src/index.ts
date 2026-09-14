@@ -16,6 +16,7 @@ import { ForceGraphViewer } from './components/graph/ForceGraphViewer';
 import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
 import { ConfigManager } from './components/ConfigManager';
+import { ToolsModal } from './components/tools/ToolsModal';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -34,6 +35,7 @@ export class WikiForgeApp {
   private graphControls!: GraphControls;
   private chatDrawer!: ChatDrawer;
   private configManager!: ConfigManager;
+  private toolsModal!: ToolsModal;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
@@ -112,6 +114,10 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
+    this.toolsModal = new ToolsModal(() => {
+      void this.loadVault();
+    });
+
     this.header = new Header(
       this.layout.headerContainer,
       mode => {
@@ -126,6 +132,9 @@ Backlink to [[01-index]].
       projectId => {
         this.storage.setActiveProjectId(projectId);
         void this.loadVault();
+      },
+      () => {
+        void this.toolsModal.open();
       }
     );
 

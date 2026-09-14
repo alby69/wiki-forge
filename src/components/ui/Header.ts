@@ -5,6 +5,7 @@ export class Header {
   private onViewModeChangeCb?: (mode: 'editor' | 'graph' | 'split') => void;
   private onToggleChatCb?: () => void;
   private onOpenConfigCb?: () => void;
+  private onOpenToolsCb?: () => void;
   private onProjectSelectCb?: (projectId: string) => void;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
@@ -14,13 +15,15 @@ export class Header {
     onViewModeChange?: (mode: 'editor' | 'graph' | 'split') => void,
     onToggleChat?: () => void,
     onOpenConfig?: () => void,
-    onProjectSelect?: (projectId: string) => void
+    onProjectSelect?: (projectId: string) => void,
+    onOpenTools?: () => void
   ) {
     this.container = container;
     this.onViewModeChangeCb = onViewModeChange;
     this.onToggleChatCb = onToggleChat;
     this.onOpenConfigCb = onOpenConfig;
     this.onProjectSelectCb = onProjectSelect;
+    this.onOpenToolsCb = onOpenTools;
     this.render();
   }
 
@@ -56,6 +59,7 @@ export class Header {
           <button id="view-mode-graph" style="background: #2d3748; color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">Graph View</button>
           <button id="view-mode-split" style="background: #3182ce; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">Split View</button>
           <div style="width: 1px; height: 20px; background: #2d3748; margin: 0 4px;"></div>
+          <button id="header-tools-btn" style="background: #2d3748; color: #64b5f6; border: 1px solid #4a5568; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">🛠️ Tools</button>
           <button id="header-config-btn" style="background: #4a5568; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">⚙️ Config</button>
           <button id="chat-toggle-header-btn" style="background: #2b6cb0; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">💬 OpenCode Chat</button>
         </div>
@@ -65,8 +69,11 @@ export class Header {
     const editorBtn = this.container.querySelector('#view-mode-editor');
     const graphBtn = this.container.querySelector('#view-mode-graph');
     const splitBtn = this.container.querySelector('#view-mode-split');
+    const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
     const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
+
+    if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement;
 
     if (editorBtn) editorBtn.addEventListener('click', () => this.onViewModeChangeCb?.('editor'));

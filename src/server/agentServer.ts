@@ -1,10 +1,322 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as http from 'node:http';
+import { spawn } from 'node:child_process';
 import * as toml from 'smol-toml';
 import { MarkdownParser } from '../services/markdownParser';
 import { WikiNote } from '../core/types/wiki';
 import { LlmClient, LlmClientFactory } from './llmClient';
+
+export interface ScriptParamDef {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'boolean' | 'select';
+  default?: any;
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+  description?: string;
+}
+
+export interface ScriptDef {
+  id: string;
+  path: string;
+  displayName: string;
+  category: 'Ingestion' | 'OKF Maintenance' | 'Analysis & Metrics' | 'Taxonomy' | 'Thesis & Study' | 'Wizard';
+  description: string;
+  parameters: ScriptParamDef[];
+}
+
+export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>): string[] {
+  const args: string[] = [];
+  const getVal = (name: string, def?: any) => (userArgs && userArgs[name] !== undefined ? userArgs[name] : def);
+
+  switch (scriptDef.id) {
+    case 'conv2md': {
+      const input = String(getVal('input', 'backup'));
+      const output = String(getVal('output', 'raw'));
+      const ocr = Boolean(getVal('ocr', false));
+      args.push('--input', input, '--output', output);
+      if (ocr) args.push('--ocr');
+      break;
+    }
+    case 'clip2md': {
+      const url = String(getVal('url', '')).trim();
+      const output = String(getVal('output', 'sources/web-clips'));
+      if (url) args.push(url);
+      args.push('--output', output);
+      break;
+    }
+    case 'notebooklm_import': {
+      const inputFile = String(getVal('input_file', '')).trim();
+      const source = String(getVal('source', 'NotebookLM Session'));
+      const outputDir = String(getVal('output_dir', 'raw'));
+      if (inputFile) args.push(inputFile);
+      args.push('--source', source, '--output-dir', outputDir);
+      break;
+    }
+    case 'migrate_to_okf': {
+      break;
+    }
+    case 'okf_lint': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      args.push(wikiDir);
+      break;
+    }
+    case 'okf_log': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const message = String(getVal('message', '')).trim();
+      const type = String(getVal('type', 'Update'));
+      const date = String(getVal('date', '')).trim();
+      args.push(wikiDir, message, '--type', type);
+      if (date) args.push('--date', date);
+      break;
+    }
+    case 'okf_reindex': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      args.push(wikiDir);
+      break;
+    }
+    case 'okf_stats': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      args.push(wikiDir);
+      break;
+    }
+    case 'wiki_stats': {
+      break;
+    }
+    case 'maturity_calculator': {
+      const targetPath = String(getVal('path', 'wiki'));
+      const write = Boolean(getVal('write', false));
+      const dryRun = Boolean(getVal('dry_run', false));
+      const minScore = Number(getVal('min_score', 0));
+      args.push(targetPath, '--min-score', String(minScore));
+      if (write) args.push('--write');
+      if (dryRun) args.push('--dry-run');
+      break;
+    }
+    case 'check_docs_sync': {
+      break;
+    }
+    case 'suggest_tags': {
+      const processAll = Boolean(getVal('all', true));
+      const file = String(getVal('file', '')).trim();
+      const wiki = String(getVal('wiki', 'wiki'));
+      const write = Boolean(getVal('write', false));
+      const top = Number(getVal('top', 6));
+      const semantic = Boolean(getVal('semantic', false));
+
+      if (processAll) {
+        args.push('--all', '--wiki', wiki);
+      } else if (file) {
+        args.push(file);
+      } else {
+        args.push('--all', '--wiki', wiki);
+      }
+      if (write) args.push('--write');
+      args.push('--top', String(top));
+      if (semantic) args.push('--semantic');
+      break;
+    }
+    case 'generate_thesis': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const output = String(getVal('output', 'output/thesis_compiled.md'));
+      const minMaturity = Number(getVal('min_maturity', 0));
+      const title = String(getVal('title', 'Thesis Draft'));
+      args.push('--wiki-dir', wikiDir, '--output', output, '--min-maturity', String(minMaturity), '--title', title);
+      break;
+    }
+    case 'export_thesis_pdf': {
+      const input = String(getVal('input', 'output/thesis_compiled.md'));
+      const output = String(getVal('output', 'output/thesis_final.pdf'));
+      const engine = String(getVal('engine', 'xelatex'));
+      const noToc = Boolean(getVal('no_toc', false));
+      args.push('--input', input, '--output', output, '--engine', engine);
+      if (noToc) args.push('--no-toc');
+      break;
+    }
+    case 'wizard': {
+      const preset = String(getVal('preset', 'academic'));
+      args.push('--preset', preset);
+      break;
+    }
+    default:
+      break;
+  }
+
+  return args;
+}
+
+export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
+  conv2md: {
+    id: 'conv2md',
+    path: 'conv2md.py',
+    displayName: 'Convert Sources to Markdown',
+    category: 'Ingestion',
+    description: 'Converts PDF, EPUB, DOCX, MD, and TXT sources from input directory into raw/ Markdown notes.',
+    parameters: [
+      { name: 'input', label: 'Input Directory', type: 'text', default: 'backup', description: 'Source directory containing documents.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for Markdown notes.' },
+      { name: 'ocr', label: 'Use OCR Flag', type: 'boolean', default: false, description: 'Note scanned PDFs for OCR extraction.' },
+    ],
+  },
+  clip2md: {
+    id: 'clip2md',
+    path: 'clip2md.py',
+    displayName: 'Web Clipper',
+    category: 'Ingestion',
+    description: 'Fetches HTML from a target web URL and saves clean Markdown to sources/web-clips/.',
+    parameters: [
+      { name: 'url', label: 'URL to Clip', type: 'text', required: true, placeholder: 'https://example.com/article', description: 'Target webpage URL.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'sources/web-clips', description: 'Destination folder for web clips.' },
+    ],
+  },
+  notebooklm_import: {
+    id: 'notebooklm_import',
+    path: 'scripts/notebooklm_import.py',
+    displayName: 'Import NotebookLM Export',
+    category: 'Ingestion',
+    description: 'Imports NotebookLM Markdown export files with OKF v0.2 frontmatter metadata.',
+    parameters: [
+      { name: 'input_file', label: 'Export File Path', type: 'text', required: true, placeholder: 'sources/notebooklm-export.md', description: 'Path to exported .md file.' },
+      { name: 'source', label: 'Source Name', type: 'text', default: 'NotebookLM Session', description: 'Descriptive title for the source.' },
+      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination folder for imported note.' },
+    ],
+  },
+  migrate_to_okf: {
+    id: 'migrate_to_okf',
+    path: 'scripts/migrate_to_okf.py',
+    displayName: 'Migrate to OKF v0.2',
+    category: 'OKF Maintenance',
+    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter.',
+    parameters: [
+      { name: 'confirm', label: 'Confirm Migration (Danger / Backup first)', type: 'boolean', default: false, required: true, description: 'Check to acknowledge irreversible frontmatter migration.' },
+    ],
+  },
+  okf_lint: {
+    id: 'okf_lint',
+    path: 'scripts/okf_lint.py',
+    displayName: 'Lint OKF Bundle',
+    category: 'OKF Maintenance',
+    description: 'Validates frontmatter structure, required fields, and index compliance across all notes.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+    ],
+  },
+  okf_log: {
+    id: 'okf_log',
+    path: 'scripts/okf_log.py',
+    displayName: 'Append OKF Log Entry',
+    category: 'OKF Maintenance',
+    description: 'Appends a new entry to the OKF wiki update log (wiki/log.md).',
+    parameters: [
+      { name: 'message', label: 'Log Message', type: 'text', required: true, placeholder: 'Descriptive summary of changes', description: 'Details of the update.' },
+      { name: 'type', label: 'Log Type', type: 'select', default: 'Update', options: ['Update', 'Creation', 'Deprecation', 'Initialization'], description: 'Category keyword for the log entry.' },
+      { name: 'date', label: 'Date (YYYY-MM-DD)', type: 'text', placeholder: 'Today (UTC)', description: 'Optional override date.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+    ],
+  },
+  okf_reindex: {
+    id: 'okf_reindex',
+    path: 'scripts/okf_reindex.py',
+    displayName: 'Regenerate OKF Indexes',
+    category: 'OKF Maintenance',
+    description: 'Regenerates master index.md and thematic folder indexes according to OKF §8.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+    ],
+  },
+  okf_stats: {
+    id: 'okf_stats',
+    path: 'scripts/okf_stats.py',
+    displayName: 'OKF Bundle Analytics',
+    category: 'OKF Maintenance',
+    description: 'Generates OKF bundle analytics report covering note types, statuses, and trust tiers.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+    ],
+  },
+  wiki_stats: {
+    id: 'wiki_stats',
+    path: 'wiki_stats.py',
+    displayName: 'Global Wiki Statistics',
+    category: 'Analysis & Metrics',
+    description: 'Calculates global wiki statistics and updates docs/METRICS.md.',
+    parameters: [],
+  },
+  maturity_calculator: {
+    id: 'maturity_calculator',
+    path: 'scripts/maturity_calculator.py',
+    displayName: 'Calculate Maturity Score',
+    category: 'Analysis & Metrics',
+    description: 'Calculates and updates Maturity Index scores (0-100) for wiki notes.',
+    parameters: [
+      { name: 'path', label: 'Target Path', type: 'text', default: 'wiki', description: 'Path to note file or wiki directory.' },
+      { name: 'write', label: 'Write to Frontmatter', type: 'boolean', default: false, description: 'Persist maturity scores directly into Markdown YAML.' },
+      { name: 'dry_run', label: 'Dry Run Mode', type: 'boolean', default: false, description: 'Display calculation preview without writing.' },
+      { name: 'min_score', label: 'Min Score Filter', type: 'number', default: 0, description: 'Filter output by minimum maturity score.' },
+    ],
+  },
+  check_docs_sync: {
+    id: 'check_docs_sync',
+    path: 'scripts/check_docs_sync.py',
+    displayName: 'Verify Docs & Skills Sync',
+    category: 'Analysis & Metrics',
+    description: 'Verifies consistency between agent skills, README, TUTORIAL, and CHANGELOG.',
+    parameters: [],
+  },
+  suggest_tags: {
+    id: 'suggest_tags',
+    path: 'suggest_tags.py',
+    displayName: 'Suggest Taxonomy Tags',
+    category: 'Taxonomy',
+    description: 'Suggests taxonomy tags for notes using controlled vocabulary (RAKE / KeyBERT).',
+    parameters: [
+      { name: 'all', label: 'Process Entire Wiki', type: 'boolean', default: true, description: 'Batch process all notes in wiki directory.' },
+      { name: 'file', label: 'Single Note Path', type: 'text', placeholder: 'wiki/concept.md', description: 'Single note file path (when Process Entire Wiki is false).' },
+      { name: 'wiki', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to wiki folder.' },
+      { name: 'write', label: 'Write Frontmatter', type: 'boolean', default: false, description: 'Write suggested tags into Markdown frontmatter.' },
+      { name: 'top', label: 'Max Tags', type: 'number', default: 6, description: 'Maximum number of tags to retain.' },
+      { name: 'semantic', label: 'Semantic Mode (KeyBERT)', type: 'boolean', default: false, description: 'Use KeyBERT semantic embeddings if installed.' },
+    ],
+  },
+  generate_thesis: {
+    id: 'generate_thesis',
+    path: 'scripts/generate_thesis.py',
+    displayName: 'Compile Thesis Draft',
+    category: 'Thesis & Study',
+    description: 'Aggregates wiki notes and chapter syntheses into a single compiled thesis draft.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'output', label: 'Output Path', type: 'text', default: 'output/thesis_compiled.md', description: 'Destination path for compiled Markdown.' },
+      { name: 'min_maturity', label: 'Min Maturity Score', type: 'number', default: 0, description: 'Filter included notes by minimum maturity.' },
+      { name: 'title', label: 'Thesis Title', type: 'text', default: 'Thesis Draft', description: 'Title header for the compiled document.' },
+    ],
+  },
+  export_thesis_pdf: {
+    id: 'export_thesis_pdf',
+    path: 'scripts/export_thesis_pdf.py',
+    displayName: 'Export Thesis to PDF',
+    category: 'Thesis & Study',
+    description: 'Exports compiled thesis Markdown to PDF format via Pandoc.',
+    parameters: [
+      { name: 'input', label: 'Input Markdown Path', type: 'text', default: 'output/thesis_compiled.md', description: 'Source compiled thesis Markdown file.' },
+      { name: 'output', label: 'Output PDF Path', type: 'text', default: 'output/thesis_final.pdf', description: 'Destination PDF file path.' },
+      { name: 'engine', label: 'PDF Engine', type: 'select', default: 'xelatex', options: ['xelatex', 'pdflatex', 'wkhtmltopdf', 'weasyprint'], description: 'Pandoc PDF rendering engine.' },
+      { name: 'no_toc', label: 'Disable TOC', type: 'boolean', default: false, description: 'Disable automatic Table of Contents generation.' },
+    ],
+  },
+  wizard: {
+    id: 'wizard',
+    path: 'scripts/wizard.py',
+    displayName: 'Domain Setup Wizard',
+    category: 'Wizard',
+    description: 'Interactive domain setup wizard for academic, business, research, creative, or thesis workflows.',
+    parameters: [
+      { name: 'preset', label: 'Domain Preset', type: 'select', default: 'academic', options: ['academic', 'business', 'research', 'creative', 'existing', 'thesis'], description: 'Scenario preset configuration.' },
+    ],
+  },
+};
 
 export interface ProjectEntry {
   id: string;
@@ -328,6 +640,104 @@ export class AgentServer {
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
+      return true;
+    }
+
+    // Script Control Panel Endpoints
+    if (pathname === '/api/scripts/list' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, scripts: Object.values(SCRIPT_REGISTRY) }));
+      return true;
+    }
+
+    if (pathname === '/api/scripts/execute' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ scriptId?: string; script?: string; args?: Record<string, any> }>(req);
+        const scriptId = body.scriptId || body.script;
+        if (!scriptId || !SCRIPT_REGISTRY[scriptId]) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Invalid or unregistered script ID '${scriptId}'` }));
+          return true;
+        }
+
+        const scriptDef = SCRIPT_REGISTRY[scriptId];
+        const userArgs = body.args || {};
+        const cliArgs = buildCliArgs(scriptDef, userArgs);
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, scriptDef.path);
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        });
+
+        res.write(`data: ${JSON.stringify({ type: 'start', script: scriptDef.displayName, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
+
+        const child = spawn('python3', [scriptPath, ...cliArgs], {
+          cwd: projRoot,
+          env: { ...process.env, PYTHONUNBUFFERED: '1' },
+        });
+
+        child.stdout.on('data', (data: Buffer) => {
+          res.write(`data: ${JSON.stringify({ type: 'stdout', text: data.toString('utf-8') })}\n\n`);
+        });
+
+        child.stderr.on('data', (data: Buffer) => {
+          res.write(`data: ${JSON.stringify({ type: 'stderr', text: data.toString('utf-8') })}\n\n`);
+        });
+
+        child.on('error', (err: Error) => {
+          res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Failed to start process: ${err.message}` })}\n\n`);
+          res.write(`data: ${JSON.stringify({ type: 'exit', code: -1 })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        });
+
+        child.on('close', (code: number | null) => {
+          res.write(`data: ${JSON.stringify({ type: 'exit', code: code ?? 0 })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        });
+      } catch (err) {
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+      }
+      return true;
+    }
+
+    if (pathname === '/api/files/download' && req.method === 'GET') {
+      try {
+        const fileParam = url.searchParams.get('path');
+        if (!fileParam) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing path parameter' }));
+          return true;
+        }
+
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const absPath = path.resolve(projRoot, fileParam);
+        const rel = path.relative(projRoot, absPath);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Access denied' }));
+          return true;
+        }
+
+        const fileData = await fs.readFile(absPath);
+        const filename = path.basename(absPath);
+        res.writeHead(200, {
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        });
+        res.end(fileData);
+      } catch (err) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'File not found' }));
+      }
       return true;
     }
 

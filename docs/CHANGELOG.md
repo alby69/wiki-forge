@@ -5,6 +5,17 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-09-14
+
+### Added
+- **Web UI Python Script Control Panel** (Phases 38–40):
+  - Unified Script Control Panel accessible directly from the Web UI navigation header via the "🛠️ Tools" button.
+  - Exposes all 15 Python CLI scripts (`conv2md.py`, `clip2md.py`, `notebooklm_import.py`, `migrate_to_okf.py`, `okf_lint.py`, `okf_log.py`, `okf_reindex.py`, `okf_stats.py`, `wiki_stats.py`, `maturity_calculator.py`, `check_docs_sync.py`, `suggest_tags.py`, `generate_thesis.py`, `export_thesis_pdf.py`, `wizard.py`) through categorized graphical menus (Ingestion, OKF Maintenance, Analysis & Metrics, Taxonomy, Thesis & Study, Wizard).
+  - Dynamic parameter form component (`ToolsModal.ts`) generating typed input fields (text, number, select/dropdown, checkbox) for each tool.
+  - Real-time terminal-like log console (`LogConsole.ts`) streaming Python stdout and stderr using Server-Sent Events (SSE) with process cancellation support and log export.
+  - Secure child process execution engine in `src/server/agentServer.ts` (`GET /api/scripts/list`, `POST /api/scripts/execute`, `GET /api/files/download`) using `child_process.spawn('python3', ...)` with strict parameter validation and path containment against command injection.
+  - Integration test suite in `tests/scriptControlPanel.test.ts` verifying endpoints, argument building, SSE streaming, and security safeguards.
+
 ## [2.7.0] - 2026-09-02
 
 ### Added

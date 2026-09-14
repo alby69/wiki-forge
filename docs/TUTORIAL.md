@@ -152,6 +152,7 @@ Wiki-Forge includes an interactive Web UI (Vite + TypeScript) so you can view, e
 - **Markdown Editor**: CodeMirror 6 editor with syntax highlighting, `[[wikilink]]` completion, and keyboard shortcuts (`Ctrl/Cmd+S`, `Ctrl/Cmd+B`, `Ctrl/Cmd+I`).
 - **Context Panel**: Shows backlinks, outbound links, and tags for the active note.
 - **Graph View**: Interactive force-directed link graph showing connections between notes.
+- **Script Control Panel (🛠️ Tools)**: Graphical interface accessible from the header to configure and execute all 15 Python CLI scripts with real-time log output console streaming.
 - **Chat Drawer**: Integrated agent assistant with stream responses, one-click `/` command shortcuts, scenario wizard selector, and **📌 Attach to Wiki** button.
 
 ### How to Launch
