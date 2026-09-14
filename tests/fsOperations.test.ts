@@ -95,4 +95,60 @@ describe('Filesystem Operations Test Suite', () => {
     });
     assert.strictEqual(res.status, 400);
   });
+
+  test('multi-project creation, config management and note isolation', async () => {
+    // 1. Create new project 'thesis'
+    const proj = await storage.createProject('thesis', 'Thesis Wiki');
+    assert.ok(proj);
+    assert.strictEqual(proj.id, 'thesis');
+
+    const projects = await storage.getProjects();
+    assert.ok(projects.some(p => p.id === 'thesis'));
+
+    // 2. Read config
+    const config = await storage.getProjectConfig('thesis');
+    assert.ok(config);
+    assert.strictEqual((config as any).project.name, 'thesis');
+
+    // 3. Update config via PUT using smol-toml
+    const newConfig = {
+      project: { name: 'thesis', title: 'Master Thesis Knowledge Base', language: 'it' },
+      paths: { sources: 'sources', raw: 'raw', wiki: 'wiki', output: 'output', notes: 'notes' },
+      okf: { version: '0.2', type_vocabulary: ['Paper', 'Concept'] }
+    };
+    const savedConfig = await storage.updateProjectConfig(newConfig, 'thesis');
+    assert.strictEqual(savedConfig, true);
+
+    const updatedConfig = await storage.getProjectConfig('thesis');
+    assert.strictEqual((updatedConfig as any).project.title, 'Master Thesis Knowledge Base');
+    assert.strictEqual((updatedConfig as any).project.language, 'it');
+
+    // 4. Save note under thesis project
+    storage.setActiveProjectId('thesis');
+    const note = await storage.saveNote({
+      id: 'chapter1',
+      title: 'Chapter 1 Introduction',
+      content: '# Chapter 1\n\nIntroduction to AI.',
+      folder: 'general'
+    });
+    assert.strictEqual(note.id, 'chapter1');
+
+    const thesisNotes = await storage.getAllNotes();
+    assert.ok(thesisNotes.some(n => n.id === 'chapter1'));
+
+    // Check disk location
+    const noteExistsOnDisk = await fs.stat(path.join(tmpDir, 'projects', 'thesis', 'wiki', 'general', 'chapter1.md')).then(s => s.isFile()).catch(() => false);
+    assert.strictEqual(noteExistsOnDisk, true);
+
+    // Switch back to default project and confirm note isolation
+    storage.setActiveProjectId('default');
+    const defaultNotes = await storage.getAllNotes();
+    assert.ok(!defaultNotes.some(n => n.id === 'chapter1'));
+
+    // 5. Delete project
+    const deleted = await storage.deleteProject('thesis', true);
+    assert.strictEqual(deleted, true);
+    const projectsAfterDelete = await storage.getProjects();
+    assert.ok(!projectsAfterDelete.some(p => p.id === 'thesis'));
+  });
 });

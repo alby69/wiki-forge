@@ -51,6 +51,7 @@
 | 37 | OKF MCP Server Integration for External Agents | ⬜ Todo | Expose OKF bundle querying via Model Context Protocol (MCP) server for external multi-agent ecosystems |
 | 38 | Core/API Separation, Caching & Auto-Tests | ✅ Done | `src/api/core.py`, `src/cache.py`, optimized Vite build, `tests/auto/` |
 | 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
+| 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -354,6 +355,18 @@ required.
 - **Cache Layer (`src/cache.py`):** Active cache layer for optimized content/indexing performance.
 - **Vite Build Optimization:** Optimized Web UI build pipeline and bundle configuration.
 - **Automated Core Tests (`tests/auto/`):** Added automated test suite `tests/auto/test_core.py`.
+
+---
+
+## Phase 40 — Multi-Project Management & GUI Config Manager ✅ Done
+
+**Goal:** Extend `wiki-forge` to manage multiple wiki projects simultaneously with `projects/` folder structure, `projects.json` registry, and a Web UI GUI Configuration Manager for editing `config.toml`.
+
+**Deliverables:**
+- **Multi-Project Architecture & API Server (`src/server/agentServer.ts`):** `projects/` subfolder structure (`projects/<id>/`), central `projects.json` registry, project-isolated directory paths, `GET /api/projects`, `POST /api/projects`, `GET /api/projects/:id/config`, `PUT /api/projects/:id/config` (parsed and stringified using `smol-toml`), `DELETE /api/projects/:id`, and header/query `X-Project-Id` resolution with strict path traversal containment.
+- **Storage Adapter (`src/storage/ApiStorage.ts`):** `X-Project-Id` request headers, `localStorage` active project persistence (`wiki-forge:active-project`), and project CRUD methods.
+- **Web UI Project Switcher & Config Manager (`src/components/ui/Header.ts`, `src/components/ConfigManager.ts`):** Header project switcher dropdown and a tabbed configuration modal (*Generale*, *Percorsi*, *LLM & Agent*, *OKF & Tag*) for editing settings without modifying code.
+- **Tests & Verification (`tests/fsOperations.test.ts`):** Integration tests for project creation, config serialization, note isolation, and project deletion.
 
 ---
 

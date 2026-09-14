@@ -1,9 +1,16 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as http from 'node:http';
+import * as toml from 'smol-toml';
 import { MarkdownParser } from '../services/markdownParser';
 import { WikiNote } from '../core/types/wiki';
 import { LlmClient, LlmClientFactory } from './llmClient';
+
+export interface ProjectEntry {
+  id: string;
+  name: string;
+  path: string;
+}
 
 export interface ChatRequest {
   message?: string;
@@ -122,12 +129,14 @@ export class AgentServer {
     this.llmClient = llmClient;
   }
 
-  public getWikiDir(): string {
-    return path.join(this.rootDir, 'wiki');
+  public async getWikiDir(projectId: string = 'default'): Promise<string> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    return path.join(projRoot, 'wiki');
   }
 
-  public getRawDir(): string {
-    return path.join(this.rootDir, 'raw');
+  public async getRawDir(projectId: string = 'default'): Promise<string> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    return path.join(projRoot, 'raw');
   }
 
   public setLlmClient(client: LlmClient): void {
@@ -187,16 +196,134 @@ export class AgentServer {
     });
   }
 
+  private getProjectIdFromRequest(req: http.IncomingMessage, url: URL): string {
+    const headerVal = req.headers['x-project-id'];
+    if (typeof headerVal === 'string' && headerVal.trim()) {
+      return headerVal.trim();
+    }
+    const queryVal = url.searchParams.get('projectId');
+    if (queryVal && queryVal.trim()) {
+      return queryVal.trim();
+    }
+    return 'default';
+  }
+
+  public async getProjects(): Promise<ProjectEntry[]> {
+    const registryPath = path.join(this.rootDir, 'projects.json');
+    try {
+      const data = await fs.readFile(registryPath, 'utf-8');
+      const list = JSON.parse(data) as ProjectEntry[];
+      if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
+    } catch (_e) {
+      // Missing or invalid
+    }
+    return [{ id: 'default', name: 'Default Wiki', path: '.' }];
+  }
+
+  public async saveProjects(projects: ProjectEntry[]): Promise<void> {
+    const registryPath = path.join(this.rootDir, 'projects.json');
+    await fs.writeFile(registryPath, JSON.stringify(projects, null, 2), 'utf-8');
+  }
+
+  public async resolveProjectRoot(projectId: string = 'default'): Promise<string> {
+    const projects = await this.getProjects();
+    const project = projects.find(p => p.id === projectId);
+    const relPath = project ? project.path : (projectId === 'default' ? '.' : `projects/${projectId}`);
+
+    // Containment check against rootDir
+    const absPath = path.resolve(this.rootDir, relPath);
+    const relToRoot = path.relative(this.rootDir, absPath);
+    if (relToRoot.startsWith('..') || (path.isAbsolute(relToRoot) && relToRoot !== absPath)) {
+      const err = new Error('Access denied: Invalid project path traversal detected');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+    return absPath;
+  }
+
+  public async createProject(id: string, name: string): Promise<ProjectEntry> {
+    const cleanId = id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    if (!cleanId) {
+      const err = new Error('Invalid project ID');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    const projects = await this.getProjects();
+    if (projects.some(p => p.id === cleanId)) {
+      const err = new Error(`Project '${cleanId}' already exists`);
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    const projectRelPath = cleanId === 'default' ? '.' : `projects/${cleanId}`;
+    const projectAbsPath = path.resolve(this.rootDir, projectRelPath);
+
+    // Create project directories
+    await fs.mkdir(path.join(projectAbsPath, 'sources'), { recursive: true });
+    await fs.mkdir(path.join(projectAbsPath, 'raw'), { recursive: true });
+    await fs.mkdir(path.join(projectAbsPath, 'wiki'), { recursive: true });
+    await fs.mkdir(path.join(projectAbsPath, 'output'), { recursive: true });
+    await fs.mkdir(path.join(projectAbsPath, 'notes'), { recursive: true });
+
+    // Copy template or default config.toml
+    const configPath = path.join(projectAbsPath, 'config.toml');
+    const defaultConfigPath = path.join(this.rootDir, 'config.toml');
+    try {
+      const baseConfig = await fs.readFile(defaultConfigPath, 'utf-8');
+      const parsed = toml.parse(baseConfig) as Record<string, unknown>;
+      if (!parsed.project) parsed.project = {};
+      (parsed.project as Record<string, unknown>).name = cleanId;
+      (parsed.project as Record<string, unknown>).title = name || `${cleanId} Wiki`;
+      await fs.writeFile(configPath, toml.stringify(parsed), 'utf-8');
+    } catch (_e) {
+      const initialConfig = `[project]\nname = "${cleanId}"\ntitle = "${name || cleanId}"\ncontext = ""\nlanguage = "en"\n\n[paths]\nsources = "sources"\nraw = "raw"\nwiki = "wiki"\noutput = "output"\nnotes = "notes"\n`;
+      await fs.writeFile(configPath, initialConfig, 'utf-8');
+    }
+
+    const newProject: ProjectEntry = { id: cleanId, name: name || cleanId, path: projectRelPath };
+    projects.push(newProject);
+    await this.saveProjects(projects);
+    return newProject;
+  }
+
+  public async deleteProject(id: string, deleteFolder: boolean = false): Promise<void> {
+    if (id === 'default') {
+      const err = new Error('Cannot delete default project');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    let projects = await this.getProjects();
+    const proj = projects.find(p => p.id === id);
+    if (!proj) {
+      const err = new Error(`Project '${id}' not found`);
+      (err as unknown as { status: number }).status = 404;
+      throw err;
+    }
+
+    projects = projects.filter(p => p.id !== id);
+    await this.saveProjects(projects);
+
+    if (deleteFolder) {
+      const projectAbsPath = await this.resolveProjectRoot(id);
+      await fs.rm(projectAbsPath, { recursive: true, force: true });
+    }
+  }
+
   public async handleRequest(
     req: http.IncomingMessage,
     res: http.ServerResponse
   ): Promise<boolean> {
     const url = new URL(req.url ?? '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
+    const projectId = this.getProjectIdFromRequest(req, url);
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Project-Id');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -204,13 +331,244 @@ export class AgentServer {
       return true;
     }
 
+    // Projects CRUD API
+    if (pathname === '/api/projects' && req.method === 'GET') {
+      try {
+        const projects = await this.getProjects();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, projects }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/projects' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ id: string; name: string }>(req);
+        const project = await this.createProject(body.id, body.name);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, project }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    const configMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config$/);
+    if (configMatch) {
+      const pId = configMatch[1];
+      if (req.method === 'GET') {
+        try {
+          const projectRoot = await this.resolveProjectRoot(pId);
+          const configPath = path.join(projectRoot, 'config.toml');
+          let parsed: unknown = {};
+          try {
+            const raw = await fs.readFile(configPath, 'utf-8');
+            parsed = toml.parse(raw);
+          } catch (_e) {
+            // file missing
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, config: parsed }));
+        } catch (err) {
+          const status = (err as { status?: number }).status || 500;
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+        return true;
+      }
+
+      if (req.method === 'PUT') {
+        try {
+          const body = await this.parseJsonBody<Record<string, unknown>>(req);
+          const projectRoot = await this.resolveProjectRoot(pId);
+          const configPath = path.join(projectRoot, 'config.toml');
+          const tomlContent = toml.stringify(body);
+          await fs.writeFile(configPath, tomlContent, 'utf-8');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
+        } catch (err) {
+          const status = (err as { status?: number }).status || 500;
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+        return true;
+      }
+    }
+
+    const deleteMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
+    if (deleteMatch && req.method === 'DELETE') {
+      try {
+        const pId = deleteMatch[1];
+        const deleteFolder = url.searchParams.get('deleteFolder') === 'true';
+        await this.deleteProject(pId, deleteFolder);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     if (pathname === '/api/wiki/notes' && req.method === 'GET') {
       try {
-        const notes = await this.readAllWikiNotes();
+        const notes = await this.readAllWikiNotes(projectId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, notes }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/save' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<SaveNoteRequest>(req);
+        const result = await this.saveWikiNote(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/attach' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<AttachNoteRequest>(req);
+        const result = await this.attachToNote(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/chat' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<ChatRequest>(req);
+        const isStream = body.stream === true || (req.headers.accept && req.headers.accept.includes('text/event-stream'));
+
+        if (isStream) {
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+          });
+          await this.processChatCommandStream(body, chunk => {
+            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          }, projectId);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        } else {
+          const response = await this.processChatCommand(body, projectId);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, response }));
+        }
+      } catch (err) {
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        } else {
+          res.write(`data: ${JSON.stringify({ error: String(err) })}\n\n`);
+          res.end();
+        }
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/folder/create' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<CreateFolderRequest>(req);
+        const result = await this.createFolderHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, folder: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/file/create' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<CreateFileRequest>(req);
+        const result = await this.createFileHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/rename' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<RenameRequest>(req);
+        await this.renameHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/move' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<MoveRequest>(req);
+        await this.moveHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/delete' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<DeleteRequest>(req);
+        await this.deleteHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/upload' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<UploadRequest>(req);
+        await this.uploadHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
@@ -365,8 +723,9 @@ export class AgentServer {
     return false;
   }
 
-  public async readAllWikiNotes(): Promise<WikiNote[]> {
-    const wikiDir = this.getWikiDir();
+  public async readAllWikiNotes(projectId: string = 'default'): Promise<WikiNote[]> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = await this.getWikiDir(projectId);
     const notes: WikiNote[] = [];
 
     const walk = async (dir: string): Promise<void> => {
@@ -377,7 +736,7 @@ export class AgentServer {
           if (entry.isDirectory()) {
             await walk(fullPath);
           } else if (entry.isFile() && entry.name.endsWith('.md')) {
-            const relativePath = path.relative(this.rootDir, fullPath).replace(/\\/g, '/');
+            const relativePath = path.relative(projRoot, fullPath).replace(/\\/g, '/');
             const content = await fs.readFile(fullPath, 'utf-8');
             const stem = entry.name.replace(/\.md$/i, '');
             const folder = path.relative(wikiDir, dir).replace(/\\/g, '/') || 'wiki';
@@ -403,21 +762,22 @@ export class AgentServer {
     return this.parser.computeBacklinks(notes);
   }
 
-  public async saveWikiNote(data: SaveNoteRequest): Promise<WikiNote> {
-    const wikiDir = path.resolve(this.getWikiDir());
+  public async saveWikiNote(data: SaveNoteRequest, projectId: string = 'default'): Promise<WikiNote> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     let targetPath: string;
 
     if (data.path) {
       targetPath = path.isAbsolute(data.path)
         ? path.resolve(data.path)
-        : path.resolve(this.rootDir, data.path);
+        : path.resolve(projRoot, data.path);
     } else {
       const folder = data.folder && data.folder !== 'wiki' ? data.folder : '';
       const filename = `${data.id.endsWith('.md') ? data.id : `${data.id}.md`}`;
       targetPath = path.resolve(wikiDir, folder, filename);
     }
 
-    // Path traversal containment check
+    // Path traversal containment check against wikiDir
     const rel = path.relative(wikiDir, targetPath);
     if (rel.startsWith('..') || path.isAbsolute(rel)) {
       const err = new Error('Access denied: target path must reside inside wiki directory');
@@ -428,7 +788,7 @@ export class AgentServer {
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     await fs.writeFile(targetPath, data.content, 'utf-8');
 
-    const relativePath = path.relative(this.rootDir, targetPath).replace(/\\/g, '/');
+    const relativePath = path.relative(projRoot, targetPath).replace(/\\/g, '/');
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
     const titleFromName = stem.replace(/[-_]/g, ' ');
@@ -442,9 +802,9 @@ export class AgentServer {
     );
   }
 
-  private validateSafePath(targetPath: string): void {
-    const wikiDir = path.resolve(this.getWikiDir());
-    const rawDir = path.resolve(this.getRawDir());
+  private async validateSafePath(targetPath: string, projectId: string = 'default'): Promise<void> {
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
+    const rawDir = path.resolve(await this.getRawDir(projectId));
     const absTarget = path.resolve(targetPath);
 
     const relWiki = path.relative(wikiDir, absTarget);
@@ -460,61 +820,66 @@ export class AgentServer {
     }
   }
 
-  public async createFolderHandler(data: CreateFolderRequest): Promise<string> {
-    const wikiDir = path.resolve(this.getWikiDir());
+  public async createFolderHandler(data: CreateFolderRequest, projectId: string = 'default'): Promise<string> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const target = path.resolve(wikiDir, data.folderPath.replace(/^wiki\/?/, ''));
-    this.validateSafePath(target);
+    await this.validateSafePath(target, projectId);
     await fs.mkdir(target, { recursive: true });
-    return path.relative(this.rootDir, target).replace(/\\/g, '/');
+    return path.relative(projRoot, target).replace(/\\/g, '/');
   }
 
-  public async createFileHandler(data: CreateFileRequest): Promise<WikiNote> {
-    const wikiDir = path.resolve(this.getWikiDir());
+  public async createFileHandler(data: CreateFileRequest, projectId: string = 'default'): Promise<WikiNote> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const folder = data.folderPath ? data.folderPath.replace(/^wiki\/?/, '') : '';
     const name = data.fileName.endsWith('.md') ? data.fileName : `${data.fileName}.md`;
     const target = path.resolve(wikiDir, folder, name);
-    this.validateSafePath(target);
+    await this.validateSafePath(target, projectId);
 
     const defaultContent = data.content ?? `# ${data.fileName.replace(/\.md$/i, '').replace(/[-_]/g, ' ')}\n\n`;
     await fs.mkdir(path.dirname(target), { recursive: true });
     await fs.writeFile(target, defaultContent, 'utf-8');
 
     const id = path.basename(target, '.md');
-    const relativePath = path.relative(this.rootDir, target).replace(/\\/g, '/');
+    const relativePath = path.relative(projRoot, target).replace(/\\/g, '/');
     const folderName = path.relative(wikiDir, path.dirname(target)).replace(/\\/g, '/') || 'wiki';
 
     return this.parser.parseNote(id, id.replace(/[-_]/g, ' '), defaultContent, folderName === '.' ? 'wiki' : folderName, relativePath);
   }
 
-  public async renameHandler(data: RenameRequest): Promise<void> {
-    const absOld = path.isAbsolute(data.oldPath) ? path.resolve(data.oldPath) : path.resolve(this.rootDir, data.oldPath);
-    this.validateSafePath(absOld);
+  public async renameHandler(data: RenameRequest, projectId: string = 'default'): Promise<void> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const absOld = path.isAbsolute(data.oldPath) ? path.resolve(data.oldPath) : path.resolve(projRoot, data.oldPath);
+    await this.validateSafePath(absOld, projectId);
 
     const parent = path.dirname(absOld);
     const absNew = path.resolve(parent, data.newName);
-    this.validateSafePath(absNew);
+    await this.validateSafePath(absNew, projectId);
 
     await fs.rename(absOld, absNew);
   }
 
-  public async moveHandler(data: MoveRequest): Promise<void> {
-    const absSource = path.isAbsolute(data.sourcePath) ? path.resolve(data.sourcePath) : path.resolve(this.rootDir, data.sourcePath);
-    this.validateSafePath(absSource);
+  public async moveHandler(data: MoveRequest, projectId: string = 'default'): Promise<void> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const absSource = path.isAbsolute(data.sourcePath) ? path.resolve(data.sourcePath) : path.resolve(projRoot, data.sourcePath);
+    await this.validateSafePath(absSource, projectId);
 
-    const wikiDir = path.resolve(this.getWikiDir());
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const targetDir = path.resolve(wikiDir, data.targetFolder.replace(/^wiki\/?/, ''));
-    this.validateSafePath(targetDir);
+    await this.validateSafePath(targetDir, projectId);
 
     await fs.mkdir(targetDir, { recursive: true });
     const absDest = path.resolve(targetDir, path.basename(absSource));
-    this.validateSafePath(absDest);
+    await this.validateSafePath(absDest, projectId);
 
     await fs.rename(absSource, absDest);
   }
 
-  public async deleteHandler(data: DeleteRequest): Promise<void> {
-    const absTarget = path.isAbsolute(data.targetPath) ? path.resolve(data.targetPath) : path.resolve(this.rootDir, data.targetPath);
-    this.validateSafePath(absTarget);
+  public async deleteHandler(data: DeleteRequest, projectId: string = 'default'): Promise<void> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const absTarget = path.isAbsolute(data.targetPath) ? path.resolve(data.targetPath) : path.resolve(projRoot, data.targetPath);
+    await this.validateSafePath(absTarget, projectId);
 
     const stat = await fs.stat(absTarget);
     if (stat.isDirectory()) {
@@ -524,11 +889,11 @@ export class AgentServer {
     }
   }
 
-  public async uploadHandler(data: UploadRequest): Promise<void> {
-    const wikiDir = path.resolve(this.getWikiDir());
+  public async uploadHandler(data: UploadRequest, projectId: string = 'default'): Promise<void> {
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const folder = data.folderPath ? data.folderPath.replace(/^wiki\/?/, '') : '';
     const target = path.resolve(wikiDir, folder, data.fileName);
-    this.validateSafePath(target);
+    await this.validateSafePath(target, projectId);
 
     await fs.mkdir(path.dirname(target), { recursive: true });
 
@@ -540,8 +905,8 @@ export class AgentServer {
     }
   }
 
-  public async attachToNote(data: AttachNoteRequest): Promise<WikiNote> {
-    const wikiDir = this.getWikiDir();
+  public async attachToNote(data: AttachNoteRequest, projectId: string = 'default'): Promise<WikiNote> {
+    const wikiDir = await this.getWikiDir(projectId);
     let targetId = data.noteId;
     if (!targetId && data.title) {
       targetId = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -583,10 +948,10 @@ export class AgentServer {
       content: finalContent,
       folder: data.folder,
       title: data.title,
-    });
+    }, projectId);
   }
 
-  public async processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void): Promise<string> {
+  public async processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void, projectId: string = 'default'): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
     if (rawInput.length > 50000) {
       throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
@@ -604,7 +969,7 @@ export class AgentServer {
     }
 
     if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview') {
-      const result = await this.processChatCommand(req);
+      const result = await this.processChatCommand(req, projectId);
       onChunk(result);
       return result;
     }
@@ -615,7 +980,7 @@ export class AgentServer {
       return text;
     }
 
-    const notes = await this.readAllWikiNotes();
+    const notes = await this.readAllWikiNotes(projectId);
     let contextNotes: WikiNote[] = [];
     if (args) {
       const queryWords = args.toLowerCase().split(/\s+/).filter(Boolean);
@@ -666,23 +1031,23 @@ export class AgentServer {
           onChunk
         );
       } catch (err) {
-        const fallback = await this.processChatCommand(req);
+        const fallback = await this.processChatCommand(req, projectId);
         onChunk(fallback);
         return fallback;
       }
     } else {
-      const full = await this.processChatCommand(req);
+      const full = await this.processChatCommand(req, projectId);
       onChunk(full);
       return full;
     }
   }
 
-  public async processChatCommand(req: ChatRequest): Promise<string> {
+  public async processChatCommand(req: ChatRequest, projectId: string = 'default'): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
     if (rawInput.length > 50000) {
       throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
     }
-    const notes = await this.readAllWikiNotes();
+    const notes = await this.readAllWikiNotes(projectId);
 
     let command = '';
     let args = rawInput;
@@ -740,11 +1105,11 @@ export class AgentServer {
       }
 
       case 'compile': {
-        return this.executeCompileWorkflow();
+        return this.executeCompileWorkflow(projectId);
       }
 
       case 'audit': {
-        return this.executeAuditWorkflow(notes);
+        return this.executeAuditWorkflow(notes, projectId);
       }
 
       case 'trace': {
@@ -752,7 +1117,7 @@ export class AgentServer {
       }
 
       case 'reindex': {
-        return this.executeReindexWorkflow();
+        return this.executeReindexWorkflow(projectId);
       }
 
       case 'study-guide': {
@@ -772,7 +1137,7 @@ export class AgentServer {
       }
 
       case 'promote-note': {
-        return await this.executePromoteNoteWorkflow(args);
+        return await this.executePromoteNoteWorkflow(args, projectId);
       }
 
       case 'audio-overview': {
@@ -828,8 +1193,8 @@ export class AgentServer {
     }
   }
 
-  private async executeCompileWorkflow(): Promise<string> {
-    const rawDir = this.getRawDir();
+  private async executeCompileWorkflow(projectId: string = 'default'): Promise<string> {
+    const rawDir = await this.getRawDir(projectId);
     const uncompiledFiles: string[] = [];
 
     try {
@@ -844,7 +1209,7 @@ export class AgentServer {
     }
 
     if (uncompiledFiles.length === 0) {
-      const notes = await this.readAllWikiNotes();
+      const notes = await this.readAllWikiNotes(projectId);
       return `### ⚡ Compile Workflow Completed\n\n- **Uncompiled Files in \`raw/\`**: 0\n- **Wiki Articles Analyzed**: ${notes.length}\n- **Status**: Knowledge base fully interlinked and compiled according to \`AGENT.md\` guidelines.`;
     }
 
@@ -872,7 +1237,7 @@ export class AgentServer {
           folder,
           content: response,
           title: stem.replace(/[-_]/g, ' '),
-        });
+        }, projectId);
 
         // Rename file in raw/ to _COMPILED.md
         const compiledPath = path.join(rawDir, fileName.replace(/\.md$/i, '_COMPILED.md'));
@@ -884,13 +1249,13 @@ export class AgentServer {
       }
     }
 
-    await this.executeReindexWorkflow();
+    await this.executeReindexWorkflow(projectId);
 
     return `### ⚡ Compile Workflow Execution Report\n\n**Processed ${uncompiledFiles.length} file(s):**\n${compiledResults.join('\n')}\n\n- **Indexes updated**: Regenerated \`wiki/index.md\` and thematic indexes.`;
   }
 
-  private async executeAuditWorkflow(notes: WikiNote[]): Promise<string> {
-    const wikiDir = this.getWikiDir();
+  private async executeAuditWorkflow(notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+    const wikiDir = await this.getWikiDir(projectId);
 
     // 1. Orphan notes
     const orphans = notes.filter(n => (n.backlinks?.length ?? 0) === 0 && !n.id.endsWith('index'));
@@ -942,14 +1307,14 @@ export class AgentServer {
 
     const q = (topic || '').toLowerCase().trim();
     const relevantNotes = q
-      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || (n.folder && n.folder.toLowerCase().includes(q)))
       : notes.slice(0, 5);
 
     const sourceIds = relevantNotes.map(n => n.id);
     const slug = q ? q.replace(/[^a-z0-9]+/g, '-') : 'general';
     const filePath = path.join(outputDir, `study-guide-${slug}.md`);
 
-    const sections = relevantNotes.map(n => `### ${n.title}\n- **Summary**: Key concept from [[${n.id}]]\n- **Folder**: ${n.folder}\n- **Key Terms**: ${n.tags?.join(', ') || 'general'}\n`).join('\n');
+    const sections = relevantNotes.map(n => `### ${n.title}\n- **Summary**: Key concept from [[${n.id}]]\n- **Folder**: ${n.folder || 'wiki'}\n- **Key Terms**: ${n.tags?.join(', ') || 'general'}\n`).join('\n');
 
     const content = `---
 tags: [study-guide, ${slug}]
@@ -1016,7 +1381,7 @@ ${sections || 'No notes found for topic.'}
 
     const q = (target || '').toLowerCase().trim();
     const relevantNotes = q
-      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || (n.folder && n.folder.toLowerCase().includes(q)))
       : notes.slice(0, 3);
 
     const sourceIds = relevantNotes.map(n => n.id);
@@ -1046,7 +1411,7 @@ ${sections || 'No notes found for topic.'}
     return `### 🎙️ Audio Overview Script Generated\n\n- **Dialogue Script**: \`${relScriptPath}\`\n- **TTS Provider Status**: \`none\` (Audio synthesis disabled in \`config.toml\`). Dialogue script generated successfully.\n- **Sources Covered**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*To enable MP3 generation, configure \`[audio]\` provider in \`config.toml\`.*`;
   }
 
-  public async executePromoteNoteWorkflow(argsText: string): Promise<string> {
+  public async executePromoteNoteWorkflow(argsText: string, projectId: string = 'default'): Promise<string> {
     const parts = (argsText || '').trim().split(/\s+/);
     const noteId = parts[0];
     const wikiName = parts[1] || 'general';
@@ -1097,9 +1462,9 @@ ${noteContent.slice(0, 500)}
       folder: wikiName,
       content: newArticleContent,
       title,
-    });
+    }, projectId);
 
-    await this.executeReindexWorkflow();
+    await this.executeReindexWorkflow(projectId);
 
     return `### 🚀 Note Promoted to Wiki Article\n\n- **Created Article**: \`wiki/${createdNote.folder}/${createdNote.id}.md\`\n- **Thematic Index Updated**: \`wiki/${createdNote.folder}/index.md\`\n- **Master Index Updated**: \`wiki/index.md\``;
   }
@@ -1255,7 +1620,7 @@ Consider promoting key takeaways from this report into a permanent wiki article 
 
     const q = topic.toLowerCase().trim();
     const relevantNotes = q
-      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || n.folder.toLowerCase().includes(q))
+      ? notes.filter(n => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q) || (n.folder && n.folder.toLowerCase().includes(q)))
       : notes.slice(0, 5);
 
     const slug = q ? q.replace(/[^a-z0-9]+/g, '-') : 'general';
@@ -1378,9 +1743,9 @@ ${questions.join('\n---\n\n')}
     return `### 🕸️ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
   }
 
-  private async executeReindexWorkflow(): Promise<string> {
-    const wikiDir = this.getWikiDir();
-    const notes = await this.readAllWikiNotes();
+  private async executeReindexWorkflow(projectId: string = 'default'): Promise<string> {
+    const wikiDir = await this.getWikiDir(projectId);
+    const notes = await this.readAllWikiNotes(projectId);
 
     // Group notes by folder
     const folderMap = new Map<string, WikiNote[]>();

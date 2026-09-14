@@ -147,15 +147,16 @@ agents expect their own filename, so create a copy or symlink:
 cp AGENT.md CLAUDE.md      # or: ln -s AGENT.md CLAUDE.md
 ```
 
-## Browse & Interact with the wiki (Web UI v2.2)
+## Browse & Interact with the wiki (Web UI v2.8)
 
 A lightweight, dependency-light **web application** is included for exploring,
 editing, and running agent queries directly in a browser — no Obsidian required.
 It is a single-page app (Vite + TypeScript, no framework) with a multi-column
 layout and live agent integration. The interface is organised into panels:
 
-- **Header** — Wiki-Forge branding, a view-mode switcher (**Editor** /
+- **Header** — Wiki-Forge branding, **Project Switcher** dropdown (select active project from `projects/`), **⚙️ Config** button to open the GUI Config Manager, a view-mode switcher (**Editor** /
   **Graph View** / **Split View**) and the **💬 OpenCode Chat** toggle button.
+- **GUI Config Manager** — tabbed modal interface to edit project properties, folder paths, LLM provider settings (`opencode`, `anthropic`, `openai_compatible`, `ollama`), and OKF type vocabulary directly in the browser, persisting updates to `config.toml` via `smol-toml`.
 - **Vault Explorer (sidebar, 280 px)** — an Obsidian-style collapsible file tree
   of the `wiki/` folder and its subfolders, a search box (**Ctrl+K**) that
   filters files in real time, and a **tag cloud** at the bottom. A **file
