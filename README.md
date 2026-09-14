@@ -36,7 +36,6 @@ project, a business wiki, personal notes, and so on.
 │   ├── SOURCES.md       # Registry of ingested sources (the bibliography)
 │   ├── CHANGELOG.md     # Release history
 │   ├── METRICS.md       # Wiki statistics & metrics
-├── docs/
 │   └── KARPATHY_LLM_WIKI.md   # The original idea file (offline copy)
 ├── index.html            # Web UI entry point (Vite)
 ├── vite.config.ts        # Vite configuration (with Agent API plugin)
