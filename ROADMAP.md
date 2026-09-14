@@ -52,6 +52,7 @@
 | 38 | Core/API Separation, Caching & Auto-Tests | ✅ Done | `src/api/core.py`, `src/cache.py`, optimized Vite build, `tests/auto/` |
 | 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
 | 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
+| 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 15 Python CLI scripts with real-time SSE log streaming |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -378,3 +379,16 @@ required.
 - **Makefile Refactoring:** Updated `skills-link` target in `Makefile` to use `ln -sf ../../skills/$$skill_name .claude/skills/$$skill_name` instead of `cp -r`.
 - **Documentation Alignment:** Updated `skills/README.md` to document symlink behavior, rationale, and multi-agent compatibility under DRY/KISS principles.
 - **Roadmap & Doc Sync:** Aligned `ROADMAP.md` and verified command consistency with `scripts/check_docs_sync.py`.
+
+---
+
+## Phase 41 — Web UI Python Script Control Panel ✅ Done
+
+**Goal:** Integrate all 15 Python CLI scripts into the Web UI via a dedicated "Tools" menu, dynamic forms, and real-time SSE log streaming.
+
+**Deliverables:**
+- **Script Registry & Backend API (`src/server/agentServer.ts`):** `GET /api/scripts/list` returning the 15 registered tool definitions, `POST /api/scripts/execute` spawning Python child processes securely via `child_process.spawn('python3', ...)` with real-time SSE log streaming (`stdout`, `stderr`, `exit`), and `GET /api/files/download` with path traversal containment.
+- **Control Panel UI (`src/components/tools/ToolsModal.ts`):** Tabbed/categorized modal interface (Ingestion, OKF Maintenance, Analysis & Metrics, Taxonomy, Thesis & Study, Wizard) rendering dynamic input forms (text, number, select, checkbox) for script parameters.
+- **Real-Time Streaming Log Console (`src/components/tools/LogConsole.ts`):** Terminal-like console displaying streaming process output with color coding, cancellation controls, and log export.
+- **Header Navigation Integration (`src/components/ui/Header.ts`):** "🛠️ Tools" button launching the Script Control Panel directly from the navigation bar.
+- **Integration Tests (`tests/scriptControlPanel.test.ts`):** Complete test suite verifying registry API, argument building, process execution SSE streaming, and security containment.

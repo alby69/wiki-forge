@@ -155,8 +155,9 @@ editing, and running agent queries directly in a browser — no Obsidian require
 It is a single-page app (Vite + TypeScript, no framework) with a multi-column
 layout and live agent integration. The interface is organised into panels:
 
-- **Header** — Wiki-Forge branding, **Project Switcher** dropdown (select active project from `projects/`), **⚙️ Config** button to open the GUI Config Manager, a view-mode switcher (**Editor** /
+- **Header** — Wiki-Forge branding, **Project Switcher** dropdown (select active project from `projects/`), **🛠️ Tools** button to launch the Script Control Panel, **⚙️ Config** button to open the GUI Config Manager, a view-mode switcher (**Editor** /
   **Graph View** / **Split View**) and the **💬 OpenCode Chat** toggle button.
+- **Script Control Panel (🛠️ Tools)** — a unified modal interface for running all 15 Python CLI scripts (`conv2md`, `clip2md`, `notebooklm_import`, `migrate_to_okf`, `okf_lint`, `okf_log`, `okf_reindex`, `okf_stats`, `wiki_stats`, `maturity_calculator`, `check_docs_sync`, `suggest_tags`, `generate_thesis`, `export_thesis_pdf`, `wizard`) directly from the browser. Includes dynamic parameter forms and real-time streaming SSE log output console.
 - **GUI Config Manager** — tabbed modal interface to edit project properties, folder paths, LLM provider settings (`opencode`, `anthropic`, `openai_compatible`, `ollama`), and OKF type vocabulary directly in the browser, persisting updates to `config.toml` via `smol-toml`.
 - **Vault Explorer (sidebar, 280 px)** — an Obsidian-style collapsible file tree
   of the `wiki/` folder and its subfolders, a search box (**Ctrl+K**) that
