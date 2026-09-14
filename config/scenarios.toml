@@ -8,6 +8,14 @@ workflow = ["Ingest PDFs", "Extract Authors/Theories", "Compile Literature Revie
 actions = ["conv2md.py", "ingest", "compile", "audit links"]
 prompt = "Execute ingestion on raw/ directory with context 'Thesis Review', compile the literature review, and run audit links."
 
+[scenarios.thesis]
+id = "thesis"
+name = "Wiki-Forge Thesis Edition (Cognitive Dynamic Thesis)"
+description = "Build an evolutionary dynamic thesis knowledge base from LLM queries, calculating page maturity and compiling printable PDF chapters."
+workflow = ["Ingest Sources", "Generate Syntheses & Questions", "Calculate Page Maturity Index", "Compile Chapters", "Export Printable PDF"]
+actions = ["conv2md.py", "ingest", "maturity", "thesis-compile", "thesis-pdf"]
+prompt = "Execute ingestion on raw/ sources, run maturity calculator to score wiki pages, aggregate mature synthesis notes into thesis draft chapters, and prepare printable PDF export."
+
 [scenarios.business]
 id = "business"
 name = "Business KB / Product / Policy"

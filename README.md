@@ -307,6 +307,8 @@ See `AGENT.md` (`tag-suggest` command) for the agent workflow.
 - **`audio-overview <target>`**: Synthesizes 2-speaker Host A / Host B conversational dialogue scripts in `output/audio-script-*.md` with optional TTS audio generation.
 - **`deep-research <question>`**: Executes multi-source research synthesis reports with claim attribution matrices and knowledge gap identification in `output/research-*.md`.
 - **`note <text>` & `promote-note <id>`**: Records scratchpad quick notes in `notes/` and promotes them into formal indexed wiki articles.
+- **`maturity [path]`**: Calculates and updates page maturity scores (0-100) based on sources, links, and questions.
+- **`thesis-chapter [min-maturity]`**: Aggregates mature wiki synthesis notes into a unified thesis draft (`output/thesis_compiled.md`).
 
 See `AGENT.md` §5.7–§5.8 for full command contracts and options.
 

@@ -6,7 +6,7 @@ description: >
   ai-tools", "make a study guide for the anthropology wiki", "turn this into a
   mindmap", "audio overview of chapter 3", "jot down a quick note".
 triggers:
-  commands: [study-guide, quiz, mindmap, audio-overview, note, promote-note]
+  commands: [study-guide, quiz, mindmap, audio-overview, note, promote-note, maturity, thesis-chapter]
 reads:
   - config.toml
   - wiki/**/*.md
@@ -63,6 +63,22 @@ confirm_destructive: false
 2. Extract headings (`##`, `###`), key bullet points, and concept relationships.
 3. Generate an indented tree Markdown representation and JSON node-link structure in `output/mindmap-<name>.md`.
 **Output:** Markdown tree structure in `output/mindmap-<name>.md`.
+
+### `maturity [target-path]`
+**Scope:** Calculate and update the 0-100 Maturity Index for wiki notes based on source coverage, originating questions, links, and text length.
+**Action:**
+1. Parse YAML frontmatter and body of target wiki notes.
+2. Compute maturity score using `scripts/maturity_calculator.py`.
+3. Report notes sorted by maturity score and update frontmatter attributes (`maturita`, `stato`).
+**Output:** Maturity Overview summary table.
+
+### `thesis-chapter [min-maturity]`
+**Scope:** Aggregate structured thesis chapters and mature synthesis notes into a unified thesis draft (`output/thesis_compiled.md`).
+**Action:**
+1. Collect chapter notes (`tipo: capitolo_tesi`) and synthesis notes with `maturita >= min-maturity`.
+2. Generate cohesive thesis Markdown in `output/thesis_compiled.md`.
+3. Optionally invoke `scripts/export_thesis_pdf.py` for printable PDF export (`output/thesis_final.pdf`).
+**Output:** Compiled thesis draft path and chapter breakdown summary.
 
 ### `quiz <wiki-name|article-path> [n-questions]`
 **Scope:** Generate an interactive self-test quiz from target wiki content.
