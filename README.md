@@ -25,6 +25,7 @@ project, a business wiki, personal notes, and so on.
 ├── conv2md.py            # Convert PDF/EPUB/DOCX/MD/TXT -> Markdown (raw/)
 ├── run_convert.sh        # One-command wrapper around conv2md.py
 ├── scripts/
+│   ├── notebooklm_import.py # Import NotebookLM Markdown exports into raw/
 │   └── wizard.py        # Scenario-Driven Interactive Wizard CLI
 ├── AGENT.md             # Router operating manual for the LLM agent (symlink to docs/AGENT.md)
 ├── skills/              # Modular Agent Skill packages (ingest, curate, audit, query, study, onboarding)
@@ -297,6 +298,17 @@ python suggest_tags.py wiki/ai/foo.md --semantic # semantic ranking (needs keybe
 `suggest_tags.py` is dependency-light (pure-Python RAKE by default; optional
 KeyBERT semantic ranking when `keybert` + `sentence-transformers` are installed).
 See `AGENT.md` (`tag-suggest` command) for the agent workflow.
+
+### NotebookLM Import Workflow (Importazione da NotebookLM)
+
+To bring study guides, Q&A summaries, or FAQs from Google NotebookLM into `wiki-forge`:
+
+1. Export or copy the Markdown generated in NotebookLM to a local `.md` file (e.g. `study_notes.md`).
+2. Run the import script to clean pre-existing headers, add OKF v0.2 YAML frontmatter, and save to `raw/`:
+   ```bash
+   python scripts/notebooklm_import.py study_notes.md --source "NotebookLM Session"
+   ```
+3. Run `/compile` in your agent to compile the imported material into native `wiki/` articles.
 
 ### Study & Research Suite
 
