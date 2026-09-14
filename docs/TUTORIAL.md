@@ -236,6 +236,8 @@ Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
 | `deep-research <q>` / `/deep-research` | Multi-source synthesis research report | `deep-research "agent architectures"` |
 | `note <text>` / `/note` | Record quick scratchpad note in `notes/` | `note "check Karpathy paper on LLM OS"` |
 | `promote-note <id>` / `/promote-note` | Promote scratchpad note to wiki article | `promote-note note-1 ai-tools` |
+| `maturity [path]` / `/maturity` | Calculate and update note maturity scores | `maturity wiki/` |
+| `thesis-chapter` / `/thesis-chapter` | Compile thesis chapters and mature notes | `thesis-chapter 50` |
 | `search <term>` / `/search` | Search concepts across the wiki | `search "LLM-OS"` |
 | `backlinks [note]` / `/backlinks` | View incoming links to a note | `backlinks ai-tools/claude-code` |
 | `related [note]` / `/related` | View related notes | `related ai-tools/claude-code` |
