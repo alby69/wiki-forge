@@ -1,4 +1,5 @@
 import { ProjectInfo } from '../../storage/ApiStorage';
+import { WikiNote } from '../../core/types/wiki';
 
 export class Header {
   private container: HTMLElement;
@@ -9,6 +10,7 @@ export class Header {
   private onProjectSelectCb?: (projectId: string) => void;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
+  private activeNote: WikiNote | null = null;
 
   constructor(
     container: HTMLElement,
@@ -33,6 +35,24 @@ export class Header {
     this.render();
   }
 
+  public setActiveNote(note: WikiNote | null): void {
+    this.activeNote = note;
+    this.render();
+  }
+
+  private renderNoteBadge(): string {
+    if (!this.activeNote) return '';
+
+    const tier = this.activeNote.trustTier || 'unverified';
+    if (tier === 'human-reviewed') {
+      return `<span style="font-size: 11px; background: #22543d; color: #9ae6b4; padding: 2px 6px; border-radius: 4px; font-weight: 600;">✓ Human-Reviewed</span>`;
+    } else if (tier === 'machine-confirmed') {
+      return `<span style="font-size: 11px; background: #2a4365; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-weight: 600;">🤖 Machine-Confirmed</span>`;
+    } else {
+      return `<span style="font-size: 11px; background: #4a5568; color: #cbd5e0; padding: 2px 6px; border-radius: 4px;">Unverified</span>`;
+    }
+  }
+
   public render(): void {
     const projOptions = this.projects.length > 0
       ? this.projects.map(p => `<option value="${p.id}" ${p.id === this.activeProjectId ? 'selected' : ''}>${p.name}</option>`).join('')
@@ -44,7 +64,8 @@ export class Header {
           <div style="font-weight: 700; font-size: 16px; color: #64b5f6; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 18px;">⚒️</span> Wiki-Forge
           </div>
-          <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px;">v2.8 Multi-Project</span>
+          <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px;">OKF v0.2</span>
+          ${this.renderNoteBadge()}
 
           <div style="margin-left: 10px; display: flex; align-items: center; gap: 6px;">
             <label style="font-size: 12px; color: #a0aec0;">Project:</label>

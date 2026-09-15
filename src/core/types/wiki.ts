@@ -19,4 +19,8 @@ export interface WikiNote {
   backlinks: Backlink[];    // Notes that link to this note
   createdAt?: string;
   updatedAt?: string;
+  status?: string;
+  verified?: string[];
+  staleAfter?: string;
+  trustTier?: 'human-reviewed' | 'machine-confirmed' | 'unverified';
 }

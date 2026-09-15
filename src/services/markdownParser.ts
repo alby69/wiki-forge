@@ -88,6 +88,22 @@ export class MarkdownParser {
     const tags = this.extractTags(content, fTags);
     const outboundLinks = this.extractWikiLinks(content);
 
+    const verified = Array.isArray(frontmatter.verified)
+      ? (frontmatter.verified as string[])
+      : typeof frontmatter.verified === 'string'
+      ? [frontmatter.verified]
+      : [];
+
+    const status = typeof frontmatter.status === 'string' ? frontmatter.status.toLowerCase() : 'draft';
+    const staleAfter = typeof frontmatter.stale_after === 'string' ? frontmatter.stale_after : undefined;
+
+    let trustTier: 'human-reviewed' | 'machine-confirmed' | 'unverified' = 'unverified';
+    if (verified.some(v => v.startsWith('human:'))) {
+      trustTier = 'human-reviewed';
+    } else if (verified.length > 0) {
+      trustTier = 'machine-confirmed';
+    }
+
     return {
       id,
       title: (frontmatter.title as string) || title,
@@ -98,6 +114,10 @@ export class MarkdownParser {
       frontmatter,
       outboundLinks,
       backlinks: [],
+      status,
+      verified,
+      staleAfter,
+      trustTier,
     };
   }
 

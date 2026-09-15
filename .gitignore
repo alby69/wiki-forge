@@ -12,6 +12,9 @@ __pycache__/
 # ----- Logs & Output -----
 *.log
 output/
+test-results/
+tmp-*/
+tests/tmp-*/
 
 # ----- Editor / OS noise -----
 .obsidian/

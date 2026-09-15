@@ -58,12 +58,45 @@ export class ContextPanel {
             .join('')
         : `<span style="color: #718096; font-size: 12px;">No tags</span>`;
 
+    const trustTier = this.selectedNote.trustTier || 'unverified';
+    const status = this.selectedNote.status || 'draft';
+    const staleAfter = this.selectedNote.staleAfter;
+    const isStale = staleAfter && staleAfter < new Date().toISOString().slice(0, 10);
+
+    let trustBadge = `<span style="background: #4a5568; color: #cbd5e0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">Unverified</span>`;
+    if (trustTier === 'human-reviewed') {
+      trustBadge = `<span style="background: #22543d; color: #9ae6b4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ Human-Reviewed</span>`;
+    } else if (trustTier === 'machine-confirmed') {
+      trustBadge = `<span style="background: #2a4365; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">🤖 Machine-Confirmed</span>`;
+    }
+
+    let statusBadge = `<span style="background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(status)}</span>`;
+    if (status === 'stable') {
+      statusBadge = `<span style="background: #1a365d; color: #63b3ed; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">stable</span>`;
+    } else if (status === 'deprecated') {
+      statusBadge = `<span style="background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">⚠️ deprecated</span>`;
+    }
+
+    const staleBadge = isStale ? `<span style="background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px;">⏰ Stale (${staleAfter})</span>` : '';
+
+    const verifiersList = (this.selectedNote.verified || []).length > 0
+      ? (this.selectedNote.verified || []).map(v => `<span style="background: #1a1b1e; border: 1px solid #2d3748; color: #a0aec0; padding: 1px 5px; border-radius: 3px; font-size: 10px; margin-right: 4px;">${escapeHtml(v)}</span>`).join('')
+      : `<span style="color: #718096; font-size: 11px;">None</span>`;
+
     this.container.innerHTML = `
       <div class="context-panel" style="padding: 16px; background: #121316; height: 100%; color: #e2e8f0; font-size: 13px; box-sizing: border-box; overflow-y: auto;">
         <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; border-bottom: 1px solid #2d3748; padding-bottom: 8px;">Node Metadata</h3>
         <div style="margin-bottom: 16px;">
           <strong style="color: #fff; font-size: 15px;">${escapeHtml(this.selectedNote.title)}</strong>
           <div style="margin-top: 6px;">${tagsHTML}</div>
+          <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+            ${trustBadge}
+            ${statusBadge}
+            ${staleBadge}
+          </div>
+          <div style="margin-top: 8px; font-size: 11px; color: #a0aec0;">
+            <strong>Verifiers:</strong> ${verifiersList}
+          </div>
         </div>
 
         <h4 style="margin-bottom: 8px; font-size: 12px; color: #a0aec0;">Backlinks (${this.selectedNote.backlinks.length})</h4>
