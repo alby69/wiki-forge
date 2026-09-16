@@ -17,6 +17,23 @@ project, a business wiki, personal notes, and so on.
 
 ---
 
+## 🚀 Avvio Rapido (Per tutti gli utenti)
+
+Non serve installare Python o Node.js! Segui questi tre semplici passaggi:
+
+1. **Installa Docker Desktop** (se non lo hai già): [Scarica qui](https://www.docker.com/products/docker-desktop)
+2. **Scarica questo repository** come file ZIP ed estrailo.
+3. **Fai doppio click** sul file di avvio corrispondente al tuo sistema operativo nella cartella principale:
+   - 🪟 Windows: `Start_WikiForge.bat`
+   - 🍎 macOS: `Start_WikiForge.command` *(al primo avvio, potrebbe essere necessario fare clic destro → "Apri")*
+   - 🐧 Linux: `Start_WikiForge.sh` *(assicurati che sia eseguibile: `chmod +x Start_WikiForge.sh`)*
+
+L'applicazione si avvierà in background e il tuo browser si aprirà automaticamente su **http://localhost:5173**.
+
+> 💡 **Per arrestare l'applicazione**, usa semplicemente il file `Stop_WikiForge.*` corrispondente.
+
+---
+
 ## What's inside
 
 ```

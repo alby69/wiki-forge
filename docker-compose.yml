@@ -15,18 +15,18 @@ name: wiki-forge
 
 services:
   wiki:
+    image: ghcr.io/alby69/wiki-forge:latest
     build: .
-    image: wiki-forge:latest
     volumes:
       - .:/wiki
     working_dir: /wiki
     command: ["shell"]
 
   api:
+    image: ghcr.io/alby69/wiki-forge-ui:latest
     build:
       context: .
       dockerfile: Dockerfile.ui
-    image: wiki-forge-api:latest
     volumes:
       - .:/app
       - /app/node_modules
@@ -42,10 +42,10 @@ services:
     command: sh -c "npm install && npx tsx src/server/httpServer.ts"
 
   ui:
+    image: ghcr.io/alby69/wiki-forge-ui:latest
     build:
       context: .
       dockerfile: Dockerfile.ui
-    image: wiki-forge-ui:latest
     volumes:
       - .:/app
       - /app/node_modules
