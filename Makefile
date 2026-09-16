@@ -32,7 +32,7 @@ audit:
 	@echo "Run 'audit' in your agent (AGENT.md §5.3)"
 
 stats:
-	@python3 wiki_stats.py
+	@python3 scripts/wiki_stats.py
 
 reindex:
 	@echo "Run 'reindex' in your agent (AGENT.md §5.3)"
@@ -110,10 +110,10 @@ ui-typecheck:
 	npm run typecheck
 
 tags:
-	python suggest_tags.py --all
+	python3 scripts/suggest_tags.py --all
 
 tags-write:
-	python suggest_tags.py --all --write
+	python3 scripts/suggest_tags.py --all --write
 
 skills-link:
 	@mkdir -p .claude/skills

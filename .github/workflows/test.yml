@@ -30,13 +30,13 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Test conv2md CLI
-        run: python conv2md.py --help
+        run: python scripts/conv2md.py --help
 
       - name: Test wiki_stats
-        run: python wiki_stats.py
+        run: python scripts/wiki_stats.py
 
       - name: Test clip2md CLI
-        run: python clip2md.py --help
+        run: python scripts/clip2md.py --help
 
       - name: Test docs-sync consistency
         run: python scripts/check_docs_sync.py
