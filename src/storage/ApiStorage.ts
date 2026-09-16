@@ -22,7 +22,12 @@ export class ApiStorage implements IStorage {
   private activeProjectIdMemory: string = 'default';
 
   constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl;
+    // In browser, use VITE_API_BASE_URL if available; otherwise use provided baseUrl
+    if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL) {
+      this.baseUrl = (import.meta as any).env.VITE_API_BASE_URL;
+    } else {
+      this.baseUrl = baseUrl;
+    }
   }
 
   public getActiveProjectId(): string {
