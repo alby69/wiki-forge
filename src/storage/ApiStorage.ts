@@ -1,7 +1,6 @@
 import { WikiNote } from '../core/types/wiki';
 import { IStorage } from '../core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
-import { showToast } from '../components/ui/Toast';
 
 export interface AttachOptions {
   noteId?: string;
@@ -182,16 +181,11 @@ export class ApiStorage implements IStorage {
       if (res.ok) {
         const json = (await res.json()) as { success: boolean; note?: WikiNote };
         if (json.success && json.note) {
-          if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-            showToast({ message: `Saved note: ${json.note.title || note.id}`, variant: 'success' });
-          }
           return json.note;
         }
       }
     } catch (_err) {
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        showToast({ message: 'Network error saving note. Used local fallback.', variant: 'warning' });
-      }
+      // Backend unavailable; fallback
     }
 
     return this.fallback.saveNote(note);
@@ -228,17 +222,10 @@ export class ApiStorage implements IStorage {
       });
       if (res.ok) {
         const json = (await res.json()) as { success: boolean };
-        if (json.success) {
-          if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-            showToast({ message: `Deleted: ${id}`, variant: 'success' });
-          }
-          return true;
-        }
+        return json.success;
       }
     } catch (_err) {
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        showToast({ message: `Error deleting: ${id}`, variant: 'error' });
-      }
+      // Backend unavailable
     }
     return false;
   }

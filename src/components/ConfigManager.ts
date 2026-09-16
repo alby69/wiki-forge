@@ -1,6 +1,4 @@
 import { ApiStorage, ProjectInfo } from '../storage/ApiStorage';
-import { confirmAction } from './ui/ConfirmDialog';
-import { showToast } from './ui/Toast';
 
 export class ConfigManager {
   private container: HTMLElement;
@@ -86,15 +84,15 @@ export class ConfigManager {
       : okfSection.type_vocabulary || '';
 
     this.container.innerHTML = `
-      <div role="dialog" aria-modal="true" aria-labelledby="config-modal-title" style="width: 680px; max-width: 90vw; max-height: 85vh; background: #18191c; border: 1px solid #2d3748; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; color: #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+      <div style="width: 680px; max-width: 90vw; max-height: 85vh; background: #18191c; border: 1px solid #2d3748; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; color: #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
 
         <!-- Header -->
         <div style="padding: 16px 20px; background: #121316; border-bottom: 1px solid #2d3748; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 18px;">⚙️</span>
-            <h3 id="config-modal-title" style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6;">Configuration Manager</h3>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6;">Configuration Manager</h3>
           </div>
-          <button id="config-close-btn" aria-label="Close configuration manager" style="background: transparent; border: none; color: #a0aec0; font-size: 18px; cursor: pointer;">✕</button>
+          <button id="config-close-btn" style="background: transparent; border: none; color: #a0aec0; font-size: 18px; cursor: pointer;">✕</button>
         </div>
 
         <!-- Project Selector Bar -->
@@ -237,13 +235,6 @@ export class ConfigManager {
   private attachEventListeners(): void {
     const closeBtn = this.container.querySelector('#config-close-btn');
     const cancelBtn = this.container.querySelector('#config-cancel-btn');
-
-    document.addEventListener('keydown', (e) => {
-      if (this.container.style.display !== 'none' && e.key === 'Escape') {
-        e.preventDefault();
-        this.close();
-      }
-    });
     const saveBtn = this.container.querySelector('#config-save-btn');
     const projSelect = this.container.querySelector('#config-project-select') as HTMLSelectElement;
     const newProjBtn = this.container.querySelector('#config-new-project-btn');
@@ -287,9 +278,8 @@ export class ConfigManager {
           this.currentConfig = config || this.getDefaultConfig();
           this.onProjectChanged();
           this.render();
-          showToast({ message: `Project '${created.name}' created!`, variant: 'success' });
         } else {
-          showToast({ message: 'Failed to create project.', variant: 'error' });
+          alert('Failed to create project.');
         }
       });
     }
@@ -297,20 +287,8 @@ export class ConfigManager {
     if (deleteProjBtn) {
       deleteProjBtn.addEventListener('click', async () => {
         const activeId = this.storage.getActiveProjectId();
-        const confirmDelete = await confirmAction({
-          title: 'Delete Project',
-          message: `Are you sure you want to delete project '${activeId}' from projects registry?`,
-          confirmText: 'Delete Project',
-          variant: 'danger',
-        });
-        if (confirmDelete) {
-          const deleteFolder = await confirmAction({
-            title: 'Delete Disk Folder',
-            message: `Do you also want to permanently delete the folder 'projects/${activeId}' on disk?`,
-            confirmText: 'Delete Folder',
-            cancelText: 'Keep Folder',
-            variant: 'danger',
-          });
+        if (confirm(`Are you sure you want to delete project '${activeId}' from projects registry?`)) {
+          const deleteFolder = confirm(`Do you also want to permanently delete the folder 'projects/${activeId}' on disk?`);
           await this.storage.deleteProject(activeId, deleteFolder);
           this.storage.setActiveProjectId('default');
           this.projects = await this.storage.getProjects();
@@ -318,7 +296,6 @@ export class ConfigManager {
           this.currentConfig = config || this.getDefaultConfig();
           this.onProjectChanged();
           this.render();
-          showToast({ message: `Project '${activeId}' deleted.`, variant: 'info' });
         }
       });
     }
