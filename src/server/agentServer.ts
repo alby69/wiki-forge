@@ -150,7 +150,7 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
 export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
   conv2md: {
     id: 'conv2md',
-    path: 'conv2md.py',
+    path: 'scripts/conv2md.py',
     displayName: 'Convert Sources to Markdown',
     category: 'Ingestion',
     description: 'Converts PDF, EPUB, DOCX, MD, and TXT sources from input directory into raw/ Markdown notes.',
@@ -162,7 +162,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
   },
   clip2md: {
     id: 'clip2md',
-    path: 'clip2md.py',
+    path: 'scripts/clip2md.py',
     displayName: 'Web Clipper',
     category: 'Ingestion',
     description: 'Fetches HTML from a target web URL and saves clean Markdown to sources/web-clips/.',
@@ -238,7 +238,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
   },
   wiki_stats: {
     id: 'wiki_stats',
-    path: 'wiki_stats.py',
+    path: 'scripts/wiki_stats.py',
     displayName: 'Global Wiki Statistics',
     category: 'Analysis & Metrics',
     description: 'Calculates global wiki statistics and updates docs/METRICS.md.',
@@ -267,7 +267,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
   },
   suggest_tags: {
     id: 'suggest_tags',
-    path: 'suggest_tags.py',
+    path: 'scripts/suggest_tags.py',
     displayName: 'Suggest Taxonomy Tags',
     category: 'Taxonomy',
     description: 'Suggests taxonomy tags for notes using controlled vocabulary (RAKE / KeyBERT).',

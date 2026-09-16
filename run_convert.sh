@@ -29,4 +29,4 @@ else
   PY="python"
 fi
 
-"$PY" conv2md.py --input backup --output raw "$@"
+"$PY" scripts/conv2md.py --input backup --output raw "$@"

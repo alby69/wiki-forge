@@ -1,5 +1,5 @@
 ---
-generated: 2026-09-15
+generated: 2026-09-16
 ---
 
 # Wiki Metrics
@@ -19,11 +19,11 @@ generated: 2026-09-15
 |---------|---------------|
 | [[stefano-gatti]] | 36 |
 | [[andrej-karpathy]] | 28 |
-| [[hr-ai-maturita]] | 19 |
 | [[nello-cristianini]] | 19 |
+| [[hr-ai-maturita]] | 19 |
 | [[bullshit-jobs]] | 18 |
 | [[mappa-teorica-tesi]] | 17 |
 | [[agenti-sicurezza]] | 16 |
 | [[sequoia-ascent-2026]] | 15 |
 | [[dario-amodei]] | 13 |
-| [[verifiability]] | 12 |
+| [[sovrumano-ani-agi-asi]] | 12 |

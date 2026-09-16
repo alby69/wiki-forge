@@ -24,11 +24,23 @@ project, a business wiki, personal notes, and so on.
 ├── config.toml          # THE ONLY KNOB: title, context, folder layout
 ├── config/
 │   └── scenarios.toml   # Scenario presets (Academic, Business, Research, etc.)
-├── conv2md.py            # Convert PDF/EPUB/DOCX/MD/TXT -> Markdown (raw/)
-├── run_convert.sh        # One-command wrapper around conv2md.py
 ├── scripts/
+│   ├── conv2md.py            # Convert PDF/EPUB/DOCX/MD/TXT -> Markdown (raw/)
+│   ├── run_convert.sh        # One-command wrapper around scripts/conv2md.py
 │   ├── notebooklm_import.py # Import NotebookLM Markdown exports into raw/
-│   └── wizard.py        # Scenario-Driven Interactive Wizard CLI
+│   ├── wiki_stats.py        # Global wiki statistics & METRICS.md
+│   ├── suggest_tags.py      # Taxonomy tag suggestions (RAKE/KeyBERT)
+│   ├── clip2md.py           # Web clipper -> Markdown (sources/web-clips/)
+│   ├── maturity_calculator.py # Maturity Index scores (0-100)
+│   ├── check_docs_sync.py   # Verify docs & skills sync
+│   ├── migrate_to_okf.py    # Migrate to OKF v0.2
+│   ├── okf_lint.py          # Lint OKF bundle frontmatter
+│   ├── okf_log.py           # Append OKF log entry
+│   ├── okf_reindex.py       # Regenerate OKF indexes
+│   ├── okf_stats.py         # OKF bundle analytics
+│   ├── generate_thesis.py   # Compile thesis draft
+│   ├── export_thesis_pdf.py # Export thesis to PDF
+│   └── wizard.py            # Scenario-Driven Interactive Wizard CLI
 ├── AGENT.md             # Router operating manual for the LLM agent (symlink to docs/AGENT.md)
 ├── skills/              # Modular Agent Skill packages (ingest, curate, audit, query, study, onboarding)
 │   └── README.md        # Human-readable index & progressive disclosure rationale
@@ -293,9 +305,9 @@ To keep the taxonomy coherent, tags are drawn from a controlled vocabulary in
 `config.toml` (`[tags].allowed` / `[tags].blocked`). Generate suggestions with:
 
 ```bash
-python suggest_tags.py wiki/ai/foo.md            # print suggestions for one note
-python suggest_tags.py --all --write             # append suggestions to every note
-python suggest_tags.py wiki/ai/foo.md --semantic # semantic ranking (needs keybert)
+python scripts/suggest_tags.py wiki/ai/foo.md            # print suggestions for one note
+python scripts/suggest_tags.py --all --write             # append suggestions to every note
+python scripts/suggest_tags.py wiki/ai/foo.md --semantic # semantic ranking (needs keybert)
 ```
 
 `suggest_tags.py` is dependency-light (pure-Python RAKE by default; optional

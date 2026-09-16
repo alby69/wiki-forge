@@ -54,7 +54,7 @@ flowchart LR
 If you have just cloned this repository, you might notice that `backup/` (or `sources/`), `raw/`, and `output/` **do not appear in Git**:
 
 - **These folders are intentionally listed in `.gitignore`.** They are local working directories meant to hold your personal documents, converted text files, and temporary outputs.
-- **They are created and populated automatically** on your computer when you run your first conversion command (e.g. `bash run_convert.sh`, `python conv2md.py`, or the Wizard).
+- **They are created and populated automatically** on your computer when you run your first conversion command (e.g. `bash run_convert.sh`, `python scripts/conv2md.py`, or the Wizard).
 - **This is expected behavior, not an error.** Keeping working directories out of Git ensures that your private documents, books, and notes are never accidentally committed or uploaded to public repositories.
 
 ---
@@ -85,7 +85,7 @@ flowchart TD
 
 ### Step 1 — Get documents into `raw/`
 1. Put original PDFs, EPUBs, or DOCX files into `sources/` (or `backup/`).
-2. Run `bash run_convert.sh` (or `python conv2md.py`).
+2. Run `bash run_convert.sh` (or `python scripts/conv2md.py`).
 3. Converted Markdown files appear in `raw/`, ready to be processed.
 
 #### Alternative: Import from Google NotebookLM (Importazione da NotebookLM)
@@ -285,7 +285,7 @@ Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
 
 ### "The agent says it can't find raw files"
 - Check that `config.toml` exists and `paths.raw` points to `raw`.
-- Run `bash run_convert.sh` or `python conv2md.py` to convert sources.
+- Run `bash run_convert.sh` or `python scripts/conv2md.py` to convert sources.
 
 ### "Links are broken after renaming an article"
 1. Run `audit` to detect broken wikilinks.
