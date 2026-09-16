@@ -22,7 +22,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the converter and helpers (the rest is mounted from the host).
-COPY conv2md.py entrypoint.sh config.toml ./
+COPY scripts/conv2md.py entrypoint.sh config.toml ./
 
 # Run via `sh` so we don't depend on the exec bit (which Windows may strip).
 # Dispatch subcommands: `convert` runs conv2md, `shell` drops into a prompt.

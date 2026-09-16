@@ -9,7 +9,7 @@ set -e
 
 case "$1" in
   convert)
-    exec python conv2md.py --input "${INPUT_DIR:-backup}" --output "${RAW_DIR:-raw}"
+    exec python scripts/conv2md.py --input "${INPUT_DIR:-backup}" --output "${RAW_DIR:-raw}"
     ;;
   shell)
     exec sh
