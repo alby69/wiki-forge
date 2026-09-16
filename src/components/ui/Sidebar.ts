@@ -28,6 +28,7 @@ export interface FileActionCallbacks {
   onMove?: (sourcePath: string, targetFolder: string) => Promise<void>;
   onDelete?: (path: string) => Promise<void>;
   onUpload?: (folderPath: string, files: FileList) => Promise<void>;
+  getFolders?: () => Promise<string[]>;
 }
 
 export class Sidebar {
@@ -52,17 +53,17 @@ export class Sidebar {
     this.onSelectNoteCb = onSelectNote;
     this.onFilterTagsCb = onFilterTags;
     this.actionCb = actionCb;
-    this.render();
+    void this.render();
   }
 
   public setNotes(notes: WikiNote[]): void {
     this.notes = notes;
-    this.render();
+    void this.render();
   }
 
   public setActiveNote(noteId: string): void {
     this.activeId = noteId;
-    this.render();
+    void this.render();
   }
 
   /** Notes visible under the current search query + selected-tag filter.
@@ -175,7 +176,7 @@ export class Sidebar {
       </div>`;
   }
 
-  private buildTree(notes: WikiNote[]): TreeNode {
+  private async buildTree(notes: WikiNote[]): Promise<TreeNode> {
     const root: TreeNode = {
       name: '',
       path: '',
@@ -183,6 +184,7 @@ export class Sidebar {
       children: new Map(),
     };
 
+    // Add folders from notes
     for (const note of notes) {
       const segments = (note.path || `wiki/${note.id}.md`).split('/');
       let cursor = root;
@@ -204,6 +206,32 @@ export class Sidebar {
         cursor = node;
       });
     }
+
+    // Add empty folders from API
+    if (this.actionCb?.getFolders) {
+      try {
+        const folders = await this.actionCb.getFolders();
+        for (const folderPath of folders) {
+          if (folderPath === 'wiki' || folderPath === '.') continue;
+          const segments = folderPath.split('/');
+          let cursor = root;
+          segments.forEach((seg, idx) => {
+            if (!cursor.children.has(seg)) {
+              cursor.children.set(seg, {
+                name: seg,
+                path: segments.slice(0, idx + 1).join('/'),
+                isFolder: true,
+                children: new Map(),
+              });
+            }
+            cursor = cursor.children.get(seg)!;
+          });
+        }
+      } catch (_e) {
+        // Ignore folder fetch errors
+      }
+    }
+
     return root;
   }
 
@@ -255,8 +283,8 @@ export class Sidebar {
     return html;
   }
 
-  public render(): void {
-    const root = this.buildTree(this.getVisibleNotes());
+  public async render(): Promise<void> {
+    const root = await this.buildTree(this.getVisibleNotes());
     const treeHTML = Array.from(root.children.values())
       .map(child => this.renderNode(child, 0))
       .join('');
@@ -303,11 +331,15 @@ export class Sidebar {
     this.bindEvents();
   }
 
+  private async refresh(): Promise<void> {
+    await this.render();
+  }
+
   private bindEvents(): void {
     const search = this.container.querySelector<HTMLInputElement>('#vault-search-input');
     search?.addEventListener('input', () => {
       this.query = search.value;
-      this.render();
+      void this.refresh();
     });
 
     const fileInput = this.container.querySelector<HTMLInputElement>('#sidebar-file-input');
@@ -372,7 +404,7 @@ export class Sidebar {
           this.selectedItemPath = folderPath;
           if (this.expanded.has(folderPath)) this.expanded.delete(folderPath);
           else this.expanded.add(folderPath);
-          this.render();
+          void this.refresh();
         }
       });
     });
@@ -384,7 +416,7 @@ export class Sidebar {
         const filePath = item.getAttribute('data-path');
         if (filePath) this.selectedItemPath = filePath;
         if (noteId && this.onSelectNoteCb) this.onSelectNoteCb(noteId);
-        this.render();
+        void this.refresh();
       });
     });
 
@@ -441,14 +473,14 @@ export class Sidebar {
         if (this.selectedTags.has(tag)) this.selectedTags.delete(tag);
         else this.selectedTags.add(tag);
         this.onFilterTagsCb?.(Array.from(this.selectedTags));
-        this.render();
+        void this.refresh();
       });
     });
 
     this.container.querySelector('.tag-clear')?.addEventListener('click', () => {
       this.selectedTags.clear();
       this.onFilterTagsCb?.([]);
-      this.render();
+      void this.refresh();
     });
   }
 }

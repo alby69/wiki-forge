@@ -1130,6 +1130,19 @@ export class AgentServer {
       return true;
     }
 
+    if (pathname === '/api/wiki/folders' && req.method === 'GET') {
+      try {
+        const folders = await this.getAllFolders(projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, folders }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     return false;
   }
 
@@ -1170,6 +1183,32 @@ export class AgentServer {
 
     await walk(wikiDir);
     return this.parser.computeBacklinks(notes);
+  }
+
+  public async getAllFolders(projectId: string = 'default'): Promise<string[]> {
+    const wikiDir = await this.getWikiDir(projectId);
+    const folders: string[] = ['wiki'];
+
+    const walk = async (dir: string): Promise<void> => {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            const relativePath = path.relative(wikiDir, fullPath).replace(/\\/g, '/');
+            if (relativePath && relativePath !== '.') {
+              folders.push(relativePath);
+            }
+            await walk(fullPath);
+          }
+        }
+      } catch (_e) {
+        // Directory might not exist yet
+      }
+    };
+
+    await walk(wikiDir);
+    return folders.sort();
   }
 
   public async saveWikiNote(data: SaveNoteRequest, projectId: string = 'default'): Promise<WikiNote> {

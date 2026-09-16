@@ -54,7 +54,7 @@ services:
       - ${HOME}/.local/share/opencode:/root/.local/share/opencode
     environment:
       - OPENCODE_BIN=/root/.opencode/bin/opencode
-      - VITE_API_BASE_URL=http://localhost:3001
+      - VITE_API_BASE_URL=http://api:3001
     working_dir: /app
     ports:
       - "5173:5173"

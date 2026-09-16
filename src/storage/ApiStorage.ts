@@ -336,6 +336,23 @@ export class ApiStorage implements IStorage {
     );
   }
 
+  public async getAllFolders(): Promise<string[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/folders`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; folders?: string[] };
+        if (json.success && Array.isArray(json.folders)) {
+          return json.folders;
+        }
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return ['wiki'];
+  }
+
   public async sendChat(message: string, command?: string, contextNoteId?: string): Promise<string> {
     try {
       const res = await fetch(`${this.baseUrl}/api/chat`, {

@@ -177,6 +177,9 @@ Backlink to [[01-index]].
           }
           await this.loadVault();
         },
+        getFolders: async () => {
+          return this.storage.getAllFolders();
+        },
       }
     );
 
