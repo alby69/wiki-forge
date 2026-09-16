@@ -298,30 +298,34 @@ export class Sidebar {
         ? `<span class="tag-clear" style="color: #fc8181; font-size: 11px; cursor: pointer; margin-left: 4px; text-transform: none;">clear</span>`
         : '';
 
-    this.container.innerHTML = `
-      <div style="width: 280px; background: #121316; height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
+this.container.innerHTML = `
+      <div style="width: 100%; background: #121316; height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
         <!-- File Operations Toolbar -->
-        <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; display: flex; gap: 4px; background: #1a1b1e; align-items: center; flex-wrap: wrap;">
-          <button id="btn-new-folder" title="New Folder" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">📁+</button>
-          <button id="btn-new-file" title="New File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">📄+</button>
-          <button id="btn-upload-file" title="Upload File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">📤 Upload</button>
-          <button id="btn-rename-item" title="Rename Selected" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">✏️</button>
-          <button id="btn-delete-item" title="Delete Selected" style="background: #742a2a; color: #feb2b2; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;">🗑️</button>
+        <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; background: #1a1b1e; flex-shrink: 0;">
+          <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; overflow-x: auto;" id="toolbar-primary">
+            <button id="btn-new-folder" title="New Folder" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📁+</button>
+            <button id="btn-new-file" title="New File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📄+</button>
+            <button id="btn-upload-file" title="Upload File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📤</button>
+          </div>
+          <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 4px; overflow-x: auto;" id="toolbar-secondary">
+            <button id="btn-rename-item" title="Rename Selected" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">✏️</button>
+            <button id="btn-delete-item" title="Delete Selected" style="background: #742a2a; color: #feb2b2; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">🗑️</button>
+          </div>
           <input type="file" id="sidebar-file-input" multiple style="display: none;" />
         </div>
 
         <!-- Search Input -->
-        <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748;">
+        <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; flex-shrink: 0;">
           <input type="text" id="vault-search-input" value="${escapeHtml(this.query)}" placeholder="Search files... (Ctrl+K)" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box; outline: none;" />
         </div>
 
         <!-- File Tree Explorer Dropzone -->
-        <div id="file-tree-container" style="flex: 1; overflow-y: auto; padding: 8px 4px; position: relative;">
+        <div id="file-tree-container" style="flex: 1; overflow-y: auto; padding: 8px 4px; position: relative; min-height: 0;">
           ${treeHTML || '<div style="font-size: 12px; color: #718096; padding: 8px;">No notes match the current filter.</div>'}
         </div>
 
         <!-- Tag Cloud -->
-        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; max-height: 30%; overflow-y: auto;">
+        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; flex-shrink: 0; max-height: 40%; overflow-y: auto;">
           <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase;">Tag cloud ${clearHTML}</div>
           <div>${tagsHTML || '<span style="font-size: 11px; color: #718096;">No tags</span>'}</div>
         </div>
