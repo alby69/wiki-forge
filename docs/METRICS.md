@@ -10,7 +10,7 @@ generated: 2026-09-16
 | Total wikilinks | 328 |
 | Broken links | 0 |
 | Orphan articles | 1 |
-| Thematic wikis | 4 |
+| Thematic wikis | 2 |
 | Sources ingested | 0 |
 
 ## Most Linked Articles
@@ -19,11 +19,11 @@ generated: 2026-09-16
 |---------|---------------|
 | [[stefano-gatti]] | 36 |
 | [[andrej-karpathy]] | 28 |
-| [[nello-cristianini]] | 19 |
 | [[hr-ai-maturita]] | 19 |
+| [[nello-cristianini]] | 19 |
 | [[bullshit-jobs]] | 18 |
 | [[mappa-teorica-tesi]] | 17 |
 | [[agenti-sicurezza]] | 16 |
 | [[sequoia-ascent-2026]] | 15 |
 | [[dario-amodei]] | 13 |
-| [[sovrumano-ani-agi-asi]] | 12 |
+| [[verifiability]] | 12 |

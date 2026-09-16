@@ -54,6 +54,7 @@
 | 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
 | 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 15 Python CLI scripts with real-time SSE log streaming |
 | 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities, interaction modes, and quality/error handling sections |
+| 43 | Advanced UI/UX Polish, Accessibility & Comprehensive Testing | ✅ Done | Implementazione standard WCAG 2.1 AA, sistema Toast, responsive mobile-first, skeleton loader e suite di test a11y/E2E. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -404,3 +405,17 @@ required.
 - **Real-Time Streaming Log Console (`src/components/tools/LogConsole.ts`):** Terminal-like console displaying streaming process output with color coding, cancellation controls, and log export.
 - **Header Navigation Integration (`src/components/ui/Header.ts`):** "🛠️ Tools" button launching the Script Control Panel directly from the navigation bar.
 - **Integration Tests (`tests/scriptControlPanel.test.ts`):** Complete test suite verifying registry API, argument building, process execution SSE streaming, and security containment.
+
+---
+
+## Phase 43 — Advanced UI/UX Polish, Accessibility & Comprehensive Testing ✅ Done
+
+**Goal:** Elevate the Web UI to enterprise-grade standards by ensuring accessibility, seamless responsive behavior, robust user feedback, and comprehensive automated testing.
+
+**Deliverables:**
+- **Accessibility (a11y) Overhaul:** Added proper `aria-label`, `role`, `aria-modal`, and keyboard navigation (focus trapping, `Esc` key modal closure) across interactive components (`Header.ts`, `Sidebar.ts`, `ChatDrawer.ts`, `ConfigManager.ts`, `ToolsModal.ts`, `ConfirmDialog.ts`). Enhanced color contrast ratios in `src/styles/theme.css` to meet WCAG 2.1 Level AA standards (>= 4.5:1).
+- **Responsive Mobile-First UX:** Added `--breakpoint-sm: 768px` media queries. On screens `< 768px`, collapsed sidebars into off-canvas drawers triggered by a mobile menu button (`☰ Menu`) in `Header.ts`. Configured full-screen `ChatDrawer` (`100vw` x `100vh`) on mobile devices and guaranteed minimum 44x44px touch targets.
+- **Global Feedback System:** Implemented `ToastManager` (`src/components/ui/Toast.ts`) and `useToast` hook for non-blocking success, error, warning, and info notifications across `ApiStorage.ts`, note saving, file deleting, and project management actions.
+- **Loading States:** Introduced `Skeleton` loaders (`src/components/ui/Skeleton.ts`) with animated CSS shimmer effect for the Vault Explorer tree, Chat message streaming startup, and Graph Viewer initialization.
+- **Error Prevention:** Created reusable, accessible `ConfirmDialog` (`src/components/ui/ConfirmDialog.ts`) replacing native `window.confirm()` and alerts for destructive actions (file deletion, clearing chat history, project removal).
+- **Comprehensive Testing:** Added unit and integration test suites (`tests/uiToast.test.ts`, `tests/uiConfirmDialog.test.ts`, `tests/uiAccessibility.test.ts`, `tests/uiMobileResponsive.test.ts`, `tests/uiSkeleton.test.ts`) using Node test runner + JSDOM with 100% pass rate.

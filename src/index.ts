@@ -135,6 +135,9 @@ Backlink to [[01-index]].
       },
       () => {
         void this.toolsModal.open();
+      },
+      () => {
+        this.layout.toggleMobileSidebar();
       }
     );
 
@@ -142,6 +145,7 @@ Backlink to [[01-index]].
       this.layout.sidebarContainer,
       noteId => {
         this.selectNote(noteId);
+        this.layout.closeMobileSidebar();
       },
       tags => {
         this.filterTags = tags;

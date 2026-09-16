@@ -128,6 +128,18 @@ export class MainLayout {
 
   private isResizingGraph = false;
 
+  public toggleMobileSidebar(): void {
+    if (this.sidebarContainer) {
+      this.sidebarContainer.classList.toggle('mobile-open');
+    }
+  }
+
+  public closeMobileSidebar(): void {
+    if (this.sidebarContainer) {
+      this.sidebarContainer.classList.remove('mobile-open');
+    }
+  }
+
   public setViewMode(mode: 'editor' | 'graph' | 'split'): void {
     if (mode === 'editor') {
       this.editorContainer.style.display = 'flex';

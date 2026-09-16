@@ -5,6 +5,17 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-09-15
+
+### Added
+- **Advanced UI/UX Polish, Accessibility & Comprehensive Testing** (Phase 43):
+  - **Global Feedback System (`Toast.ts`):** Non-blocking success, error, warning, and info notifications (`showToast`, `useToast`) with auto-dismiss (4s) and manual close option. Integrated into `ApiStorage.ts` for file save, file delete, folder creation, and network error events.
+  - **Error Prevention (`ConfirmDialog.ts`):** Accessible, focus-trapped modal dialog replacing native browser `window.confirm()` and alerts for file/folder deletion, clearing chat history, and project removal.
+  - **Accessibility (WCAG 2.1 AA) Overhaul:** Added descriptive `aria-label` attributes to all icon-only buttons (`📁+`, `📄+`, `📤`, `✏️`, `🗑️`, `🛠️`, `⚙️`, `💬`, `☰ Menu`), modal dialog roles (`role="dialog"`, `aria-modal="true"`, `aria-labelledby`), focus trapping, and `Esc` key modal closure. Enhanced contrast ratios in `src/styles/theme.css` (`--text-muted: #8d99ae`).
+  - **Responsive Mobile-First UX:** CSS media queries (`--breakpoint-sm: 768px`) collapsing sidebars into off-canvas drawers triggered by a mobile menu button (`☰ Menu`), full-screen `ChatDrawer` (`100vw` x `100vh`) on mobile, and minimum 44x44px touch targets.
+  - **Loading States (`Skeleton.ts`):** Reusable animated CSS shimmer loaders for the Vault Explorer tree, Chat message streaming startup, and Graph Viewer initialization.
+  - **Comprehensive Test Suite:** Added unit and integration test suites (`tests/uiToast.test.ts`, `tests/uiConfirmDialog.test.ts`, `tests/uiAccessibility.test.ts`, `tests/uiMobileResponsive.test.ts`, `tests/uiSkeleton.test.ts`) using Node test runner and JSDOM (100% pass rate across 83 tests).
+
 ## [2.8.0] - 2026-09-14
 
 ### Added

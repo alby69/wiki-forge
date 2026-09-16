@@ -30,14 +30,14 @@ export class ToolsModal {
 
   private renderBase(): void {
     this.overlay.innerHTML = `
-      <div style="background: #18191c; border: 1px solid #2d3748; border-radius: 8px; width: 90vw; max-width: 1100px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+      <div role="dialog" aria-modal="true" aria-labelledby="tools-modal-title" style="background: #18191c; border: 1px solid #2d3748; border-radius: 8px; width: 90vw; max-width: 1100px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
         <!-- Header -->
         <div style="height: 50px; background: #121316; border-bottom: 1px solid #2d3748; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">🛠️</span>
-            <span style="font-weight: 700; font-size: 16px; color: #64b5f6;">Wiki-Forge Script Control Panel</span>
+            <span id="tools-modal-title" style="font-weight: 700; font-size: 16px; color: #64b5f6;">Wiki-Forge Script Control Panel</span>
           </div>
-          <button id="tools-modal-close" style="background: none; border: none; color: #a0aec0; font-size: 20px; cursor: pointer;">✕</button>
+          <button id="tools-modal-close" aria-label="Close script control panel" style="background: none; border: none; color: #a0aec0; font-size: 20px; cursor: pointer;">✕</button>
         </div>
 
         <!-- Main Body -->
@@ -67,6 +67,13 @@ export class ToolsModal {
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.close());
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (this.overlay.style.display !== 'none' && e.key === 'Escape') {
+        e.preventDefault();
+        this.close();
+      }
+    });
 
     const consoleHost = this.overlay.querySelector('#tools-log-console-root') as HTMLElement;
     this.logConsole = new LogConsole(consoleHost);

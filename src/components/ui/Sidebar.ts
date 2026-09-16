@@ -1,5 +1,8 @@
 import { WikiNote } from '../../core/types/wiki';
 import { escapeHtml } from '../../core/utils/html';
+import { confirmAction } from './ConfirmDialog';
+import { showToast } from './Toast';
+import { Skeleton } from './Skeleton';
 
 interface TreeNode {
   name: string;
@@ -39,6 +42,7 @@ export class Sidebar {
   private query = '';
   private selectedTags = new Set<string>();
   private expanded = new Set<string>(['wiki']);
+  private isLoading = false;
   private onSelectNoteCb?: (noteId: string) => void;
   private onFilterTagsCb?: (tags: string[]) => void;
   private actionCb?: FileActionCallbacks;
@@ -56,8 +60,14 @@ export class Sidebar {
     void this.render();
   }
 
+  public setLoading(loading: boolean): void {
+    this.isLoading = loading;
+    void this.render();
+  }
+
   public setNotes(notes: WikiNote[]): void {
     this.notes = notes;
+    this.isLoading = false;
     void this.render();
   }
 
@@ -303,25 +313,25 @@ this.container.innerHTML = `
         <!-- File Operations Toolbar -->
         <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; background: #1a1b1e; flex-shrink: 0;">
           <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; overflow-x: auto;" id="toolbar-primary">
-            <button id="btn-new-folder" title="New Folder" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📁+</button>
-            <button id="btn-new-file" title="New File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📄+</button>
-            <button id="btn-upload-file" title="Upload File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📤</button>
+            <button id="btn-new-folder" title="New Folder" aria-label="Create new folder" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📁+</button>
+            <button id="btn-new-file" title="New File" aria-label="Create new file" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📄+</button>
+            <button id="btn-upload-file" title="Upload File" aria-label="Upload file" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📤</button>
           </div>
           <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 4px; overflow-x: auto;" id="toolbar-secondary">
-            <button id="btn-rename-item" title="Rename Selected" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">✏️</button>
-            <button id="btn-delete-item" title="Delete Selected" style="background: #742a2a; color: #feb2b2; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">🗑️</button>
+            <button id="btn-rename-item" title="Rename Selected" aria-label="Rename selected item" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">✏️</button>
+            <button id="btn-delete-item" title="Delete Selected" aria-label="Delete selected item" style="background: #742a2a; color: #feb2b2; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">🗑️</button>
           </div>
-          <input type="file" id="sidebar-file-input" multiple style="display: none;" />
+          <input type="file" id="sidebar-file-input" multiple style="display: none;" aria-label="Upload file selection" />
         </div>
 
         <!-- Search Input -->
         <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; flex-shrink: 0;">
-          <input type="text" id="vault-search-input" value="${escapeHtml(this.query)}" placeholder="Search files... (Ctrl+K)" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box; outline: none;" />
+          <input type="text" id="vault-search-input" value="${escapeHtml(this.query)}" placeholder="Search files... (Ctrl+K)" aria-label="Search vault files" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box; outline: none;" />
         </div>
 
         <!-- File Tree Explorer Dropzone -->
         <div id="file-tree-container" style="flex: 1; overflow-y: auto; padding: 8px 4px; position: relative; min-height: 0;">
-          ${treeHTML || '<div style="font-size: 12px; color: #718096; padding: 8px;">No notes match the current filter.</div>'}
+          ${this.isLoading ? Skeleton.renderTree() : (treeHTML || '<div style="font-size: 12px; color: #8d99ae; padding: 8px;">No notes match the current filter.</div>')}
         </div>
 
         <!-- Tag Cloud -->
@@ -377,7 +387,7 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-rename-item')?.addEventListener('click', async () => {
       if (!this.selectedItemPath) {
-        alert('Please select a file or folder in the tree first.');
+        showToast({ message: 'Please select a file or folder in the tree first.', variant: 'warning' });
         return;
       }
       const currentName = this.selectedItemPath.split('/').pop() || '';
@@ -389,14 +399,18 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-delete-item')?.addEventListener('click', async () => {
       if (!this.selectedItemPath) {
-        alert('Please select a file or folder in the tree first.');
+        showToast({ message: 'Please select a file or folder in the tree first.', variant: 'warning' });
         return;
       }
-      if (confirm(`Are you sure you want to delete '${this.selectedItemPath}'?`)) {
-        if (this.actionCb?.onDelete) {
-          await this.actionCb.onDelete(this.selectedItemPath);
-          this.selectedItemPath = null;
-        }
+      const confirmed = await confirmAction({
+        title: 'Delete Item',
+        message: `Are you sure you want to delete '${this.selectedItemPath}'?`,
+        confirmText: 'Delete',
+        variant: 'danger',
+      });
+      if (confirmed && this.actionCb?.onDelete) {
+        await this.actionCb.onDelete(this.selectedItemPath);
+        this.selectedItemPath = null;
       }
     });
 

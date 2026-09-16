@@ -2,6 +2,8 @@ import { WikiNote } from '../../core/types/wiki';
 import { renderMarkdown } from '../../core/utils/markdown';
 import { ApiStorage, AttachOptions } from '../../storage/ApiStorage';
 import { AttachModal } from './AttachModal';
+import { confirmAction } from '../ui/ConfirmDialog';
+import { Skeleton } from '../ui/Skeleton';
 
 export interface ChatMessage {
   id: string;
@@ -124,8 +126,8 @@ export class ChatDrawer {
           <span>💬</span> OpenCode Assistant
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button id="chat-clear-btn" title="Clear history" style="background: none; border: none; color: #a0aec0; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
-          <button id="chat-close-btn" style="background: none; border: none; color: #a0aec0; font-size: 16px; cursor: pointer;">&times;</button>
+          <button id="chat-clear-btn" title="Clear history" aria-label="Clear chat history" style="background: none; border: none; color: #a0aec0; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
+          <button id="chat-close-btn" aria-label="Close chat assistant drawer" style="background: none; border: none; color: #a0aec0; font-size: 16px; cursor: pointer;">&times;</button>
         </div>
       </div>
 
@@ -155,10 +157,10 @@ export class ChatDrawer {
       </div>
 
       <div style="padding: 12px; background: #121316; border-top: 1px solid #2d3748; display: flex; flex-direction: column; gap: 8px;">
-        <textarea id="chat-input" placeholder="Ask a question or type /consult..." style="width: 100%; height: 60px; background: #18191c; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 8px; font-family: inherit; font-size: 12px; resize: none; box-sizing: border-box;"></textarea>
+        <textarea id="chat-input" placeholder="Ask a question or type /consult..." aria-label="Type message for assistant" style="width: 100%; height: 60px; background: #18191c; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 8px; font-family: inherit; font-size: 12px; resize: none; box-sizing: border-box;"></textarea>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 10px; color: #718096;">Press Enter to send</span>
-          <button id="chat-send-btn" style="background: #3182ce; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Send</button>
+          <span style="font-size: 10px; color: #a0aec0;">Press Enter to send</span>
+          <button id="chat-send-btn" aria-label="Send message to assistant" style="background: #3182ce; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Send</button>
         </div>
       </div>
     `;
@@ -197,7 +199,17 @@ export class ChatDrawer {
     closeBtn?.addEventListener('click', () => this.close());
 
     const clearBtn = this.container.querySelector('#chat-clear-btn');
-    clearBtn?.addEventListener('click', () => this.clearHistory());
+    clearBtn?.addEventListener('click', async () => {
+      const confirmed = await confirmAction({
+        title: 'Clear Chat History',
+        message: 'Are you sure you want to clear all chat history?',
+        confirmText: 'Clear History',
+        variant: 'danger',
+      });
+      if (confirmed) {
+        this.clearHistory();
+      }
+    });
 
     const input = this.container.querySelector('#chat-input') as HTMLTextAreaElement;
     const sendBtn = this.container.querySelector('#chat-send-btn');
@@ -287,17 +299,34 @@ export class ChatDrawer {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    this.messages.push(assistantMsg);
-    this.render();
-
     const list = this.container.querySelector('#chat-messages-list');
-    const attachBtns = this.container.querySelectorAll('.attach-btn');
-    const targetAttachBtn = Array.from(attachBtns).find(b => b.getAttribute('data-msg-id') === assistantMsgId);
-    const msgWrapper = targetAttachBtn?.closest('div')?.parentElement?.querySelector('.markdown-body');
+    let skeletonNode: HTMLElement | null = null;
+    if (list) {
+      skeletonNode = document.createElement('div');
+      skeletonNode.id = 'chat-loading-skeleton';
+      skeletonNode.innerHTML = Skeleton.renderChatMessage();
+      list.appendChild(skeletonNode);
+      list.scrollTop = list.scrollHeight;
+    }
+
+    let isFirstChunk = true;
+    let msgWrapper: Element | null = null;
 
     await this.apiStorage.sendChatStream(
       text,
       (chunk: string) => {
+        if (isFirstChunk) {
+          isFirstChunk = false;
+          if (skeletonNode && skeletonNode.parentNode) {
+            skeletonNode.parentNode.removeChild(skeletonNode);
+          }
+          this.messages.push(assistantMsg);
+          this.render();
+          const attachBtns = this.container.querySelectorAll('.attach-btn');
+          const targetAttachBtn = Array.from(attachBtns).find(b => b.getAttribute('data-msg-id') === assistantMsgId);
+          msgWrapper = targetAttachBtn?.closest('div')?.parentElement?.querySelector('.markdown-body') || null;
+        }
+
         assistantMsg.text += chunk;
         if (msgWrapper) {
           msgWrapper.innerHTML = renderMarkdown(assistantMsg.text);
@@ -311,9 +340,15 @@ export class ChatDrawer {
             });
           });
         }
-        if (list) list.scrollTop = list.scrollHeight;
+        const updatedList = this.container.querySelector('#chat-messages-list');
+        if (updatedList) updatedList.scrollTop = updatedList.scrollHeight;
       }
     );
+
+    const remainingSkeleton = this.container.querySelector('#chat-loading-skeleton');
+    if (remainingSkeleton && remainingSkeleton.parentNode) {
+      remainingSkeleton.parentNode.removeChild(remainingSkeleton);
+    }
 
     this.saveHistory();
   }
