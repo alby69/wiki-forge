@@ -5,6 +5,17 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-09-16
+
+### Added
+- **Complete Documentation Overhaul & 5-Phase Operator Workflow**:
+  - Eliminated outdated/redundant proposal files (`docs/versioning_proposal.md`, `docs/wikimap.md`) to streamline the `docs/` folder.
+  - Renamed and updated `docs/TECHNICAL_ARCHITECTURE.md` as the single technical reference for developers, covering system component topology, multi-provider LLM client, REST/SSE agent server, script execution engine, OKF v0.2, versioning & snapshot rollback engine (`scripts/versioning.py`), and multi-project management.
+  - Redesigned `docs/TUTORIAL.md` (Guida Operativa dell'Utente) in clear plain language for non-technical users and content creators, detailing the 5-phase chronological workflow for building a dynamic knowledge base.
+  - Updated `docs/THESIS_GUIDE.md` as a step-by-step concrete operator guide for Master's Thesis (Tesi Magistrale) creation with dual output (dynamic searchable wiki + printable PDF via Pandoc).
+  - Restructured `README.md` with a clear audience-based document index and 5-phase operator pipeline summary.
+  - Synchronized `ROADMAP.md` tracking all completed phases up to v2.9.0.
+
 ## [2.8.0] - 2026-09-14
 
 ### Added
