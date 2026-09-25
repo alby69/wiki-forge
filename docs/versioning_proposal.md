@@ -58,3 +58,12 @@ Aggiungere dopo fase 42 (o come fase 42b):
 5. Aggiornare `ROADMAP.md` con fase 42b
 
 Questo mantiene la distinzione fonti/elaborazioni richiesta dalla lettera e rende la tesi dinamica verificabile nel tempo.
+
+---
+## Stato implementazione (aggiornato)
+- A (versioning.py): ✅ implementato e pushato
+- B (OKF metadati config): ✅ implementato
+- C (okf_log.py esteso): ✅ implementato
+- D (wiki/versions/): ✅ implementato
+- E (/rollback AGENT.md): ✅ implementato
+Sequenza completa. Commit finale disponibile su repo remoto.

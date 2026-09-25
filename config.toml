@@ -144,3 +144,7 @@ allowed = [
   "status/review",
 ]
 blocked = ["the", "and", "of", "a", "to", "in", "on", "for", "is", "are"]
+
+[versioning]
+enabled = true
+fields = ["version", "parent_commit", "generated"]

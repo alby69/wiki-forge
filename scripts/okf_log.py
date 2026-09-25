@@ -60,3 +60,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Estensione C: log incrementale per versioning
+# Ogni commit versione aggiunge riga al log con timestamp, nota, azione
