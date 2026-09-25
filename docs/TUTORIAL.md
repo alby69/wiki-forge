@@ -1,304 +1,242 @@
-# TUTORIAL — Your "second brain" (an LLM Wiki), explained simply
+# TUTORIAL — Guida Operativa all'Uso di Wiki-Forge
 
-*A plain-language guide for non-technical readers. It explains, step by step, what
-Wiki-Forge is, why it works, and how to use it day to day. No programming knowledge
-required — you only ever edit one small settings file and drop files into a folder.*
-
----
-
-## 0. The Problem This Project Solves
-
-Imagine you're writing a thesis, running a book club, or researching a topic you care about. Over months you collect dozens of PDFs, e-books, articles, and notes. Two things usually go wrong:
-
-1. **You forget what you've read.** Six months later you remember "there was a great passage about X" but not which of your 40 PDFs it was in.
-2. **Asking an AI chatbot to help doesn't scale.** If you paste a whole library at an AI every time you have a question, it's slow, expensive, and the AI has to re-read everything from scratch each time — like hiring a new intern every morning who has never seen your files before.
-
-Wiki-Forge solves this by giving the AI a **permanent memory that improves over time**, instead of a blank slate every time you ask a question.
-
-> **Analogy:** Instead of dumping a box of loose papers on someone's desk every time you have a question, you hire a librarian once. The librarian reads every new book you bring in, writes a tidy summary card for it, files it under the right subject, and cross-references it with everything else in the library. From then on, when you ask a question, the librarian doesn't re-read the whole library — they walk straight to the right shelf.
+> **Guida semplice per utenti ed operatori non tecnici.**
+> Spiega passo dopo passo come costruire, consultare ed evolvere la propria base di conoscenza dinamica ("LLM Wiki") e come esportarla in formato PDF pronto per la stampa o la consegna.
 
 ---
 
-## 1. The Core Idea & Three-Folder Structure
+## 1. Cos'è Wiki-Forge e Quale Problema Risolve
 
-The idea comes from Andrej Karpathy's **LLM Wiki** pattern (see `docs/KARPATHY_LLM_WIKI.md`). Instead of searching raw documents every time (classic RAG), the LLM **incrementally builds a persistent, interlinked wiki** of Markdown files that sits between you and your sources.
+Quando affronti un progetto complesso — come una **Tesi Magistrale**, una ricerca di mercato o un manuale operativo — accumuli decine di PDF, articoli e appunti. Con i metodi tradizionali incontri due limiti principali:
 
-Everything in Wiki-Forge revolves around three main folders:
+1. **Memoria frammentata**: Dopo qualche mese ricordi di aver letto un concetto fondamentale, ma non ricordi più in quale dei tuoi 50 PDF si trovi.
+2. **Chatbot tradizionali (RAG classico) inefficienti**: Incollare centinaia di documenti ad ogni domanda è lento, costoso e costringe l'IA a ripartire da zero ogni volta.
+
+Wiki-Forge risolve questo problema trasformando l'IA in un **Knowledge Engineer (Ingegnere della Conoscenza)**. L'IA non si limita a rispondere a una domanda passeggera: **costruisce, aggiorna e organizza nel tempo una Wiki interconnessa in formato Markdown**, che rimane salvata sul tuo computer.
+
+> **L'Analogia del Bibliotecario:** Anziché portare uno scatolone di fogli sfusi al tuo assistente ogni volta che hai un dubbio, assumi un bibliotecario permanente. Ogni volta che porti un nuovo libro, il bibliotecario lo legge, crea schede sintetiche, le organizza per argomento e crea collegamenti incrociati (`[[wikilink]]`). Quando fai una domanda, il bibliotecario va dritto al punto.
+
+---
+
+## 2. Le 5 Fasi Cronologiche per Costruire una Knowledge Base Dinamica
+
+Per guidare un operatore dalla prima bozza fino al documento finale (es. una Tesi Magistrale stampabile e consultabile), Wiki-Forge segue un flusso logico in **5 Fasi Cronologiche**:
 
 ```
-project/
-├── sources/  (named backup/)  Your ORIGINAL files (PDF, EPUB) — untouched, keep safe
-├── raw/                        The same files turned into plain text (Markdown)
-├── wiki/                       The knowledge, organized and linked (written by the AI)
-└── output/                     Temporary answers to your questions
+ ┌─────────────────────────────────────────────────────────────┐
+ │ FASE 1: Configurazione & Inizializzazione                   │
+ │ Setup progetto, config.toml, Scenari Wizard (es. Academic)  │
+ └──────────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │ FASE 2: Ingestione & Conversione Fonti                      │
+ │ Caricamento PDF/EPUB in sources/, conv2md, web-clips,       │
+ │ importazione da NotebookLM                                  │
+ └──────────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │ FASE 3: Costruzione Incrementale & Consultazione KB        │
+ │ /compile, /ingest, Web UI, CodeMirror 6, Graph View,        │
+ │ /consult, OKF v0.2, versioning incrementale e /rollback     │
+ └──────────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │ FASE 4: Sintesi, Studio & Calcolo Maturità                  │
+ │ /study-guide, /quiz, /mindmap, /audio-overview,             │
+ │ /deep-research, /note, /promote-note, /maturity, /tag-suggest│
+ └──────────────────────────────┬──────────────────────────────┘
+                                │
+                                ▼
+ ┌─────────────────────────────────────────────────────────────┐
+ │ FASE 5: Proiezione Statica & Compilazione PDF               │
+ │ /thesis-chapter, generate_thesis, export_thesis_pdf         │
+ └─────────────────────────────────────────────────────────────┘
 ```
-
-```mermaid
-flowchart LR
-    A["📥 sources/ (or backup/)\n(your original files)\nPDF, EPUB, DOCX — never touched"] -->|conversion tool| B["📄 raw/\n(plain text inbox)\nconverted, readable by the AI"]
-    B -->|the AI reads, sorts, writes| C["🗂️ wiki/\n(the knowledge base)\ntidy linked articles"]
-    C -->|you ask a question| D["💬 output/\n(scratchpad)\nanswers with citations"]
-```
-
-| Folder | Role | Description |
-|--------|------|-------------|
-| **`sources/`** (named `backup/`) | The locked archive | Your original files (PDF, EPUB, DOCX). Untouched and safe. |
-| **`raw/`** | The "in-tray" / inbox | Converted plain text (Markdown) versions of your files ready to be processed. |
-| **`wiki/`** | The "whiteboard" / library | The heart of the second brain. Tidy articles written by the AI with `[[wikilinks]]`. |
-| **`output/`** | The "scratchpad" | Ephemeral answers and reports. Emptying it loses no persistent knowledge. |
 
 ---
 
-## 2. Important Note on `backup/`, `raw/`, and `output/` Folders
+### FASE 1: Configurazione & Inizializzazione Vault
 
-If you have just cloned this repository, you might notice that `backup/` (or `sources/`), `raw/`, and `output/` **do not appear in Git**:
+All'avvio di un nuovo progetto, la prima operazione consiste nel configurare le informazioni generali e scegliere lo scenario operativo.
 
-- **These folders are intentionally listed in `.gitignore`.** They are local working directories meant to hold your personal documents, converted text files, and temporary outputs.
-- **They are created and populated automatically** on your computer when you run your first conversion command (e.g. `bash run_convert.sh`, `python scripts/conv2md.py`, or the Wizard).
-- **This is expected behavior, not an error.** Keeping working directories out of Git ensures that your private documents, books, and notes are never accidentally committed or uploaded to public repositories.
+1. **Configurazione principale (`config.toml`)**:
+   Puoi modificare direttamente il file `config.toml` oppure usare l'interfaccia grafica **⚙️ Config** nella Web UI per impostare titolo, lingua e percorsi:
+   ```toml
+   [project]
+   name = "tesi-magistrale"
+   title = "Tesi Magistrale - AI e Trasformazione del Lavoro"
+   language = "it"
 
----
-
-## 3. The AI's "Manual": `AGENT.md`
-
-The agent reads `docs/AGENT.md` (symlinked in the root as `AGENT.md`) at every startup to know how to manage the knowledge base. It is **prose, not code** — plain instructions in English:
-
-1. **The AI's role**: "librarian" — ingest raw material, maintain the wiki, answer with traceable syntheses.
-2. **The rules of the folders** (`sources/` / `raw/` / `wiki/` / `output/`).
-3. **The wiki structure**: a master `index.md`, then one folder per theme (`wiki/<topic>/`) with its own `index.md` and many articles conforming to the Open Knowledge Format (OKF v0.2).
-4. **The agent workflows**: Consult, Compile, Audit, Trace, Reindex, and more.
-
-> `AGENT.md` (located in `docs/AGENT.md` and symlinked at `AGENT.md` in root) is just an instruction sheet written in clear English. Every time you open the agent, it reads it and knows what to do.
-
----
-
-## 4. Everyday Workflow (Step by Step)
-
-```mermaid
-flowchart TD
-    S["1️⃣ Add a source\nDrop a PDF/EPUB/DOCX into sources/"] --> Conv["Convert\n(automatic text extraction)"]
-    Conv --> Compile["2️⃣ Compile\nAI reads new files,\nwrites/updates wiki articles,\nlinks them together"]
-    Compile --> Consult["3️⃣ Consult\nYou ask a question,\nAI answers using the wiki,\nwith citations"]
-    Compile --> Audit["4️⃣ Audit\nAI checks for broken links,\nduplicate articles,\nmissing pages"]
-    Audit --> Compile
-```
-
-### Step 1 — Get documents into `raw/`
-1. Put original PDFs, EPUBs, or DOCX files into `sources/` (or `backup/`).
-2. Run `bash run_convert.sh` (or `python scripts/conv2md.py`).
-3. Converted Markdown files appear in `raw/`, ready to be processed.
-
-#### Alternative: Import from Google NotebookLM (Importazione da NotebookLM)
-If you study documents or videos on Google NotebookLM and generate Study Guides, FAQs, or Briefings:
-1. Export or copy the Markdown generated in NotebookLM to a local file (e.g. `notebook_export.md`).
-2. Run the import tool:
-   ```bash
-   python scripts/notebooklm_import.py notebook_export.md --source "Research Topic X"
+   [paths]
+   sources = "sources"  # o backup/ (i tuoi file originali)
+   raw = "raw"          # i file convertiti in testo Markdown
+   wiki = "wiki"        # la base di conoscenza dinamica
+   output = "output"    # le risposte e i report temporanei
+   notes = "notes"      # appunti veloci
    ```
-3. The file will be cleaned, annotated with OKF v0.2 YAML frontmatter, and placed in `raw/notebook_export_NOTEBOOKLM.md`.
-4. Run `/compile` in your agent to integrate the knowledge directly into `wiki/`.
 
-### Step 2 — Compile (Build the wiki)
-When you tell the agent `compile` (or `/compile`):
-1. Runs conversion for any newly added documents in `sources/`.
-2. Reads uncompiled files in `raw/`.
-3. Classifies them by theme, writes or updates structured articles in `wiki/`.
-4. Links articles together with `[[wikilinks]]`.
-5. Renames processed raw files with a `_COMPILED` suffix (e.g., `paper_COMPILED.md`) so they are not reprocessed.
+2. **Wizard di Scenario (`wizard` / `/wizard`)**:
+   Attiva il wizard guidato per impostare la struttura ideale al tuo dominio. Per una Tesi Magistrale, avvia il preset accademico:
+   ```bash
+   python scripts/wizard.py --preset academic
+   ```
+   Oppure scrivi `/wizard academic` direttamente nella chat dell'agente.
 
-### Step 3 — Consult (Ask questions)
-When you ask a question or run `consult "..."` (or `/consult`):
-1. The agent inspects `wiki/index.md` and thematic indexes.
-2. Reads only the relevant clean wiki articles (saving time and tokens).
-3. Answers by synthesizing information and citing sources with `[[wikilinks]]`.
-
-### Step 4 — Audit (Maintain health)
-Running `audit` (or `/audit`):
-1. Checks for broken `[[wikilinks]]`.
-2. Detects duplicate articles to merge.
-3. Verifies index synchronization and OKF v0.2 frontmatter schema.
+3. **Gestione Multi-Progetto**:
+   Se lavori a più progetti contemporaneamente, puoi isolare ciascuna base di conoscenza nella cartella `projects/` (es. `projects/tesi/` e `projects/lavoro/`) e passare da un progetto all'altro dall'interfaccia grafica tramite il dropdown **Project Switcher**.
 
 ---
 
-## 5. The Bibliography Registry: `docs/SOURCES.md`
+### FASE 2: Ingestione & Conversione Fonti
 
-Wiki-Forge maintains a source registry at `docs/SOURCES.md`. It lists every ingested source, ordered by author and topic, linking the `raw/` converted file to its compiled `wiki/` article. You can regenerate or update it at any time using the `sources` (or `sources regenerate`) command.
+Nessun file originale viene mai modificato o cancellato. La Fase 2 converte i tuoi documenti sorgente in testo Markdown pulito collocato nella cartella `raw/`.
 
----
+1. **Aggiunta file sorgente**:
+   Inserisci PDF, EPUB, DOCX o TXT nella cartella `sources/` (o `backup/`).
+2. **Conversione automatica (`convert-only` / `/convert-only`)**:
+   Esegui lo script di conversione:
+   ```bash
+   bash run_convert.sh
+   # oppure via comando agente: /convert-only
+   ```
+   I file convertiti appariranno in `raw/` pronti per l'elaborazione.
 
-## 6. The Web UI — Your Second Brain in the Browser
+3. **Cattura da Web (`clip2md.py`)**:
+   Per salvare articoli da siti web direttamente in Markdown, usa lo script di web clipping:
+   ```bash
+   python scripts/clip2md.py "https://example.com/articolo"
+   ```
 
-Wiki-Forge includes an interactive Web UI (Vite + TypeScript) so you can view, edit, search, and navigate your wiki without needing Obsidian or external tools.
-
-```
-+---------------------+-------------------------------------+---------------------+---------------------+
-|    Header · Editor | Graph View | Split View ·  💬 OpenCode Chat                    |                     |
-+---------------------+-------------------------------------+---------------------+---------------------+
-|  Vault Explorer     |        Markdown Editor              |   Context Panel     |   Chat Drawer       |
-|  · file toolbar     |  · clean rendered preview           |   · backlinks       |   · shortcuts       |
-|    📁+ 📄+ 📤 ✏️ 🗑️ |  · CodeMirror 6 edit mode            |   · outbound links  |     /consult … /x  |
-|  · file tree, drag&drop | · 💾 Save & Close / ✖ Cancel   |   · note tags       |   · 🪄 wizard sel.  |
-|  · search (Ctrl+K)  |  · clickable [[wikilinks]]           |                     |   · streaming answers|
-|  · tag cloud filter |                                     |                     |   · 📌 Attach to Wiki|
-+---------------------+-------------------------------------+---------------------+---------------------+
-|  Graph view · controls (zoom, node search, min-connections, reset) — click a node to open it |
-+-----------------------------------------------------------------------------------------------+
-|  Footer · status bar (vault & engine state)                                                     |
-+-----------------------------------------------------------------------------------------------+
-```
-
-### Features
-- **Vault Explorer**: Collapsible file tree of `wiki/`, instant search (**Ctrl+K**), file operations toolbar (`📁+`, `📄+`, `📤`, `✏️`, `🗑️`), and tag cloud filter.
-- **Markdown Editor**: CodeMirror 6 editor with syntax highlighting, `[[wikilink]]` completion, and keyboard shortcuts (`Ctrl/Cmd+S`, `Ctrl/Cmd+B`, `Ctrl/Cmd+I`).
-- **Context Panel**: Shows backlinks, outbound links, and tags for the active note.
-- **Graph View**: Interactive force-directed link graph showing connections between notes.
-- **Script Control Panel (🛠️ Tools)**: Graphical interface accessible from the header to configure and execute all 15 Python CLI scripts with real-time log output console streaming.
-- **Chat Drawer**: Integrated agent assistant with stream responses, one-click `/` command shortcuts, scenario wizard selector, and **📌 Attach to Wiki** button.
-
-### How to Launch
-```bash
-npm install        # First time only
-npm run dev        # Open http://localhost:5173
-```
-Or via Docker:
-```bash
-make ui-docker     # Open http://localhost:5173
-```
+4. **Importazione da Google NotebookLM (`notebooklm_import.py`)**:
+   Se utilizzi Google NotebookLM per riassumere studio e FAQ, importa le tue note pulite e dotate di metadata OKF v0.2:
+   ```bash
+   python scripts/notebooklm_import.py appunti_notebooklm.md --source "Sessione NotebookLM"
+   ```
 
 ---
 
-## 7. Multi-Project Management & GUI Config Manager
+### FASE 3: Costruzione Incrementale & Consultazione della KB Dinamica
 
-Wiki-Forge supports managing multiple wiki projects simultaneously without modifying source code.
+Questa è la fase centrale in cui la conoscenza prende vita. L'agente legge i file grezzi in `raw/`, crea articoli sintetici interconnessi in `wiki/` conformi allo standard **OKF v0.2**, ed etichetta i sorgenti elaborati col suffisso `_COMPILED.md`.
 
-### Structure of `projects/`
-Multiple projects live in the `projects/` directory at the root level. Each project acts as an isolated knowledge base vault with its own settings and folders:
+1. **Compilazione iniziale (`compile` / `/compile` e `ingest` / `/ingest`)**:
+   Per elaborare tutti i file in `raw/`, esegui:
+   ```text
+   /compile
+   ```
+   Per elaborare un singolo file specifico:
+   ```text
+   /ingest raw/articolo.md
+   ```
+   Se desideri riesaminare un sorgente già compilato:
+   ```text
+   /recompile raw/articolo_COMPILED.md
+   ```
 
-```
-projects/
-├── thesis/
-│   ├── config.toml
-│   ├── sources/
-│   ├── raw/
-│   ├── wiki/
-│   ├── output/
-│   └── notes/
-└── business-kb/
-    ├── config.toml
-    └── ...
-```
+2. **Esplorazione e Modifica tramite Web UI**:
+   Avvia la Web UI con `npm run dev` o `make ui-docker` (http://localhost:5173):
+   - **Vault Explorer**: Naviga nella cartella `wiki/`, crea nuove cartelle (`📁+`) o nuovi file (`📄+`), rinomina (`✏️`), sposta o elimina (`🗑️`).
+   - **Editor CodeMirror 6**: Formatta il testo in Markdown, usa l'autocompletamento automatico dei `[[wikilink]]` digitando `[[`, e salva con **💾 Save & Close** o scorciatoia `Ctrl+S`.
+   - **Graph View**: Visualizza la mappa interattiva dei concetti e clicca sui nodi per aprire la nota corrispondente.
 
-A central `projects.json` file in the root directory registers all available projects:
-```json
-[
-  { "id": "default", "name": "Default Wiki", "path": "." },
-  { "id": "thesis", "name": "Thesis Wiki", "path": "projects/thesis" }
-]
-```
+3. **Interrogazione Dinamica & Tracciabilità (`consult`, `search`, `backlinks`, `related`, `trace`)**:
+   Poni domande complesse all'agente nella chat:
+   - `/consult "Quali sono le principali teorie sul lavoro di Graeber?"`: L'agente risponde citando le fonti con `[[wikilink]]`.
+   - `/search "intelligenza artificiale"`: Cerca concetti chiave nella wiki.
+   - `/backlinks ai-tools/claude-code`: Mostra le note che collegano l'articolo selezionato.
+   - `/related ai-tools/claude-code`: Identifica gli articoli correlati.
+   - `/trace "claim di ricerca"`: Verifica e traccia le affermazioni fino alle righe esatte del sorgente originale (`#L10-L25`).
 
-### Project Switcher & GUI Config Manager in Web UI
-- **Project Switcher**: The header includes a **Project:** dropdown allowing you to switch between active projects instantly. The active project selection is persisted in `localStorage` (`wiki-forge:active-project`).
-- **GUI Config Manager**: Click the **⚙️ Config** button in the header to open a visual tabbed modal interface:
-  - **Generale**: Edit project `name`, `title`, `language`, and `context`.
-  - **Percorsi**: Configure custom directory paths for `sources`, `raw`, `wiki`, `output`, and `notes`.
-  - **LLM & Agent**: Configure `provider` (`opencode`, `anthropic`, `openai_compatible`, `ollama`), `model`, `api_key_env`, and `timeout_seconds`.
-  - **OKF & Tag**: Manage Open Knowledge Format version and `type_vocabulary`.
-  - **Project Actions**: Create a new project directly from the interface or delete secondary projects.
-
-All configuration updates are written to `config.toml` safely formatted using `smol-toml`.
+4. **Creazione Articoli & Gestione Versioni (`new-article`, `rollback`)**:
+   Crea un nuovo articolo da modello con `/new-article <nome>`. Ogni modifica sostanziale genera uno snapshot di versione in `wiki/versions/`. Se desideri ripristinare uno stato precedente, usa:
+   ```text
+   /rollback note=nome-nota to=v1
+   ```
 
 ---
 
-## 8. The Scenario Wizard — Domain Presets
+### FASE 4: Sintesi, Studio & Calcolo Maturità
 
-A *scenario* is a ready-made setup for specific project types. Presets live in `config/scenarios.toml`:
+Mentre la wiki cresce, puoi utilizzare la Suite di Studio e Sintesi per generare materiali didattici, approfondimenti e monitorare il completamento delle note.
 
-| Scenario | ID | Use Case |
-|----------|----|----------|
-| Academic / Thesis | `academic` | Literature review, PDF ingestion, theory extraction |
-| Business KB | `business` | SOPs, meeting notes, company knowledge base, FAQs |
-| Competitive Research | `research` | Article/report analysis, source tracing, dossiers |
-| Creative Fiction | `creative` | Worldbuilding, character/location stubs |
-| Existing Wiki | `existing` | Health audit, navigation, summaries for existing wikis |
+1. **Strumenti di Sintesi e Didattica (`study-guide`, `quiz`, `mindmap`, `audio-overview`, `deep-research`)**:
+   - `/study-guide <argomento>`: Genera una guida di studio strutturata in `output/`.
+   - `/quiz <argomento> [n]`: Genera un quiz di autovalutazione a scelte multiple.
+   - `/mindmap <articolo>`: Estrae la mappa concettuale ad albero e JSON.
+   - `/audio-overview <argomento>`: Crea uno script di dialogo a due voci (Host A / Host B) per un podcast audio.
+   - `/deep-research <domanda>`: Esegue una ricerca approfondita multi-fonte con matrice di attribuzione delle affermazioni.
 
-Run via CLI:
-```bash
-python scripts/wizard.py            # Interactive menu
-python scripts/wizard.py --preset academic  # Direct preset launch
-```
-Or in Web UI Chat / Agent CLI using `wizard` or `/wizard [scenario]`.
+2. **Scratchpad Note Veloci & Suggerimento Tag (`note`, `promote-note`, `tag-suggest`)**:
+   - `/note "idea per il Capitolo 2 sulla dequalificazione del lavoro"`: Salva una nota rapida in `notes/`.
+   - `/promote-note <id> <categoria>`: Promuove la nota rapida ad articolo wiki ufficiale.
+   - `/tag-suggest wiki/articolo.md`: Suggerisce tag coerenti con la tassonomia controllata.
 
----
-
-## 9. Command Cheat Sheet
-
-### Daily Commands
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `compile` / `/compile` | Process new raw files into the wiki | `compile` |
-| `ingest <file>` / `/ingest` | Process a single raw file | `ingest raw/paper.md` |
-| `convert-only` / `/convert-only` | Convert sources without compiling | `convert-only` |
-| `recompile <file>` / `/recompile` | Force re-processing of a compiled raw file | `recompile raw/paper_COMPILED.md` |
-| `consult "..."` / `/consult` | Query the wiki for answers with citations | `consult "What are LLM agents?"` |
-| `study-guide <topic>` / `/study-guide` | Generate study guide in `output/` | `study-guide ai-tools` |
-| `quiz <topic> [n]` / `/quiz` | Generate interactive quiz in `output/` | `quiz ai-tools 5` |
-| `mindmap <art>` / `/mindmap` | Generate concept mind map in `output/` | `mindmap ai-tools/claude-code` |
-| `audio-overview <target>` / `/audio-overview` | Generate 2-speaker podcast dialogue script | `audio-overview ai-tools` |
-| `deep-research <q>` / `/deep-research` | Multi-source synthesis research report | `deep-research "agent architectures"` |
-| `note <text>` / `/note` | Record quick scratchpad note in `notes/` | `note "check Karpathy paper on LLM OS"` |
-| `promote-note <id>` / `/promote-note` | Promote scratchpad note to wiki article | `promote-note note-1 ai-tools` |
-| `maturity [path]` / `/maturity` | Calculate and update note maturity scores | `maturity wiki/` |
-| `thesis-chapter` / `/thesis-chapter` | Compile thesis chapters and mature notes | `thesis-chapter 50` |
-| `search <term>` / `/search` | Search concepts across the wiki | `search "LLM-OS"` |
-| `backlinks [note]` / `/backlinks` | View incoming links to a note | `backlinks ai-tools/claude-code` |
-| `related [note]` / `/related` | View related notes | `related ai-tools/claude-code` |
-| `trace "claim"` / `/trace` | Passage-level source grounding verification | `trace "LLMs as OS"` |
-| `help` / `/help` | Show command reference | `help` |
-
-### Weekly Maintenance Commands
-| Command | Purpose |
-|---------|---------|
-| `audit` / `/audit` | General wiki health check |
-| `reindex` / `/reindex` | Rebuild master and thematic indexes |
-| `prune` / `/prune` | Remove empty or orphan notes |
-| `lint-frontmatter` / `/lint-frontmatter` | Validate frontmatter against OKF v0.2 |
-| `stats` / `/stats` | View wiki growth and link metrics |
-
-### Curation & As-Needed Commands
-| Command | Purpose |
-|---------|---------|
-| `new-article <name>` / `/new-article` | Create new article from template |
-| `merge <a> <b>` / `/merge` | Merge duplicate articles |
-| `split <art> <heading>` / `/split` | Split long article into sub-articles |
-| `stub <concept>` / `/stub` | Create placeholder stub |
-| `retag <art> [+tag]` / `/retag` | Add or update article tags |
-| `sources` / `sources regenerate` | Rebuild bibliography registry (`docs/SOURCES.md`) |
-| `tag-suggest [file]` / `/tag-suggest` | Suggest tags from controlled vocabulary |
-| `export json` / `/export` | Export wiki structure |
-| `diff <art>` / `/diff` | Show git diff of an article |
-| `template show` / `/template` | Display article template |
-| `wizard [scenario]` / `/wizard` | Launch scenario-driven wizard |
+3. **Calcolo dell'Indice di Maturità (`maturity` / `/maturity`)**:
+   Valuta lo stato di avanzamento delle note (punteggio da 0 a 100 basato su fonti, link e completezza):
+   ```bash
+   python scripts/maturity_calculator.py wiki --write
+   # Oppure comando chat: /maturity
+   ```
 
 ---
 
-## 10. Troubleshooting
+### FASE 5: Proiezione Statica & Compilazione PDF Stampabile
 
-### "The agent says it can't find raw files"
-- Check that `config.toml` exists and `paths.raw` points to `raw`.
-- Run `bash run_convert.sh` or `python scripts/conv2md.py` to convert sources.
+Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità elevato, è il momento di estrarre e compilare il documento finale per la stampa o la consegna formale.
 
-### "Links are broken after renaming an article"
-1. Run `audit` to detect broken wikilinks.
-2. Run `reindex` to update indexes.
+1. **Aggregazione Capitoli Tesi (`thesis-chapter` / `/thesis-chapter`)**:
+   Aggrega tutte le sintesi e i capitoli maturi in un unico documento unificato:
+   ```bash
+   python scripts/generate_thesis.py --wiki-dir wiki --output output/thesis_compiled.md --min-maturity 50
+   # Oppure via comando agente: /thesis-chapter
+   ```
 
-### "I have two articles about the same topic"
-- Run `audit` to find duplicates.
-- Run `merge <article-1> <article-2>` to combine them.
+2. **Esportazione PDF via Pandoc (`export_thesis_pdf.py` / `make thesis-pdf`)**:
+   Compila il documento unificato Markdown in un PDF finale formattato:
+   ```bash
+   python scripts/export_thesis_pdf.py --input output/thesis_compiled.md --output output/thesis_final.pdf
+   # Oppure via shortcut: make thesis-pdf
+   ```
+
+3. **Utility di Manutenzione & Esportazione Struttura (`export`, `diff`, `template`, `sources`, `help`)**:
+   - `/export` (o `export json`): Esporta la struttura completa della wiki.
+   - `/diff <articolo>`: Mostra le differenze Git di un articolo.
+   - `/template show`: Visualizza il modello standard delle note.
+   - `/sources` (o `sources regenerate`): Rigenera il registro bibliografico in `docs/SOURCES.md`.
+   - `/help`: Mostra la guida di riferimento rapido dei comandi.
 
 ---
 
-## 11. Keeping Your Wiki Healthy
+## 3. Comandi di Manutenzione Periodica della Wiki
 
-- **Monthly**: Run `audit` to fix broken links, run `sources regenerate` to keep `docs/SOURCES.md` updated, and run `stats` to review wiki growth.
-- **Quarterly**: Run `audit` for duplicate detection, check `wiki/index.md` organization, and backup with `export json`.
-- **Yearly**: Archive old `output/` files and update `config.toml` if your project scope evolves.
+Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2:
+
+| Comando | Scopo / Azione |
+|---------|----------------|
+| `audit` / `/audit` | Controllo generale di salute (link rotti, orfani, sovrapposizioni) |
+| `reindex` / `/reindex` | Rigenerazione automatica degli indici master e tematici |
+| `prune` / `/prune` | Pulizia di note vuote o bozze abbandonate |
+| `lint-frontmatter` / `/lint-frontmatter` | Validazione della sintassi YAML frontmatter OKF v0.2 |
+| `stats` / `/stats` | Calcolo delle metriche di crescita e generazione di `docs/METRICS.md` |
+| `merge <a> <b>` / `/merge` | Unione di due articoli duplicati |
+| `split <art> <sezione>` / `/split` | Divisione di un articolo lungo in sotto-articoli |
+| `stub <concetto>` / `/stub` | Creazione di una nota segnaposto per sviluppi futuri |
+| `retag <art> [+tag]` / `/retag` | Aggiornamento dei tag di un articolo |
+
+---
+
+## 4. Guida alla Risoluzione Problemi (Troubleshooting)
+
+### "L'agente non trova i file grezzi in raw/"
+- Verifica che `config.toml` contenga `raw = "raw"`.
+- Assicurati di aver eseguito `bash run_convert.sh` o `python scripts/conv2md.py` dopo aver aggiunto i file in `sources/`.
+
+### "I wikilink risultano interrotti dopo aver rinominato un articolo"
+- Esegui il comando `/audit` per rilevare i link rotti.
+- Esegui il comando `/reindex` per aggiornare tutti gli indici della wiki.
+
+### "Due articoli trattano lo stesso argomento"
+- Esegui `/merge articolo-1 articolo-2` per unire i contenuti mantenendo la tracciabilità delle fonti.
