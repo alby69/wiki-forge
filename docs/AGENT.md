@@ -180,3 +180,6 @@ Track and maintain wiki quality against key health metrics:
   - **v3.0**: Upgraded agent role from "librarian" to "Knowledge Engineer". Added 6 core capabilities, explicit confidence disclosure, interaction modes (§6), error handling & edge cases (§8), quality metrics (§9), and security/privacy (§10). Integrated OKF v0.2 standard and macro-workflow orchestration.
   - **v2.0**: Command Reference system, 15+ atomic commands, modular skill routing.
   - **v1.0**: Initial LLM Wiki Schema (Karpathy pattern).
+
+## /rollback
+Sintassi: `/rollback note=<nota> [to=<version>] [reason=...]`. Copia `wiki/versions/<nota>.vN.md` in `wiki/<nota>.md`, aggiorna `log.md`.
