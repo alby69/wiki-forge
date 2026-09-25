@@ -72,4 +72,42 @@ Here is an inline tag #python.
     assert.strictEqual(filtered.nodes.length, 1);
     assert.strictEqual(filtered.nodes[0].label, 'C64 Development');
   });
+
+  test('should extract OKF node metadata and filter by OKF criteria', () => {
+    const note1 = parser.parseNote('n1', 'Concept Note', '---\ntype: Concept\nstatus: stable\nverified: ["human:agent"]\n---\nBody text [[n2]]', 'wiki');
+    const note2 = parser.parseNote('n2', 'Draft Paper', '---\ntype: Paper\nstatus: draft\n---\nDraft content', 'wiki');
+    const orphanNote = parser.parseNote('n3', 'Orphan Note', '---\ntype: Tool\nstatus: draft\n---\nNo links here', 'wiki');
+
+    const processed = parser.computeBacklinks([note1, note2, orphanNote]);
+    const graphData = graphService.generateGraphData(processed);
+
+    assert.strictEqual(graphData.nodes.length, 3);
+
+    const conceptNode = graphData.nodes.find(n => n.id === 'n1');
+    assert.strictEqual(conceptNode?.okfType, 'Concept');
+    assert.strictEqual(conceptNode?.trustTier, 'human-reviewed');
+    assert.strictEqual(conceptNode?.status, 'stable');
+
+    const orphanNode = graphData.nodes.find(n => n.id === 'n3');
+    assert.strictEqual(orphanNode?.isOrphan, true);
+
+    // Test filter: hideDrafts
+    const noDrafts = graphService.filterGraphData(graphData, { hideDrafts: true });
+    assert.strictEqual(noDrafts.nodes.length, 1);
+    assert.strictEqual(noDrafts.nodes[0].id, 'n1');
+
+    // Test filter: showOnlyOrphans
+    const onlyOrphans = graphService.filterGraphData(graphData, { showOnlyOrphans: true });
+    assert.strictEqual(onlyOrphans.nodes.length, 1);
+    assert.strictEqual(onlyOrphans.nodes[0].id, 'n3');
+
+    // Test filter: okfType
+    const paperOnly = graphService.filterGraphData(graphData, { okfType: 'Paper' });
+    assert.strictEqual(paperOnly.nodes.length, 1);
+    assert.strictEqual(paperOnly.nodes[0].id, 'n2');
+
+    // Test maxNodes cap
+    const capped = graphService.filterGraphData(graphData, { maxNodes: 2 });
+    assert.strictEqual(capped.nodes.length, 2);
+  });
 });

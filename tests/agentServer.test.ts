@@ -99,4 +99,52 @@ This is a test note linking to [[other-note]].
     const reindexReply = await apiStorage.sendChat('/reindex');
     assert.ok(reindexReply.includes('Reindex Complete'));
   });
+
+  await t.test('GET /api/wiki/tags and POST /api/wiki/tags/merge', async () => {
+    const tags = await apiStorage.getTags();
+    assert.ok(Array.isArray(tags));
+    assert.ok(tags.some(t => t.name === 'test'));
+
+    const updatedCount = await apiStorage.mergeTag('test', 'unit-test');
+    assert.ok(updatedCount >= 1);
+
+    const updatedTags = await apiStorage.getTags();
+    assert.ok(updatedTags.some(t => t.name === 'unit-test'));
+    assert.ok(!updatedTags.some(t => t.name === 'test'));
+  });
+
+  await t.test('GET /api/wiki/curation returns inReview, orphans, and stale notes', async () => {
+    const curation = await apiStorage.getCuration();
+    assert.ok(Array.isArray(curation.inReview));
+    assert.ok(Array.isArray(curation.orphans));
+    assert.ok(Array.isArray(curation.stale));
+    assert.ok(curation.orphans.length >= 1);
+  });
+
+  await t.test('PATCH /api/wiki/metadata updates frontmatter without altering body text', async () => {
+    const updated = await apiStorage.updateMetadata({
+      id: 'sample-note',
+      type: 'Tool',
+      status: 'stable',
+      trustTier: 'human-reviewed',
+    });
+
+    assert.ok(updated);
+    assert.equal(updated?.trustTier, 'human-reviewed');
+    assert.equal(updated?.status, 'stable');
+    assert.equal(updated?.frontmatter.type, 'Tool');
+
+    const fileContent = await fs.readFile(path.join(wikiDir, 'sample-note.md'), 'utf-8');
+    assert.ok(fileContent.includes('type: Tool'));
+    assert.ok(fileContent.includes('status: stable'));
+    assert.ok(fileContent.includes('This is a test note linking to [[other-note]].'));
+  });
+
+  await t.test('POST /api/wiki/from-chat returns structured draft with OKF metadata', async () => {
+    const draft = await apiStorage.generateNoteFromChat('Summary of quantum computing concepts with references to qubits.');
+    assert.ok(draft);
+    assert.ok(draft.title);
+    assert.ok(draft.content);
+    assert.equal(draft.trustTier, 'unverified');
+  });
 });

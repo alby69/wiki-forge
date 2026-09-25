@@ -203,32 +203,58 @@ export class ForceGraphViewer implements IGraphViewer {
 
   private nodeCanvasObj = (node: any, ctx: CanvasRenderingContext2D, globalScale: number): void => {
     const val = typeof node.val === 'number' ? node.val : 1;
-    const r = Math.max(3, Math.sqrt(val) * 2.2);
+    const r = Math.max(3.5, Math.sqrt(val) * 2.2);
     const active = this.isActive(node.id);
-    const color = (node.color as string) || '#90a4ae';
+
+    // Orphan nodes highlighted in red
+    const isOrphan = Boolean(node.isOrphan);
+    const color = isOrphan ? '#e53e3e' : (node.color as string) || '#90a4ae';
 
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
     ctx.fillStyle = active ? color : this.dim(color);
     ctx.fill();
 
-    if (node.id === this.highlightedNodeId) {
-      ctx.lineWidth = 1.5 / globalScale;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
+    // Trust Tier border styling
+    const trustTier = node.trustTier || 'unverified';
+    let borderColor = 'rgba(160,174,192,0.4)';
+    let borderWidth = 1 / globalScale;
+
+    if (trustTier === 'human-reviewed') {
+      borderColor = '#ffd700'; // Gold border
+      borderWidth = 2.2 / globalScale;
+    } else if (trustTier === 'machine-confirmed') {
+      borderColor = '#64b5f6'; // Light blue border
+      borderWidth = 1.8 / globalScale;
+    } else if (isOrphan) {
+      borderColor = '#fc8181'; // Red border for orphans
+      borderWidth = 1.8 / globalScale;
     }
+
+    if (node.id === this.highlightedNodeId) {
+      borderColor = '#ffffff';
+      borderWidth = 2.8 / globalScale;
+    }
+
+    ctx.lineWidth = borderWidth;
+    ctx.strokeStyle = active ? borderColor : this.dim(borderColor);
+    ctx.stroke();
 
     const fontSize = Math.max(2.5, 11 / globalScale);
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = active ? '#e2e8f0' : 'rgba(203,213,225,0.4)';
-    ctx.fillText(node.label, node.x, node.y + r + 1);
+    const orphanTag = isOrphan ? ' ⚠️' : '';
+    ctx.fillText(`${node.label}${orphanTag}`, node.x, node.y + r + 2);
   };
 
   private tooltip(node: any): string {
     const tags = Array.isArray(node.tags) && node.tags.length ? `  ·  #${node.tags.join('  #')}` : '';
-    return `<b>${node.label}</b>  (${node.group || 'wiki'})${tags}`;
+    const typeStr = node.okfType ? ` [${node.okfType}]` : '';
+    const trustStr = node.trustTier ? ` · ${node.trustTier}` : '';
+    const orphanStr = node.isOrphan ? ' · ⚠️ Orphan' : '';
+    return `<b>${node.label}</b>${typeStr} (${node.group || 'wiki'})${trustStr}${orphanStr}${tags}`;
   }
 
   private nodePointerArea = (node: any, paintColor: string, ctx: CanvasRenderingContext2D): void => {

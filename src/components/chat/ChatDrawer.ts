@@ -182,7 +182,10 @@ export class ChatDrawer {
               <span>${msg.timestamp}</span>
               ${
                 !isUser
-                  ? `<button class="attach-btn" data-msg-id="${msg.id}" style="background: none; border: none; color: #64b5f6; cursor: pointer; font-size: 10px; padding: 0;">📌 Attach to Wiki</button>`
+                  ? `<div style="display: flex; gap: 8px;">
+                      <button class="attach-btn" data-msg-id="${msg.id}" style="background: none; border: none; color: #64b5f6; cursor: pointer; font-size: 10px; padding: 0;">📌 Attach</button>
+                      <button class="save-note-btn" data-msg-id="${msg.id}" style="background: none; border: none; color: #81c784; cursor: pointer; font-size: 10px; padding: 0; font-weight: 600;">💾 Save as Wiki Note</button>
+                    </div>`
                   : ''
               }
             </div>
@@ -223,6 +226,16 @@ export class ChatDrawer {
         if (cmd) {
           input.value = `${cmd} `;
           input.focus();
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.save-note-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const msgId = btn.getAttribute('data-msg-id');
+        const msg = this.messages.find(m => m.id === msgId);
+        if (msg) {
+          await this.openSaveAsWikiNoteModal(msg.text);
         }
       });
     });
@@ -316,5 +329,111 @@ export class ChatDrawer {
     );
 
     this.saveHistory();
+  }
+
+  private async openSaveAsWikiNoteModal(text: string): Promise<void> {
+    const draft = await this.apiStorage.generateNoteFromChat(text) || {
+      title: 'Chat Note',
+      category: 'general',
+      type: 'Concept',
+      status: 'draft',
+      trustTier: 'unverified',
+      content: text,
+      suggestedPath: 'wiki/general/chat-note.md',
+    };
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(0,0,0,0.75)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+
+    overlay.innerHTML = `
+      <div style="background: #18191c; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; width: 480px; max-width: 90vw; color: #e2e8f0; font-family: sans-serif; box-shadow: 0 15px 30px rgba(0,0,0,0.6);">
+        <h3 style="margin-top: 0; font-size: 16px; color: #81c784; display: flex; align-items: center; gap: 6px;">
+          💾 Save Response as Wiki Note
+        </h3>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+          <div>
+            <label style="font-size: 11px; color: #a0aec0; display: block; margin-bottom: 4px;">Note Title:</label>
+            <input type="text" id="save-note-title" value="${draft.title.replace(/"/g, '&quot;')}" style="width: 100%; background: #121316; border: 1px solid #4a5568; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #a0aec0; display: block; margin-bottom: 4px;">Category / Folder:</label>
+              <input type="text" id="save-note-folder" value="${draft.category.replace(/"/g, '&quot;')}" style="width: 100%; background: #121316; border: 1px solid #4a5568; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box;" />
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #a0aec0; display: block; margin-bottom: 4px;">OKF Type:</label>
+              <select id="save-note-type" style="width: 100%; background: #121316; border: 1px solid #4a5568; color: #64b5f6; padding: 6px; border-radius: 4px; font-size: 12px; box-sizing: border-box; font-weight: 600;">
+                <option value="Concept" ${draft.type === 'Concept' ? 'selected' : ''}>Concept</option>
+                <option value="Paper" ${draft.type === 'Paper' ? 'selected' : ''}>Paper</option>
+                <option value="Tool" ${draft.type === 'Tool' ? 'selected' : ''}>Tool</option>
+                <option value="Workflow" ${draft.type === 'Workflow' ? 'selected' : ''}>Workflow</option>
+                <option value="Guideline" ${draft.type === 'Guideline' ? 'selected' : ''}>Guideline</option>
+                <option value="Thesis" ${draft.type === 'Thesis' ? 'selected' : ''}>Thesis</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 11px; color: #a0aec0; display: block; margin-bottom: 4px;">Markdown Content Preview:</label>
+            <textarea id="save-note-content" style="width: 100%; height: 140px; background: #121316; border: 1px solid #4a5568; color: #e2e8f0; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical; box-sizing: border-box;">${draft.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button id="save-note-cancel" style="background: #4a5568; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">Cancel</button>
+          <button id="save-note-confirm" style="background: #3182ce; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Save to Wiki 💾</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.querySelector('#save-note-cancel')?.addEventListener('click', close);
+
+    overlay.querySelector('#save-note-confirm')?.addEventListener('click', async () => {
+      const titleInput = (overlay.querySelector('#save-note-title') as HTMLInputElement).value.trim();
+      const folderInput = (overlay.querySelector('#save-note-folder') as HTMLInputElement).value.trim() || 'general';
+      const typeInput = (overlay.querySelector('#save-note-type') as HTMLSelectElement).value;
+      const contentInput = (overlay.querySelector('#save-note-content') as HTMLTextAreaElement).value;
+
+      const stem = titleInput.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const fullMarkdown = `---
+title: "${titleInput.replace(/"/g, '\\"')}"
+type: ${typeInput}
+status: draft
+okf_trust: unverified
+tags: [chat-import, ${folderInput}]
+created: ${todayStr}
+updated: ${todayStr}
+---
+
+# ${titleInput}
+
+${contentInput.trim()}
+`;
+
+      await this.apiStorage.saveNote({
+        id: stem,
+        title: titleInput,
+        folder: folderInput,
+        content: fullMarkdown,
+      });
+
+      close();
+      if (this.onAttachSuccessCb) {
+        this.onAttachSuccessCb();
+      }
+    });
   }
 }

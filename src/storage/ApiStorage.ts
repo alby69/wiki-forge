@@ -374,6 +374,129 @@ export class ApiStorage implements IStorage {
     return `### 🤖 Offline Agent Assistant\n\nReceived: "${message}". Connect to the backend server for live execution.`;
   }
 
+  public async getTags(): Promise<Array<{ name: string; count: number }>> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/tags`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; tags?: Array<{ name: string; count: number }> };
+        if (json.success && Array.isArray(json.tags)) {
+          return json.tags;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return [];
+  }
+
+  public async mergeTag(oldTag: string, newTag: string): Promise<number> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/tags/merge`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ oldTag, newTag }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; updatedCount?: number };
+        if (json.success && typeof json.updatedCount === 'number') {
+          return json.updatedCount;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return 0;
+  }
+
+  public async getCuration(): Promise<{ inReview: WikiNote[]; orphans: WikiNote[]; stale: WikiNote[] }> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/curation`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          success: boolean;
+          curation?: { inReview: WikiNote[]; orphans: WikiNote[]; stale: WikiNote[] };
+        };
+        if (json.success && json.curation) {
+          return json.curation;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return { inReview: [], orphans: [], stale: [] };
+  }
+
+  public async updateMetadata(params: {
+    id?: string;
+    path?: string;
+    type?: string;
+    status?: string;
+    trustTier?: 'human-reviewed' | 'machine-confirmed' | 'unverified';
+  }): Promise<WikiNote | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/metadata`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify(params),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; note?: WikiNote };
+        if (json.success && json.note) {
+          return json.note;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return null;
+  }
+
+  public async generateNoteFromChat(
+    messageText: string,
+    title?: string,
+    category?: string
+  ): Promise<{
+    title: string;
+    category: string;
+    type: string;
+    status: string;
+    trustTier: string;
+    content: string;
+    suggestedPath: string;
+  } | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/from-chat`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ messageText, title, category }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          success: boolean;
+          draft?: {
+            title: string;
+            category: string;
+            type: string;
+            status: string;
+            trustTier: string;
+            content: string;
+            suggestedPath: string;
+          };
+        };
+        if (json.success && json.draft) {
+          return json.draft;
+        }
+      }
+    } catch (_err) {
+      // Fallback
+    }
+    return null;
+  }
+
   public async sendChatStream(
     message: string,
     onChunk: (chunk: string) => void,

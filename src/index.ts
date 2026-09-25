@@ -17,6 +17,7 @@ import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
 import { ConfigManager } from './components/ConfigManager';
 import { ToolsModal } from './components/tools/ToolsModal';
+import { CurationDashboard } from './components/tools/CurationDashboard';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -36,6 +37,7 @@ export class WikiForgeApp {
   private chatDrawer!: ChatDrawer;
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
+  private curationDashboard!: CurationDashboard;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
@@ -118,6 +120,16 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
+    this.curationDashboard = new CurationDashboard(this.storage, {
+      onSelectNote: noteId => {
+        this.selectNote(noteId);
+      },
+      onFixWithAgent: prompt => {
+        this.chatDrawer.open();
+        void this.chatDrawer.handleSendMessage(prompt);
+      },
+    });
+
     this.header = new Header(
       this.layout.headerContainer,
       mode => {
@@ -179,6 +191,12 @@ Backlink to [[01-index]].
         },
         getFolders: async () => {
           return this.storage.getAllFolders();
+        },
+        onOpenCurationDashboard: () => {
+          void this.curationDashboard.open();
+        },
+        onTagsUpdated: () => {
+          void this.loadVault();
         },
       }
     );

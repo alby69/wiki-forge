@@ -25,6 +25,24 @@ export class GraphControls {
           <button id="graph-zoom-fit" title="Fit to view" style="background: #2d3748; color: #fff; border: 1px solid #4a5568; padding: 0 8px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 12px;">Fit</button>
         </div>
         <input type="text" id="graph-search-input" placeholder="Search node..." style="background: #2d3748; border: 1px solid #4a5568; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px;" />
+        <select id="graph-type-select" title="Filter by OKF Type" style="background: #2d3748; color: #fff; border: 1px solid #4a5568; padding: 4px; border-radius: 4px; font-size: 12px;">
+          <option value="all">All Types</option>
+          <option value="Concept">Concept</option>
+          <option value="Paper">Paper</option>
+          <option value="Tool">Tool</option>
+          <option value="Workflow">Workflow</option>
+          <option value="Guideline">Guideline</option>
+          <option value="Thesis">Thesis</option>
+        </select>
+        <label style="color: #a0aec0; display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+          <input type="checkbox" id="graph-hide-drafts" /> Hide Drafts
+        </label>
+        <label style="color: #a0aec0; display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+          <input type="checkbox" id="graph-hide-unverified" /> Hide Unverified
+        </label>
+        <label style="color: #a0aec0; display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+          <input type="checkbox" id="graph-show-orphans" /> Show Orphans Only
+        </label>
         <label style="color: #a0aec0; display: flex; align-items: center; gap: 4px;">
           Min connections:
           <input type="number" id="graph-degree-input" min="0" max="20" value="0" style="width: 45px; background: #2d3748; border: 1px solid #4a5568; color: #fff; padding: 4px; border-radius: 4px; font-size: 12px;" />
@@ -34,6 +52,10 @@ export class GraphControls {
     `;
 
     const searchInput = this.container.querySelector('#graph-search-input') as HTMLInputElement;
+    const typeSelect = this.container.querySelector('#graph-type-select') as HTMLSelectElement;
+    const hideDraftsCheckbox = this.container.querySelector('#graph-hide-drafts') as HTMLInputElement;
+    const hideUnverifiedCheckbox = this.container.querySelector('#graph-hide-unverified') as HTMLInputElement;
+    const showOrphansCheckbox = this.container.querySelector('#graph-show-orphans') as HTMLInputElement;
     const degreeInput = this.container.querySelector('#graph-degree-input') as HTMLInputElement;
     const resetBtn = this.container.querySelector('#reset-graph-btn') as HTMLButtonElement;
 
@@ -41,13 +63,25 @@ export class GraphControls {
       this.cb.onFilterChange({
         searchQuery: searchInput.value,
         minDegree: parseInt(degreeInput.value, 10) || 0,
+        okfType: typeSelect.value,
+        hideDrafts: hideDraftsCheckbox.checked,
+        hideUnverified: hideUnverifiedCheckbox.checked,
+        showOnlyOrphans: showOrphansCheckbox.checked,
       });
     };
 
     searchInput.addEventListener('input', triggerChange);
+    typeSelect.addEventListener('change', triggerChange);
+    hideDraftsCheckbox.addEventListener('change', triggerChange);
+    hideUnverifiedCheckbox.addEventListener('change', triggerChange);
+    showOrphansCheckbox.addEventListener('change', triggerChange);
     degreeInput.addEventListener('change', triggerChange);
     resetBtn.addEventListener('click', () => {
       searchInput.value = '';
+      typeSelect.value = 'all';
+      hideDraftsCheckbox.checked = false;
+      hideUnverifiedCheckbox.checked = false;
+      showOrphansCheckbox.checked = false;
       degreeInput.value = '0';
       triggerChange();
     });
