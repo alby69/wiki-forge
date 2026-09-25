@@ -8,9 +8,12 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { autocompletion } from '@codemirror/autocomplete';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { wikilinkAutocompleteSource } from './wikilinkAutocomplete';
+import { OKFStatusBar } from './OKFStatusBar';
+import { ApiStorage } from '../../storage/ApiStorage';
 
 export class MarkdownEditor {
   private container: HTMLElement;
+  private apiStorage = new ApiStorage();
   private currentNote: WikiNote | null = null;
   private mode: 'preview' | 'edit' = 'preview';
   private saveStatusMessage: string = '';
@@ -18,6 +21,7 @@ export class MarkdownEditor {
   private onOpenLinkCb?: (target: string) => void;
   private getNotesCb?: () => WikiNote[];
   private editorView: EditorView | null = null;
+  private okfStatusBar: OKFStatusBar | null = null;
 
   constructor(
     container: HTMLElement,
@@ -103,6 +107,7 @@ export class MarkdownEditor {
             }
           </div>
         </div>
+        <div id="okf-status-bar-container"></div>
         <div style="flex: 1; display: flex; flex-direction: column; padding: 16px; overflow: hidden;">
           ${
             isPreview
@@ -190,6 +195,16 @@ export class MarkdownEditor {
         this.mode = 'preview';
         this.render();
       });
+    }
+
+    const okfBarContainer = this.container.querySelector('#okf-status-bar-container') as HTMLElement;
+    if (okfBarContainer) {
+      this.okfStatusBar = new OKFStatusBar(okfBarContainer, this.apiStorage, {
+        onMetadataChanged: (updatedNote) => {
+          this.currentNote = updatedNote;
+        },
+      });
+      this.okfStatusBar.setNote(note);
     }
   }
 }

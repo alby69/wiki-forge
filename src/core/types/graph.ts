@@ -9,6 +9,12 @@ export interface GraphNode {
   val: number;       // Node size weight based on link degree
   color?: string;    // Accent color based on tag or status
   tags?: string[];   // Associated tags for filtering
+  okfType?: string;  // OKF Note Type (Concept, Paper, Tool, Workflow, etc.)
+  trustTier?: 'human-reviewed' | 'machine-confirmed' | 'unverified'; // OKF Trust Tier
+  status?: string;   // Note status (draft, stable, deprecated)
+  isOrphan?: boolean; // Whether node has 0 inbound and outbound links
+  inDegree?: number;
+  outDegree?: number;
 }
 
 export interface GraphLink {
@@ -27,4 +33,11 @@ export interface GraphFilterOptions {
   searchQuery?: string;
   minDegree?: number;
   folder?: string;
+  hideDrafts?: boolean;
+  hideUnverified?: boolean;
+  showOnlyOrphans?: boolean;
+  okfType?: string;
+  activeNodeId?: string;
+  neighborhoodDepth?: number; // 0 (all), 1 (direct), 2 (depth 2)
+  maxNodes?: number; // default max nodes limit (e.g. 50)
 }

@@ -430,6 +430,62 @@ function formatWizardList(): string {
     .join('\n');
 }
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function applyFrontmatterUpdates(rawContent: string, updates: Record<string, unknown>): string {
+  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+  const match = frontmatterRegex.exec(rawContent);
+
+  let fmMap: Record<string, unknown> = {};
+  let body = rawContent;
+
+  if (match) {
+    const yamlBlock = match[1];
+    body = rawContent.slice(match[0].length);
+    yamlBlock.split('\n').forEach(line => {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx !== -1) {
+        const k = line.slice(0, colonIdx).trim();
+        const v = line.slice(colonIdx + 1).trim();
+        if (v.startsWith('[') && v.endsWith(']')) {
+          fmMap[k] = v
+            .slice(1, -1)
+            .split(',')
+            .map(item => item.trim().replace(/^['"]|['"]$/g, ''))
+            .filter(Boolean);
+        } else {
+          fmMap[k] = v.replace(/^['"]|['"]$/g, '');
+        }
+      }
+    });
+  }
+
+  // Merge updates
+  for (const [k, v] of Object.entries(updates)) {
+    if (v === undefined || v === null) {
+      delete fmMap[k];
+    } else {
+      fmMap[k] = v;
+    }
+  }
+
+  // Build YAML block
+  const lines: string[] = ['---'];
+  for (const [k, v] of Object.entries(fmMap)) {
+    if (Array.isArray(v)) {
+      lines.push(`${k}: [${v.map(i => String(i)).join(', ')}]`);
+    } else {
+      lines.push(`${k}: ${v}`);
+    }
+  }
+  lines.push('---');
+  lines.push('');
+
+  return lines.join('\n') + body;
+}
+
 export class AgentServer {
   private parser = new MarkdownParser();
   private rootDir: string;
@@ -1138,6 +1194,292 @@ export class AgentServer {
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/tags' && req.method === 'GET') {
+      try {
+        const notes = await this.readAllWikiNotes(projectId);
+        const tagMap = new Map<string, number>();
+        for (const note of notes) {
+          for (const tag of note.tags) {
+            if (String(tag).match(/^[0-9]+$/)) continue;
+            tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+          }
+        }
+        const tags = Array.from(tagMap.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, tags }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/tags/merge' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ oldTag: string; newTag: string }>(req);
+        if (!body.oldTag || !body.newTag) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing oldTag or newTag' }));
+          return true;
+        }
+
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const wikiDir = await this.getWikiDir(projectId);
+        let updatedCount = 0;
+
+        const walk = async (dir: string): Promise<void> => {
+          try {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                await walk(fullPath);
+              } else if (entry.isFile() && entry.name.endsWith('.md')) {
+                let content = await fs.readFile(fullPath, 'utf-8');
+                let changed = false;
+
+                // Replace inline #oldTag
+                const oldTagRegex = new RegExp(`(?:^|\\s)#${escapeRegex(body.oldTag)}(?=\\s|$)`, 'g');
+                if (oldTagRegex.test(content)) {
+                  content = content.replace(oldTagRegex, ` #${body.newTag}`);
+                  changed = true;
+                }
+
+                // Parse frontmatter
+                const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+                const match = fmRegex.exec(content);
+                if (match) {
+                  const fmBlock = match[1];
+                  const bodyText = content.slice(match[0].length);
+                  const lines = fmBlock.split('\n');
+                  let fmChanged = false;
+                  const newLines = lines.map(line => {
+                    const colonIdx = line.indexOf(':');
+                    if (colonIdx !== -1) {
+                      const k = line.slice(0, colonIdx).trim();
+                      if (k === 'tags') {
+                        const val = line.slice(colonIdx + 1).trim();
+                        if (val.startsWith('[') && val.endsWith(']')) {
+                          const tagList = val
+                            .slice(1, -1)
+                            .split(',')
+                            .map(t => t.trim().replace(/^['"]|['"]$/g, ''))
+                            .filter(Boolean);
+                          if (tagList.includes(body.oldTag)) {
+                            fmChanged = true;
+                            const newTags = Array.from(
+                              new Set(tagList.map(t => (t === body.oldTag ? body.newTag : t)))
+                            );
+                            return `tags: [${newTags.join(', ')}]`;
+                          }
+                        } else if (val === body.oldTag || val === `'${body.oldTag}'` || val === `"${body.oldTag}"`) {
+                          fmChanged = true;
+                          return `tags: [${body.newTag}]`;
+                        }
+                      }
+                    }
+                    return line;
+                  });
+
+                  if (fmChanged) {
+                    content = `---\n${newLines.join('\n')}\n---\n${bodyText}`;
+                    changed = true;
+                  }
+                }
+
+                if (changed) {
+                  await fs.writeFile(fullPath, content, 'utf-8');
+                  updatedCount++;
+                }
+              }
+            }
+          } catch (_e) {
+            // ignore missing dirs
+          }
+        };
+
+        await walk(wikiDir);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, updatedCount }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/curation' && req.method === 'GET') {
+      try {
+        const notes = await this.readAllWikiNotes(projectId);
+        const inReview: WikiNote[] = [];
+        const orphans: WikiNote[] = [];
+        const stale: WikiNote[] = [];
+
+        const now = new Date();
+        const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+
+        for (const note of notes) {
+          if (note.id.endsWith('index') || note.path.endsWith('index.md')) continue;
+
+          // In Review: trustTier is machine-confirmed
+          if (note.trustTier === 'machine-confirmed' || note.frontmatter.okf_trust === 'machine-confirmed') {
+            inReview.push(note);
+          }
+
+          // Orphans: 0 non-index backlinks
+          const realBacklinks = (note.backlinks || []).filter(
+            b => !b.sourceId.endsWith('index') && !b.sourceId.endsWith('/index')
+          );
+          if (realBacklinks.length === 0) {
+            orphans.push(note);
+          }
+
+          // Stale: staleAfter expired or status stable and not modified for >90 days
+          const staleAfter = note.staleAfter || (typeof note.frontmatter.stale_after === 'string' ? note.frontmatter.stale_after : undefined);
+          const todayStr = now.toISOString().slice(0, 10);
+          if (staleAfter && staleAfter < todayStr) {
+            stale.push(note);
+          } else {
+            const updated = (note.frontmatter.updated as string) || (note.frontmatter.created as string);
+            if (updated) {
+              const updatedDate = new Date(updated);
+              if (!isNaN(updatedDate.getTime()) && (now.getTime() - updatedDate.getTime() > ninetyDaysMs)) {
+                stale.push(note);
+              }
+            }
+          }
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, curation: { inReview, orphans, stale } }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/metadata' && req.method === 'PATCH') {
+      try {
+        const body = await this.parseJsonBody<{
+          id?: string;
+          path?: string;
+          type?: string;
+          status?: string;
+          trustTier?: 'human-reviewed' | 'machine-confirmed' | 'unverified';
+        }>(req);
+
+        if (!body.id && !body.path) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing note id or path' }));
+          return true;
+        }
+
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const notes = await this.readAllWikiNotes(projectId);
+        const targetNote = notes.find(n => n.id === body.id || n.path === body.path);
+
+        if (!targetNote) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Note not found' }));
+          return true;
+        }
+
+        const absPath = path.resolve(projRoot, targetNote.path);
+        await this.validateSafePath(absPath, projectId);
+
+        let content = await fs.readFile(absPath, 'utf-8');
+
+        // Apply metadata updates to frontmatter
+        const updates: Record<string, unknown> = {};
+        if (body.type !== undefined) updates.type = body.type;
+        if (body.status !== undefined) updates.status = body.status;
+        if (body.trustTier !== undefined) {
+          updates.okf_trust = body.trustTier;
+          if (body.trustTier === 'human-reviewed') {
+            updates.verified = ['human:agent'];
+          } else if (body.trustTier === 'machine-confirmed') {
+            updates.verified = ['machine:llm'];
+          } else {
+            updates.verified = [];
+          }
+        }
+
+        content = applyFrontmatterUpdates(content, updates);
+        await fs.writeFile(absPath, content, 'utf-8');
+
+        // Re-read updated note
+        const updatedNotes = await this.readAllWikiNotes(projectId);
+        const updatedNote = updatedNotes.find(n => n.id === targetNote.id) || targetNote;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: updatedNote }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/from-chat' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ messageText: string; title?: string; category?: string }>(req);
+        if (!body.messageText) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing messageText' }));
+          return true;
+        }
+
+        const client = await this.getOrInitLlmClient();
+        const systemPrompt = `You are a Knowledge Engineering assistant for Wiki-Forge. Convert the provided message into a structured OKF v0.2 wiki note. Return ONLY a valid JSON object with keys: "title" (short title string), "category" (e.g. "tech", "concepts", "research", or "general"), "type" (one of: Concept, Paper, Tool, Workflow, Guideline), "status" (draft), "content" (Markdown body text with [[wikilinks]] for key terms and concepts).`;
+
+        let draft = {
+          title: body.title || 'Chat Excerpt',
+          category: body.category || 'general',
+          type: 'Concept',
+          status: 'draft',
+          trustTier: 'unverified',
+          content: body.messageText,
+          suggestedPath: `wiki/${body.category || 'general'}/${(body.title || 'chat-excerpt').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`,
+        };
+
+        try {
+          const response = await client.complete({
+            systemPrompt,
+            userMessage: body.messageText,
+            contextNotes: [],
+          });
+
+          // Parse JSON if returned in response
+          const jsonMatch = response.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            draft.title = parsed.title || draft.title;
+            draft.category = parsed.category || draft.category;
+            draft.type = parsed.type || draft.type;
+            draft.status = parsed.status || draft.status;
+            draft.content = parsed.content || draft.content;
+            const stem = draft.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            draft.suggestedPath = `wiki/${draft.category}/${stem}.md`;
+          }
+        } catch (_e) {
+          // LLM fallback
+          const stem = (body.title || 'chat-excerpt').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          draft.suggestedPath = `wiki/${body.category || 'general'}/${stem}.md`;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, draft }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
