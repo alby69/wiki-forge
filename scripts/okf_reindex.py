@@ -80,7 +80,7 @@ def generate_topic_index(topic_dir: Path, wiki_root: Path):
 
     index_file = topic_dir / "index.md"
     index_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Generated topic index: {index_file.relative_to(wiki_root)}")
+    print(f"Generated topic index: {index_file.relative_to(wiki_root)}", file=sys.stderr)
 
 def generate_root_index(wiki_root: Path):
     topic_dirs = [d for d in sorted(wiki_root.iterdir()) if d.is_dir() and not d.name.startswith(".")]
@@ -123,24 +123,44 @@ def generate_root_index(wiki_root: Path):
 
     root_index = wiki_root / "index.md"
     root_index.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Generated bundle-root index: {root_index.relative_to(wiki_root)}")
+    print(f"Generated bundle-root index: {root_index.relative_to(wiki_root)}", file=sys.stderr)
 
 def main():
-    wiki_dir_arg = sys.argv[1] if len(sys.argv) > 1 else "wiki"
-    wiki_root = Path(wiki_dir_arg).resolve()
+    import argparse
+    parser = argparse.ArgumentParser(description="OKF v0.2 Index Generator")
+    parser.add_argument("wiki_dir", nargs="?", default="wiki", help="Path to wiki directory")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
+    wiki_root = Path(args.wiki_dir).resolve()
 
     if not wiki_root.exists() or not wiki_root.is_dir():
-        print(f"Error: Path '{wiki_root}' does not exist.", file=sys.stderr)
+        msg = f"Error: Path '{wiki_root}' does not exist."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
+    topic_count = 0
     # Generate index for each sub-directory
     for sub_dir in sorted(wiki_root.iterdir()):
         if sub_dir.is_dir() and not sub_dir.name.startswith("."):
             generate_topic_index(sub_dir, wiki_root)
+            topic_count += 1
 
     # Generate bundle root index
     generate_root_index(wiki_root)
-    print("✅ OKF §8 reindexing completed successfully.")
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "wiki_dir": str(wiki_root),
+            "topic_indexes_generated": topic_count
+        }))
+    else:
+        print("✅ OKF §8 reindexing completed successfully.")
 
 if __name__ == "__main__":
     main()

@@ -154,11 +154,21 @@ def lint_file(file_path: Path, wiki_root: Path) -> list[str]:
     return errors
 
 def main():
-    wiki_dir_arg = sys.argv[1] if len(sys.argv) > 1 else "wiki"
-    wiki_root = Path(wiki_dir_arg).resolve()
+    import argparse
+    parser = argparse.ArgumentParser(description="OKF v0.2 Bundle Linter and Validator")
+    parser.add_argument("wiki_dir", nargs="?", default="wiki", help="Wiki directory (default: wiki)")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
+    wiki_root = Path(args.wiki_dir).resolve()
 
     if not wiki_root.exists() or not wiki_root.is_dir():
-        print(f"Error: Path '{wiki_root}' does not exist or is not a directory.", file=sys.stderr)
+        msg = f"Error: Path '{wiki_root}' does not exist or is not a directory."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     all_errors = []
@@ -169,13 +179,23 @@ def main():
         file_errors = lint_file(file_path, wiki_root)
         all_errors.extend(file_errors)
 
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "error" if all_errors else "success",
+            "file_count": file_count,
+            "errors_count": len(all_errors),
+            "errors": all_errors
+        }))
+        sys.exit(1 if all_errors else 0)
+
     if all_errors:
         print(f"❌ OKF Linter found {len(all_errors)} errors across {file_count} files:\n", file=sys.stderr)
         for err in all_errors:
             print(f"  - {err}", file=sys.stderr)
         sys.exit(1)
     else:
-        print(f"✅ OKF v0.2 Linter Passed! Checked {file_count} Markdown files in '{wiki_dir_arg}'.")
+        print(f"✅ OKF v0.2 Linter Passed! Checked {file_count} Markdown files in '{args.wiki_dir}'.")
         sys.exit(0)
 
 if __name__ == "__main__":

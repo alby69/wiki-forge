@@ -49,9 +49,28 @@ def main():
     parser.add_argument("--output", default="output/thesis_final.pdf", help="Output PDF file")
     parser.add_argument("--engine", default="xelatex", help="Pandoc PDF engine (e.g., xelatex, pdflatex, wkhtmltopdf, weasyprint)")
     parser.add_argument("--no-toc", action="store_true", help="Disable Table of Contents")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    export_pdf(Path(args.input).resolve(), Path(args.output).resolve(), args.engine, not args.no_toc)
+    out_pdf = Path(args.output).resolve()
+    try:
+        export_pdf(Path(args.input).resolve(), out_pdf, args.engine, not args.no_toc)
+        if args.json:
+            import json
+            print(json.dumps({
+                "status": "success",
+                "output_path": str(out_pdf)
+            }))
+    except SystemExit:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": "Failed to export PDF"}))
+        sys.exit(1)
+    except Exception as exc:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": str(exc)}))
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

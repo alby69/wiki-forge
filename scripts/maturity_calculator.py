@@ -113,12 +113,18 @@ def main():
     parser.add_argument("--write", action="store_true", help="Write calculated maturity values back to YAML frontmatter")
     parser.add_argument("--dry-run", action="store_true", help="Calculate without writing changes")
     parser.add_argument("--min-score", type=int, default=0, help="Filter output by minimum maturity score")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
     target_path = Path(args.path).resolve()
 
     if not target_path.exists():
-        print(f"Error: Path '{target_path}' does not exist.", file=sys.stderr)
+        msg = f"Error: Path '{target_path}' does not exist."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     files = [target_path] if target_path.is_file() else list(target_path.glob("**/*.md"))
@@ -129,17 +135,28 @@ def main():
             continue
         res = update_file_maturity(f, write=args.write and not args.dry_run)
         if res.get("maturita", 0) >= args.min_score:
-            results.append(res)
+            res_copy = dict(res)
+            res_copy["file"] = str(res_copy["file"])
+            results.append(res_copy)
 
     results.sort(key=lambda x: x.get("maturita", 0), reverse=True)
 
-    print(f"📊 Maturity Overview ({len(results)} notes analyzed):")
-    print(f"{'Maturity':<10} {'State':<10} {'Sources':<10} {'Links':<8} {'File'}")
-    print("-" * 65)
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "count": len(results),
+            "results": results
+        }))
+    else:
+        print(f"📊 Maturity Overview ({len(results)} notes analyzed):")
+        print(f"{'Maturity':<10} {'State':<10} {'Sources':<10} {'Links':<8} {'File'}")
+        print("-" * 65)
 
-    for r in results:
-        rel_f = r['file'].relative_to(target_path.parent) if target_path.parent in r['file'].parents else r['file'].name
-        print(f"{r.get('maturita', 0):<10} {r.get('stato', 'draft'):<10} {r.get('copertura_fonti', 0):<10} {r.get('collegamenti', 0):<8} {rel_f}")
+        for r in results:
+            f_path = Path(r['file'])
+            rel_f = f_path.relative_to(target_path.parent) if target_path.parent in f_path.parents else f_path.name
+            print(f"{r.get('maturita', 0):<10} {r.get('stato', 'draft'):<10} {r.get('copertura_fonti', 0):<10} {r.get('collegamenti', 0):<8} {rel_f}")
 
 if __name__ == "__main__":
     main()

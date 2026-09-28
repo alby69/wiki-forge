@@ -103,10 +103,20 @@ def check_version_sync(repo_root: Path) -> list[str]:
     return errors
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Check documentation and skills synchronization")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
     repo_root = Path(__file__).resolve().parent.parent
     commands = parse_skill_commands(repo_root)
     if not commands:
-        print("ERROR: No commands found in skills/*/SKILL.md frontmatter.", file=sys.stderr)
+        msg = "ERROR: No commands found in skills/*/SKILL.md frontmatter."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     all_errors = []
@@ -122,6 +132,15 @@ def main():
     # Check version parity
     version_errors = check_version_sync(repo_root)
     all_errors.extend(version_errors)
+
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "error" if all_errors else "success",
+            "commands_checked": len(commands),
+            "errors": all_errors
+        }))
+        sys.exit(1 if all_errors else 0)
 
     if all_errors:
         print("❌ Doc & Skill Sync Verification Failed:\n", file=sys.stderr)

@@ -170,7 +170,7 @@ def already_converted(output_dir: Path, stem: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool) -> None:
+def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool, quiet: bool = False) -> tuple[int, int, int]:
     """Walk `input_dir`, convert every supported file into `output_dir`."""
     output_dir.mkdir(parents=True, exist_ok=True)
     pandoc_ok = check_pandoc()
@@ -179,8 +179,9 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool) -> None:
         p for p in input_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTS
     )
     if not files:
-        print(f"No PDF/EPUB/DOCX/MD/TXT files found in {input_dir}")
-        return
+        if not quiet:
+            print(f"No PDF/EPUB/DOCX/MD/TXT files found in {input_dir}", file=sys.stderr)
+        return 0, 0, 0
 
     ok, skipped, failed = 0, 0, 0
     for f in files:
@@ -189,11 +190,13 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool) -> None:
 
         # Idempotency: never overwrite an existing conversion.
         if already_converted(output_dir, f.stem):
-            print(f"Skip (already converted): {f.name}")
+            if not quiet:
+                print(f"Skip (already converted): {f.name}", file=sys.stderr)
             skipped += 1
             continue
 
-        print(f"Convert: {f.name} -> {out_path.name}")
+        if not quiet:
+            print(f"Convert: {f.name} -> {out_path.name}", file=sys.stderr)
         try:
             if ext in PDF_EXTS:
                 convert_pdf(f, out_path, use_ocr=use_ocr)
@@ -213,10 +216,13 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool) -> None:
             print(f"  ERROR on {f.name}: {exc}", file=sys.stderr)
             failed += 1
 
-    print(
-        f"\nDone: {ok} converted, {skipped} skipped (already present), "
-        f"{failed} failed. Output in: {output_dir}"
-    )
+    if not quiet:
+        print(
+            f"\nDone: {ok} converted, {skipped} skipped (already present), "
+            f"{failed} failed. Output in: {output_dir}",
+            file=sys.stderr
+        )
+    return ok, skipped, failed
 
 
 def main() -> None:
@@ -244,14 +250,33 @@ def main() -> None:
         default=bool(conv.get("ocr", False)),
         help="Note scanned PDFs (real OCR needs a separate step, see README).",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output result as JSON object on stdout.",
+    )
     args = parser.parse_args()
 
     input_dir = Path(args.input)
     if not input_dir.is_dir():
-        print(f"Invalid input folder: {input_dir}", file=sys.stderr)
+        msg = f"Invalid input folder: {input_dir}"
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
-    process_folder(input_dir, Path(args.output), args.ocr)
+    result = process_folder(input_dir, Path(args.output), args.ocr, quiet=args.json)
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "ok": result[0],
+            "skipped": result[1],
+            "failed": result[2],
+            "output_dir": str(args.output),
+        }))
 
 
 if __name__ == "__main__":

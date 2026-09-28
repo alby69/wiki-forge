@@ -6,10 +6,10 @@ generated: 2026-09-28
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 44 |
-| Total wikilinks | 407 |
+| Total articles | 45 |
+| Total wikilinks | 328 |
 | Broken links | 0 |
-| Orphan articles | 1 |
+| Orphan articles | 2 |
 | Thematic wikis | 3 |
 | Sources ingested | 0 |
 
@@ -17,13 +17,13 @@ generated: 2026-09-28
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[stefano-gatti]] | 38 |
-| [[andrej-karpathy]] | 30 |
-| [[hr-ai-maturita]] | 21 |
-| [[nello-cristianini]] | 21 |
-| [[bullshit-jobs]] | 20 |
-| [[mappa-teorica-tesi]] | 19 |
-| [[agenti-sicurezza]] | 18 |
-| [[sequoia-ascent-2026]] | 17 |
-| [[dario-amodei]] | 15 |
-| [[sovrumano-ani-agi-asi]] | 14 |
+| [[stefano-gatti]] | 36 |
+| [[andrej-karpathy]] | 28 |
+| [[hr-ai-maturita]] | 19 |
+| [[nello-cristianini]] | 19 |
+| [[bullshit-jobs]] | 18 |
+| [[mappa-teorica-tesi]] | 17 |
+| [[agenti-sicurezza]] | 16 |
+| [[sequoia-ascent-2026]] | 15 |
+| [[dario-amodei]] | 13 |
+| [[verifiability]] | 12 |

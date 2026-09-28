@@ -7,6 +7,7 @@ export class MainLayout {
   public headerContainer!: HTMLElement;
   public graphControlsContainer!: HTMLElement;
   public chatContainer!: HTMLElement;
+  public mainContentArea!: HTMLElement;
   private sidebarWidth = 280;
   private contextWidth = 280;
   private editorFlex = 1;
@@ -52,6 +53,7 @@ export class MainLayout {
     this.contextContainer = this.container.querySelector('#context-root')!;
     this.graphControlsContainer = this.container.querySelector('#graph-controls-root')!;
     this.chatContainer = this.container.querySelector('#chat-root')!;
+    this.mainContentArea = this.container.querySelector('#main-content-area')!;
 
     this.bindResizers();
   }

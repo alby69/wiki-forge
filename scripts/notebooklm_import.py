@@ -58,14 +58,39 @@ def process_file(input_path: Path, output_dir: Path, source_name: str) -> Path:
 
 def main():
     parser = argparse.ArgumentParser(description="Importa export Markdown da NotebookLM in wiki-forge.")
-    parser.add_argument("input_file", type=Path, help="Percorso del file .md esportato da NotebookLM")
+    parser.add_argument("input_file", nargs="?", type=Path, help="Percorso del file .md esportato da NotebookLM")
+    parser.add_argument("--input-file", dest="opt_input_file", type=Path, help="Percorso del file .md esportato da NotebookLM")
     parser.add_argument("--source", type=str, default="NotebookLM Session", help="Nome descrittivo della fonte")
     parser.add_argument("--output-dir", type=Path, default=Path("raw"), help="Cartella di destinazione (default: raw)")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
+    target_input = args.opt_input_file or args.input_file
+    if not target_input:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": "input_file is required"}))
+        else:
+            parser.print_help()
+        sys.exit(1)
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    process_file(args.input_file, args.output_dir, args.source)
+    try:
+        out_path = process_file(target_input, args.output_dir, args.source)
+        if args.json:
+            import json
+            print(json.dumps({"status": "success", "output_path": str(out_path)}))
+    except SystemExit:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": f"File {target_input} not found"}))
+        sys.exit(1)
+    except Exception as exc:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": str(exc)}))
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -99,14 +99,32 @@ def compute_okf_stats(wiki_dir: Path) -> dict:
     }
 
 def main():
-    wiki_dir_arg = sys.argv[1] if len(sys.argv) > 1 else "wiki"
-    wiki_root = Path(wiki_dir_arg).resolve()
+    import argparse
+    parser = argparse.ArgumentParser(description="OKF v0.2 Bundle Analytics and Statistics")
+    parser.add_argument("wiki_dir", nargs="?", default="wiki", help="Path to wiki directory")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
+    wiki_root = Path(args.wiki_dir).resolve()
 
     if not wiki_root.exists() or not wiki_root.is_dir():
-        print(f"Error: Path '{wiki_root}' does not exist.", file=sys.stderr)
+        msg = f"Error: Path '{wiki_root}' does not exist."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     stats = compute_okf_stats(wiki_root)
+
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "stats": stats
+        }))
+        return
 
     print("==========================================")
     print("      OKF v0.2 BUNDLE METRICS REPORT      ")

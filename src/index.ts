@@ -19,6 +19,7 @@ import { ChatDrawer } from './components/chat/ChatDrawer';
 import { ConfigManager } from './components/ConfigManager';
 import { ToolsModal } from './components/tools/ToolsModal';
 import { OnboardingWizard } from './components/simple-mode/OnboardingWizard';
+import { SimpleModeDashboard } from './components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from './components/advanced-mode/VersionTimeline';
 
 export class WikiForgeApp {
@@ -40,6 +41,7 @@ export class WikiForgeApp {
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
   private onboardingWizard!: OnboardingWizard;
+  private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
 
   constructor(rootContainer: HTMLElement) {
@@ -261,6 +263,17 @@ Backlink to [[01-index]].
       },
       target => this.openWikilink(target)
     );
+
+    this.simpleDashboard = new SimpleModeDashboard(this.layout.mainContentArea, {
+      storage: this.storage,
+      onOpenChat: () => this.chatDrawer.open(),
+      onVaultUpdated: () => void this.loadVault(),
+    });
+
+    appStore.subscribe(state => {
+      this.simpleDashboard.setVisible(!state.isAdvancedMode);
+    });
+    this.simpleDashboard.setVisible(!appStore.getState().isAdvancedMode);
 
     this.layout.setViewMode('split');
   }

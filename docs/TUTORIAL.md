@@ -10,7 +10,7 @@
 Quando affronti un progetto complesso — come una **Tesi Magistrale**, una ricerca di mercato o un manuale operativo — accumuli decine di PDF, articoli e appunti. Con i metodi tradizionali incontri due limiti principali:
 
 1. **Memoria frammentata**: Dopo qualche mese ricordi di aver letto un concetto fondamentale, ma non ricordi più in quale dei tuoi 50 PDF si trovi.
-2. **Chatbot tradizionali (RAG classico) inefficienti**: Incollare centinaia di documenti ad ogni domanda è lento, costoso e costringe l'IA a ripartire da zero ogni volta.
+2. **Chatbot tradizionali inefficienti**: Incollare centinaia di documenti ad ogni domanda è lento, costoso e costringe l'IA a ripartire da zero ogni volta.
 
 Wiki-Forge risolve questo problema trasformando l'IA in un **Knowledge Engineer (Ingegnere della Conoscenza)**. L'IA non si limita a rispondere a una domanda passeggera: **costruisce, aggiorna e organizza nel tempo una Wiki interconnessa in formato Markdown**, che rimane salvata sul tuo computer.
 
@@ -18,9 +18,52 @@ Wiki-Forge risolve questo problema trasformando l'IA in un **Knowledge Engineer 
 
 ---
 
-## 2. Le 5 Fasi Cronologiche per Costruire una Knowledge Base Dinamica
+## 2. 🌟 Guida Rapida in 3 Passi (Per Tutti)
 
-Per guidare un operatore dalla prima bozza fino al documento finale (es. una Tesi Magistrale stampabile e consultabile), Wiki-Forge segue un flusso logico in **5 Fasi Cronologiche**:
+In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passaggi senza bisogno di comandi tecnici o di usare il terminale:
+
+```
+  ┌───────────────────┐      ┌───────────────────┐      ┌───────────────────┐
+  │ 1. 📥 Carica     │ ───> │ 2. ⚡ Compila     │ ───> │ 3. 💬 Esplora     │
+  │    Documenti      │      │    Wiki           │      │    o Esporta      │
+  └───────────────────┘      └───────────────────┘      └───────────────────┘
+```
+
+1. **Carica**: Trascina i tuoi documenti PDF, DOCX, EPUB o TXT nell'area **"📥 Carica Documenti"** nella Web UI (oppure incollali nella cartella `sources/`).
+2. **Elabora**: Premi il pulsante **"⚡ Compila Wiki"**. Il sistema converte automaticamente i file, estrae i concetti principali e crea i collegamenti tra le note.
+3. **Esplora o Esporta**: Chiedi risposte e mappe concettuali alla chat tramite **"💬 Chiedi alla Wiki"**, oppure clicca su **"📄 Esporta PDF"** per generare il documento finale.
+
+---
+
+### 🎯 Scenari di Utilizzo Pratici
+
+#### Scenario A: Lo Studente Universitario (Tesi di Laurea)
+- **Obiettivo**: Gestire 50+ paper accademici e produrre una tesi di laurea formattata.
+- **Flusso**:
+  1. Carica i PDF dei paper nell'area **"Carica Documenti"**.
+  2. Clicca su **"Compila Wiki"**.
+  3. Fai domande alla chat: *"Crea una mappa concettuale che colleghi le teorie di Graeber e Cristianini presenti nei paper"*.
+  4. Per generare la tesi finale, usa il comando `/thesis-chapter` per unire le note e scarica il PDF finale pronto per la stampa.
+
+#### Scenario B: Il Professionista (Gestione Riunioni e Progetti)
+- **Obiettivo**: Non perdere le decisioni prese durante le riunioni e organizzare i progetti aziendali.
+- **Flusso**:
+  1. Incolla il trascritto di una riunione nella chat con il comando `/note Riunione 28/09: decidiamo di usare Wiki-Forge`.
+  2. A fine settimana, usa `/promote-note` per trasformare gli appunti in una pagina wiki strutturata.
+  3. Cerca istantaneamente le decisioni passate chiedendo alla chat: *"Quali scadenze abbiamo fissato per il progetto X?"*.
+
+#### Scenario C: L'Appassionato (Ricette, Manuali, Hobby)
+- **Obiettivo**: Creare un archivio personale di conoscenze consultabile in mobilità.
+- **Flusso**:
+  1. Usa lo strumento **Web Clipper** nella UI per salvare articoli e ricette da siti web.
+  2. Il sistema converte la pagina in testo pulito, suggerisce automaticamente i tag (es. `#cucina/italiana`) e la salva nella wiki.
+  3. Chiedi alla chat: *"Mostrami tutte le ricette con i funghi salvate il mese scorso"*.
+
+---
+
+## 3. 🚀 Workflow Avanzato (Per Utenti Esperti)
+
+Per gli utenti avanzati che desiderano il controllo totale sui processi di ingestion, linting, metadati OKF v0.2 e compilazione, Wiki-Forge offre un flusso strutturato in **5 Fasi Cronologiche**:
 
 ```
  ┌─────────────────────────────────────────────────────────────┐
@@ -53,7 +96,7 @@ Per guidare un operatore dalla prima bozza fino al documento finale (es. una Tes
  ┌─────────────────────────────────────────────────────────────┐
  │ FASE 5: Proiezione Statica & Compilazione PDF               │
  │ /thesis-chapter, generate_thesis, export_thesis_pdf         │
- └─────────────────────────────────────────────────────────────┘
+ └──────────────────────────────┘
 ```
 
 ---
@@ -210,7 +253,7 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
 
 ---
 
-## 3. Comandi di Manutenzione Periodica della Wiki
+## 4. Comandi di Manutenzione Periodica della Wiki
 
 Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2:
 
@@ -228,7 +271,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 
 ---
 
-## 4. Guida alla Risoluzione Problemi (Troubleshooting)
+## 5. Guida alla Risoluzione Problemi (Troubleshooting)
 
 ### "L'agente non trova i file grezzi in raw/"
 - Verifica che `config.toml` contenga `raw = "raw"`.
