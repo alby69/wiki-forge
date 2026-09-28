@@ -35,7 +35,7 @@ A fundamental principle of `wiki-forge` is the distinction between **Parametric 
        │                             │                              │
        ▼                             ▼                              ▼
 +──────────────+              +──────────────+              +──────────────────────+
-|  `wiki/` KB  |              |  Local/Cloud |              | 15 Python CLI        |
+|  `wiki/` KB  |              |  Local/Cloud |              | 16 Python CLI        |
 |  (OKF v0.2)  |              |  LLM Engine  |              | Scripts & Tooling    |
 +──────────────+              +──────────────+              +──────────────────────+
 ```
@@ -67,12 +67,17 @@ Implemented in `config.toml` (`[okf]`), `scripts/okf_*.py`, and Makefile:
 - **Validation & Indexing**: `okf_lint.py` validates schema compliance; `okf_reindex.py` auto-generates OKF §8 `index.md`; `okf_log.py` logs chronological changes into `wiki/log.md` (OKF §9); `okf_stats.py` provides bundle analytics.
 
 ### 2.5 Incremental Versioning & Snapshot Rollback Engine
-Implemented in `scripts/versioning.py`, `wiki/versions/`, and `AGENT.md` (`/rollback` command):
+Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/components/versioning/`, and `AGENT.md` (`/rollback`, `/history`, `/diff` commands):
 - **Source/Synthesis Isolation**: Original sources remain untouched in `sources/` (`backup/`) and `raw/`.
 - **Version Snapshots**: Every `/compile` or major update creates a version snapshot (`wiki/versions/<note>.v1.md`, `.v2.md`).
-- **Agent Rollback**: `/rollback note=<note> [to=version]` restores previous state, appends audit entries to `wiki/log.md`, and updates indices.
+- **Agent Commands & Web UI**: `/rollback note=<note> [to=version]` restores previous state with safety net backup, `/history` lists snapshots, and `/diff` renders unified diffs. The Web UI includes `VersionHistoryPanel.ts` and `DiffViewer.ts` for timeline view and 1-click restore.
 
-### 2.6 Multi-Project Workspace Management
+### 2.6 OKF Model Context Protocol (MCP) Server
+Implemented in `src/server/mcp_server.py` and `docker-compose.yml`:
+- **Tools Exposed**: `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, and `get_version_history`.
+- **Multi-Agent Ecosystem Support**: Enables external LLM agents (Claude, GPT) to query and cite the OKF knowledge base over standard MCP JSON-RPC protocol.
+
+### 2.7 Multi-Project Workspace Management
 Implemented in `projects/` and `src/components/ConfigManager.ts`:
 - **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
 - **GUI Config Manager**: Web UI modal allows editing project metadata, folder paths, LLM provider settings, and OKF taxonomy using `smol-toml`.
