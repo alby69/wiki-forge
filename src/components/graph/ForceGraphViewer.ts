@@ -21,15 +21,12 @@ export class ForceGraphViewer implements IGraphViewer {
 
   public render(container: HTMLElement, data: GraphData): void {
     this.container = container;
+    this.container.style.position = 'relative';
+
     if (!this.fg) {
       container.innerHTML = '';
-      // force-graph exposes a Kapsule factory: call it once to get the
-      // instance generator, then call that with the DOM node to bind + mount
-      // the canvas. The single-call form returns a generator and never paints.
       const makeInstance = ForceGraph as unknown as (() => (el: HTMLElement) => ForceGraph);
-      // The container may not be laid out yet (0x0); never pass 0 or the canvas
-      // stays invisible. Fall back to a sane size — the ResizeObserver below
-      // snaps it to the real dimensions as soon as layout settles.
+
       const init = () => {
         const width = container.clientWidth || 800;
         const height = container.clientHeight || 600;
@@ -52,14 +49,13 @@ export class ForceGraphViewer implements IGraphViewer {
             .onBackgroundClick(() => this.clearHighlight())
             .minZoom(0.2)
             .maxZoom(8);
+
+          this.renderLegend(container);
         } catch (err) {
           container.innerHTML = `<pre style="color:#fc8181;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:12px;">Graph failed to initialise:\n\n${err instanceof Error ? err.stack ?? err.message : String(err)}</pre>`;
           return;
         }
 
-        // Push whatever data we already hold (render() is often called with the
-        // empty seed before the vault finishes loading) and fit it once the
-        // force simulation has had a tick to assign node coordinates.
         this.fg.graphData(this.data);
         this.scheduleFit();
 
@@ -67,8 +63,6 @@ export class ForceGraphViewer implements IGraphViewer {
           if (!this.fg) return;
           const w = container.clientWidth;
           const h = container.clientHeight;
-          // Guard against 0x0: a zero-sized container would make the canvas
-          // invisible and the graph would drift off-screen. Keep the last size.
           if (w > 0 && h > 0) this.fg.width(w).height(h);
         });
         this.resizeObs.observe(container);
@@ -80,8 +74,33 @@ export class ForceGraphViewer implements IGraphViewer {
     this.setData(data);
   }
 
-  /** Re-fit the graph a couple of times so it centres correctly even if the
-   *  first frames ran while the canvas had no real size. */
+  private renderLegend(container: HTMLElement): void {
+    const legend = document.createElement('div');
+    legend.id = 'graph-trust-legend';
+    legend.style.cssText = `
+      position: absolute; bottom: 16px; left: 16px; background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; font-size: 11px;
+      color: #f8fafc; backdrop-filter: blur(4px); pointer-events: none; z-index: 10;
+      display: flex; flex-direction: column; gap: 4px;
+    `;
+    legend.innerHTML = `
+      <div style="font-weight: 700; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">OKF TRUST TIERS</div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Human-Reviewed
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #60a5fa;"></span> Machine-Confirmed
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Unverified
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #ef4444; background: transparent;"></span> Orphan Note
+      </div>
+    `;
+    container.appendChild(legend);
+  }
+
   private scheduleFit(): void {
     if (!this.fg) return;
     const fit = () => {
@@ -137,12 +156,10 @@ export class ForceGraphViewer implements IGraphViewer {
     this.activeFilter = options;
   }
 
-  /** Zoom in / out by a multiplicative factor (Obsidian-style buttons). */
   public zoomBy(factor: number): void {
     if (this.fg) this.fg.zoom(this.fg.zoom() * factor, 300);
   }
 
-  /** Fit the whole graph into view. */
   public zoomToFit(): void {
     if (this.fg) this.fg.zoomToFit(400, 40);
   }
@@ -158,8 +175,6 @@ export class ForceGraphViewer implements IGraphViewer {
     if (this.container) this.container.innerHTML = '';
   }
 
-  // --- internals ---------------------------------------------------------
-
   private activeId(): string | null {
     return this.hoverNodeId ?? this.highlightedNodeId;
   }
@@ -172,7 +187,6 @@ export class ForceGraphViewer implements IGraphViewer {
 
   private refresh(): void {
     if (!this.fg) return;
-    // Re-assigning the same accessors forces force-graph to repaint.
     this.fg
       .nodeColor(this.nodeColorFn)
       .linkColor(this.linkColorFn)
@@ -180,17 +194,17 @@ export class ForceGraphViewer implements IGraphViewer {
   }
 
   private nodeColorFn = (node: any): string => {
-    const color = (node.color as string) || '#90a4ae';
+    const color = (node.color as string) || '#94a3b8';
     return this.isActive(node.id) ? color : this.dim(color);
   };
 
   private linkColorFn = (link: any): string => {
     const active = this.activeId();
-    if (!active) return 'rgba(160,174,192,0.35)';
+    if (!active) return 'rgba(148,163,184,0.35)';
     const s = this.endId(link.source);
     const t = this.endId(link.target);
-    if (s === active || t === active) return 'rgba(100,181,246,0.85)';
-    return 'rgba(160,174,192,0.08)';
+    if (s === active || t === active) return 'rgba(96,165,250,0.85)';
+    return 'rgba(148,163,184,0.08)';
   };
 
   private linkWidthFn = (link: any): number => {
@@ -203,17 +217,21 @@ export class ForceGraphViewer implements IGraphViewer {
 
   private nodeCanvasObj = (node: any, ctx: CanvasRenderingContext2D, globalScale: number): void => {
     const val = typeof node.val === 'number' ? node.val : 1;
-    const r = Math.max(3, Math.sqrt(val) * 2.2);
+    const r = Math.max(3.5, Math.sqrt(val) * 2.2);
     const active = this.isActive(node.id);
-    const color = (node.color as string) || '#90a4ae';
+    const color = (node.color as string) || '#94a3b8';
 
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
     ctx.fillStyle = active ? color : this.dim(color);
     ctx.fill();
 
-    if (node.id === this.highlightedNodeId) {
-      ctx.lineWidth = 1.5 / globalScale;
+    if (node.isOrphan) {
+      ctx.lineWidth = 1.8 / globalScale;
+      ctx.strokeStyle = '#ef4444';
+      ctx.stroke();
+    } else if (node.id === this.highlightedNodeId) {
+      ctx.lineWidth = 1.8 / globalScale;
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
     }
@@ -222,18 +240,19 @@ export class ForceGraphViewer implements IGraphViewer {
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = active ? '#e2e8f0' : 'rgba(203,213,225,0.4)';
+    ctx.fillStyle = active ? '#f8fafc' : 'rgba(203,213,225,0.4)';
     ctx.fillText(node.label, node.x, node.y + r + 1);
   };
 
   private tooltip(node: any): string {
-    const tags = Array.isArray(node.tags) && node.tags.length ? `  ·  #${node.tags.join('  #')}` : '';
-    return `<b>${node.label}</b>  (${node.group || 'wiki'})${tags}`;
+    const tags = Array.isArray(node.tags) && node.tags.length ? ` · #${node.tags.join('  #')}` : '';
+    const trust = node.trustTier ? ` · Tier: ${node.trustTier}` : '';
+    return `<b>${node.label}</b> (${node.group || 'wiki'})${trust}${tags}`;
   }
 
   private nodePointerArea = (node: any, paintColor: string, ctx: CanvasRenderingContext2D): void => {
     const val = typeof node.val === 'number' ? node.val : 1;
-    const r = Math.max(3, Math.sqrt(val) * 2.2) + 2;
+    const r = Math.max(3.5, Math.sqrt(val) * 2.2) + 2;
     ctx.fillStyle = paintColor;
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
@@ -266,6 +285,6 @@ export class ForceGraphViewer implements IGraphViewer {
   private dim(color: string): string {
     return color.length === 7 && color.startsWith('#')
       ? `${color}40`
-      : 'rgba(144,164,174,0.25)';
+      : 'rgba(148,163,184,0.25)';
   }
 }

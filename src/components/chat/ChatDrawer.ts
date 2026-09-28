@@ -58,7 +58,7 @@ export class ChatDrawer {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`.',
+        text: '### 🤖 Wiki-Forge Agent Assistant\n\nBenvenuto! Come posso aiutarti con la tua Knowledge Base?\n\nScegli un\'azione rapida qui sotto o fai una domanda.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -87,7 +87,7 @@ export class ChatDrawer {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: '### 🤖 OpenCode Agent Assistant\n\nWelcome! How can I assist with your knowledge base?\n\nTry slash shortcuts: `/consult`, `/compile`, `/audit`, `/trace`, `/reindex`, `/wizard`.',
+        text: '### 🤖 Wiki-Forge Agent Assistant\n\nBenvenuto! Come posso aiutarti con la tua Knowledge Base?\n\nScegli un\'azione rapida qui sotto o fai una domanda.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -112,53 +112,41 @@ export class ChatDrawer {
   public render(): void {
     this.container.style.display = this.isOpen ? 'flex' : 'none';
     this.container.style.flexDirection = 'column';
-    this.container.style.width = '360px';
+    this.container.style.width = '380px';
     this.container.style.height = '100%';
-    this.container.style.background = '#151619';
-    this.container.style.borderLeft = '1px solid #2d3748';
+    this.container.style.background = '#0f172a';
+    this.container.style.borderLeft = '1px solid #1e293b';
     this.container.style.boxSizing = 'border-box';
 
     this.container.innerHTML = `
-      <div style="padding: 12px 16px; background: #121316; border-bottom: 1px solid #2d3748; display: flex; align-items: center; justify-content: space-between;">
-        <div style="font-weight: 600; color: #64b5f6; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-          <span>💬</span> OpenCode Assistant
+      <div style="padding: 12px 16px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;">
+        <div style="font-weight: 600; color: #60a5fa; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+          <span>💬</span> Agent Assistant
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button id="chat-clear-btn" title="Clear history" style="background: none; border: none; color: #a0aec0; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
-          <button id="chat-close-btn" style="background: none; border: none; color: #a0aec0; font-size: 16px; cursor: pointer;">&times;</button>
+          <button id="chat-clear-btn" title="Clear history" style="background: none; border: none; color: #94a3b8; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
+          <button id="chat-close-btn" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;">&times;</button>
         </div>
       </div>
 
-      <div style="padding: 8px 12px; background: #1a1c23; border-bottom: 1px solid #2d3748; display: flex; gap: 6px; overflow-x: auto;" class="chat-shortcuts">
-        <button data-cmd="/consult" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔍 /consult</button>
-        <button data-cmd="/compile" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ /compile</button>
-        <button data-cmd="/audit" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
-        <button data-cmd="/trace" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
-        <button data-cmd="/reindex" style="background: #2d3748; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
-        <button data-cmd="/wizard" style="background: #553c9a; color: #f3e8ff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">🪄 /wizard</button>
-      </div>
-
-      <div style="padding: 6px 12px; background: #1a1c23; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a0aec0;">
-        <span style="white-space: nowrap;">🪄 Wizard scenario:</span>
-        <select id="chat-wizard-select" title="Choose a wizard scenario to launch in chat" style="flex: 1; background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer;">
-          <option value="">Pick a scenario…</option>
-          <option value="academic">🎓 Academic / Thesis</option>
-          <option value="business">🏢 Business KB</option>
-          <option value="research">📰 Competitive Research</option>
-          <option value="creative">✍️ Fiction / Worldbuilding</option>
-          <option value="existing">🧭 Existing Wiki</option>
-        </select>
+      <div style="padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 6px; overflow-x: auto;" class="chat-shortcuts">
+        <button data-cmd="/consult" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔍 /consult</button>
+        <button data-cmd="/compile" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ /compile</button>
+        <button data-cmd="/audit" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
+        <button data-cmd="/trace" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
+        <button data-cmd="/reindex" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
+        <button data-cmd="/wizard" style="background: #4f46e5; color: #ffffff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🪄 /wizard</button>
       </div>
 
       <div id="chat-messages-list" style="flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.5;">
         ${this.renderMessages()}
       </div>
 
-      <div style="padding: 12px; background: #121316; border-top: 1px solid #2d3748; display: flex; flex-direction: column; gap: 8px;">
-        <textarea id="chat-input" placeholder="Ask a question or type /consult..." style="width: 100%; height: 60px; background: #18191c; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 8px; font-family: inherit; font-size: 12px; resize: none; box-sizing: border-box;"></textarea>
+      <div style="padding: 12px; background: #020617; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px;">
+        <textarea id="chat-input" placeholder="Chiedi qualcosa o seleziona un'azione..." style="width: 100%; height: 60px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; padding: 8px; font-family: inherit; font-size: 12px; resize: none; box-sizing: border-box;"></textarea>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 10px; color: #718096;">Press Enter to send</span>
-          <button id="chat-send-btn" style="background: #3182ce; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Send</button>
+          <span style="font-size: 10px; color: #64748b;">Invio per spedire</span>
+          <button id="chat-send-btn" style="background: #4f46e5; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Invia</button>
         </div>
       </div>
     `;
@@ -170,19 +158,32 @@ export class ChatDrawer {
     return this.messages
       .map(msg => {
         const isUser = msg.sender === 'user';
-        const bg = isUser ? '#2b6cb0' : '#1e2330';
+        const bg = isUser ? '#4338ca' : '#1e293b';
         const align = isUser ? 'flex-end' : 'flex-start';
 
-        return `
-          <div style="align-self: ${align}; max-width: 90%; display: flex; flex-direction: column; gap: 4px;">
-            <div style="background: ${bg}; padding: 10px 12px; border-radius: 8px; color: #e2e8f0;" class="markdown-body">
-              ${renderMarkdown(msg.text)}
+        const actionChipsHtml = !isUser
+          ? `
+            <div class="action-chips-container">
+              <button class="action-chip" data-chip-cmd="/study-guide">📝 Guida Studio</button>
+              <button class="action-chip" data-chip-cmd="/mindmap">📊 Mappa Concettuale</button>
+              <button class="action-chip" data-chip-cmd="/quiz">🧪 Quiz</button>
+              <button class="action-chip" data-chip-cmd="/audio-overview">🎙️ Audio Script</button>
+              <button class="action-chip" data-chip-cmd="/deep-research">🔬 Deep Research</button>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #718096; padding: 0 4px;">
+          `
+          : '';
+
+        return `
+          <div style="align-self: ${align}; max-width: 92%; display: flex; flex-direction: column; gap: 4px;">
+            <div style="background: ${bg}; padding: 10px 12px; border-radius: 12px; color: #f8fafc;" class="markdown-body">
+              ${renderMarkdown(msg.text)}
+              ${actionChipsHtml}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; padding: 0 4px;">
               <span>${msg.timestamp}</span>
               ${
                 !isUser
-                  ? `<button class="attach-btn" data-msg-id="${msg.id}" style="background: none; border: none; color: #64b5f6; cursor: pointer; font-size: 10px; padding: 0;">📌 Attach to Wiki</button>`
+                  ? `<button class="attach-btn" data-msg-id="${msg.id}" style="background: none; border: none; color: #60a5fa; cursor: pointer; font-size: 10px; padding: 0;">📌 Salva nella Wiki</button>`
                   : ''
               }
             </div>
@@ -227,14 +228,13 @@ export class ChatDrawer {
       });
     });
 
-    const wizardSelect = this.container.querySelector('#chat-wizard-select') as HTMLSelectElement;
-    wizardSelect?.addEventListener('change', () => {
-      const scenario = wizardSelect.value;
-      if (scenario) {
-        input.value = `/wizard ${scenario} `;
-        input.focus();
-        wizardSelect.value = '';
-      }
+    this.container.querySelectorAll('.action-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cmd = chip.getAttribute('data-chip-cmd');
+        if (cmd) {
+          void this.handleSendMessage(cmd);
+        }
+      });
     });
 
     this.container.querySelectorAll('.attach-btn').forEach(btn => {
