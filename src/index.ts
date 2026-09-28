@@ -7,6 +7,7 @@ import { WikiNote } from './core/types/wiki';
 import { MarkdownParser } from './services/markdownParser';
 import { GraphService } from './services/graphService';
 import { ApiStorage } from './storage/ApiStorage';
+import { appStore } from './store/appStore';
 import { MainLayout } from './components/ui/MainLayout';
 import { Header } from './components/ui/Header';
 import { Sidebar } from './components/ui/Sidebar';
@@ -17,6 +18,8 @@ import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
 import { ConfigManager } from './components/ConfigManager';
 import { ToolsModal } from './components/tools/ToolsModal';
+import { OnboardingWizard } from './components/simple-mode/OnboardingWizard';
+import { VersionTimeline } from './components/advanced-mode/VersionTimeline';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -36,11 +39,23 @@ export class WikiForgeApp {
   private chatDrawer!: ChatDrawer;
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
+  private onboardingWizard!: OnboardingWizard;
+  private versionTimeline!: VersionTimeline;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
     this.initUI();
     void this.loadVault();
+    this.checkFirstLaunchOnboarding();
+  }
+
+  private checkFirstLaunchOnboarding(): void {
+    const { onboardingCompleted } = appStore.getState();
+    if (!onboardingCompleted) {
+      setTimeout(() => {
+        this.onboardingWizard.open();
+      }, 500);
+    }
   }
 
   private async loadVault(): Promise<void> {
@@ -65,6 +80,7 @@ export class WikiForgeApp {
         `---
 title: System Architecture
 tags: [architecture, core]
+version: 1
 ---
 # System Architecture
 
@@ -80,6 +96,7 @@ The **Wiki-Forge** project utilizes a decoupled architecture split into UI, Core
         `---
 title: C64 Development
 tags: [assembly, c64]
+version: 1
 ---
 # C64 Development
 
@@ -94,6 +111,7 @@ Links to [[01-index]].
         `---
 title: LLM Agent Pipeline
 tags: [python, agent, llm]
+version: 1
 ---
 # LLM Agent Pipeline
 
@@ -118,6 +136,18 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
+    this.onboardingWizard = new OnboardingWizard({
+      storage: this.storage,
+      onComplete: () => {
+        void this.loadVault();
+      },
+    });
+
+    this.versionTimeline = new VersionTimeline(this.storage, note => {
+      this.selectedNote = note;
+      void this.loadVault();
+    });
+
     this.header = new Header(
       this.layout.headerContainer,
       mode => {
@@ -135,6 +165,9 @@ Backlink to [[01-index]].
       },
       () => {
         void this.toolsModal.open();
+      },
+      () => {
+        this.onboardingWizard.open();
       }
     );
 
@@ -263,6 +296,12 @@ Backlink to [[01-index]].
     const found = this.parser.resolveLinkTarget(target, this.notes);
     if (found) {
       this.selectNote(found.id);
+    }
+  }
+
+  public openVersionTimeline(): void {
+    if (this.selectedNote) {
+      this.versionTimeline.open(this.selectedNote);
     }
   }
 
