@@ -143,12 +143,31 @@ generated: {today}
 
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="Calculate statistics and metrics for the LLM Wiki")
+    parser.add_argument("--wiki-dir", help="Path to wiki directory")
+    parser.add_argument("--raw-dir", help="Path to raw directory")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
     cfg = load_config()
     paths = cfg.get("paths", {})
-    wiki_dir = Path(paths.get("wiki", "wiki"))
-    raw_dir = Path(paths.get("raw", "raw"))
+    wiki_dir = Path(args.wiki_dir or paths.get("wiki", "wiki"))
+    raw_dir = Path(args.raw_dir or paths.get("raw", "raw"))
 
     stats = analyze_wiki(wiki_dir, raw_dir)
+
+    if args.json:
+        import json
+        try:
+            generate_metrics_md(stats)
+        except Exception:
+            pass
+        print(json.dumps({
+            "status": "success",
+            "stats": stats
+        }))
+        return
 
     print("=== Wiki Statistics ===")
     print(f"Total articles:    {stats['total_articles']}")

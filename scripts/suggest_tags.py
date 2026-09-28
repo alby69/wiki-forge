@@ -231,7 +231,7 @@ def suggest_for_text(text: str, cfg: dict, top: int, keybert_model=None) -> list
 
 def process_file(
     path: Path, cfg: dict, top: int, write: bool, keybert_model=None
-) -> None:
+) -> list[str]:
     raw = path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(raw)
     existing = list(fm.get("tags", []) or [])
@@ -253,6 +253,7 @@ def process_file(
         new_raw = f"{dump_frontmatter(fm)}\n\n{body.lstrip()}"
         path.write_text(new_raw, encoding="utf-8")
         print("  [written]")
+    return merged
 
 
 def main() -> None:
@@ -278,6 +279,11 @@ def main() -> None:
         "--semantic",
         action="store_true",
         help="Use KeyBERT semantic ranking if available (else falls back to RAKE).",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output result as JSON object on stdout.",
     )
     args = parser.parse_args()
 

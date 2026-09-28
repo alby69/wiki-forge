@@ -1,6 +1,7 @@
 import { WikiNote } from '../../core/types/wiki';
 import { renderMarkdown } from '../../core/utils/markdown';
 import { ApiStorage, AttachOptions } from '../../storage/ApiStorage';
+import { appStore } from '../../store/appStore';
 import { AttachModal } from './AttachModal';
 
 export interface ChatMessage {
@@ -36,6 +37,10 @@ export class ChatDrawer {
 
     this.loadHistory();
     this.render();
+
+    appStore.subscribe(() => {
+      this.render();
+    });
   }
 
   private loadHistory(): void {
@@ -132,9 +137,15 @@ export class ChatDrawer {
       <div style="padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 6px; overflow-x: auto;" class="chat-shortcuts">
         <button data-cmd="/consult" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔍 /consult</button>
         <button data-cmd="/compile" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ /compile</button>
-        <button data-cmd="/audit" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
-        <button data-cmd="/trace" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
-        <button data-cmd="/reindex" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
+        ${
+          appStore.getState().isAdvancedMode
+            ? `
+            <button data-cmd="/audit" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
+            <button data-cmd="/trace" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
+            <button data-cmd="/reindex" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
+          `
+            : ''
+        }
         <button data-cmd="/wizard" style="background: #4f46e5; color: #ffffff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🪄 /wizard</button>
       </div>
 
@@ -155,6 +166,8 @@ export class ChatDrawer {
   }
 
   private renderMessages(): string {
+    const { isAdvancedMode } = appStore.getState();
+
     return this.messages
       .map(msg => {
         const isUser = msg.sender === 'user';
@@ -167,8 +180,14 @@ export class ChatDrawer {
               <button class="action-chip" data-chip-cmd="/study-guide">📝 Guida Studio</button>
               <button class="action-chip" data-chip-cmd="/mindmap">📊 Mappa Concettuale</button>
               <button class="action-chip" data-chip-cmd="/quiz">🧪 Quiz</button>
-              <button class="action-chip" data-chip-cmd="/audio-overview">🎙️ Audio Script</button>
-              <button class="action-chip" data-chip-cmd="/deep-research">🔬 Deep Research</button>
+              ${
+                isAdvancedMode
+                  ? `
+                  <button class="action-chip" data-chip-cmd="/audio-overview">🎙️ Audio Script</button>
+                  <button class="action-chip" data-chip-cmd="/deep-research">🔬 Deep Research</button>
+                `
+                  : ''
+              }
             </div>
           `
           : '';

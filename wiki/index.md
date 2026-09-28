@@ -1,51 +1,20 @@
-# Wiki Master Index
+---
+okf_version: "0.2"
+---
 
-Welcome to the knowledge base.
+# Wiki Index — Knowledge Base
 
-## Thematic Wikis
+## Topics
 
-- [[antropologia-economica/index|antropologia economica]]
-- [[intelligenza-artificiale/index|intelligenza artificiale]]
+* [Antropologia Economica](antropologia-economica/index.md) (5 articles)
+* [Intelligenza Artificiale](intelligenza-artificiale/index.md) (33 articles)
+* [Versions](versions/index.md) (1 articles)
 
-## All Notes
+## Recently Updated
 
-- [[alba-di-tutto]]
-- [[bullshit-jobs]]
-- [[david-graeber]]
-- [[debito-primi-5000-anni]]
-- [[index]]
-- [[indice_wiki]]
-- [[indice]]
-- [[2025-llm-year-in-review]]
-- [[adozione-integrazione]]
-- [[agenti-sicurezza]]
-- [[ai-lavoro-tre-letture]]
-- [[alfabetizzazione-riqualificazione]]
-- [[andrej-karpathy]]
-- [[animals-vs-ghosts]]
-- [[auto-grade-hn]]
-- [[chemical-hygiene]]
-- [[dario-amodei]]
-- [[dati-ai-scenari]]
-- [[dietro-le-quinte-hr-ai]]
-- [[hr-ai-maturita]]
-- [[ignoranza-critica]]
-- [[intelligenza-collettiva]]
-- [[machina-sapiens]]
-- [[machines-of-loving-grace]]
-- [[mappa-teorica-tesi]]
-- [[modello-migliore]]
-- [[nello-cristianini]]
-- [[power-to-the-people]]
-- [[scorciatoia-apprendimento-automatico]]
-- [[sequoia-ascent-2026]]
-- [[sovrumano-ani-agi-asi]]
-- [[stefano-gatti]]
-- [[test-di-turing]]
-- [[the-adolescence-of-technology]]
-- [[the-space-of-minds]]
-- [[trasformazione-output-first]]
-- [[verifiability]]
-- [[vibe-coding-menugen]]
-- [[visione-sistemica-manager]]
-- [[log]]
+* [Verifiability: cosa si automatizza con l'AI](intelligenza-artificiale/verifiability.md) — tags: ['intelligenza-artificiale', 'verifiability']
+* [Vibe Coding Menugen](intelligenza-artificiale/vibe-coding-menugen.md) — tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
+* [Visione Sistemica Manager](intelligenza-artificiale/visione-sistemica-manager.md) — tags: ['intelligenza-artificiale', 'visione-sistemica-manager']
+* [Versions](versions/README.md) — type: Reference
+* [Indice Wiki](intelligenza-artificiale/indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
+

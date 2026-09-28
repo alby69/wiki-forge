@@ -1,5 +1,11 @@
 import { ApiStorage, ProjectInfo } from '../storage/ApiStorage';
 
+/**
+ * ConfigManager
+ * Manages project configuration directly via config.toml (Single Source of Truth).
+ * All reads and updates are routed directly to the server API (/api/projects/:id/config)
+ * which reads/writes config.toml on disk without keeping duplicate local storage state.
+ */
 export class ConfigManager {
   private container: HTMLElement;
   private storage: ApiStorage;

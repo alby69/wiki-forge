@@ -44,19 +44,44 @@ def append_to_log(log_path: Path, message: str, entry_type: str = "Update", date
 def main():
     parser = argparse.ArgumentParser(description="Append entry to OKF log.md")
     parser.add_argument("wiki_dir", nargs="?", default="wiki", help="Path to wiki directory")
-    parser.add_argument("message", help="Log message describing the update")
+    parser.add_argument("message", nargs="?", default="", help="Log message describing the update")
+    parser.add_argument("--message", dest="opt_message", help="Log message describing the update")
     parser.add_argument("--type", default="Update", choices=["Update", "Creation", "Deprecation", "Initialization"], help="Log entry keyword type")
     parser.add_argument("--date", default=None, help="Date in YYYY-MM-DD format (default: today UTC)")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
     wiki_root = Path(args.wiki_dir).resolve()
 
+    target_msg = args.opt_message or args.message
+    if not target_msg:
+        msg = "Error: message is required."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
+        sys.exit(1)
+
     if not wiki_root.exists():
-        print(f"Error: Directory '{wiki_root}' does not exist.", file=sys.stderr)
+        msg = f"Error: Directory '{wiki_root}' does not exist."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     log_path = wiki_root / "log.md"
-    append_to_log(log_path, args.message, args.type, args.date)
+    append_to_log(log_path, target_msg, args.type, args.date)
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "log_path": str(log_path),
+            "message": target_msg,
+            "type": args.type
+        }))
 
 if __name__ == "__main__":
     main()

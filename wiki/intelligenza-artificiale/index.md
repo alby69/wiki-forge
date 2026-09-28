@@ -1,39 +1,37 @@
-# INTELLIGENZA ARTIFICIALE Index
-
-Thematic index for **intelligenza-artificiale**.
+# Intelligenza Artificiale — Topic Index
 
 ## Articles
 
-- [[indice_wiki]] — indice wiki
-- [[2025-llm-year-in-review]] — 2025 llm year in review
-- [[adozione-integrazione]] — adozione integrazione
-- [[agenti-sicurezza]] — agenti sicurezza
-- [[ai-lavoro-tre-letture]] — ai lavoro tre letture
-- [[alfabetizzazione-riqualificazione]] — alfabetizzazione riqualificazione
-- [[andrej-karpathy]] — andrej karpathy
-- [[animals-vs-ghosts]] — animals vs ghosts
-- [[auto-grade-hn]] — auto grade hn
-- [[chemical-hygiene]] — chemical hygiene
-- [[dario-amodei]] — dario amodei
-- [[dati-ai-scenari]] — dati ai scenari
-- [[dietro-le-quinte-hr-ai]] — dietro le quinte hr ai
-- [[hr-ai-maturita]] — hr ai maturita
-- [[ignoranza-critica]] — ignoranza critica
-- [[intelligenza-collettiva]] — intelligenza collettiva
-- [[machina-sapiens]] — machina sapiens
-- [[machines-of-loving-grace]] — machines of loving grace
-- [[mappa-teorica-tesi]] — mappa teorica tesi
-- [[modello-migliore]] — modello migliore
-- [[nello-cristianini]] — nello cristianini
-- [[power-to-the-people]] — power to the people
-- [[scorciatoia-apprendimento-automatico]] — scorciatoia apprendimento automatico
-- [[sequoia-ascent-2026]] — sequoia ascent 2026
-- [[sovrumano-ani-agi-asi]] — sovrumano ani agi asi
-- [[stefano-gatti]] — stefano gatti
-- [[test-di-turing]] — test di turing
-- [[the-adolescence-of-technology]] — the adolescence of technology
-- [[the-space-of-minds]] — the space of minds
-- [[trasformazione-output-first]] — trasformazione output first
-- [[verifiability]] — verifiability
-- [[vibe-coding-menugen]] — vibe coding menugen
-- [[visione-sistemica-manager]] — visione sistemica manager
+* [2025 Llm Year In Review](2025-llm-year-in-review.md) — tags: ['intelligenza-artificiale']
+* [Adozione Integrazione](adozione-integrazione.md) — tags: ['intelligenza-artificiale', 'adozione-integrazione']
+* [Agenti Sicurezza](agenti-sicurezza.md) — tags: ['intelligenza-artificiale', 'agenti-sicurezza']
+* [Ai Lavoro Tre Letture](ai-lavoro-tre-letture.md) — tags: ['intelligenza-artificiale', 'ai-lavoro-tre-letture']
+* [Alfabetizzazione Riqualificazione](alfabetizzazione-riqualificazione.md) — tags: ['intelligenza-artificiale', 'alfabetizzazione-riqualificazione']
+* [Andrej Karpathy](andrej-karpathy.md) — tags: ['intelligenza-artificiale', 'andrej-karpathy']
+* [Animals Vs Ghosts](animals-vs-ghosts.md) — tags: ['intelligenza-artificiale', 'animals-vs-ghosts']
+* [Auto Grade Hn](auto-grade-hn.md) — tags: ['intelligenza-artificiale', 'auto-grade-hn']
+* [Chemical Hygiene](chemical-hygiene.md) — tags: ['intelligenza-artificiale', 'chemical-hygiene']
+* [Dario Amodei](dario-amodei.md) — tags: ['intelligenza-artificiale', 'dario-amodei']
+* [Dati Ai Scenari](dati-ai-scenari.md) — tags: ['intelligenza-artificiale', 'dati-ai-scenari']
+* [Dietro Le Quinte Hr Ai](dietro-le-quinte-hr-ai.md) — tags: ['intelligenza-artificiale', 'dietro-le-quinte-hr-ai']
+* [Hr Ai Maturita](hr-ai-maturita.md) — tags: ['intelligenza-artificiale', 'hr-ai-maturita']
+* [Ignoranza Critica](ignoranza-critica.md) — tags: ['intelligenza-artificiale', 'ignoranza-critica']
+* [Indice Wiki](indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
+* [Intelligenza Collettiva](intelligenza-collettiva.md) — tags: ['intelligenza-artificiale', 'intelligenza-collettiva']
+* [Machina Sapiens](machina-sapiens.md) — tags: ['intelligenza-artificiale', 'machina-sapiens']
+* [Machines Of Loving Grace](machines-of-loving-grace.md) — tags: ['intelligenza-artificiale', 'machines-of-loving-grace']
+* [Mappa Teorica Tesi](mappa-teorica-tesi.md) — tags: ['intelligenza-artificiale', 'mappa-teorica-tesi']
+* [Modello Migliore](modello-migliore.md) — tags: ['intelligenza-artificiale', 'modello-migliore']
+* [Nello Cristianini](nello-cristianini.md) — tags: ['intelligenza-artificiale', 'nello-cristianini']
+* [Power To The People](power-to-the-people.md) — tags: ['intelligenza-artificiale', 'power-to-the-people']
+* [Scorciatoia Apprendimento Automatico](scorciatoia-apprendimento-automatico.md) — tags: ['intelligenza-artificiale', 'scorciatoia-apprendimento-automatico']
+* [Sequoia Ascent 2026](sequoia-ascent-2026.md) — tags: ['intelligenza-artificiale', 'sequoia-ascent-2026']
+* [Sovrumano Ani Agi Asi](sovrumano-ani-agi-asi.md) — tags: ['intelligenza-artificiale', 'sovrumano-ani-agi-asi']
+* [Stefano Gatti](stefano-gatti.md) — tags: ['intelligenza-artificiale', 'stefano-gatti']
+* [Test Di Turing](test-di-turing.md) — tags: ['intelligenza-artificiale', 'test-di-turing']
+* [The Adolescence Of Technology](the-adolescence-of-technology.md) — tags: ['intelligenza-artificiale', 'the-adolescence-of-technology']
+* [The Space Of Minds](the-space-of-minds.md) — tags: ['intelligenza-artificiale', 'the-space-of-minds']
+* [Trasformazione Output First](trasformazione-output-first.md) — tags: ['intelligenza-artificiale', 'trasformazione-output-first']
+* [Verifiability: cosa si automatizza con l'AI](verifiability.md) — tags: ['intelligenza-artificiale', 'verifiability']
+* [Vibe Coding Menugen](vibe-coding-menugen.md) — tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
+* [Visione Sistemica Manager](visione-sistemica-manager.md) — tags: ['intelligenza-artificiale', 'visione-sistemica-manager']

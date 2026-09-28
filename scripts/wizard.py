@@ -161,24 +161,36 @@ def main() -> None:
         choices=["academic", "business", "research", "creative", "existing"],
         help="Bypass interactive menu and run a specific scenario preset directly."
     )
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
     args = parser.parse_args()
 
     config = load_config()
     scenarios = load_scenarios()
 
     if not scenarios:
-        console.print("[bold red]Error:[/bold red] Could not load scenario presets from config/scenarios.toml.")
+        msg = "Could not load scenario presets from config/scenarios.toml."
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            console.print(f"[bold red]Error:[/bold red] {msg}")
         sys.exit(1)
 
     if args.preset:
         preset_id = args.preset
     else:
-        preset_id = interactive_menu(scenarios)
-        if not preset_id:
-            console.print("Wizard cancelled.")
-            sys.exit(0)
+        if args.json:
+            preset_id = "academic"
+        else:
+            preset_id = interactive_menu(scenarios)
+            if not preset_id:
+                console.print("Wizard cancelled.")
+                sys.exit(0)
 
     run_wizard_scenario(preset_id, scenarios, config)
+    if args.json:
+        import json
+        print(json.dumps({"status": "success", "preset": preset_id, "scenario": scenarios.get("scenarios", {}).get(preset_id, {})}))
 
 
 if __name__ == "__main__":

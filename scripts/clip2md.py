@@ -115,22 +115,37 @@ def main() -> None:
         description="Fetch a web page and save it as a Markdown file for source ingestion."
     )
     parser.add_argument("url", nargs="?", help="URL to clip")
+    parser.add_argument("--url", dest="opt_url", help="URL to clip")
     parser.add_argument(
         "--output",
         default=clip_cfg.get("folder", "sources/web-clips"),
         help="Destination folder for web clips. Default: sources/web-clips",
     )
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
     args = parser.parse_args()
 
-    if not args.url:
-        parser.print_help()
+    target_url = args.opt_url or args.url
+    if not target_url:
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": "URL is required"}))
+        else:
+            parser.print_help()
         sys.exit(1)
 
     try:
-        saved_path = clip_url(args.url, Path(args.output))
-        print(f"Clipped '{args.url}' -> {saved_path}")
+        saved_path = clip_url(target_url, Path(args.output))
+        if args.json:
+            import json
+            print(json.dumps({"status": "success", "url": target_url, "output_path": str(saved_path)}))
+        else:
+            print(f"Clipped '{target_url}' -> {saved_path}")
     except Exception as exc:
-        print(f"Error clipping URL '{args.url}': {exc}", file=sys.stderr)
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": str(exc)}))
+        else:
+            print(f"Error clipping URL '{target_url}': {exc}", file=sys.stderr)
         sys.exit(1)
 
 

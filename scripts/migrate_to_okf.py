@@ -135,11 +135,23 @@ def migrate_file(file_path: Path, wiki_root: Path, cfg: dict, now_iso: str) -> b
     return True
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="One-shot Migration Script to OKF v0.2 compliant frontmatter")
+    parser.add_argument("--wiki-dir", help="Wiki directory to migrate (default: wiki)")
+    parser.add_argument("--confirm", action="store_true", help="Confirm migration execution")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+
+    args = parser.parse_args()
     repo_root = Path(__file__).resolve().parent.parent
-    wiki_root = repo_root / "wiki"
+    wiki_root = Path(args.wiki_dir).resolve() if args.wiki_dir else repo_root / "wiki"
 
     if not wiki_root.exists():
-        print(f"Error: wiki directory does not exist at '{wiki_root}'", file=sys.stderr)
+        msg = f"Error: wiki directory does not exist at '{wiki_root}'"
+        if args.json:
+            import json
+            print(json.dumps({"status": "error", "message": msg}))
+        else:
+            print(msg, file=sys.stderr)
         sys.exit(1)
 
     cfg = load_config(repo_root)
@@ -166,7 +178,15 @@ def main():
         if sub_dir.is_dir() and not sub_dir.name.startswith("."):
             okf_reindex.generate_topic_index(sub_dir, wiki_root)
 
-    print(f"✅ Successfully migrated {migrated_count} Markdown articles to OKF v0.2 standard!")
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "migrated_count": migrated_count,
+            "wiki_dir": str(wiki_root)
+        }))
+    else:
+        print(f"✅ Successfully migrated {migrated_count} Markdown articles to OKF v0.2 standard!")
 
 if __name__ == "__main__":
     main()

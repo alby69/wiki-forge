@@ -102,9 +102,19 @@ def main():
     parser.add_argument("--output", default="output/thesis_compiled.md", help="Output Markdown path")
     parser.add_argument("--min-maturity", type=int, default=0, help="Minimum maturity score for synthesis notes (0-100)")
     parser.add_argument("--title", default="Tesi di Laurea - Architettura Cognitiva Evolutiva", help="Thesis Title")
+    parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    build_thesis(Path(args.wiki_dir).resolve(), Path(args.output).resolve(), args.min_maturity, args.title)
+    out_path = Path(args.output).resolve()
+    build_thesis(Path(args.wiki_dir).resolve(), out_path, args.min_maturity, args.title)
+    if args.json:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "output_path": str(out_path),
+            "min_maturity": args.min_maturity,
+            "title": args.title
+        }))
 
 if __name__ == "__main__":
     main()
