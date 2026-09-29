@@ -1,3 +1,15 @@
+---
+okf_version: "0.2"
+type: Reference
+title: "Competency Questions Specification"
+description: "Natural language Competency Questions (CQs) for Knowledge Base validation."
+status: stable
+author: "human:alby69"
+tags: [knowledge-engineering, cq, okf]
+created: 2026-09-29
+updated: 2026-09-29
+---
+
 # Competency Questions (CQ) Specification
 
 This document defines natural language Competency Questions (CQs) used by the `cq_validator.py` engine to verify whether the knowledge base contains necessary entities, relations, and business rules.

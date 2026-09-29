@@ -12,7 +12,7 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Competency Questions](competency_questions.md) — This document defines natural language Competency Questions (CQs) used by the `cq_validator.py` engine to verify whether...
+* [Competency Questions Specification](competency_questions.md) — Natural language Competency Questions (CQs) for Knowledge Base validation.
 * [Indice Wiki](intelligenza-artificiale/indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
 * [Intelligenza Collettiva](intelligenza-artificiale/intelligenza-collettiva.md) — tags: ['intelligenza-artificiale', 'intelligenza-collettiva']
 * [Machina Sapiens](intelligenza-artificiale/machina-sapiens.md) — tags: ['intelligenza-artificiale', 'machina-sapiens']
