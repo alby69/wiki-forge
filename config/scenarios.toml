@@ -8,6 +8,19 @@ workflow = ["Ingest PDFs", "Extract Authors/Theories", "Compile Literature Revie
 actions = ["conv2md.py", "ingest", "compile", "audit links"]
 prompt = "Execute ingestion on raw/ directory with context 'Thesis Review', compile the literature review, and run audit links."
 
+[scenarios.academic.schema]
+enabled = true
+strict = false
+
+[scenarios.academic.schema.types.claim]
+required = ["statement", "confidence"]
+relations = { supported_by = "paper" }
+
+[scenarios.academic.schema.types.paper]
+required = ["author", "year"]
+relations = { cites = "paper" }
+
+
 [scenarios.thesis]
 id = "thesis"
 name = "Wiki-Forge Thesis Edition (Cognitive Dynamic Thesis)"
@@ -15,6 +28,19 @@ description = "Build an evolutionary dynamic thesis knowledge base from LLM quer
 workflow = ["Ingest Sources", "Generate Syntheses & Questions", "Calculate Page Maturity Index", "Compile Chapters", "Export Printable PDF"]
 actions = ["conv2md.py", "ingest", "maturity", "thesis-compile", "thesis-pdf"]
 prompt = "Execute ingestion on raw/ sources, run maturity calculator to score wiki pages, aggregate mature synthesis notes into thesis draft chapters, and prepare printable PDF export."
+
+[scenarios.thesis.schema]
+enabled = true
+strict = false
+
+[scenarios.thesis.schema.types.concept]
+required = ["definition", "status"]
+relations = { broader = "concept", related = "concept" }
+
+[scenarios.thesis.schema.types.chapter]
+required = ["chapter_number", "title"]
+relations = { includes = "concept" }
+
 
 [scenarios.business]
 id = "business"
@@ -24,6 +50,19 @@ workflow = ["Ingest SOPs/Meetings", "Structure KB", "Setup FAQ/Consulting"]
 actions = ["conv2md.py", "ingest", "stub", "compile"]
 prompt = "Execute ingestion on raw/ directory for business documents, create entity stubs, and compile the business KB."
 
+[scenarios.business.schema]
+enabled = true
+strict = false
+
+[scenarios.business.schema.types.process]
+required = ["owner", "status"]
+relations = { defined_by = "policy" }
+
+[scenarios.business.schema.types.policy]
+required = ["effective_date", "status"]
+relations = { applies_to = "process" }
+
+
 [scenarios.research]
 id = "research"
 name = "Competitive / News / Dossier"
@@ -31,6 +70,19 @@ description = "Ingest articles and reports, cross-reference entities, trace sour
 workflow = ["Ingest Articles/Reports", "Cross-reference Entities", "Source Tracing", "View Stats"]
 actions = ["conv2md.py", "ingest", "trace", "stats"]
 prompt = "Execute ingestion on raw/ directory for competitive research, trace key entity claims, and run stats."
+
+[scenarios.research.schema]
+enabled = true
+strict = false
+
+[scenarios.research.schema.types.entity]
+required = ["entity_type"]
+relations = { associated_with = "entity" }
+
+[scenarios.research.schema.types.source]
+required = ["source_type", "url"]
+relations = { mentions = "entity" }
+
 
 [scenarios.creative]
 id = "creative"
@@ -40,6 +92,19 @@ workflow = ["Setup Entities (Characters/Places)", "Interlink Wiki", "Graph & Orp
 actions = ["stub", "compile", "audit orphans"]
 prompt = "Create entity stubs for main characters and places, compile the worldbuilding wiki, and check for orphan notes."
 
+[scenarios.creative.schema]
+enabled = true
+strict = false
+
+[scenarios.creative.schema.types.character]
+required = ["role"]
+relations = { ally_of = "character", enemy_of = "character", located_in = "location" }
+
+[scenarios.creative.schema.types.location]
+required = ["region"]
+relations = { part_of = "location" }
+
+
 [scenarios.existing]
 id = "existing"
 name = "Existing Wiki Navigation"
@@ -47,3 +112,7 @@ description = "Audit wiki health, search or consult knowledge base, and generate
 workflow = ["Audit health", "Search / Consult KB", "Generate Summary Report"]
 actions = ["audit", "search", "consult"]
 prompt = "Run a full audit on the existing wiki, search key concepts, and consult the knowledge base for a summary report."
+
+[scenarios.existing.schema]
+enabled = false
+strict = false

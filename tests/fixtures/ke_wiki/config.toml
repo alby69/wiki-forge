@@ -1,0 +1,28 @@
+[project]
+name = "ke-fixture"
+title = "KE Fixture Wiki"
+
+[paths]
+wiki = "wiki"
+
+[schema]
+enabled = true
+strict = true
+
+[schema.types.concept]
+required = ["definition", "status"]
+optional = ["prefLabel", "altLabel"]
+relations = { broader = "concept", related = "concept" }
+
+[schema.types.entity]
+required = ["entity_kind"]
+relations = { instance_of = "concept" }
+
+[schema.relations.broader]
+inverse = "narrower"
+transitive = true
+acyclic = true
+
+[schema.relations.related]
+inverse = "related"
+symmetric = true
