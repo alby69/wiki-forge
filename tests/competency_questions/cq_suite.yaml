@@ -1,0 +1,12 @@
+competency_questions:
+  - id: CQ1
+    question: "Which notes support concept-a?"
+    query: |
+      PREFIX wf: <https://w3id.org/wikiforge/ontology/>
+      PREFIX wfid: <https://w3id.org/wikiforge/id/>
+      SELECT ?supporter WHERE {
+        ?supporter wf:supports wfid:concept-a .
+      }
+    expected_min_results: 1
+    expected_bindings:
+      - supporter: "https://w3id.org/wikiforge/id/concept-b"

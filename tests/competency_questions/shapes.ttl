@@ -1,0 +1,21 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <http://schema.org/> .
+@prefix wf: <https://w3id.org/wikiforge/ontology/> .
+@prefix wfclass: <https://w3id.org/wikiforge/class/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Note Shape: Articles and Concepts must have a schema:name label and a wf:status
+wf:NoteShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Article ;
+    sh:property [
+        sh:path schema:name ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Every Note must have at least one schema:name string label." ;
+    ] ;
+    sh:property [
+        sh:path wf:status ;
+        sh:minCount 1 ;
+        sh:message "Every Note must have a wf:status property." ;
+    ] .
