@@ -34,7 +34,7 @@ class ZettelToRDFConverter:
         self.ontology_uri = ontology_uri
 
     def parse_markdown_file(self, filepath: Path, input_dir: Path = Path(".")) -> dict:
-        """Estrae frontmatter YAML, titolo e wikilinks semantici da una nota Markdown."""
+        """Estrae frontmatter YAML, titolo e wikilinks semantici con metadati da una nota Markdown."""
         content = filepath.read_text(encoding="utf-8")
 
         metadata = {}
@@ -73,10 +73,10 @@ class ZettelToRDFConverter:
             tags = [t.strip() for t in tags.split(",")]
 
         semantic_links = []
-        wikilink_pattern = re.compile(r'\[\[(?:([^\]:]+)::)?([^\]]+)\]\]')
+        wikilink_pattern = re.compile(r'\[\[(?:([^\]:]+)::)?([^\]\s|]+)(?:\s*\|?\s*(\{.*\}))?\]\]')
 
         for match in wikilink_pattern.finditer(body):
-            pred, target = match.groups()
+            pred, target, edge_meta_str = match.groups()
             target_str = target.strip()
             target_p = Path(target_str)
 
@@ -90,10 +90,22 @@ class ZettelToRDFConverter:
             else:
                 predicate_name = "refersTo"
 
+            edge_meta = {}
+            if edge_meta_str:
+                try:
+                    edge_meta = yaml.safe_load(edge_meta_str) or {}
+                except Exception:
+                    pass
+
+            confidence = edge_meta.get("confidence", metadata.get("confidence", 0.95))
+            created = edge_meta.get("created", created_date)
+
             semantic_links.append({
                 "predicate": predicate_name,
                 "target_slug": target_slug,
-                "target_raw": target_str
+                "target_raw": target_str,
+                "confidence": confidence,
+                "created": created
             })
 
         return {
@@ -108,8 +120,8 @@ class ZettelToRDFConverter:
             "links": semantic_links
         }
 
-    def convert_notes_to_turtle(self, notes_data: list) -> str:
-        """Converte una lista di note estratte in un grafo RDF serializzato in Turtle."""
+    def convert_notes_to_turtle(self, notes_data: list, include_rdf_star: bool = True) -> str:
+        """Converte una lista di note estratte in un grafo RDF serializzato in Turtle/RDF-star."""
         ttl_lines = [TURTLE_PREFIXES]
 
         all_targets = set()
@@ -131,10 +143,20 @@ class ZettelToRDFConverter:
             ttl_lines.append(f'    prov:wasAttributedTo {author_iri} ;')
 
             link_statements = []
+            rdf_star_annotations = []
+
             for link in note['links']:
                 pred = link['predicate']
                 target_iri = f"wfid:{link['target_slug']}"
                 link_statements.append(f"    wf:{pred} {target_iri}")
+
+                if include_rdf_star:
+                    rdf_star_annotations.append(
+                        f"<< {note_iri} wf:{pred} {target_iri} >>\n"
+                        f'    wf:created "{link["created"]}"^^xsd:date ;\n'
+                        f'    wf:confidence {link["confidence"]} ;\n'
+                        f'    prov:wasAttributedTo {author_iri} .'
+                    )
 
             if link_statements:
                 ttl_lines.append(" ;\n".join(link_statements) + " .")
@@ -143,6 +165,11 @@ class ZettelToRDFConverter:
 
             ttl_lines.append(f"\n{author_iri} a prov:Agent, foaf:Agent ;")
             ttl_lines.append(f'    foaf:name "{escape_ttl_string(note["author"])}" .\n')
+
+            if rdf_star_annotations:
+                ttl_lines.append("# --- RDF-star Edge Metadata ---")
+                ttl_lines.extend(rdf_star_annotations)
+                ttl_lines.append("")
 
         parsed_slugs = {n['slug'] for n in notes_data}
         missing_targets = all_targets - parsed_slugs
@@ -160,7 +187,7 @@ class ZettelToRDFConverter:
         return "\n".join(ttl_lines)
 
     def process_directory(self, input_dir: Path, output_file: Path):
-        """Scansiona la cartella di note Markdown ed esporta il grafo RDF .ttl."""
+        """Scansiona la cartella di note Markdown ed esporta il grafo RDF .ttl con RDF-star."""
         notes = []
         md_files = list(input_dir.glob("**/*.md"))
         print(f"📁 Trovate {len(md_files)} note Markdown in {input_dir}")
@@ -171,10 +198,10 @@ class ZettelToRDFConverter:
 
         turtle_content = self.convert_notes_to_turtle(notes)
         output_file.write_text(turtle_content, encoding="utf-8")
-        print(f"✅ Grafo RDF estratto con successo in: {output_file}")
+        print(f"✅ Grafo RDF/RDF-star estratto con successo in: {output_file}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Automazione conversione Markdown Zettelkasten in RDF per wiki-forge")
+    parser = argparse.ArgumentParser(description="Automazione conversione Markdown Zettelkasten in RDF/RDF-star per wiki-forge")
     parser.add_argument("--input", "-i", type=str, default="./notes", help="Cartella contenente le note .md")
     parser.add_argument("--output", "-o", type=str, default="knowledge_graph.ttl", help="File di output .ttl")
 

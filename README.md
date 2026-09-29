@@ -40,11 +40,11 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida passo-passo che spiega come utilizzare il sistema giorno per giorno, con il prontuario dei comandi e la risoluzione dei problemi.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico e completo per costruire una tesi di laurea come Knowledge Base dinamica e generarne la versione stampabile in PDF.
 - **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per ingegneri della conoscenza (modellazione ontologica, validazione di vincoli logici ed esportazione semantica RDF/JSON-LD).
-- **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale operativo per la validazione W3C SHACL, la conversione duale RDF/Cypher e la pipeline LangGraph GraphRAG.
+- **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale operativo per la validazione W3C SHACL, la conversione duale RDF/Cypher, il supporto RDF-star, lo Shortcut Engine, la sincronizzazione incrementale Live ed il retrieval ibrido LangGraph GraphRAG.
 - **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Registro bibliografico e guida alla tracciabilità delle fonti.
 
 ### ⚙️ Per Sviluppatori ed Ingegneri del Software (Technical Architecture)
-- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Architettura Tecnica**: Analisi dettagliata dell'architettura del sistema, server API, client LLM multi-provider, isolamento della memoria non-parametrica, motore di script SSE e confronto con l'addestramento *nanochat*.
+- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Architettura Tecnica**: Analisi dettagliata dell'architettura del sistema, server API FastAPI e CLI, client LLM multi-provider, isolamento della memoria non-parametrica, motore di script SSE e confronto con l'addestramento *nanochat*.
 - **[`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)** — **Open Knowledge Format Spec v0.2**: Specifica tecnica standard per il formato delle note, frontmatter YAML, trust tiers ed indici.
 - **[`docs/AGENT.md`](docs/AGENT.md)** — **Operating Manual dell'Agente**: Il manuale operativo che definisce il contratto, i ruoli e le capacità dell'agente LLM.
 - **[`docs/CHANGELOG.md`](docs/CHANGELOG.md)** — **Storico dei Rilasci**: Registro dei cambiamenti e versionamento semantico.
@@ -127,13 +127,20 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 ├── docs/                # Documentazione centralizzata (TUTORIAL, THESIS_GUIDE, GRAPH_RAG, ecc.)
 ├── src/
 │   └── wikiforge/
+│       ├── api/
+│       │   └── api_server.py            # Server REST API FastAPI per servizi Knowledge Graph
+│       ├── cli.py                       # CLI unificata (`python3 -m src.wikiforge.cli`)
+│       ├── watcher/
+│       │   └── graph_watcher.py         # File watcher live event-driven (watchdog)
 │       ├── config/
 │       │   └── shapes.ttl               # Vincoli W3C SHACL per la validazione delle forme
 │       └── semantics/
-│           ├── markdown_to_rdf.py       # Convertitore Zettelkasten -> Grafo RDF Turtle
+│           ├── markdown_to_rdf.py       # Convertitore Zettelkasten -> Grafo RDF Turtle + RDF-star
 │           ├── markdown_to_cypher.py    # Esportatore Zettelkasten -> Script Neo4j Cypher
+│           ├── shortcut_engine.py       # Engine di materializzazione scorciatoie (SPARQL & Cypher)
+│           ├── cq_runner.py             # Test runner per Competency Questions (YAML -> SPARQL)
 │           ├── shacl_validator.py       # Motore di validazione SHACL ed inferenza OWL
-│           └── graph_rag_pipeline.py    # Pipeline GraphRAG stateful in LangGraph
+│           └── graph_rag_pipeline.py    # Pipeline Retrieval Ibrida (Vector + Subgraph Traversal)
 ├── sources/             # Cartella file sorgenti ORIGINALI (backup/ - mai modificati)
 ├── raw/                 # Testo grezzo convertito (inbox dell'agente)
 ├── wiki/                # La Knowledge Base viva ed interconnessa
@@ -148,8 +155,12 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 
 Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **Knowledge Engineer** professionale per la validazione formale e l'interoperabilità semantica:
 - **Validazione W3C SHACL (`shapes.ttl`)**: Enforcing automatizzato di vincoli di forma strutturali e semantici (`wf:PermanentNoteShape`, `wfs:AgentShape`) tramite `pyshacl` ed il flusso CI/CD `.github/workflows/shacl_validation.yml`.
-- **Mappatura Duale Grafo RDF & Neo4j Cypher**: Mappatore Zettelkasten -> W3C Turtle (`markdown_to_rdf.py`) ed esportatore per Labeled Property Graphs in Neo4j (`markdown_to_cypher.py`).
-- **Pipeline Stateful GraphRAG con LangGraph**: Motore agentico in `src/wikiforge/semantics/graph_rag_pipeline.py` con estrazione entità, traduzione Text-to-Cypher, esecuzione su grafo, recupero da errori con auto-correzione (self-correction loop) e sintesi verificata con tracciabilità PROV-O.
+- **Mappatura Duale Grafo RDF, RDF-star & Neo4j Cypher**: Mappatore Zettelkasten -> W3C Turtle con **RDF-star** (`<< s p o >>`) per metadati su archi (`markdown_to_rdf.py`) ed esportatore per Labeled Property Graphs in Neo4j (`markdown_to_cypher.py`).
+- **Engine di Materializzazione Shortcut (`shortcut_engine.py`)**: Materializzazione automatica di archi diretti semplificati (`wf:directCoAuthor`, `wf:agent`, `wf:role`) da strutture ODP reificate a molti salti.
+- **File Watcher Incrementale Live (`graph_watcher.py`)**: Sincronizzazione in tempo reale su eventi di file system (`watchdog`) per riflettere creazione, modifica ed eliminazione di note `.md` nel grafo senza ricompilazione totale.
+- **Pipeline Hybrid GraphRAG con LangGraph (`graph_rag_pipeline.py`)**: Motore agentico stateful con ricerca vettoriale per similarità (Vector Search) combinata con estrazione di sottografi k-hop (Ego-Graph Traversal), auto-correzione ed autoriflessione con sintesi tracciata PROV-O.
+- **Test Runner Competency Questions (`cq_runner.py`)**: Runner automatizzato per verificare i requisiti conoscitivi definiti in YAML (`tests/competency_questions/cqs.yml`) ed esportare report di conformità Markdown.
+- **FastAPI REST API & Unified CLI (`api_server.py` & `cli.py`)**: Endpoints API REST (`/api/v1/graph/sync`, `/api/v1/graph/validate`, `/api/v1/graph/rag`) e interfaccia CLI unificata per la gestione completa del Knowledge Graph.
 - **Competency Questions Engine (`/validate-cq`)**: Validazione della copertura conoscitiva della wiki rispetto a domande in linguaggio naturale via `python3 scripts/cq_validator.py` (`make validate-cq`).
 - **Ontology Design Pattern Suggester (`/suggest-odp`)**: Suggerimento di pattern ontologici formali (Employment, Temporal Properties, Situations) via `python3 scripts/odp_suggester.py` (`make suggest-odp`).
 - **Ponte Neuro-Simbolico (`/neuro-check`)**: Analisi di contraddizioni logiche e inferenza di collegamenti mancanti via `python3 scripts/neuro_symbolic_check.py` (`make neuro-check`).
