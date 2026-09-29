@@ -120,7 +120,7 @@ class ZettelToRDFConverter:
             "links": semantic_links
         }
 
-    def convert_notes_to_turtle(self, notes_data: list, include_rdf_star: bool = True) -> str:
+    def convert_notes_to_turtle(self, notes_data: list, include_rdf_star: bool = False) -> str:
         """Converte una lista di note estratte in un grafo RDF serializzato in Turtle/RDF-star."""
         ttl_lines = [TURTLE_PREFIXES]
 
@@ -186,8 +186,8 @@ class ZettelToRDFConverter:
 
         return "\n".join(ttl_lines)
 
-    def process_directory(self, input_dir: Path, output_file: Path):
-        """Scansiona la cartella di note Markdown ed esporta il grafo RDF .ttl con RDF-star."""
+    def process_directory(self, input_dir: Path, output_file: Path, include_rdf_star: bool = False):
+        """Scansiona la cartella di note Markdown ed esporta il grafo RDF .ttl (opzionalmente RDF-star)."""
         notes = []
         md_files = list(input_dir.glob("**/*.md"))
         print(f"📁 Trovate {len(md_files)} note Markdown in {input_dir}")
@@ -196,15 +196,16 @@ class ZettelToRDFConverter:
             note_data = self.parse_markdown_file(md_file, input_dir=input_dir)
             notes.append(note_data)
 
-        turtle_content = self.convert_notes_to_turtle(notes)
+        turtle_content = self.convert_notes_to_turtle(notes, include_rdf_star=include_rdf_star)
         output_file.write_text(turtle_content, encoding="utf-8")
-        print(f"✅ Grafo RDF/RDF-star estratto con successo in: {output_file}")
+        print(f"✅ Grafo RDF estratto con successo in: {output_file}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Automazione conversione Markdown Zettelkasten in RDF/RDF-star per wiki-forge")
     parser.add_argument("--input", "-i", type=str, default="./notes", help="Cartella contenente le note .md")
     parser.add_argument("--output", "-o", type=str, default="knowledge_graph.ttl", help="File di output .ttl")
+    parser.add_argument("--rdf-star", action="store_true", help="Includi annotazioni RDF-star (<< s p o >>)")
 
     args = parser.parse_args()
     converter = ZettelToRDFConverter()
-    converter.process_directory(Path(args.input), Path(args.output))
+    converter.process_directory(Path(args.input), Path(args.output), include_rdf_star=args.rdf_star)
