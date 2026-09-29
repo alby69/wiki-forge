@@ -23,7 +23,7 @@ wfid:index a wf:PermanentNote ;
     dcterms:identifier "index" ;
     dcterms:title "Wiki Index — Knowledge Base" ;
     dcterms:created "2026-01-01"^^xsd:date ;
-    wf:content "# Wiki Index — Knowledge Base\n\n## Topics\n\n* [Antropologia Economica](antropologia-economica/index.md) (5 articles)\n* [Intelligenza Artificiale](intelligenza-artificiale/index.md) (33 articles)\n* [Versions](versions/index.md) (1 articles)\n\n## Recently Updated\n\n* [Verifiability: cosa si automatizza co..." ;
+    wf:content "# Wiki Index — Knowledge Base\n\n## Topics\n\n* [Antropologia Economica](antropologia-economica/index.md) (5 articles)\n* [Intelligenza Artificiale](intelligenza-artificiale/index.md) (33 articles)\n* [Versions](versions/index.md) (1 articles)\n\n## Recently Updated\n\n* [The Space Of Minds](intelligenza-arti..." ;
     prov:wasAttributedTo wfid:agent-anonymus .
 
 wfid:agent-anonymus a prov:Agent, foaf:Agent ;
@@ -46,9 +46,7 @@ wfid:indice a wf:PermanentNote ;
     dcterms:title "Indice delle wiki" ;
     dcterms:created "2026-01-01"^^xsd:date ;
     wf:content "# Indice delle wiki\n\nElenco delle wiki nell'ordine in cui sono state create.\n\n## Wiki tematiche\n\n- **Antropologia economica** — `[[antropologia-economica/indice_wiki|Antropologia economica]]`\n  Opere di David Graeber (e David Wengrow) su lavoro, debito e le origini della società umana.\n\n- **Intellig..." ;
-    prov:wasAttributedTo wfid:agent-anonymus ;
-    wf:refersTo wfid:antropologia-economica-indice-wikiantropologia-economica ;
-    wf:refersTo wfid:intelligenza-artificiale-indice-wikiintelligenza-artificiale .
+    prov:wasAttributedTo wfid:agent-anonymus .
 
 wfid:agent-anonymus a prov:Agent, foaf:Agent ;
     foaf:name "Anonymus" .
@@ -898,13 +896,6 @@ wfid:animals-vs-ghosts a wf:PermanentNote ;
     wf:content "Stub note for target animals-vs-ghosts" ;
     prov:wasAttributedTo wfid:agent-anonymus .
 
-wfid:antropologia-economica-indice-wikiantropologia-economica a wf:PermanentNote ;
-    dcterms:identifier "antropologia-economica-indice-wikiantropologia-economica" ;
-    dcterms:title "Stub antropologia-economica-indice-wikiantropologia-economica" ;
-    dcterms:created "2026-01-01"^^xsd:date ;
-    wf:content "Stub note for target antropologia-economica-indice-wikiantropologia-economica" ;
-    prov:wasAttributedTo wfid:agent-anonymus .
-
 wfid:auto-grade-hn a wf:PermanentNote ;
     dcterms:identifier "auto-grade-hn" ;
     dcterms:title "Stub auto-grade-hn" ;
@@ -973,13 +964,6 @@ wfid:ignoranza-critica a wf:PermanentNote ;
     dcterms:title "Stub ignoranza-critica" ;
     dcterms:created "2026-01-01"^^xsd:date ;
     wf:content "Stub note for target ignoranza-critica" ;
-    prov:wasAttributedTo wfid:agent-anonymus .
-
-wfid:intelligenza-artificiale-indice-wikiintelligenza-artificiale a wf:PermanentNote ;
-    dcterms:identifier "intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
-    dcterms:title "Stub intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
-    dcterms:created "2026-01-01"^^xsd:date ;
-    wf:content "Stub note for target intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
     prov:wasAttributedTo wfid:agent-anonymus .
 
 wfid:intelligenza-collettiva a wf:PermanentNote ;

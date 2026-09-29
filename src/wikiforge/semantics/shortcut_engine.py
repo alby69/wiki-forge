@@ -3,7 +3,8 @@ src/wikiforge/semantics/shortcut_engine.py
 
 Multi-Layered View & Shortcut Engine for Wiki-Forge Semantic Knowledge Graphs.
 Bridges formal Content Ontology Design Patterns (CODPs) (e.g. AgentRole, Event, Provenance)
-and simplified application views via rule-based SPARQL CONSTRUCT materialization.
+and simplified application views via rule-based SPARQL CONSTRUCT materialization (RDF)
+and Cypher materialization queries (Neo4j).
 """
 
 from __future__ import annotations
@@ -13,6 +14,18 @@ from rdflib import Graph, URIRef, Literal, RDF, RDFS
 
 
 DEFAULT_SHORTCUT_RULES: Dict[str, str] = {
+    "direct_co_author_shortcut": """
+        PREFIX wf: <https://w3id.org/wikiforge/ontology/>
+        PREFIX prov: <http://www.w3.org/ns/prov#>
+        CONSTRUCT {
+            ?note wf:directCoAuthor ?otherAuthor .
+        } WHERE {
+            ?note prov:wasAttributedTo ?agent1 .
+            ?otherNote prov:wasAttributedTo ?otherAuthor .
+            { ?note wf:supports ?otherNote } UNION { ?note wf:refersTo ?otherNote }
+            FILTER(?agent1 != ?otherAuthor)
+        }
+    """,
     "agent_role_shortcut": """
         PREFIX wf: <https://w3id.org/wikiforge/ontology/>
         CONSTRUCT {
@@ -45,20 +58,43 @@ DEFAULT_SHORTCUT_RULES: Dict[str, str] = {
     """,
 }
 
+DEFAULT_CYPHER_SHORTCUT_QUERIES: List[str] = [
+    """
+    MATCH (n:PermanentNote)-[:WAS_ATTRIBUTED_TO]->(a1:Agent)
+    MATCH (n)-[:SUPPORTS|REFERS_TO]->(other:PermanentNote)-[:WAS_ATTRIBUTED_TO]->(a2:Agent)
+    WHERE a1 <> a2
+    MERGE (n)-[:DIRECT_CO_AUTHOR]->(a2)
+    """,
+    """
+    MATCH (e)-[:HAS_AGENT_ROLE]->(ar)
+    OPTIONAL MATCH (ar)-[:WITH_AGENT]->(a)
+    OPTIONAL MATCH (ar)-[:WITH_ROLE]->(r)
+    FOREACH (_ IN CASE WHEN a IS NOT NULL THEN [1] ELSE [] END | MERGE (e)-[:AGENT]->(a))
+    FOREACH (_ IN CASE WHEN r IS NOT NULL THEN [1] ELSE [] END | MERGE (e)-[:ROLE]->(r))
+    """
+]
+
 
 class ShortcutEngine:
     """
     Materializes simplified direct shortcut properties from multi-hop reified ODP structures.
     """
 
-    def __init__(self, rules: Optional[Dict[str, str]] = None):
+    def __init__(self, rules: Optional[Dict[str, str]] = None, cypher_queries: Optional[List[str]] = None):
         self.rules: Dict[str, str] = dict(DEFAULT_SHORTCUT_RULES)
         if rules:
             self.rules.update(rules)
+        self.cypher_queries: List[str] = list(DEFAULT_CYPHER_SHORTCUT_QUERIES)
+        if cypher_queries:
+            self.cypher_queries.extend(cypher_queries)
 
     def add_rule(self, rule_name: str, construct_sparql: str) -> None:
         """Registers a custom SPARQL CONSTRUCT shortcut rule."""
         self.rules[rule_name] = construct_sparql
+
+    def add_cypher_query(self, cypher_query: str) -> None:
+        """Registers a custom Cypher shortcut materialization query."""
+        self.cypher_queries.append(cypher_query)
 
     def materialize_shortcuts(self, data_graph: Graph) -> Graph:
         """
@@ -82,6 +118,10 @@ class ShortcutEngine:
 
         return data_graph
 
+    def get_cypher_materialization_queries(self) -> List[str]:
+        """Returns the list of Cypher queries for materializing shortcuts in Neo4j."""
+        return list(self.cypher_queries)
+
     def create_simplified_view(self, data_graph: Graph) -> Graph:
         """
         Generates a standalone application-layer Graph containing only
@@ -97,7 +137,6 @@ class ShortcutEngine:
         self.materialize_shortcuts(working_g)
 
         # Copy over core triples and shortcut triples, skipping intermediate ODP nodes
-        # Exclude nodes with rdf:type wf:AgentRole, wf:StatusAnnotation, etc.
         reified_types = {
             URIRef("https://w3id.org/wikiforge/ontology/AgentRoleNode"),
             URIRef("https://w3id.org/wikiforge/ontology/ProvenanceNode"),

@@ -10,3 +10,6 @@ pytest
 langgraph
 langchain-openai
 neo4j
+watchdog
+fastapi
+uvicorn
