@@ -1,0 +1,103 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix wf: <https://w3id.org/wikiforge/ontology/> .
+@prefix wfid: <https://w3id.org/wikiforge/id/> .
+@prefix wfs: <https://w3id.org/wikiforge/shapes/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# =================================================================
+# SHACL Shape per la Nota Permanente Zettelkasten (wf:PermanentNote)
+# =================================================================
+wfs:PermanentNoteShape
+    a sh:NodeShape ;
+    sh:targetClass wf:PermanentNote ;
+    rdfs:label "Shape di Validazione per le Note Permanenti Zettelkasten" ;
+    rdfs:comment "Definisce i vincoli strutturali e semantici per ogni nota Zettelkasten." ;
+
+    # 1. Identificatore Univoco (dcterms:identifier)
+    sh:property [
+        sh:path dcterms:identifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[a-z0-9-]+$" ;
+        sh:message "Ogni nota deve avere esattamente un identificatore univoco in formato slug (es. note-001)." ;
+    ] ;
+
+    # 2. Titolo della Nota (dcterms:title)
+    sh:property [
+        sh:path dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 3 ;
+        sh:message "Ogni nota deve avere un titolo di almeno 3 caratteri." ;
+    ] ;
+
+    # 3. Data di Creazione ISO (dcterms:created)
+    sh:property [
+        sh:path dcterms:created ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Ogni nota deve avere una data di creazione valida in formato YYYY-MM-DD." ;
+    ] ;
+
+    # 4. Contenuto Markdown (wf:content)
+    sh:property [
+        sh:path wf:content ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:message "La nota deve contenere il corpo del testo Markdown." ;
+    ] ;
+
+    # 5. Attribuzione Autore (prov:wasAttributedTo)
+    sh:property [
+        sh:path prov:wasAttributedTo ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:message "Ogni nota deve essere attribuita a un Agente (autore) tramite un IRI valido." ;
+    ] ;
+
+    # 6. Collegamento Semantico SUPPORTS (wf:supports)
+    sh:property [
+        sh:path wf:supports ;
+        sh:nodeKind sh:IRI ;
+        sh:class wf:PermanentNote ;
+        sh:message "I collegamenti wf:supports devono puntare esclusivamente a un IRI di una nota permanente." ;
+    ] ;
+
+    # 7. Collegamento Semantico CONTRADICTS (wf:contradicts)
+    sh:property [
+        sh:path wf:contradicts ;
+        sh:nodeKind sh:IRI ;
+        sh:class wf:PermanentNote ;
+        sh:message "I collegamenti wf:contradicts devono puntare esclusivamente a un IRI di una nota permanente." ;
+    ] ;
+
+    # 8. Collegamento Semantico REFERS_TO (wf:refersTo)
+    sh:property [
+        sh:path wf:refersTo ;
+        sh:nodeKind sh:IRI ;
+        sh:class wf:PermanentNote ;
+        sh:message "I collegamenti wf:refersTo devono puntare esclusivamente a un IRI di una nota permanente." ;
+    ] .
+
+# =================================================================
+# SHACL Shape per gli Agenti / Autori (prov:Agent / foaf:Agent)
+# =================================================================
+wfs:AgentShape
+    a sh:NodeShape ;
+    sh:targetClass prov:Agent ;
+    rdfs:label "Shape di Validazione per gli Agenti Autori" ;
+
+    sh:property [
+        sh:path foaf:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Ogni Agente deve avere esattamente un nome (foaf:name)." ;
+    ] .

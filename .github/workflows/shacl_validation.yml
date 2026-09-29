@@ -1,0 +1,84 @@
+name: W3C SHACL Validation CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+    paths:
+      - 'wiki/**'
+      - 'notes/**'
+      - 'src/wikiforge/config/shapes.ttl'
+      - 'src/**'
+  pull_request:
+    branches: [ "main", "master" ]
+    paths:
+      - 'wiki/**'
+      - 'notes/**'
+      - 'src/wikiforge/config/shapes.ttl'
+
+jobs:
+  shacl-validation:
+    name: Validate Zettelkasten Knowledge Graph Shapes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Semantic Graph Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rdflib pyshacl pyyaml pydantic
+
+      - name: Convert Markdown Zettelkasten to RDF Turtle
+        run: |
+          python src/wikiforge/semantics/markdown_to_rdf.py --input ./wiki --output ./knowledge_graph.ttl
+
+      - name: Run PySHACL Constraint Validation
+        run: |
+          python -c "
+          from pyshacl import validate
+          from rdflib import Graph
+          import sys
+
+          print('🔍 Loading Knowledge Graph data...')
+          data_g = Graph().parse('knowledge_graph.ttl', format='turtle')
+
+          print('📋 Loading SHACL Shape Constraints...')
+          shapes_g = Graph().parse('src/wikiforge/config/shapes.ttl', format='turtle')
+
+          print('⚙️ Executing SHACL Validation Engine...')
+          conforms, results_graph, results_text = validate(
+              data_graph=data_g,
+              shacl_graph=shapes_g,
+              inference='rdfs',
+              abort_on_first=False
+          )
+
+          if conforms:
+              print('✅ SUCCESS: Knowledge Graph conforms to all SHACL shapes!')
+              sys.exit(0)
+          else:
+              print('❌ SHACL VALIDATION VIOLATIONS DETECTED:\n')
+              print(results_text)
+              sys.exit(1)
+          "
+
+      - name: Export Cypher Script Artifact for Neo4j
+        if: success()
+        run: |
+          python src/wikiforge/semantics/markdown_to_cypher.py --input ./wiki --output ./knowledge_graph.cypher
+
+      - name: Upload Graph Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knowledge-graph-artifacts
+          path: |
+            knowledge_graph.ttl
+            knowledge_graph.cypher

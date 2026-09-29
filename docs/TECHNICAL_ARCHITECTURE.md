@@ -85,7 +85,14 @@ Implemented in `scripts/export_semantic.py` and `scripts/ontology_rules.py`:
   - Rule 2: Identifies direct circular dependencies between notes (A -> B -> A).
   - Rule 3: Enforces that notes with `status: stable` contain human verification (`human:*` actor in `verified`).
 
-### 2.7 Multi-Project Workspace Management
+### 2.8 Enterprise Semantic Knowledge Graph & Stateful GraphRAG System
+Implemented in `src/wikiforge/config/shapes.ttl`, `src/wikiforge/semantics/markdown_to_rdf.py`, `markdown_to_cypher.py`, `graph_rag_pipeline.py`, and `.github/workflows/shacl_validation.yml`:
+- **W3C SHACL Validation Schema (`shapes.ttl`)**: Formally validates extracted RDF graphs against SHACL shape constraints enforcing unique slug IDs, ISO creation dates, non-empty markdown bodies, author agent IRIs, and typed relation targets (`wf:supports`, `wf:contradicts`, `wf:refersTo`).
+- **Dual-Graph Conversion**: Converts Zettelkasten Markdown notes into W3C Turtle RDF graphs and Neo4j Cypher property graph scripts.
+- **Stateful GraphRAG Pipeline (`WikiForgeGraphRAG`)**: Agentic workflow built with LangGraph implementing Entity Extraction, Text-to-Cypher translation, Neo4j/Mock execution, automated self-correction error recovery, and grounded synthesis with PROV-O provenance citations.
+- **CI/CD Automation**: GitHub Actions workflow automatically verifies SHACL shape conformance and builds graph artifacts on push/PR.
+
+### 2.9 Multi-Project Workspace Management
 Implemented in `projects/` and `src/components/ConfigManager.ts`:
 - **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
 - **GUI Config Manager**: Web UI modal allows editing project metadata, folder paths, LLM provider settings, and OKF taxonomy using `smol-toml`.

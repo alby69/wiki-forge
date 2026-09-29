@@ -12,9 +12,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Power To The People](intelligenza-artificiale/power-to-the-people.md) — tags: ['intelligenza-artificiale', 'power-to-the-people']
-* [Scorciatoia Apprendimento Automatico](intelligenza-artificiale/scorciatoia-apprendimento-automatico.md) — tags: ['intelligenza-artificiale', 'scorciatoia-apprendimento-automatico']
-* [Sequoia Ascent 2026](intelligenza-artificiale/sequoia-ascent-2026.md) — tags: ['intelligenza-artificiale', 'sequoia-ascent-2026']
-* [Sovrumano Ani Agi Asi](intelligenza-artificiale/sovrumano-ani-agi-asi.md) — tags: ['intelligenza-artificiale', 'sovrumano-ani-agi-asi']
-* [Stefano Gatti](intelligenza-artificiale/stefano-gatti.md) — tags: ['intelligenza-artificiale', 'stefano-gatti']
+* [Verifiability: cosa si automatizza con l'AI](intelligenza-artificiale/verifiability.md) — tags: ['intelligenza-artificiale', 'verifiability']
+* [Vibe Coding Menugen](intelligenza-artificiale/vibe-coding-menugen.md) — tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
+* [Visione Sistemica Manager](intelligenza-artificiale/visione-sistemica-manager.md) — tags: ['intelligenza-artificiale', 'visione-sistemica-manager']
+* [Versions](versions/README.md) — type: Reference
+* [Indice Wiki](intelligenza-artificiale/indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
 
