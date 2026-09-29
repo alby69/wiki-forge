@@ -123,6 +123,9 @@ The command surface is modularized into six Skills under `skills/`. Load the req
 | Query & Research | ask a question, search, trace a claim, deep-research | `skills/wiki-query/SKILL.md` |
 | Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes | `skills/wiki-study/SKILL.md` |
 | Onboarding & Utility | run the scenario wizard, stats, export, tags, help | `skills/wiki-onboarding/SKILL.md` |
+| Adversarial Review | stress-test notes/thesis for contradictions or missing citations | `skills/wiki-adversarial-review/SKILL.md` |
+| Digest | natural language summary of recent log updates & health | `skills/wiki-digest/SKILL.md` |
+| Presentation Slides | generate reveal.js slide deck from mature notes/chapters | `skills/wiki-slides/SKILL.md` |
 
 ---
 
