@@ -77,6 +77,14 @@ Implemented in `src/server/mcp_server.py` and `docker-compose.yml`:
 - **Tools Exposed**: `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, and `get_version_history`.
 - **Multi-Agent Ecosystem Support**: Enables external LLM agents (Claude, GPT) to query and cite the OKF knowledge base over standard MCP JSON-RPC protocol.
 
+### 2.7 W3C Semantic RDF Exporter & Ontology Rule Engine
+Implemented in `scripts/export_semantic.py` and `scripts/ontology_rules.py`:
+- **Semantic Export (`export_semantic.py`)**: Exports OKF v0.2 knowledge base notes into W3C standard RDF graph formats (`output/wiki_export.jsonld` and `output/wiki_export.ttl`) for interoperability with Protégé, GraphDB, and SPARQL query engines.
+- **Ontology Rule Engine (`ontology_rules.py`)**: Evaluates logical graph constraints:
+  - Rule 1: Verifies that every note with `type: Concept` has at least 1 inbound or outbound `[[wikilink]]`.
+  - Rule 2: Identifies direct circular dependencies between notes (A -> B -> A).
+  - Rule 3: Enforces that notes with `status: stable` contain human verification (`human:*` actor in `verified`).
+
 ### 2.7 Multi-Project Workspace Management
 Implemented in `projects/` and `src/components/ConfigManager.ts`:
 - **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.

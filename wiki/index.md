@@ -12,9 +12,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Verifiability: cosa si automatizza con l'AI](intelligenza-artificiale/verifiability.md) — tags: ['intelligenza-artificiale', 'verifiability']
-* [Vibe Coding Menugen](intelligenza-artificiale/vibe-coding-menugen.md) — tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
-* [Visione Sistemica Manager](intelligenza-artificiale/visione-sistemica-manager.md) — tags: ['intelligenza-artificiale', 'visione-sistemica-manager']
-* [Versions](versions/README.md) — type: Reference
 * [Indice Wiki](intelligenza-artificiale/indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
+* [Intelligenza Collettiva](intelligenza-artificiale/intelligenza-collettiva.md) — tags: ['intelligenza-artificiale', 'intelligenza-collettiva']
+* [Machina Sapiens](intelligenza-artificiale/machina-sapiens.md) — tags: ['intelligenza-artificiale', 'machina-sapiens']
+* [Machines Of Loving Grace](intelligenza-artificiale/machines-of-loving-grace.md) — tags: ['intelligenza-artificiale', 'machines-of-loving-grace']
+* [Mappa Teorica Tesi](intelligenza-artificiale/mappa-teorica-tesi.md) — tags: ['intelligenza-artificiale', 'mappa-teorica-tesi']
 

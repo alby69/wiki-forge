@@ -22,7 +22,7 @@ export interface ScriptDef {
   id: string;
   path: string;
   displayName: string;
-  category: 'Ingestion' | 'OKF Maintenance' | 'Analysis & Metrics' | 'Taxonomy' | 'Thesis & Study' | 'Wizard';
+  category: 'Ingestion' | 'OKF Maintenance' | 'Analysis & Metrics' | 'Taxonomy' | 'Thesis & Study' | 'Wizard' | 'Knowledge Engineering';
   description: string;
   parameters: ScriptParamDef[];
 }
@@ -147,6 +147,19 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
       if (file) args.push(file);
       args.push('--output', output);
       if (title) args.push('--title', title);
+      break;
+    }
+    case 'export_semantic': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const outputDir = String(getVal('output_dir', 'output'));
+      args.push('--wiki-dir', wikiDir, '--output-dir', outputDir);
+      break;
+    }
+    case 'ontology_rules': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const strict = Boolean(getVal('strict', false));
+      args.push(wikiDir);
+      if (strict) args.push('--strict');
       break;
     }
     default:
@@ -335,6 +348,28 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       { name: 'file', label: 'Audio / Transcript File Path', type: 'text', required: true, placeholder: 'sources/dictation.mp3', description: 'Path to audio or transcript file.' },
       { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for generated Markdown note.' },
       { name: 'title', label: 'Note Title', type: 'text', placeholder: 'Voice Note Title', description: 'Optional custom title.' },
+    ],
+  },
+  export_semantic: {
+    id: 'export_semantic',
+    path: 'scripts/export_semantic.py',
+    displayName: 'Semantic RDF Exporter (JSON-LD/TTL)',
+    category: 'Knowledge Engineering',
+    description: 'Exports OKF v0.2 knowledge base notes into W3C standard RDF formats (JSON-LD and Turtle).',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'output', description: 'Destination folder for JSON-LD and TTL files.' },
+    ],
+  },
+  ontology_rules: {
+    id: 'ontology_rules',
+    path: 'scripts/ontology_rules.py',
+    displayName: 'Ontology Rule Engine',
+    category: 'Knowledge Engineering',
+    description: 'Validates logical ontology constraints (unlinked concepts, circular links, stable note human verification).',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, description: 'Return error code if rule violations are found.' },
     ],
   },
 };

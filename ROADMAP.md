@@ -59,6 +59,8 @@
 | 44 | Voice & Multimedia Ingestion (No-Code Entry) | ✅ Done | Integrazione di trascrizione/dettatura vocale (`scripts/voice_ingest.py`) per trasformare registrazioni in note OKF strutturate. |
 | 45 | Automated "Thesis Defense" Slide Generation | ✅ Done | Integrazione della skill `slides` e modelli reveal.js (`templates/reveal/`) per generare deck di presentazione offline-ready. |
 | 46 | Enterprise Readiness: RBAC & Cloud Sync Hooks | ✅ Done | Aggiunta configurazione `[enterprise]` in `config.toml` con flag RBAC e hook di backup cloud WebDAV. |
+| 47 | Semantic Export (RDF/JSON-LD/Turtle) | ✅ Done | Script `export_semantic.py` per l'esportazione W3C semantica (`output/wiki_export.jsonld`, `output/wiki_export.ttl`). |
+| 48 | Lightweight Ontology Rule Engine | ✅ Done | Motore di regole `ontology_rules.py` per la validazione logica (unlinked concepts, circular links, stable human review). |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -85,3 +87,15 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - Updated `docs/TUTORIAL.md` and `docs/THESIS_GUIDE.md` with the 5-phase chronological operator pipeline (Initialization -> Ingestion -> Dynamic Construction -> Study & Maturity -> Print PDF Export).
 - Reorganized `README.md` with audience-based document index and 5-phase workflow.
 - Verified doc/skill synchronization with `scripts/check_docs_sync.py`.
+
+---
+
+## Phase 47 & 48 — Semantic Export & Lightweight Ontology Rule Engine ✅ Done
+
+**Goal:** Elevate `wiki-forge` to a complete Knowledge Engineering platform by implementing W3C semantic exports and formal logical ontology validation rules.
+
+**Deliverables:**
+- Implemented `scripts/export_semantic.py` exporting OKF v0.2 notes into JSON-LD and Turtle TTL semantic graph files.
+- Implemented `scripts/ontology_rules.py` for logical rule verification (unlinked `Concept` notes, circular dependencies A -> B -> A, and human verification requirements for `stable` notes).
+- Registered tools in AgentServer `SCRIPT_REGISTRY` and Web UI Control Panel.
+- Created `docs/KNOWLEDGE_ENGINEERING.md` operating manual for Knowledge Engineers.

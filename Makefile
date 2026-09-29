@@ -79,6 +79,12 @@ okf-log:
 okf-stats:
 	@python3 scripts/okf_stats.py wiki/
 
+ontology-check:
+	@python3 scripts/ontology_rules.py wiki/
+
+export-semantic:
+	@python3 scripts/export_semantic.py --wiki-dir wiki --output-dir output
+
 maturity:
 	python3 scripts/maturity_calculator.py wiki
 
@@ -92,7 +98,7 @@ mcp-serve:
 	python3 src/server/mcp_server.py --http --port 8080
 
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, ui, ui-docker, ui-build, ui-preview, ui-test, ui-typecheck, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, help"
 
 ui:
 	npm run dev
@@ -129,4 +135,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
