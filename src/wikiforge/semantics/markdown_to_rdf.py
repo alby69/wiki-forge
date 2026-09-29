@@ -23,15 +23,17 @@ def escape_ttl_string(val: str) -> str:
 def slugify(text: str) -> str:
     """Genera uno slug valido per IRI RDF."""
     text = text.lower().strip()
+    text = text.replace('_', '-').replace('/', '-').replace('\\', '-')
     text = re.sub(r'[^\w\s-]', '', text)
-    return re.sub(r'[\s_-]+', '-', text)
+    res = re.sub(r'[\s_-]+', '-', text).strip('-')
+    return res or "note"
 
 class ZettelToRDFConverter:
     def __init__(self, base_uri="https://w3id.org/wikiforge/id/", ontology_uri="https://w3id.org/wikiforge/ontology/"):
         self.base_uri = base_uri
         self.ontology_uri = ontology_uri
 
-    def parse_markdown_file(self, filepath: Path) -> dict:
+    def parse_markdown_file(self, filepath: Path, input_dir: Path = Path(".")) -> dict:
         """Estrae frontmatter YAML, titolo e wikilinks semantici da una nota Markdown."""
         content = filepath.read_text(encoding="utf-8")
 
@@ -46,8 +48,18 @@ class ZettelToRDFConverter:
             except yaml.YAMLError as e:
                 print(f"⚠️ Errore YAML in {filepath.name}: {e}")
 
-        note_id = str(metadata.get("id") or metadata.get("identifier") or filepath.stem)
-        note_slug = slugify(note_id)
+        try:
+            rel_path = filepath.relative_to(input_dir)
+        except ValueError:
+            rel_path = filepath
+
+        if metadata.get("id") or metadata.get("identifier"):
+            raw_id = metadata.get("id") or metadata.get("identifier")
+            note_slug = slugify(str(raw_id))
+        elif rel_path.parent != Path("."):
+            note_slug = slugify(f"{rel_path.parent.as_posix()}-{rel_path.stem}")
+        else:
+            note_slug = slugify(filepath.stem)
 
         title = metadata.get("title")
         if not title:
@@ -65,7 +77,13 @@ class ZettelToRDFConverter:
 
         for match in wikilink_pattern.finditer(body):
             pred, target = match.groups()
-            target_slug = slugify(target.strip())
+            target_str = target.strip()
+            target_p = Path(target_str)
+
+            if target_p.parent != Path("."):
+                target_slug = slugify(f"{target_p.parent.as_posix()}-{target_p.stem}")
+            else:
+                target_slug = slugify(target_p.stem)
 
             if pred:
                 predicate_name = pred.strip()
@@ -75,12 +93,12 @@ class ZettelToRDFConverter:
             semantic_links.append({
                 "predicate": predicate_name,
                 "target_slug": target_slug,
-                "target_raw": target.strip()
+                "target_raw": target_str
             })
 
         return {
             "file_path": str(filepath),
-            "id": note_id,
+            "id": note_slug,
             "slug": note_slug,
             "title": title,
             "created": str(created_date),
@@ -93,6 +111,11 @@ class ZettelToRDFConverter:
     def convert_notes_to_turtle(self, notes_data: list) -> str:
         """Converte una lista di note estratte in un grafo RDF serializzato in Turtle."""
         ttl_lines = [TURTLE_PREFIXES]
+
+        all_targets = set()
+        for note in notes_data:
+            for link in note['links']:
+                all_targets.add(link['target_slug'])
 
         for note in notes_data:
             note_iri = f"wfid:{note['slug']}"
@@ -121,6 +144,19 @@ class ZettelToRDFConverter:
             ttl_lines.append(f"\n{author_iri} a prov:Agent, foaf:Agent ;")
             ttl_lines.append(f'    foaf:name "{escape_ttl_string(note["author"])}" .\n')
 
+        parsed_slugs = {n['slug'] for n in notes_data}
+        missing_targets = all_targets - parsed_slugs
+        if missing_targets:
+            ttl_lines.append("# --- Link Targets / Stub Notes ---")
+            for target_slug in sorted(missing_targets):
+                target_iri = f"wfid:{target_slug}"
+                ttl_lines.append(f"{target_iri} a wf:PermanentNote ;")
+                ttl_lines.append(f'    dcterms:identifier "{target_slug}" ;')
+                ttl_lines.append(f'    dcterms:title "Stub {target_slug}" ;')
+                ttl_lines.append(f'    dcterms:created "2026-01-01"^^xsd:date ;')
+                ttl_lines.append(f'    wf:content "Stub note for target {target_slug}" ;')
+                ttl_lines.append(f'    prov:wasAttributedTo wfid:agent-anonymus .\n')
+
         return "\n".join(ttl_lines)
 
     def process_directory(self, input_dir: Path, output_file: Path):
@@ -130,7 +166,7 @@ class ZettelToRDFConverter:
         print(f"📁 Trovate {len(md_files)} note Markdown in {input_dir}")
 
         for md_file in md_files:
-            note_data = self.parse_markdown_file(md_file)
+            note_data = self.parse_markdown_file(md_file, input_dir=input_dir)
             notes.append(note_data)
 
         turtle_content = self.convert_notes_to_turtle(notes)

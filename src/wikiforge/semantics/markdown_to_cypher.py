@@ -13,14 +13,16 @@ def escape_cypher_string(val: str) -> str:
 def slugify(text: str) -> str:
     """Genera uno slug valido per gli ID dei nodi."""
     text = text.lower().strip()
+    text = text.replace('_', '-').replace('/', '-').replace('\\', '-')
     text = re.sub(r'[^\w\s-]', '', text)
-    return re.sub(r'[\s_-]+', '-', text)
+    res = re.sub(r'[\s_-]+', '-', text).strip('-')
+    return res or "note"
 
 class ZettelToCypherConverter:
     def __init__(self):
         pass
 
-    def parse_markdown_file(self, filepath: Path) -> dict:
+    def parse_markdown_file(self, filepath: Path, input_dir: Path = Path(".")) -> dict:
         """Estrae metadati, testo e wikilinks semantici."""
         content = filepath.read_text(encoding="utf-8")
         metadata = {}
@@ -34,8 +36,18 @@ class ZettelToCypherConverter:
             except yaml.YAMLError as e:
                 print(f"⚠️ Errore YAML in {filepath.name}: {e}")
 
-        note_id = str(metadata.get("id") or metadata.get("identifier") or filepath.stem)
-        note_slug = slugify(note_id)
+        try:
+            rel_path = filepath.relative_to(input_dir)
+        except ValueError:
+            rel_path = filepath
+
+        if metadata.get("id") or metadata.get("identifier"):
+            raw_id = metadata.get("id") or metadata.get("identifier")
+            note_slug = slugify(str(raw_id))
+        elif rel_path.parent != Path("."):
+            note_slug = slugify(f"{rel_path.parent.as_posix()}-{rel_path.stem}")
+        else:
+            note_slug = slugify(filepath.stem)
 
         title = metadata.get("title")
         if not title:
@@ -53,7 +65,13 @@ class ZettelToCypherConverter:
 
         for match in wikilink_pattern.finditer(body):
             pred, target = match.groups()
-            target_slug = slugify(target.strip())
+            target_str = target.strip()
+            target_p = Path(target_str)
+
+            if target_p.parent != Path("."):
+                target_slug = slugify(f"{target_p.parent.as_posix()}-{target_p.stem}")
+            else:
+                target_slug = slugify(target_p.stem)
 
             if pred:
                 predicate_name = pred.strip()
@@ -66,7 +84,7 @@ class ZettelToCypherConverter:
             })
 
         return {
-            "id": note_id,
+            "id": note_slug,
             "slug": note_slug,
             "title": title,
             "created": str(created_date),
@@ -132,7 +150,7 @@ class ZettelToCypherConverter:
         print(f"📁 Trovate {len(md_files)} note Markdown in {input_dir}")
 
         for md_file in md_files:
-            note_data = self.parse_markdown_file(md_file)
+            note_data = self.parse_markdown_file(md_file, input_dir=input_dir)
             notes.append(note_data)
 
         cypher_content = self.convert_notes_to_cypher(notes)
