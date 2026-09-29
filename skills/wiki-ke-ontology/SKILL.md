@@ -1,8 +1,10 @@
 ---
 name: wiki-ke-ontology
-description: Knowledge Engineering & Ontology Suite for Competency Questions (CQ) validation, Ontology Design Pattern (ODP) suggestions, Neuro-Symbolic consistency checking, and KE Maturity Assessment.
+description: Knowledge Engineering & Ontology Suite for Schema Linting, Schema Inference, Competency Questions (CQ) validation, Ontology Design Pattern (ODP) suggestions, Neuro-Symbolic consistency checking, and KE Maturity Assessment.
 triggers:
   commands:
+    - schema-lint
+    - schema-infer
     - validate-cq
     - suggest-odp
     - neuro-check
@@ -11,9 +13,16 @@ triggers:
 
 # 🛠️ Wiki Knowledge Engineering & Ontology Skill (`wiki-ke-ontology`)
 
-This skill package provides AI Knowledge Engineers with automated tooling based on Knowledge Representation principles, Ontology Design Patterns (ODP), and Neuro-Symbolic graph reasoning.
+This skill package provides AI Knowledge Engineers with automated tooling based on Knowledge Representation principles, Typed Schema Validation, Ontology Design Patterns (ODP), and Neuro-Symbolic graph reasoning.
 
 ## Capabilities & Workflows
+
+### 0. Typed Schema Lint & Inference (`/schema-lint`, `/schema-infer`)
+Validates every page against `[schema]` definitions in `config.toml` or infers candidate schema settings.
+- **CLI / Script**:
+  - `python3 scripts/schema_lint.py [--project ID] [--json] [--strict]`
+  - `python3 scripts/schema_infer.py [--project ID] [--json]`
+- **Makefile Targets**: `make schema-lint`, `make schema-infer`
 
 ### 1. Competency Questions (CQ) Validation (`/validate-cq`)
 Validates whether the knowledge base contains necessary entities, relations, and rules to answer natural language CQs.

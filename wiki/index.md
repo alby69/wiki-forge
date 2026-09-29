@@ -12,9 +12,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Competency Questions Specification](competency_questions.md) — Natural language Competency Questions (CQs) for Knowledge Base validation.
-* [Indice Wiki](intelligenza-artificiale/indice_wiki.md) — tags: ['intelligenza-artificiale', 'indice_wiki']
-* [Intelligenza Collettiva](intelligenza-artificiale/intelligenza-collettiva.md) — tags: ['intelligenza-artificiale', 'intelligenza-collettiva']
-* [Machina Sapiens](intelligenza-artificiale/machina-sapiens.md) — tags: ['intelligenza-artificiale', 'machina-sapiens']
-* [Machines Of Loving Grace](intelligenza-artificiale/machines-of-loving-grace.md) — tags: ['intelligenza-artificiale', 'machines-of-loving-grace']
+* [Sovrumano Ani Agi Asi](intelligenza-artificiale/sovrumano-ani-agi-asi.md) — tags: ['intelligenza-artificiale', 'sovrumano-ani-agi-asi']
+* [Stefano Gatti](intelligenza-artificiale/stefano-gatti.md) — tags: ['intelligenza-artificiale', 'stefano-gatti']
+* [Test Di Turing](intelligenza-artificiale/test-di-turing.md) — tags: ['intelligenza-artificiale', 'test-di-turing']
+* [The Adolescence Of Technology](intelligenza-artificiale/the-adolescence-of-technology.md) — tags: ['intelligenza-artificiale', 'the-adolescence-of-technology']
+* [The Space Of Minds](intelligenza-artificiale/the-space-of-minds.md) — tags: ['intelligenza-artificiale', 'the-space-of-minds']
 

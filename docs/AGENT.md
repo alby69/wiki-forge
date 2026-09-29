@@ -119,7 +119,7 @@ The command surface is modularized into six Skills under `skills/`. Load the req
 |---|---|---|
 | Ingestion | add sources, convert, compile, (re)ingest a file | `skills/wiki-ingest/SKILL.md` |
 | Curation | create/merge/split an article, tag it, stub a missing link | `skills/wiki-curate/SKILL.md` |
-| Audit & Maintenance | check health, fix broken links, reindex, prune, lint | `skills/wiki-audit/SKILL.md` |
+| Audit & Maintenance | check health, fix broken links, schema-lint, schema-infer, reindex, prune, lint | `skills/wiki-audit/SKILL.md` |
 | Query & Research | ask a question, search, trace a claim, deep-research | `skills/wiki-query/SKILL.md` |
 | Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes | `skills/wiki-study/SKILL.md` |
 | Onboarding & Utility | run the scenario wizard, stats, export, tags, help | `skills/wiki-onboarding/SKILL.md` |

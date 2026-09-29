@@ -5,6 +5,18 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-10-02
+
+### Added
+- **Typed Schema System & Linting Engine (Ticket 1 / Phase 49)**:
+  - **Shared KE Library (`scripts/ke_common.py`)**: Centralized multi-project resolution, TOML loading (`load_config`), page iterator (`iter_pages`), wikilink resolver (`resolve_wikilink` supporting `prefLabel` and `altLabel`), schema loader (`load_schema`), and `emit` output helper.
+  - **Schema Linter (`scripts/schema_lint.py`)**: Validates wiki pages against `[schema]` definitions in `config.toml`, checking missing required fields (`SCH-001`), unknown relations for types (`SCH-002`), unresolved target wikilinks (`SCH-003`), relation domain/range mismatches (`SCH-004`), cycles in acyclic relations (`SCH-005`), and unknown page types in strict mode (`SCH-006`).
+  - **Schema Inferrer (`scripts/schema_infer.py`)**: Scans existing wiki pages and auto-proposes a candidate `[schema]` TOML block to `stdout` or JSON envelope without modifying `config.toml`.
+  - **Config Manager GUI Enhancement (`src/components/ConfigManager.ts`)**: Added a read-only "Schema (Read-Only)" tab displaying schema status, strict mode, and defined type schemas.
+  - **Scenario Presets (`config/scenarios.toml`)**: Added sensible `[schema]` preset blocks for academic, thesis, business, research, and creative scenarios.
+  - **Documentation & Skills**: Created `docs/SCHEMA.md`, updated `docs/AGENT.md`, `skills/wiki-ke-ontology/SKILL.md`, `Makefile` (`make schema-lint`, `make schema-infer`), `README.md`, `docs/TUTORIAL.md`, and `ROADMAP.md`.
+  - **Test Suite**: Added test fixtures under `tests/fixtures/ke_wiki/` seeded with violations SCH-001 through SCH-006, and unit tests in `tests/test_schema_lint.py` and `tests/test_schema_infer.py`.
+
 ## [3.1.0] - 2026-09-29
 
 ### Added

@@ -10,7 +10,7 @@ export class ConfigManager {
   private container: HTMLElement;
   private storage: ApiStorage;
   private onProjectChanged: () => void;
-  private activeTab: 'general' | 'paths' | 'llm' | 'okf' = 'general';
+  private activeTab: 'general' | 'paths' | 'llm' | 'okf' | 'schema' = 'general';
   private currentConfig: Record<string, any> = {};
   private projects: ProjectInfo[] = [];
 
@@ -69,12 +69,15 @@ export class ConfigManager {
         version: '0.2',
         type_vocabulary: ['Concept', 'Paper', 'Book', 'Tool', 'Process', 'Playbook', 'Reference', 'StudyGuide', 'Quiz'],
       },
+      schema: {
+        enabled: false,
+        strict: false,
+      },
     };
   }
 
   private render(): void {
     const activeId = this.storage.getActiveProjectId();
-    const activeProj = this.projects.find(p => p.id === activeId) || { id: activeId, name: activeId };
 
     const projOptions = this.projects
       .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.name} (${p.id})</option>`)
@@ -84,6 +87,7 @@ export class ConfigManager {
     const pathsSection = this.currentConfig.paths || {};
     const agentLlmSection = (this.currentConfig.agent && this.currentConfig.agent.llm) || {};
     const okfSection = this.currentConfig.okf || {};
+    const schemaSection = this.currentConfig.schema || {};
 
     const typeVocabList = Array.isArray(okfSection.type_vocabulary)
       ? okfSection.type_vocabulary.join(', ')
@@ -119,11 +123,12 @@ export class ConfigManager {
           <button class="config-tab-btn" data-tab="paths" style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid ${this.activeTab === 'paths' ? '#3182ce' : 'transparent'}; color: ${this.activeTab === 'paths' ? '#ffffff' : '#a0aec0'}; font-weight: 600; font-size: 13px; cursor: pointer;">Percorsi</button>
           <button class="config-tab-btn" data-tab="llm" style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid ${this.activeTab === 'llm' ? '#3182ce' : 'transparent'}; color: ${this.activeTab === 'llm' ? '#ffffff' : '#a0aec0'}; font-weight: 600; font-size: 13px; cursor: pointer;">LLM & Agent</button>
           <button class="config-tab-btn" data-tab="okf" style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid ${this.activeTab === 'okf' ? '#3182ce' : 'transparent'}; color: ${this.activeTab === 'okf' ? '#ffffff' : '#a0aec0'}; font-weight: 600; font-size: 13px; cursor: pointer;">OKF & Tag</button>
+          <button class="config-tab-btn" data-tab="schema" style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid ${this.activeTab === 'schema' ? '#3182ce' : 'transparent'}; color: ${this.activeTab === 'schema' ? '#ffffff' : '#a0aec0'}; font-weight: 600; font-size: 13px; cursor: pointer;">Schema (Read-Only)</button>
         </div>
 
         <!-- Tab Contents -->
         <div style="flex: 1; padding: 20px; overflow-y: auto;">
-          ${this.renderTabContent(projectSection, pathsSection, agentLlmSection, okfSection, typeVocabList)}
+          ${this.renderTabContent(projectSection, pathsSection, agentLlmSection, okfSection, typeVocabList, schemaSection)}
         </div>
 
         <!-- Footer Actions -->
@@ -141,7 +146,7 @@ export class ConfigManager {
     this.attachEventListeners();
   }
 
-  private renderTabContent(project: any, paths: any, llm: any, okf: any, typeVocab: string): string {
+  private renderTabContent(project: any, paths: any, llm: any, okf: any, typeVocab: string, schema: any): string {
     if (this.activeTab === 'general') {
       return `
         <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -231,6 +236,50 @@ export class ConfigManager {
             <label style="display: block; font-size: 12px; color: #a0aec0; margin-bottom: 4px; font-weight: 600;">Controlled Type Vocabulary (comma-separated):</label>
             <textarea id="cfg-okf-vocab" rows="4" style="width: 100%; background: #2d3748; border: 1px solid #4a5568; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 13px; box-sizing: border-box; resize: vertical;">${typeVocab}</textarea>
           </div>
+        </div>
+      `;
+    }
+
+    if (this.activeTab === 'schema') {
+      const isEnabled = Boolean(schema.enabled);
+      const isStrict = Boolean(schema.strict);
+      const types = schema.types || {};
+
+      let typesHtml = '';
+      if (Object.keys(types).length === 0) {
+        typesHtml = '<p style="font-size: 13px; color: #a0aec0; font-style: italic;">No specific types configured in [schema.types].</p>';
+      } else {
+        typesHtml = Object.entries(types).map(([typeName, typeDef]: [string, any]) => {
+          const req = Array.isArray(typeDef.required) ? typeDef.required.join(', ') : 'none';
+          const opt = Array.isArray(typeDef.optional) ? typeDef.optional.join(', ') : 'none';
+          const rels = typeDef.relations ? JSON.stringify(typeDef.relations) : '{}';
+
+          return `
+            <div style="background: #23252b; border: 1px solid #2d3748; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <h4 style="margin: 0 0 8px 0; color: #64b5f6; font-size: 14px;">Type: ${typeName}</h4>
+              <div style="font-size: 12px; color: #cbd5e0; line-height: 1.6;">
+                <div><strong>Required fields:</strong> ${req || 'none'}</div>
+                <div><strong>Optional fields:</strong> ${opt || 'none'}</div>
+                <div><strong>Typed relations:</strong> <code>${rels}</code></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: #23252b; border: 1px solid #2d3748; border-radius: 6px; padding: 12px; display: flex; gap: 20px;">
+            <div><strong>Schema Status:</strong> <span style="color: ${isEnabled ? '#48bb78' : '#a0aec0'};">${isEnabled ? 'Enabled' : 'Disabled'}</span></div>
+            <div><strong>Mode:</strong> <span style="color: ${isStrict ? '#e53e3e' : '#e2e8f0'};">${isStrict ? 'Strict (Errors)' : 'Permissive (Warnings)'}</span></div>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #a0aec0; font-weight: 600;">Defined Schema Types:</h4>
+            ${typesHtml}
+          </div>
+          <p style="font-size: 12px; color: #a0aec0; margin-top: 10px;">
+            ℹ️ <em>To edit schema definitions or add custom type relations, update <code>config.toml</code> directly or run <code>make schema-infer</code> to generate candidate schema settings.</em>
+          </p>
         </div>
       `;
     }

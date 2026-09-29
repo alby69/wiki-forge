@@ -265,6 +265,8 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 | `audit` / `/audit` | Controllo generale di salute (link rotti, orfani, sovrapposizioni) |
 | `reindex` / `/reindex` | Rigenerazione automatica degli indici master e tematici |
 | `prune` / `/prune` | Pulizia di note vuote o bozze abbandonate |
+| `schema-lint` / `/schema-lint` | Validazione delle note rispetto allo schema tipizzato `[schema]` |
+| `schema-infer` / `/schema-infer` | Proposta automatica di una configurazione `[schema]` TOML dalla wiki |
 | `lint-frontmatter` / `/lint-frontmatter` | Validazione della sintassi YAML frontmatter OKF v0.2 |
 | `validate-cq` / `/validate-cq` | Validazione della copertura della wiki rispetto alle Competency Questions (CQ) |
 | `suggest-odp` / `/suggest-odp` | Suggerimento di Ontology Design Patterns formali (Employment, Time-Indexed) |

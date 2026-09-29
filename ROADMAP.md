@@ -61,6 +61,7 @@
 | 46 | Enterprise Readiness: RBAC & Cloud Sync Hooks | ✅ Done | Aggiunta configurazione `[enterprise]` in `config.toml` con flag RBAC e hook di backup cloud WebDAV. |
 | 47 | Semantic Export (RDF/JSON-LD/Turtle) | ✅ Done | Script `export_semantic.py` per l'esportazione W3C semantica (`output/wiki_export.jsonld`, `output/wiki_export.ttl`). |
 | 48 | Lightweight Ontology Rule Engine | ✅ Done | Motore di regole `ontology_rules.py` per la validazione logica (unlinked concepts, circular links, stable human review). |
+| 49 | Typed Schema System & Linting Engine (T1) | ✅ Done | Schema validation (`scripts/schema_lint.py`), inference (`scripts/schema_infer.py`), and `docs/SCHEMA.md`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
