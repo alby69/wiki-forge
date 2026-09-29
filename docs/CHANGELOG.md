@@ -5,6 +5,16 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-09-29
+
+### Added
+- **Full Knowledge Engineering Suite (Phases 37, 44–48)**:
+  - **Semantic Export (RDF / JSON-LD / Turtle)**: Built `scripts/export_semantic.py` exporting OKF v0.2 knowledge bases to standard W3C semantic graph formats (`output/wiki_export.jsonld`, `output/wiki_export.ttl`) for GraphDB / Protégé interoperability. Added `/export-semantic` skill command and `make export-semantic` target.
+  - **Lightweight Ontology Rule Engine**: Built `scripts/ontology_rules.py` validating logical ontology constraints: Rule 1 (unlinked `Concept` notes), Rule 2 (direct circular dependencies A -> B -> A), and Rule 3 (human-verification actor requirement for `stable` status notes). Added `/ontology-check` skill command and `make ontology-check` target.
+  - **Model Context Protocol (MCP) Server**: Native MCP server (`src/server/mcp_server.py`) exposing `search_wiki`, `get_concept_metadata`, and `get_line_anchored_citation` tools to external AI agent ecosystems via `make mcp-serve`.
+  - **Knowledge Engineer Operating Manual**: Created `docs/KNOWLEDGE_ENGINEERING.md` detailing domain modeling, OKF v0.2 quality verification, semantic interoperability, and lifecycle concept drift management.
+  - **Web UI & Control Panel Integration**: Registered `export_semantic` and `ontology_rules` tools in `SCRIPT_REGISTRY` and `buildCliArgs` in `src/server/agentServer.ts` for execution via Web UI tools modal.
+
 ## [2.9.0] - 2026-09-16
 
 ### Added

@@ -5,7 +5,7 @@ description: >
   or duplicates, reindex, prune empty stubs, or lint frontmatter — e.g. "audit wiki",
   "audit links", "audit orphans", "reindex", "prune empty notes", "lint frontmatter".
 triggers:
-  commands: [audit, reindex, prune, lint-frontmatter]
+  commands: [audit, reindex, prune, lint-frontmatter, ontology-check]
 reads:
   - wiki/**/*.md
   - .pre-commit-config.yaml
@@ -74,3 +74,12 @@ confirm_destructive: true
 - ISO 8601 timestamps and actor conventions (<producer>/<version>, human:<id>, process:<id>).
 - Reserved files `index.md` (§8 OKF) and `log.md` (§9 OKF) formatting.
 **Output:** List of violations with file paths.
+
+### `ontology-check`
+**Scope:** Execute logical ontology rule engine checks across all wiki notes.
+**Checks:**
+- Executes `python3 scripts/ontology_rules.py wiki/`.
+- Rule 1: `type: Concept` notes must have at least 1 incoming or outgoing `[[wikilink]]`.
+- Rule 2: Detects direct circular dependencies between notes (A -> B -> A).
+- Rule 3: `status: stable` notes must contain at least one `human:*` actor entry in `verified`.
+**Output:** Logical rule violations report.

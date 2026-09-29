@@ -6,7 +6,7 @@ description: >
   claude-code", "merge article A into article B", "split article X", "stub missing link",
   "retag note".
 triggers:
-  commands: [new-article, merge, split, stub, retag]
+  commands: [new-article, merge, split, stub, retag, export-semantic]
 reads:
   - templates/article.md
   - wiki/**/*.md
@@ -69,3 +69,10 @@ confirm_destructive: true
 3. Update `updated` date.
 4. Save.
 **Output:** Before/after tag list.
+
+### `export-semantic`
+**Scope:** Export OKF v0.2 knowledge base to W3C semantic formats (JSON-LD and Turtle).
+**Action:**
+- Executes `python3 scripts/export_semantic.py --wiki-dir wiki --output-dir output`.
+- Generates `output/wiki_export.jsonld` and `output/wiki_export.ttl`.
+**Output:** Paths to exported semantic graph files.

@@ -38,13 +38,13 @@ describe('Script Control Panel Test Suite', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  test('GET /api/scripts/list returns all 16 registered script tools', async () => {
+  test('GET /api/scripts/list returns all registered script tools', async () => {
     const res = await fetch(`${baseUrl}/api/scripts/list`);
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.success, true);
     assert.ok(Array.isArray(data.scripts));
-    assert.equal(data.scripts.length, 16);
+    assert.equal(data.scripts.length, 18);
 
     const scriptIds = data.scripts.map((s: { id: string }) => s.id);
     assert.ok(scriptIds.includes('conv2md'));
@@ -63,6 +63,8 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(scriptIds.includes('export_thesis_pdf'));
     assert.ok(scriptIds.includes('wizard'));
     assert.ok(scriptIds.includes('voice_ingest'));
+    assert.ok(scriptIds.includes('export_semantic'));
+    assert.ok(scriptIds.includes('ontology_rules'));
   });
 
   test('buildCliArgs builds expected command arguments for script definitions', () => {
@@ -77,6 +79,14 @@ describe('Script Control Panel Test Suite', () => {
     const wizardDef = SCRIPT_REGISTRY['wizard'];
     const wizardArgs = buildCliArgs(wizardDef, { preset: 'academic' });
     assert.deepEqual(wizardArgs, ['--preset', 'academic']);
+
+    const exportSemDef = SCRIPT_REGISTRY['export_semantic'];
+    const exportSemArgs = buildCliArgs(exportSemDef, { wiki_dir: 'wiki', output_dir: 'output' });
+    assert.deepEqual(exportSemArgs, ['--wiki-dir', 'wiki', '--output-dir', 'output']);
+
+    const ontologyDef = SCRIPT_REGISTRY['ontology_rules'];
+    const ontologyArgs = buildCliArgs(ontologyDef, { wiki_dir: 'wiki', strict: true });
+    assert.deepEqual(ontologyArgs, ['wiki', '--strict']);
   });
 
   test('POST /api/scripts/execute streams SSE response events for wiki_stats', async () => {

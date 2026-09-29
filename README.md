@@ -39,6 +39,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 ### 📖 Per Utenti ed Operatori (Non-Technical & Content Creators)
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida passo-passo che spiega come utilizzare il sistema giorno per giorno, con il prontuario dei comandi e la risoluzione dei problemi.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico e completo per costruire una tesi di laurea come Knowledge Base dinamica e generarne la versione stampabile in PDF.
+- **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per ingegneri della conoscenza (modellazione ontologica, validazione di vincoli logici ed esportazione semantica RDF/JSON-LD).
 - **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Registro bibliografico e guida alla tracciabilità delle fonti.
 
 ### ⚙️ Per Sviluppatori ed Ingegneri del Software (Technical Architecture)
@@ -89,7 +90,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 2. **Fase 2: Ingestione**: Carica i file sorgente in `sources/` e convertili in Markdown con `bash run_convert.sh` (`convert-only` / `/convert-only`), ritaglia pagine sul web con `clip2md.py` o importa da NotebookLM con `notebooklm_import.py`.
 3. **Fase 3: Costruzione & Consultazione**: Avvia `/compile` per elaborare i file in `raw/` o `/ingest` per un singolo file, esegui il riesame con `/recompile`, crea nuove schede con `/new-article`, interroga la wiki con `/consult`, cerca con `/search`, esplora i collegamenti con `/backlinks` e `/related`, e traccia le affermazioni alle fonti originali con `/trace`. Gestisci le versioni e ripristina stati precedenti con `/rollback`.
 4. **Fase 4: Sintesi & Maturazione**: Genera materiale didattico ed analisi con `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/deep-research`, prendi appunti veloci con `/note` e promuovili ad articoli con `/promote-note`, suggerisci tag con `/tag-suggest` e calcola l'indice di completamento delle pagine con `/maturity`.
-5. **Fase 5: Compilazione & Stampa PDF**: Aggrega le note mature con `/thesis-chapter` (`generate_thesis.py`), valuta la coerenza con `/adversarial-review`, riassumi i cambiamenti con `/digest`, genera slide reveal.js con `/slides` (`/generate-slides`), ed esporta il PDF finale con `export_thesis_pdf.py` (`make thesis-pdf`). Gestisci la manutenzione della wiki con `/audit`, `/reindex`, `/prune`, `/lint-frontmatter`, `/stats`, `/merge`, `/split`, `/stub`, `/retag`, rigenera la bibliografia con `/sources` (`sources regenerate`), visualizza modelli con `/template` (`template show`), confronta versioni con `/diff`, ed esporta dati con `/export` e `/help`.
+5. **Fase 5: Compilazione & Stampa PDF**: Aggrega le note mature con `/thesis-chapter` (`generate_thesis.py`), valuta la coerenza con `/adversarial-review`, riassumi i cambiamenti con `/digest`, genera slide reveal.js con `/slides` (`/generate-slides`), ed esporta il PDF finale con `export_thesis_pdf.py` (`make thesis-pdf`). Gestisci la manutenzione della wiki con `/audit`, `/reindex`, `/prune`, `/lint-frontmatter`, `/ontology-check`, `/stats`, `/merge`, `/split`, `/stub`, `/retag`, `/export-semantic`, rigenera la bibliografia con `/sources` (`sources regenerate`), visualizza modelli con `/template` (`template show`), confronta versioni con `/diff`, ed esporta dati con `/export` e `/help`.
 
 ---
 
@@ -117,6 +118,8 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 │   ├── okf_stats.py         # Statistiche ed analisi trust tier OKF
 │   ├── generate_thesis.py   # Aggregazione capitoli tesi da note mature
 │   ├── export_thesis_pdf.py # Esportazione della tesi in PDF tramite Pandoc
+│   ├── export_semantic.py   # Esportazione semantica RDF (JSON-LD / Turtle)
+│   ├── ontology_rules.py    # Motore di validazione regole ontologiche
 │   └── wizard.py            # CLI guidata per scenari operativi
 ├── AGENT.md             # Manuale operativo dell'Agente LLM (symlink a docs/AGENT.md)
 ├── skills/              # Pacchetti di Skill modulari per l'agente
@@ -129,6 +132,16 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 ├── Dockerfile           # Ambiente riproducibile (Python + Pandoc)
 └── Makefile             # Scorciatoie per terminale
 ```
+
+---
+
+## 🧠 Funzionalità Avanzate di Knowledge Engineering
+
+Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **Knowledge Engineer** professionale per la validazione formale e l'interoperabilità semantica:
+- **Validazione Ontologica Leggera (`/ontology-check`)**: Controlli di coerenza logica, rilevamento di dipendenze circolari dirette (A -> B -> A) e verifica della revisione umana per le note con stato `stable` via `python3 scripts/ontology_rules.py` (`make ontology-check`).
+- **Esportazione Semantica W3C (`/export-semantic`)**: Conversione automatica della Knowledge Base in formati RDF standard (`output/wiki_export.jsonld` e `output/wiki_export.ttl`) per l'interoperabilità con GraphDB e Protégé via `python3 scripts/export_semantic.py` (`make export-semantic`).
+- **Model Context Protocol (MCP Server)**: Server nativo (`src/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, e `get_line_anchored_citation`.
+- **Manuale del Knowledge Engineer**: Guida completa in [`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md) per la modellazione, la validazione ed il mantenimento del ciclo di vita della KB.
 
 ---
 
