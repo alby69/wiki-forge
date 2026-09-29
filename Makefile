@@ -85,6 +85,18 @@ ontology-check:
 export-semantic:
 	@python3 scripts/export_semantic.py --wiki-dir wiki --output-dir output
 
+validate-cq:
+	python3 scripts/cq_validator.py --wiki-dir wiki --output output/cq_validation_report.md
+
+suggest-odp:
+	python3 scripts/odp_suggester.py --wiki-dir wiki
+
+neuro-check:
+	python3 scripts/neuro_symbolic_check.py --wiki-dir wiki --output output/neuro_symbolic_report.md
+
+ke-maturity:
+	python3 scripts/ke_maturity.py --wiki-dir wiki --output output/ke_maturity_report.md
+
 maturity:
 	python3 scripts/maturity_calculator.py wiki
 
@@ -98,7 +110,7 @@ mcp-serve:
 	python3 src/server/mcp_server.py --http --port 8080
 
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, help"
 
 ui:
 	npm run dev
@@ -135,4 +147,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link

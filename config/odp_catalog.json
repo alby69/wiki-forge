@@ -1,0 +1,61 @@
+{
+  "patterns": [
+    {
+      "id": "employment_role",
+      "name": "Employment & Role Pattern",
+      "description": "Models employment relations with roles, contract types, working percentages, and time validity.",
+      "triggers": ["contratto", "contract", "part-time", "parttime", "fulltime", "dipendente", "employee", "assunzione"],
+      "informal_keys": ["contract", "contratto", "orario", "orario_lavoro"],
+      "suggested_structure": {
+        "employment": {
+          "role": "Employee",
+          "contract_type": "PartTime",
+          "working_percentage": 60,
+          "valid_from": "2024-01-01"
+        }
+      }
+    },
+    {
+      "id": "time_indexed_property",
+      "name": "Time-Indexed Property Pattern",
+      "description": "Models values that change over time with explicit temporal bounds.",
+      "triggers": ["valido_da", "valido_fino", "valid_from", "valid_until", "stipendio", "salary", "versione"],
+      "informal_keys": ["validity", "periodo"],
+      "suggested_structure": {
+        "temporal_property": {
+          "property_name": "status",
+          "value": "active",
+          "valid_from": "2024-01-01",
+          "valid_to": "2024-12-31"
+        }
+      }
+    },
+    {
+      "id": "participation_situation",
+      "name": "Participation & Situation Pattern",
+      "description": "Models multi-entity participation in events or situation contexts.",
+      "triggers": ["partecipa", "participates", "progetto", "project", "ruolo_progetto"],
+      "informal_keys": ["project_role", "ruolo"],
+      "suggested_structure": {
+        "participation": {
+          "event_or_project": "ProjectX",
+          "role": "Lead",
+          "contribution_percentage": 100
+        }
+      }
+    },
+    {
+      "id": "classification_type",
+      "name": "Classification Pattern",
+      "description": "Models explicit taxonomy classification and type hierarchies.",
+      "triggers": ["tipo", "categoria", "category", "classificazione", "classification"],
+      "informal_keys": ["category", "tipo"],
+      "suggested_structure": {
+        "classification": {
+          "domain_category": "Human Resources",
+          "sub_category": "Leave Policy"
+        }
+      }
+    }
+  ]
+}

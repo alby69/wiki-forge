@@ -138,9 +138,13 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 ## 🧠 Funzionalità Avanzate di Knowledge Engineering
 
 Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **Knowledge Engineer** professionale per la validazione formale e l'interoperabilità semantica:
+- **Competency Questions Engine (`/validate-cq`)**: Validazione della copertura conoscitiva della wiki rispetto a domande in linguaggio naturale via `python3 scripts/cq_validator.py` (`make validate-cq`).
+- **Ontology Design Pattern Suggester (`/suggest-odp`)**: Suggerimento di pattern ontologici formali (Employment, Temporal Properties, Situations) via `python3 scripts/odp_suggester.py` (`make suggest-odp`).
+- **Ponte Neuro-Simbolico (`/neuro-check`)**: Analisi di contraddizioni logiche e inferenza di collegamenti mancanti via `python3 scripts/neuro_symbolic_check.py` (`make neuro-check`).
+- **Valutazione Maturità KE (`/ke-maturity`)**: Valutazione della maturità del sistema su 6 dimensioni (L1-L4) via `python3 scripts/ke_maturity.py` (`make ke-maturity`).
 - **Validazione Ontologica Leggera (`/ontology-check`)**: Controlli di coerenza logica, rilevamento di dipendenze circolari dirette (A -> B -> A) e verifica della revisione umana per le note con stato `stable` via `python3 scripts/ontology_rules.py` (`make ontology-check`).
 - **Esportazione Semantica W3C (`/export-semantic`)**: Conversione automatica della Knowledge Base in formati RDF standard (`output/wiki_export.jsonld` e `output/wiki_export.ttl`) per l'interoperabilità con GraphDB e Protégé via `python3 scripts/export_semantic.py` (`make export-semantic`).
-- **Model Context Protocol (MCP Server)**: Server nativo (`src/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, e `get_line_anchored_citation`.
+- **Model Context Protocol (MCP Server)**: Server nativo (`src/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `validate_competency_question`, e `get_ontology_gaps`.
 - **Manuale del Knowledge Engineer**: Guida completa in [`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md) per la modellazione, la validazione ed il mantenimento del ciclo di vita della KB.
 
 ---

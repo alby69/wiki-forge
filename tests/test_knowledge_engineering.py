@@ -13,6 +13,11 @@ from pathlib import Path
 
 from scripts.export_semantic import export_semantic, generate_jsonld, generate_turtle
 from scripts.ontology_rules import run_ontology_checks
+from scripts.cq_validator import extract_competency_questions, evaluate_cq, load_wiki_notes
+from scripts.odp_suggester import load_odp_catalog, analyze_note_for_odp
+from scripts.neuro_symbolic_check import check_neuro_symbolic_consistency
+from scripts.ke_maturity import assess_ke_maturity
+from src.server.mcp_server import execute_tool
 
 
 class TestKnowledgeEngineering(unittest.TestCase):
@@ -157,6 +162,85 @@ Content for valid B.
 
         res = run_ontology_checks(self.wiki_dir)
         self.assertEqual(res["violations_count"], 0)
+
+    def test_cq_validation_engine(self):
+        cq_file = self.wiki_dir / "competency_questions.md"
+        cq_file.write_text("""# CQs
+- CQ1: Quante ferie spettano a Mario, che è part-time al 60%?
+""", encoding="utf-8")
+
+        mario_note = self.wiki_dir / "mario.md"
+        mario_note.write_text("""---
+type: Entity
+employment:
+  role: Employee
+  working_percentage: 60
+---
+Mario ha un contratto part-time e ferie proporzionate.
+""", encoding="utf-8")
+
+        cqs = extract_competency_questions(cq_file)
+        self.assertEqual(len(cqs), 1)
+
+        notes = load_wiki_notes(self.wiki_dir)
+        eval_res = evaluate_cq(cqs[0], notes)
+        self.assertEqual(eval_res["status"], "COVERED")
+
+    def test_odp_suggester(self):
+        catalog_path = self.test_dir / "odp_catalog.json"
+        catalog_path.write_text(json.dumps({
+            "patterns": [
+                {
+                    "id": "employment_role",
+                    "name": "Employment Pattern",
+                    "triggers": ["contratto", "part-time"],
+                    "informal_keys": ["contract"],
+                    "suggested_structure": {"employment": {"role": "Employee"}}
+                }
+            ]
+        }), encoding="utf-8")
+
+        note = self.wiki_dir / "informal-employee.md"
+        note.write_text("""---
+type: Concept
+contract: PartTime
+---
+Mario ha un contratto part-time.
+""", encoding="utf-8")
+
+        patterns = load_odp_catalog(catalog_path)
+        res = analyze_note_for_odp(note, patterns, self.test_dir)
+        self.assertIsNotNone(res)
+        self.assertEqual(len(res["suggestions"]), 1)
+        self.assertEqual(res["suggestions"][0]["pattern_id"], "employment_role")
+
+    def test_neuro_symbolic_check(self):
+        note_a = self.wiki_dir / "stable-unverified.md"
+        note_a.write_text("""---
+status: stable
+verified: []
+---
+Links to [[note-b]].
+""", encoding="utf-8")
+
+        res = check_neuro_symbolic_consistency(self.test_dir, self.wiki_dir)
+        self.assertGreaterEqual(len(res["contradictions"]), 1)
+        self.assertEqual(res["contradictions"][0]["note_id"], "stable-unverified")
+
+    def test_ke_maturity_assessment(self):
+        assessment = assess_ke_maturity(self.test_dir, self.wiki_dir)
+        self.assertIn("overall_stage", assessment)
+        self.assertIn("average_level", assessment)
+
+    def test_mcp_new_tools(self):
+        cq_file = self.wiki_dir / "competency_questions.md"
+        cq_file.write_text("""- CQ1: Test question?""", encoding="utf-8")
+
+        res_cq = execute_tool(self.wiki_dir.parent, "validate_competency_question", {"question": "Test question?"})
+        self.assertIn("cq_id", res_cq)
+
+        res_gaps = execute_tool(self.wiki_dir.parent, "get_ontology_gaps", {})
+        self.assertIn("summary", res_gaps)
 
 
 if __name__ == "__main__":

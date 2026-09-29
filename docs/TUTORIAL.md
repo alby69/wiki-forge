@@ -266,6 +266,10 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 | `reindex` / `/reindex` | Rigenerazione automatica degli indici master e tematici |
 | `prune` / `/prune` | Pulizia di note vuote o bozze abbandonate |
 | `lint-frontmatter` / `/lint-frontmatter` | Validazione della sintassi YAML frontmatter OKF v0.2 |
+| `validate-cq` / `/validate-cq` | Validazione della copertura della wiki rispetto alle Competency Questions (CQ) |
+| `suggest-odp` / `/suggest-odp` | Suggerimento di Ontology Design Patterns formali (Employment, Time-Indexed) |
+| `neuro-check` / `/neuro-check` | Controllo di coerenza neuro-simbolica e inferenza di collegamenti |
+| `ke-maturity` / `/ke-maturity` | Valutazione della maturità del sistema su 6 dimensioni (L1-L4) |
 | `ontology-check` / `/ontology-check` | Validazione logica delle regole ontologiche (concetti isolati, cicli, verif. umana) |
 | `stats` / `/stats` | Calcolo delle metriche di crescita e generazione di `docs/METRICS.md` |
 | `merge <a> <b>` / `/merge` | Unione di two articoli duplicati |
