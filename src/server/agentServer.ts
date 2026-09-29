@@ -162,6 +162,31 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
       if (strict) args.push('--strict');
       break;
     }
+    case 'cq_validator': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const cqFile = String(getVal('cq_file', 'wiki/competency_questions.md'));
+      const output = String(getVal('output', 'output/cq_validation_report.md'));
+      args.push('--wiki-dir', wikiDir, '--cq-file', cqFile, '--output', output);
+      break;
+    }
+    case 'odp_suggester': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const catalog = String(getVal('catalog', 'config/odp_catalog.json'));
+      args.push('--wiki-dir', wikiDir, '--catalog', catalog);
+      break;
+    }
+    case 'neuro_symbolic_check': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const output = String(getVal('output', 'output/neuro_symbolic_report.md'));
+      args.push('--wiki-dir', wikiDir, '--output', output);
+      break;
+    }
+    case 'ke_maturity': {
+      const wikiDir = String(getVal('wiki_dir', 'wiki'));
+      const output = String(getVal('output', 'output/ke_maturity_report.md'));
+      args.push('--wiki-dir', wikiDir, '--output', output);
+      break;
+    }
     default:
       break;
   }
@@ -370,6 +395,51 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     parameters: [
       { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
       { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, description: 'Return error code if rule violations are found.' },
+    ],
+  },
+  cq_validator: {
+    id: 'cq_validator',
+    path: 'scripts/cq_validator.py',
+    displayName: 'Competency Questions Engine',
+    category: 'Knowledge Engineering',
+    description: 'Validates knowledge base coverage against natural language Competency Questions (CQ).',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'cq_file', label: 'CQ File Path', type: 'text', default: 'wiki/competency_questions.md', description: 'Path to Markdown competency questions file.' },
+      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/cq_validation_report.md', description: 'Destination path for markdown report.' },
+    ],
+  },
+  odp_suggester: {
+    id: 'odp_suggester',
+    path: 'scripts/odp_suggester.py',
+    displayName: 'ODP Pattern Suggester',
+    category: 'Knowledge Engineering',
+    description: 'Scans informal note properties and suggests formal Ontology Design Patterns (ODP).',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'catalog', label: 'ODP Catalog Path', type: 'text', default: 'config/odp_catalog.json', description: 'Path to JSON ODP catalog.' },
+    ],
+  },
+  neuro_symbolic_check: {
+    id: 'neuro_symbolic_check',
+    path: 'scripts/neuro_symbolic_check.py',
+    displayName: 'Neuro-Symbolic Consistency Check',
+    category: 'Knowledge Engineering',
+    description: 'Checks logical contradictions and infers missing semantic links across the knowledge graph.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/neuro_symbolic_report.md', description: 'Destination path for markdown report.' },
+    ],
+  },
+  ke_maturity: {
+    id: 'ke_maturity',
+    path: 'scripts/ke_maturity.py',
+    displayName: 'KE Maturity Assessment',
+    category: 'Knowledge Engineering',
+    description: 'Assesses knowledge base platform maturity across 6 dimensions (L1-L4).',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/ke_maturity_report.md', description: 'Destination path for markdown report.' },
     ],
   },
 };

@@ -85,6 +85,28 @@ TOOLS = [
             },
             "required": ["note_id"]
         }
+    },
+    {
+        "name": "validate_competency_question",
+        "description": "Returns knowledge coverage status and matched concept notes for a target competency question.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Natural language competency question to evaluate."
+                }
+            },
+            "required": ["question"]
+        }
+    },
+    {
+        "name": "get_ontology_gaps",
+        "description": "Returns list of concepts or relations requiring Ontology Design Pattern (ODP) modeling, human review, or missing link resolution.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
     }
 ]
 
@@ -255,6 +277,60 @@ def tool_get_version_history(repo_root: Path, note_id: str) -> dict:
     history.sort(key=lambda x: x["version"], reverse=True)
     return {"note_id": stem, "versions_count": len(history), "history": history}
 
+def tool_validate_competency_question(repo_root: Path, question: str) -> dict:
+    cq_file = repo_root / "wiki" / "competency_questions.md"
+    wiki_dir = repo_root / "wiki"
+
+    # Import helper from cq_validator
+    scripts_dir = str((Path(__file__).resolve().parent.parent.parent / "scripts"))
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    try:
+        import cq_validator
+        notes = cq_validator.load_wiki_notes(wiki_dir)
+        res = cq_validator.evaluate_cq({"id": "CQ-QUERY", "text": question}, notes)
+        return res
+    except Exception as e:
+        return {"error": f"Failed to validate competency question: {e}"}
+
+def tool_get_ontology_gaps(repo_root: Path) -> dict:
+    scripts_dir = str((Path(__file__).resolve().parent.parent.parent / "scripts"))
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    gaps = {}
+    try:
+        import odp_suggester
+        import neuro_symbolic_check
+
+        wiki_dir = repo_root / "wiki"
+        catalog_path = repo_root / "config" / "odp_catalog.json"
+
+        patterns = odp_suggester.load_odp_catalog(catalog_path)
+        odp_results = []
+        if wiki_dir.exists():
+            for f in wiki_dir.rglob("*.md"):
+                if f.name in ("index.md", "log.md") or "versions" in f.parts:
+                    continue
+                res = odp_suggester.analyze_note_for_odp(f, patterns, repo_root)
+                if res:
+                    odp_results.append(res)
+
+        ns_res = neuro_symbolic_check.check_neuro_symbolic_consistency(repo_root, wiki_dir)
+
+        return {
+            "summary": {
+                "notes_needing_odp": len(odp_results),
+                "total_odp_suggestions": sum(len(r["suggestions"]) for r in odp_results),
+                "logical_contradictions": len(ns_res["contradictions"]),
+                "inferred_missing_links": len(ns_res["inferred_links"])
+            },
+            "odp_suggestions": odp_results,
+            "contradictions": ns_res["contradictions"],
+            "inferred_links": ns_res["inferred_links"]
+        }
+    except Exception as e:
+        return {"error": f"Failed to analyze ontology gaps: {e}"}
+
 def execute_tool(repo_root: Path, name: str, args: dict) -> dict:
     if name == "search_wiki":
         return tool_search_wiki(repo_root, args.get("query", ""))
@@ -266,6 +342,10 @@ def execute_tool(repo_root: Path, name: str, args: dict) -> dict:
         return tool_list_trust_tiers(repo_root)
     elif name == "get_version_history":
         return tool_get_version_history(repo_root, args.get("note_id", ""))
+    elif name == "validate_competency_question":
+        return tool_validate_competency_question(repo_root, args.get("question", ""))
+    elif name == "get_ontology_gaps":
+        return tool_get_ontology_gaps(repo_root)
     else:
         return {"error": f"Unknown tool '{name}'"}
 

@@ -4,21 +4,42 @@
 
 ---
 
-## 1. Overview & Role Definition
+## 1. Overview & Role Definition: Cognitive Units & Paradigm Shift
 
-In `wiki-forge`, the LLM agent and human operator collaborate as **Knowledge Engineers (KE)**. Rather than answering transient questions from raw files on every query (classic RAG), the system constructs and maintains a persistent, interlinked, non-parametric knowledge graph stored as plain Markdown files adhering to **Open Knowledge Format (OKF v0.2)**.
+In `wiki-forge`, documents are not treated as passive text files, but as **cognitive units** (entities, relations, rules, situations) within a neuro-symbolic Knowledge Graph. Rather than answering transient questions from raw files on every query (classic RAG), the system constructs and maintains a persistent, interlinked, non-parametric knowledge graph stored as plain Markdown files adhering to **Open Knowledge Format (OKF v0.2)**.
 
-The Knowledge Engineering lifecycle comprises four primary dimensions:
+The system bridges **Explicit Representation** (Description Logics, OWL, RDF, SPARQL, Ontology Design Patterns) and **Distributed Representation** (internal LLM latent features as described in Nello Cristianini's *Forma mentis* and *Machina sapiens*).
+
+The Knowledge Engineering lifecycle comprises six primary dimensions:
 1. **Knowledge Modeling & Construction**: Defining domain schemas, controlled vocabularies, and frontmatter taxonomy.
-2. **Quality Verification & Logical Validation**: Combining syntactic linting (`okf_lint.py`) and logical ontology rule validation (`ontology_rules.py`).
-3. **Semantic Interoperability**: Exposing structured knowledge to external AI agent ecosystems via Model Context Protocol (MCP) and exporting W3C standard RDF graphs (JSON-LD and Turtle/TTL).
-4. **Lifecycle & Concept Drift Management**: Monitoring trust tiers, freshness (`stale_after`), maturity scores (`maturity_calculator.py`), and historical snapshots (`versioning.py`).
+2. **Competency Questions (CQ) Validation**: Verifying that the knowledge base contains necessary entities, relations, and business rules to answer predefined natural language questions.
+3. **Ontology Design Patterns (ODP)**: Elevating informal properties into formal reusable patterns (Employment, Time-Indexed Properties, Situations).
+4. **Neuro-Symbolic Reasoning & Consistency**: Combining syntactic linting (`okf_lint.py`), logical rules (`ontology_rules.py`), and LLM neuro-symbolic inference (`neuro_symbolic_check.py`).
+5. **Semantic Interoperability**: Exposing structured knowledge to external AI agent ecosystems via Model Context Protocol (MCP) and exporting W3C standard RDF graphs (JSON-LD and Turtle/TTL).
+6. **Maturity & Governance**: Assessing platform progression across L1-L4 maturity levels (`ke_maturity.py`), freshness (`stale_after`), maturity scores (`maturity_calculator.py`), and historical snapshots (`versioning.py`).
 
 ---
 
-## 2. Knowledge Modeling & Frontmatter Taxonomy
+## 2. Knowledge Engineer Maturity Model (L1–L4)
 
-Knowledge modeling begins by configuring domain presets in `config/scenarios.toml` or `config.toml`. Every note in the knowledge base must declare explicit YAML frontmatter conforming to OKF v0.2:
+`wiki-forge` evaluates knowledge base platform maturity across 4 levels:
+
+- **L1 - Knowledge Curator**: Basic organization, tags, and `[[wikilink]]` interlinking.
+- **L2 - Knowledge Engineer**: Explicit taxonomy, semantic YAML frontmatter properties, W3C RDF export.
+- **L3 - AI Knowledge Engineer**: Competency Question (CQ) validation engine, rule enforcement, MCP server integration for structured retrieval.
+- **L4 - Cognitive / Agentic KE**: Autonomous agentic workflows suggesting Ontology Design Patterns (ODP), bridging neuro-symbolic reasoning, and identifying knowledge gaps.
+
+Assess maturity using:
+```bash
+make ke-maturity
+# or: python3 scripts/ke_maturity.py --json
+```
+
+---
+
+## 3. Knowledge Modeling, Frontmatter Taxonomy & ODP
+
+Every note in the knowledge base declares explicit YAML frontmatter conforming to OKF v0.2:
 
 ```yaml
 ---
@@ -38,72 +59,78 @@ verified:
   - by: "human:alby69"
     date: 2026-09-29
     type: "manual-review"
+employment:
+  role: Employee
+  contract_type: PartTime
+  working_percentage: 60
+  valid_from: "2024-01-01"
 ---
+```
+
+### Ontology Design Pattern (ODP) Suggester (`make suggest-odp`)
+Scans notes with informal properties (e.g. `contract: PartTime`) and suggests frontmatter updates matching formal patterns in `config/odp_catalog.json`:
+```bash
+make suggest-odp
+# or: python3 scripts/odp_suggester.py --json
 ```
 
 ---
 
-## 3. Logical Ontology Validation & Linting
+## 4. Competency Questions (CQ) Validation Engine
 
-`wiki-forge` provides a dual-layer validation engine:
-
-### Layer A: Syntactic Linting (`make okf-lint`)
-Runs `scripts/okf_lint.py` to ensure:
-- Required YAML frontmatter keys are present (`type`, `title`, `description`, `status`, `generated`).
-- ISO 8601 dates and proper actor formatting (`human:<id>`, `process:<id>`).
-- Reserved index files (`index.md` per OKF §8 and `log.md` per OKF §9).
-
-### Layer B: Logical Ontology Rule Engine (`make ontology-check`)
-Runs `scripts/ontology_rules.py` to enforce formal logical graph constraints:
-- **Rule 1 (Concept Linkage)**: Every note declared with `type: Concept` must have at least one incoming or outgoing `[[wikilink]]` to prevent unlinked, isolated concepts.
-- **Rule 2 (Direct Circular Dependency Detection)**: Detects direct circular dependencies between notes (e.g., Note A links to Note B and Note B links to Note A), flagging potential logical redundancies or circular reasoning.
-- **Rule 3 (Human Review Requirement for Stable Status)**: Every note promoted to `status: stable` must contain at least one verification entry in `verified` attributed to a human actor (`human:*`).
+An ontology or knowledge base is valid only if it can answer pre-defined Competency Questions (CQs). CQs are stored in `wiki/competency_questions.md`:
 
 ```bash
-# Run ontology rules check via CLI or Makefile
-make ontology-check
+# Run CQ validation via Makefile or CLI
+make validate-cq
 
-# Run with JSON output for automated CI integration
-python3 scripts/ontology_rules.py wiki/ --json --strict
+# Or run with JSON output
+python3 scripts/cq_validator.py --json
+```
+
+The report classifies CQs into:
+- `✅ Coperte`: All required entities, relations, and structured properties exist.
+- `⚠️ Parzialmente coperte`: Notes match but missing structured relations.
+- `❌ Scoperte (knowledge gap)`: Concepts/entities missing from knowledge base.
+
+---
+
+## 5. Logical Ontology Validation & Neuro-Symbolic Reasoning
+
+`wiki-forge` provides a multi-layered validation architecture:
+
+### Layer A: Syntactic Linting (`make okf-lint`)
+Ensures OKF frontmatter completeness, ISO 8601 dates, and actor formatting.
+
+### Layer B: Logical Ontology Rule Engine (`make ontology-check`)
+Enforces logical constraints (unlinked concepts, direct circular dependencies, stable note human verification).
+
+### Layer C: Neuro-Symbolic Consistency Bridge (`make neuro-check`)
+Bridges RDF graphs and LLM reasoning to detect logical contradictions and infer transitive semantic links:
+```bash
+make neuro-check
+# or: python3 scripts/neuro_symbolic_check.py --json
 ```
 
 ---
 
-## 4. Semantic Interoperability & External Ecosystems
-
-`wiki-forge` provides native integration with external AI agent ecosystems and ontology tools:
+## 6. Semantic Interoperability & External Ecosystems
 
 ### A. Model Context Protocol (MCP Server)
-The native MCP server (`src/server/mcp_server.py`) allows external AI clients (e.g., Claude Desktop, IDE extensions, or custom agent frameworks) to query and inspect the wiki safely:
-- `search_wiki(query)`: Search notes by title, content, or tags.
-- `get_concept_metadata(note_id)`: Retrieve OKF metadata, trust tier, and backlinks.
-- `get_line_anchored_citation(note_id, start_line, end_line)`: Extract grounded passage text.
+The MCP server (`src/server/mcp_server.py`) exposes tools to external AI clients:
+- `search_wiki(query)`: Search notes.
+- `get_concept_metadata(note_id)`: Retrieve metadata and trust tier.
+- `get_line_anchored_citation(note_id, start_line, end_line)`: Grounded passage retrieval.
+- `validate_competency_question(question)`: CQ coverage status.
+- `get_ontology_gaps()`: Active ODP suggestions and logical contradictions.
 
-Start the MCP server with:
+Start server:
 ```bash
 make mcp-serve
 ```
 
 ### B. W3C Semantic Export (RDF / JSON-LD / Turtle)
-Export the entire knowledge base into W3C semantic graph standards for visualization in Protégé, GraphDB, or SPARQL query engines:
-- Generates `output/wiki_export.jsonld` (JSON-LD context and graph).
-- Generates `output/wiki_export.ttl` (Turtle RDF graph).
-
+Export knowledge base into W3C RDF graph standards (`output/wiki_export.jsonld`, `output/wiki_export.ttl`):
 ```bash
-# Run semantic export via Makefile
 make export-semantic
-
-# Or execute script directly
-python3 scripts/export_semantic.py --wiki-dir wiki --output-dir output
 ```
-
----
-
-## 5. Lifecycle Maintenance & Concept Drift Management
-
-To prevent knowledge obsolescence (concept drift) and maintain high KB quality:
-
-1. **Expiration Tracking**: Monitor notes approaching or exceeding `stale_after` dates.
-2. **Maturity Indexing**: Execute `python3 scripts/maturity_calculator.py wiki --write` to update maturity scores (0–100) based on citation density, backlink completeness, and structure.
-3. **Incremental Versioning & Safety Rollback**: Inspect version history and execute `/rollback note=<note-id> to=v1` whenever bad synthesis or regression occurs.
-4. **Audit & Reindexing**: Periodically run `make audit` and `make reindex` to eliminate broken links, re-evaluate backlinks, and update thematic index files.

@@ -44,7 +44,7 @@ describe('Script Control Panel Test Suite', () => {
     const data = await res.json();
     assert.equal(data.success, true);
     assert.ok(Array.isArray(data.scripts));
-    assert.equal(data.scripts.length, 18);
+    assert.equal(data.scripts.length, 22);
 
     const scriptIds = data.scripts.map((s: { id: string }) => s.id);
     assert.ok(scriptIds.includes('conv2md'));
@@ -65,6 +65,10 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(scriptIds.includes('voice_ingest'));
     assert.ok(scriptIds.includes('export_semantic'));
     assert.ok(scriptIds.includes('ontology_rules'));
+    assert.ok(scriptIds.includes('cq_validator'));
+    assert.ok(scriptIds.includes('odp_suggester'));
+    assert.ok(scriptIds.includes('neuro_symbolic_check'));
+    assert.ok(scriptIds.includes('ke_maturity'));
   });
 
   test('buildCliArgs builds expected command arguments for script definitions', () => {
