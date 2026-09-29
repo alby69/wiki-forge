@@ -2,3 +2,8 @@ pymupdf4llm
 rich
 questionary
 pyyaml
+rdflib
+pydantic
+pyshacl
+owlrl
+pytest
