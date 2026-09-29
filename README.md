@@ -40,6 +40,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida passo-passo che spiega come utilizzare il sistema giorno per giorno, con il prontuario dei comandi e la risoluzione dei problemi.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico e completo per costruire una tesi di laurea come Knowledge Base dinamica e generarne la versione stampabile in PDF.
 - **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per ingegneri della conoscenza (modellazione ontologica, validazione di vincoli logici ed esportazione semantica RDF/JSON-LD).
+- **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale operativo per la validazione W3C SHACL, la conversione duale RDF/Cypher e la pipeline LangGraph GraphRAG.
 - **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Registro bibliografico e guida alla tracciabilità delle fonti.
 
 ### ⚙️ Per Sviluppatori ed Ingegneri del Software (Technical Architecture)
@@ -123,8 +124,16 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 │   └── wizard.py            # CLI guidata per scenari operativi
 ├── AGENT.md             # Manuale operativo dell'Agente LLM (symlink a docs/AGENT.md)
 ├── skills/              # Pacchetti di Skill modulari per l'agente
-├── docs/                # Documentazione centralizzata (TUTORIAL, THESIS_GUIDE, ecc.)
-├── src/                 # Sorgenti applicazione Web UI e Agent Server (TypeScript)
+├── docs/                # Documentazione centralizzata (TUTORIAL, THESIS_GUIDE, GRAPH_RAG, ecc.)
+├── src/
+│   └── wikiforge/
+│       ├── config/
+│       │   └── shapes.ttl               # Vincoli W3C SHACL per la validazione delle forme
+│       └── semantics/
+│           ├── markdown_to_rdf.py       # Convertitore Zettelkasten -> Grafo RDF Turtle
+│           ├── markdown_to_cypher.py    # Esportatore Zettelkasten -> Script Neo4j Cypher
+│           ├── shacl_validator.py       # Motore di validazione SHACL ed inferenza OWL
+│           └── graph_rag_pipeline.py    # Pipeline GraphRAG stateful in LangGraph
 ├── sources/             # Cartella file sorgenti ORIGINALI (backup/ - mai modificati)
 ├── raw/                 # Testo grezzo convertito (inbox dell'agente)
 ├── wiki/                # La Knowledge Base viva ed interconnessa
@@ -135,9 +144,12 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 
 ---
 
-## 🧠 Funzionalità Avanzate di Knowledge Engineering
+## 🧠 Funzionalità Avanzate di Knowledge Engineering & GraphRAG
 
 Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **Knowledge Engineer** professionale per la validazione formale e l'interoperabilità semantica:
+- **Validazione W3C SHACL (`shapes.ttl`)**: Enforcing automatizzato di vincoli di forma strutturali e semantici (`wf:PermanentNoteShape`, `wfs:AgentShape`) tramite `pyshacl` ed il flusso CI/CD `.github/workflows/shacl_validation.yml`.
+- **Mappatura Duale Grafo RDF & Neo4j Cypher**: Mappatore Zettelkasten -> W3C Turtle (`markdown_to_rdf.py`) ed esportatore per Labeled Property Graphs in Neo4j (`markdown_to_cypher.py`).
+- **Pipeline Stateful GraphRAG con LangGraph**: Motore agentico in `src/wikiforge/semantics/graph_rag_pipeline.py` con estrazione entità, traduzione Text-to-Cypher, esecuzione su grafo, recupero da errori con auto-correzione (self-correction loop) e sintesi verificata con tracciabilità PROV-O.
 - **Competency Questions Engine (`/validate-cq`)**: Validazione della copertura conoscitiva della wiki rispetto a domande in linguaggio naturale via `python3 scripts/cq_validator.py` (`make validate-cq`).
 - **Ontology Design Pattern Suggester (`/suggest-odp`)**: Suggerimento di pattern ontologici formali (Employment, Temporal Properties, Situations) via `python3 scripts/odp_suggester.py` (`make suggest-odp`).
 - **Ponte Neuro-Simbolico (`/neuro-check`)**: Analisi di contraddizioni logiche e inferenza di collegamenti mancanti via `python3 scripts/neuro_symbolic_check.py` (`make neuro-check`).
@@ -146,7 +158,7 @@ Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **K
 - **Validazione Ontologica Leggera (`/ontology-check`)**: Controlli di coerenza logica, rilevamento di dipendenze circolari dirette (A -> B -> A) e verifica della revisione umana per le note con stato `stable` via `python3 scripts/ontology_rules.py` (`make ontology-check`).
 - **Esportazione Semantica W3C (`/export-semantic`)**: Conversione automatica della Knowledge Base in formati RDF standard (`output/wiki_export.jsonld` e `output/wiki_export.ttl`) per l'interoperabilità con GraphDB e Protégé via `python3 scripts/export_semantic.py` (`make export-semantic`).
 - **Model Context Protocol (MCP Server)**: Server nativo (`src/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `validate_competency_question`, e `get_ontology_gaps`.
-- **Manuale del Knowledge Engineer**: Guida completa in [`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md) per la modellazione, la validazione ed il mantenimento del ciclo di vita della KB.
+- **Manuali di riferimento**: Guida all'interoperabilità semantica in [`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md) ed alla pipeline GraphRAG in [`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md).
 
 ---
 

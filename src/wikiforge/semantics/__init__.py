@@ -3,7 +3,7 @@ Wiki-Forge Semantics Package.
 
 Provides semantic knowledge graph modeling, Zettelkasten-to-KG mapping,
 CQ engine & SHACL validation, multi-layered view shortcut materialization,
-and GraphRAG provenance retrieval.
+GraphRAG provenance retrieval, and stateful LangGraph GraphRAG pipeline.
 """
 
 from .markdown_parser import (
@@ -19,6 +19,16 @@ from .rdf_exporter import (
     export_to_ntriples,
     export_to_cypher,
     export_all_formats,
+)
+from .markdown_to_rdf import (
+    ZettelToRDFConverter,
+    escape_ttl_string,
+    slugify as slugify_ttl,
+)
+from .markdown_to_cypher import (
+    ZettelToCypherConverter,
+    escape_cypher_string,
+    slugify as slugify_cypher,
 )
 from .shacl_validator import (
     validate_shacl,
@@ -46,6 +56,11 @@ from .graph_rag import (
     SubgraphNode,
     SubgraphEdge,
 )
+from .graph_rag_pipeline import (
+    WikiForgeGraphRAG,
+    GraphRAGState,
+    build_graph_rag_app,
+)
 
 __all__ = [
     "ParsedNote",
@@ -58,6 +73,8 @@ __all__ = [
     "export_to_ntriples",
     "export_to_cypher",
     "export_all_formats",
+    "ZettelToRDFConverter",
+    "ZettelToCypherConverter",
     "validate_shacl",
     "apply_owl_reasoning",
     "check_owl_disjointness_violations",
@@ -74,4 +91,7 @@ __all__ = [
     "RetrievedSubgraph",
     "SubgraphNode",
     "SubgraphEdge",
+    "WikiForgeGraphRAG",
+    "GraphRAGState",
+    "build_graph_rag_app",
 ]

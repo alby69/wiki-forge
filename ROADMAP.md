@@ -62,6 +62,7 @@
 | 47 | Semantic Export (RDF/JSON-LD/Turtle) | ✅ Done | Script `export_semantic.py` per l'esportazione W3C semantica (`output/wiki_export.jsonld`, `output/wiki_export.ttl`). |
 | 48 | Lightweight Ontology Rule Engine | ✅ Done | Motore di regole `ontology_rules.py` per la validazione logica (unlinked concepts, circular links, stable human review). |
 | 49 | Typed Schema System & Linting Engine (T1) | ✅ Done | Schema validation (`scripts/schema_lint.py`), inference (`scripts/schema_infer.py`), and `docs/SCHEMA.md`. |
+| 50 | Enterprise Semantic Knowledge Graph & Stateful GraphRAG System | ✅ Done | W3C SHACL shape schema (`src/wikiforge/config/shapes.ttl`), Zettelkasten-to-RDF converter (`markdown_to_rdf.py`), Neo4j Cypher exporter (`markdown_to_cypher.py`), stateful LangGraph GraphRAG pipeline (`graph_rag_pipeline.py`), GitHub Actions CI/CD (`shacl_validation.yml`), unit tests, and `docs/GRAPH_RAG.md`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -97,6 +98,21 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 **Deliverables:**
 - Implemented `scripts/export_semantic.py` exporting OKF v0.2 notes into JSON-LD and Turtle TTL semantic graph files.
-- Implemented `scripts/ontology_rules.py` for logical rule verification (unlinked `Concept` notes, circular dependencies A -> B -> A, and human verification requirements for `stable` notes).
+- Implemented `scripts/ontology_rules.py` for logical rule verification (unlinked `Concept` notes, circular dependencies A -> B -> A, and human verification requirements for `stable` status notes).
 - Registered tools in AgentServer `SCRIPT_REGISTRY` and Web UI Control Panel.
 - Created `docs/KNOWLEDGE_ENGINEERING.md` operating manual for Knowledge Engineers.
+
+---
+
+## Phase 50 — Enterprise Semantic Knowledge Graph & Stateful GraphRAG System ✅ Done
+
+**Goal:** Transform `wiki-forge` into an Enterprise Semantic Knowledge Graph system featuring automated W3C SHACL shape validation, dual W3C RDF / Neo4j Property Graph exports, and a stateful LangGraph GraphRAG pipeline with Text-to-Cypher translation and self-correction error recovery.
+
+**Deliverables:**
+- Implemented W3C SHACL validation shapes in `src/wikiforge/config/shapes.ttl`.
+- Implemented Zettelkasten-to-RDF converter in `src/wikiforge/semantics/markdown_to_rdf.py`.
+- Implemented Neo4j Cypher property graph exporter in `src/wikiforge/semantics/markdown_to_cypher.py`.
+- Implemented stateful LangGraph GraphRAG pipeline in `src/wikiforge/semantics/graph_rag_pipeline.py`.
+- Added GitHub Actions workflow in `.github/workflows/shacl_validation.yml`.
+- Added test suites (`tests/test_shacl.py`, `tests/test_converters.py`, `tests/test_graph_rag.py`).
+- Added user and architecture documentation in `docs/GRAPH_RAG.md`.

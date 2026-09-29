@@ -1,0 +1,1109 @@
+@prefix wf: <https://w3id.org/wikiforge/ontology/> .
+@prefix wfid: <https://w3id.org/wikiforge/id/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+
+# --- Nota: Competency Questions Specification ---
+wfid:competency-questions a wf:PermanentNote ;
+    dcterms:identifier "competency-questions" ;
+    dcterms:title "Competency Questions Specification" ;
+    dcterms:created "2026-09-29"^^xsd:date ;
+    wf:content "# Competency Questions (CQ) Specification\n\nThis document defines natural language Competency Questions (CQs) used by the `cq_validator.py` engine to verify whether the knowledge base contains necessary entities, relations, and business rules.\n\n## HR & Leave Policy Domain\n- CQ1: Quante ferie spettano..." ;
+    prov:wasAttributedTo wfid:agent-humanalby69 .
+
+wfid:agent-humanalby69 a prov:Agent, foaf:Agent ;
+    foaf:name "human:alby69" .
+
+# --- Nota: Wiki Index — Knowledge Base ---
+wfid:index a wf:PermanentNote ;
+    dcterms:identifier "index" ;
+    dcterms:title "Wiki Index — Knowledge Base" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Wiki Index — Knowledge Base\n\n## Topics\n\n* [Antropologia Economica](antropologia-economica/index.md) (5 articles)\n* [Intelligenza Artificiale](intelligenza-artificiale/index.md) (33 articles)\n* [Versions](versions/index.md) (1 articles)\n\n## Recently Updated\n\n* [Verifiability: cosa si automatizza co..." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Wiki Update Log ---
+wfid:log a wf:PermanentNote ;
+    dcterms:identifier "log" ;
+    dcterms:title "Wiki Update Log" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Wiki Update Log\n\n## 2026-09-02\n* **Initialization**: Migrated wiki structure to OKF v0.2 compliant bundle.\n..." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Indice delle wiki ---
+wfid:indice a wf:PermanentNote ;
+    dcterms:identifier "indice" ;
+    dcterms:title "Indice delle wiki" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Indice delle wiki\n\nElenco delle wiki nell'ordine in cui sono state create.\n\n## Wiki tematiche\n\n- **Antropologia economica** — `[[antropologia-economica/indice_wiki|Antropologia economica]]`\n  Opere di David Graeber (e David Wengrow) su lavoro, debito e le origini della società umana.\n\n- **Intellig..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:antropologia-economica-indice-wikiantropologia-economica ;
+    wf:refersTo wfid:intelligenza-artificiale-indice-wikiintelligenza-artificiale .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225) ---
+wfid:intelligenza-artificiale-agenti-sicurezza a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-agenti-sicurezza" ;
+    dcterms:title "Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Agenti AI in azienda: sulla sicurezza siamo (ancora) scoperti (#225)\n\nNel 2026 Gatti sintetizza l'analisi di Ben Lorica sulla sicurezza degli agenti AI: il passaggio dall'AI che assiste all'AI che agisce porta nuovi problemi di identità, autorizzazioni, governance, shadow AI, supervisione umana e ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:trasformazione-output-first .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Sequoia Ascent 2026: Software 3.0 e Agentic Engineering ---
+wfid:intelligenza-artificiale-sequoia-ascent-2026 a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-sequoia-ascent-2026" ;
+    dcterms:title "Sequoia Ascent 2026: Software 3.0 e Agentic Engineering" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Sequoia Ascent 2026: Software 3.0 e Agentic Engineering\n\nFireside chat a Sequoia Ascent 2026. Karpathy espone **Software 3.0**, l'**agentic engineering** e l'AI come nuovo layer programmabile per il lavoro digitale. È il saggio più centrale per l'architettura dell'LLM-OS HR.\n\n## Punti chiave\n\n- **..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:2025-llm-year-in-review .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: The Adolescence of Technology ---
+wfid:intelligenza-artificiale-the-adolescence-of-technology a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-the-adolescence-of-technology" ;
+    dcterms:title "The Adolescence of Technology" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# The Adolescence of Technology\n\n*The Adolescence of Technology* (gennaio 2026) è la \"metà complementare\" di *Machines of Loving Grace*: mappa i rischi dell'IA potente e propone un piano per superare la \"pubertà tecnologica\" senza autodistruggersi. Il titolo evoca la scena di *Contact* di Sagan: \"co..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:machines-of-loving-grace ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Dalla Growth al dato: la visione "sistemica" del manager del futuro (#202) ---
+wfid:intelligenza-artificiale-visione-sistemica-manager a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-visione-sistemica-manager" ;
+    dcterms:title "Dalla Growth al dato: la visione \"sistemica\" del manager del futuro (#202)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Dalla Growth al dato: la visione \"sistemica\" del manager del futuro (#202)\n\nNel 2026 Gatti presenta la visione di Matteo Aliotta: le competenze più difficili da automatizzare non sono le hard skill, ma la visione d'insieme, il collegare elementi diversi e produrre valore. L'AI può rendere disponib..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:andrej-karpathy .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Machina sapiens ---
+wfid:intelligenza-artificiale-machina-sapiens a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-machina-sapiens" ;
+    dcterms:title "Machina sapiens" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Machina sapiens\n\n*Machina sapiens* racconta l'incontro tra esseri umani e modelli linguistici (ChatGPT e simili) attraverso tre punti di vista: gli scienziati che li costruiscono, le persone che li usano, le macchine stesse. Il titolo gioca su *Homo sapiens* e sulla nuova \"specie\" di intelligenza ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:test-di-turing ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Mappa teorica della tesi: LLM-OS per l'HR ---
+wfid:intelligenza-artificiale-mappa-teorica-tesi a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-mappa-teorica-tesi" ;
+    dcterms:title "Mappa teorica della tesi: LLM-OS per l'HR" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Mappa teorica della tesi: LLM-OS per l'HR\n\nSintesi dei riferimenti teorici della tesi sull'impatto dell'IA nelle Risorse Umane. Mostra come cinque autori si concatenano dal problema del lavoro alla soluzione tecnica, e dove si colloca il contributo originale (l'LLM-OS HR).\n\n## Punti chiave\n\n- **Gr..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:adozione-integrazione ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:power-to-the-people ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:machines-of-loving-grace ;
+    wf:refersTo wfid:the-adolescence-of-technology .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Dario Amodei ---
+wfid:intelligenza-artificiale-dario-amodei a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-dario-amodei" ;
+    dcterms:title "Dario Amodei" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Dario Amodei\n\nDario Amodei è il CEO di Anthropic e una delle voci più influenti sul futuro dell'IA. Con i due saggi *Machines of Loving Grace* (2024) e *The Adolescence of Technology* (2026) offre una visione bilanciata: il potenziale benefico dell'IA potente e il piano per gestirne i rischi.\n\n## ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:machines-of-loving-grace ;
+    wf:refersTo wfid:the-adolescence-of-technology ;
+    wf:refersTo wfid:machines-of-loving-grace ;
+    wf:refersTo wfid:the-adolescence-of-technology ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: AI e lavoro: tre letture, tante domande (sezione HR/Etica di #226) ---
+wfid:intelligenza-artificiale-ai-lavoro-tre-letture a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-ai-lavoro-tre-letture" ;
+    dcterms:title "AI e lavoro: tre letture, tante domande (sezione HR/Etica di #226)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# AI e lavoro: tre letture, tante domande (sezione HR/Etica di #226)\n\nBlocco dello stesso numero #226 in cui Gatti mette insieme licenziamenti, narrazione mediatica dell'impatto dell'AI e domanda di competenze tecniche, mostrando che non sempre si può attribuire all'AI ogni trasformazione occupazion..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:hr-ai-maturita .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Animals vs Ghosts: LLM come "fantasmi" statistici ---
+wfid:intelligenza-artificiale-animals-vs-ghosts a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-animals-vs-ghosts" ;
+    dcterms:title "Animals vs Ghosts: LLM come \"fantasmi\" statistici" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Animals vs Ghosts: LLM come \"fantasmi\" statistici\n\nCommento di Karpathy al podcast di Dwarkesh con Rich Sutton. Il pezzo distingue due tipi di intelligenza nello spazio delle menti: gli **animali** (evolutivi) e i **fantasmi** (LLM, distillati statistici dell'umanità).\n\n## Punti chiave\n\n- Sutton s..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:the-space-of-minds ;
+    wf:refersTo wfid:2025-llm-year-in-review ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:the-space-of-minds ;
+    wf:refersTo wfid:2025-llm-year-in-review ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Intelligenza Artificiale — Topic Index ---
+wfid:intelligenza-artificiale-index a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-index" ;
+    dcterms:title "Intelligenza Artificiale — Topic Index" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Intelligenza Artificiale — Topic Index\n\n## Articles\n\n* [2025 Llm Year In Review](2025-llm-year-in-review.md) — tags: ['intelligenza-artificiale']\n* [Adozione Integrazione](adozione-integrazione.md) — tags: ['intelligenza-artificiale', 'adozione-integrazione']\n* [Agenti Sicurezza](agenti-sicurezza...." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Verifiability: cosa si automatizza con l'AI ---
+wfid:intelligenza-artificiale-verifiability a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-verifiability" ;
+    dcterms:title "Verifiability: cosa si automatizza con l'AI" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Verifiability: cosa si automatizza con l'AI\n\nLa **verificabilità** è la feature predittiva chiave di ciò che si automatizza con l'AI, parallela alla \"specificabilità\" che governava il Software 1.0.\n\n## Punti chiave\n\n- **Software 1.0** automatizza ciò che si può *specificare*; **Software 2.0** auto..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Indice wiki: Intelligenza artificiale ---
+wfid:intelligenza-artificiale-indice-wiki a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-indice-wiki" ;
+    dcterms:title "Indice wiki: Intelligenza artificiale" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "---\ntype: Concept\ntitle: Indice wiki: Intelligenza artificiale\ndescription: Wiki tematica sulla divulgazione di Nello Cristianini (e i temi affini)\nstatus: stable\ngenerated: []\nby: process:migrate-script\nat: 2026-09-02T10:42:12Z\nverified: []\nsources: []\ntags:\n  - topic/ai\n  - topic/hr\n  - author/kar..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:test-di-turing ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:machines-of-loving-grace ;
+    wf:refersTo wfid:the-adolescence-of-technology ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:intelligenza-collettiva ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:dati-ai-scenari ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:modello-migliore ;
+    wf:refersTo wfid:adozione-integrazione ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:ai-lavoro-tre-letture ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:power-to-the-people ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:the-space-of-minds ;
+    wf:refersTo wfid:auto-grade-hn ;
+    wf:refersTo wfid:chemical-hygiene ;
+    wf:refersTo wfid:2025-llm-year-in-review ;
+    wf:refersTo wfid:sequoia-ascent-2026 .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Chemical Hygiene (archivio fuori tema) ---
+wfid:intelligenza-artificiale-chemical-hygiene a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-chemical-hygiene" ;
+    dcterms:title "Chemical Hygiene (archivio fuori tema)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Chemical Hygiene (archivio fuori tema)\n\nGuida personale di Karpathy a igiene/idratazione/cibo/aria/tessuti. **Fuori tema** per la tesi (impatto AI su HR), archiviata come riferimento biografico dell'autore.\n\n## Punti chiave\n\n- Contenuto lifestyle: acqua (osmosi inversa), aria (purificatori HEPA), ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:andrej-karpathy .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Auto-grading HN: valutare il passato con il senno di poi ---
+wfid:intelligenza-artificiale-auto-grade-hn a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-auto-grade-hn" ;
+    dcterms:title "Auto-grading HN: valutare il passato con il senno di poi" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Auto-grading HN: valutare il passato con il senno di poi\n\nEsperimento in cui Karpathy usa un LLM per valutare, con il senno di poi, discussioni di Hacker News di 10 anni prima, assegnando \"prescience grades\" ai commentatori.\n\n## Punti chiave\n\n- Gli LLM eccellono nel **grading retrospettivo**: sint..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:verifiability .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Test di Turing ---
+wfid:intelligenza-artificiale-test-di-turing a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-test-di-turing" ;
+    dcterms:title "Test di Turing" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Test di Turing\n\nIl **test di Turing** (o \"gioco dell'imitazione\", 1950) è la proposta di Alan Turing di sostituire la domanda metafisica \"le macchine possono pensare?\" con una domanda operazionale: *una macchina può comportarsi bene nel gioco dell'imitazione?* Cioè, può farci credere di essere uma..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Nello Cristianini ---
+wfid:intelligenza-artificiale-nello-cristianini a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-nello-cristianini" ;
+    dcterms:title "Nello Cristianini" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Nello Cristianini\n\nNello Cristianini è un ricercatore di *machine learning* da circa trent'anni, passato da conferenze con poche centinaia di partecipanti a quelle con migliaia. Ha scritto tre libri divulgativi — *La scorciatoia*, *Machina sapiens*, *Sovrumano* — che accompagnano il lettore dalla ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:test-di-turing .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali (#141) ---
+wfid:intelligenza-artificiale-alfabetizzazione-riqualificazione a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-alfabetizzazione-riqualificazione" ;
+    dcterms:title "AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali (#141)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# AI e organizzazioni: alfabetizzazione e riqualificazione diventano centrali (#141)\n\nNel 2024 Gatti sottolinea che integrare l'AI nei workflow richiede investimenti in upskilling e reskilling, e sposta il problema da \"adottare o non adottare\" a \"imparare a usare l'AI con consapevolezza\".\n\n## Punti ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Stefano Gatti ---
+wfid:intelligenza-artificiale-stefano-gatti a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-stefano-gatti" ;
+    dcterms:title "Stefano Gatti" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Stefano Gatti\n\nStefano Gatti (Head of Data & Analytics in Nexi, professore all'Università Cattolica, publisher di *LaCulturaDelDato*) è il punto di osservazione più concreto della tesi: come dati, AI, agenti e nuove competenze vengono tradotti dentro le organizzazioni e, in particolare, dentro l'H..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:intelligenza-collettiva ;
+    wf:refersTo wfid:dati-ai-scenari ;
+    wf:refersTo wfid:adozione-integrazione ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:intelligenza-collettiva ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:dati-ai-scenari ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:modello-migliore ;
+    wf:refersTo wfid:adozione-integrazione ;
+    wf:refersTo wfid:ignoranza-critica ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:ai-lavoro-tre-letture .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Il modello migliore (di AI) non è quello #1 in classifica (#209) ---
+wfid:intelligenza-artificiale-modello-migliore a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-modello-migliore" ;
+    dcterms:title "Il modello migliore (di AI) non è quello #1 in classifica (#209)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Il modello migliore (di AI) non è quello #1 in classifica (#209)\n\nNel 2026 Gatti sposta la valutazione degli LLM dal benchmark astratto al fit con il lavoro reale dell'organizzazione, sottolineando la necessità di valutazione e monitoraggio continui.\n\n## Punti chiave\n\n- Il modello migliore **non è..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: The Space of Minds: l'LLM come punto nello spazio delle intelligenze ---
+wfid:intelligenza-artificiale-the-space-of-minds a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-the-space-of-minds" ;
+    dcterms:title "The Space of Minds: l'LLM come punto nello spazio delle intelligenze" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# The Space of Minds: l'LLM come punto nello spazio delle intelligenze\n\nL'intelligenza animale è un solo punto (o una piccola nuvola) nello spazio delle menti; gli LLM ne abitano un altro, plasmato da pressione di ottimizzazione **commerciale**, non evolutiva.\n\n## Punti chiave\n\n- **Pressione animale..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Andrej Karpathy ---
+wfid:intelligenza-artificiale-andrej-karpathy a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-andrej-karpathy" ;
+    dcterms:title "Andrej Karpathy" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Andrej Karpathy\n\nAndrej Karpathy (ex Tesla Autopilot, co-fondatore OpenAI, fondatore Eureka Labs) è uno dei divulgatori e ricercatori AI più influenti. Dopo il celebre post sul **vibe coding** (febbraio 2025), ha pubblicato una serie di saggi brevi su `karpathy.bearblog.dev` che tracciano l'evoluz..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:power-to-the-people ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:the-space-of-minds ;
+    wf:refersTo wfid:auto-grade-hn ;
+    wf:refersTo wfid:chemical-hygiene ;
+    wf:refersTo wfid:2025-llm-year-in-review ;
+    wf:refersTo wfid:sequoia-ascent-2026 .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: La scorciatoia: l'apprendimento automatico ---
+wfid:intelligenza-artificiale-scorciatoia-apprendimento-automatico a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-scorciatoia-apprendimento-automatico" ;
+    dcterms:title "La scorciatoia: l'apprendimento automatico" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# La scorciatoia: l'apprendimento automatico\n\n*La scorciatoia* spiega come l'intelligenza artificiale moderna abbia abbandonato la programmazione simbolica (\"vecchia maniera\") per la **scorciatoia statistica**: invece di codificare regole, si lascia emergere il *pattern* dai dati. Titolo del libro: ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:sovrumano-ani-agi-asi ;
+    wf:refersTo wfid:test-di-turing .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200) ---
+wfid:intelligenza-artificiale-dati-ai-scenari a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-dati-ai-scenari" ;
+    dcterms:title "Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Dati, AI e scenari: cosa è cambiato in 12 mesi e in 5 anni (#200)\n\nNel gennaio 2026, numero speciale #200, Gatti fa il punto della maturazione del suo pensiero: da ChatGPT ai reasoning models, il ruolo crescente di dati e context engineering, e i temi di responsabilità, organizzazione enterprise, ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: 2025 LLM Year in Review ---
+wfid:intelligenza-artificiale-2025-llm-year-in-review a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-2025-llm-year-in-review" ;
+    dcterms:title "2025 LLM Year in Review" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# 2025 LLM Year in Review\n\nSintesi dei \"paradigm change\" del 2025 nei LLM secondo Karpathy: sei spostamenti che ridefiniscono il panorama.\n\n## Punti chiave\n\n- **RLVR** (Reinforcement Learning from Verifiable Rewards): nuovo stadio di training; i modelli \"ragionano\" su puzzle verificabili; nuovo knob..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:verifiability ;
+    wf:refersTo wfid:animals-vs-ghosts ;
+    wf:refersTo wfid:vibe-coding-menugen ;
+    wf:refersTo wfid:nello-cristianini .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Power to the People: come gli LLM ribaltano la diffusione tecnologica ---
+wfid:intelligenza-artificiale-power-to-the-people a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-power-to-the-people" ;
+    dcterms:title "Power to the People: come gli LLM ribaltano la diffusione tecnologica" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Power to the People: come gli LLM ribaltano la diffusione tecnologica\n\nKarpathy osserva che gli LLM invertiscono il tradizionale percorso di diffusione della tecnologia: il beneficio sproporzionato va all'**individuo**, non ad aziende e governi.\n\n## Punti chiave\n\n- Le tecnologie trasformative (ele..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Intelligenza Collettiva: quando l'IA imita le nostre organizzazioni (#124) ---
+wfid:intelligenza-artificiale-intelligenza-collettiva a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-intelligenza-collettiva" ;
+    dcterms:title "Intelligenza Collettiva: quando l'IA imita le nostre organizzazioni (#124)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Intelligenza Collettiva: quando l'IA imita le nostre organizzazioni (#124)\n\nNel luglio 2024 Gatti commenta Cristiano De Nobili (*Beyond Entropy*): l'intelligenza collettiva che emerge dalla cooperazione di agenti LLM riflette le dinamiche delle organizzazioni umane.\n\n## Punti chiave\n\n- Ciò che ent..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223) ---
+wfid:intelligenza-artificiale-ignoranza-critica a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-ignoranza-critica" ;
+    dcterms:title "Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Ignoranza critica: la skill di sopravvivenza nel presente e nel futuro (#223)\n\nNel 2026 Gatti propone che il valore professionale non risieda nell'accumulare sempre più informazioni, ma nel sapere cosa ignorare, cosa delegare e dove concentrare l'attenzione.\n\n## Punti chiave\n\n- **Ignoranza critica..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:alfabetizzazione-riqualificazione ;
+    wf:refersTo wfid:visione-sistemica-manager ;
+    wf:refersTo wfid:andrej-karpathy .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Vibe Coding: MenuGen ---
+wfid:intelligenza-artificiale-vibe-coding-menugen a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-vibe-coding-menugen" ;
+    dcterms:title "Vibe Coding: MenuGen" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Vibe Coding: MenuGen\n\nMenuGen è la prima app \"vibe coded\" end-to-end di Andrej Karpathy: un'applicazione reale (foto del menù di un ristorante → immagini dei piatti) costruita senza scrivere codice manuale, solo descrivendo cosa si voleva a Cursor+Claude.\n\n## Punti chiave\n\n- Il **vibe coding** abb..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:power-to-the-people ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:power-to-the-people ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:stefano-gatti .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: HR e AI: dopo l'esplosione, la prova di maturità? (#226) ---
+wfid:intelligenza-artificiale-hr-ai-maturita a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-hr-ai-maturita" ;
+    dcterms:title "HR e AI: dopo l'esplosione, la prova di maturità? (#226)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# HR e AI: dopo l'esplosione, la prova di maturità? (#226)\n\nNel luglio 2026 Gatti pubblica l'esplicito seguito del #105. Il mercato degli strumenti HR/AI è maturato, ma alcune soluzioni rischiano di snaturare processi che dovrebbero restare fortemente umani; HR potrebbe dover occuparsi anche delle t..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:dietro-le-quinte-hr-ai ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:ai-lavoro-tre-letture ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Sovrumano: ANI, AGI, ASI ---
+wfid:intelligenza-artificiale-sovrumano-ani-agi-asi a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-sovrumano-ani-agi-asi" ;
+    dcterms:title "Sovrumano: ANI, AGI, ASI" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Sovrumano: ANI, AGI, ASI\n\n*Sovrumano* esplora se e quando le macchine supereranno l'intelligenza umana. Cristianini distingue tre gradi — **ANI**, **AGI**, **ASI** — e soprattutto mette al centro il problema difficile: *come si misura l'intelligenza?*\n\n## Punti chiave\n\n- **ANI** (Artificial Narrow..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:nello-cristianini ;
+    wf:refersTo wfid:machina-sapiens ;
+    wf:refersTo wfid:scorciatoia-apprendimento-automatico ;
+    wf:refersTo wfid:test-di-turing .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105) ---
+wfid:intelligenza-artificiale-dietro-le-quinte-hr-ai a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-dietro-le-quinte-hr-ai" ;
+    dcterms:title "Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Dietro le quinte: come dati e AI stanno rivoluzionando il mondo HR (#105)\n\nNel marzo 2024 Gatti commenta l'articolo di Bernard Marr su come dati e intelligenza artificiale stiano ridisegnando l'HR, ma prendendo le distanze dall'ottimismo dell'autore: integrazione con i sistemi legacy, usabilità e ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:agenti-sicurezza .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Machines of Loving Grace ---
+wfid:intelligenza-artificiale-machines-of-loving-grace a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-machines-of-loving-grace" ;
+    dcterms:title "Machines of Loving Grace" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Machines of Loving Grace\n\n*Machines of Loving Grace* (ottobre 2024) è il saggio in cui Dario Amodei disegna il mondo che potrebbe nascere se l'IA potente venisse usata bene. Il titolo (da una poesia di Richard Brautigan) sintetizza l'idea: macchine che amplificano, non sostituiscono, la grazia uma..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:dario-amodei ;
+    wf:refersTo wfid:the-adolescence-of-technology ;
+    wf:refersTo wfid:antropologia-economica-bullshit-jobs ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:nello-cristianini .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Trasformazione con l'AI: meglio controllare tutto o puntare all'output? (#196) ---
+wfid:intelligenza-artificiale-trasformazione-output-first a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-trasformazione-output-first" ;
+    dcterms:title "Trasformazione con l'AI: meglio controllare tutto o puntare all'output? (#196)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Trasformazione con l'AI: meglio controllare tutto o puntare all'output? (#196)\n\nNel 2025 Gatti contrappone una trasformazione che parte dalla mappatura dei processi a un paradigma \"output first\", nel quale si definisce il risultato desiderato e si lascia maggiore autonomia agli agenti.\n\n## Punti c..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:agenti-sicurezza ;
+    wf:refersTo wfid:sequoia-ascent-2026 ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: L'AI in azienda non si adotta, si integra prova dopo prova (#215) ---
+wfid:intelligenza-artificiale-adozione-integrazione a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-adozione-integrazione" ;
+    dcterms:title "L'AI in azienda non si adotta, si integra prova dopo prova (#215)" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# L'AI in azienda non si adotta, si integra prova dopo prova (#215)\n\nNel 2026 Gatti commenta il saggio di Jack Dorsey *From Hierarchy to Intelligence*: il problema non è scegliere tool o licenze, ma modificare il funzionamento dell'organizzazione e portare l'AI in produzione. Ribadisce MVP > POC e l..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:mappa-teorica-tesi ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:stefano-gatti ;
+    wf:refersTo wfid:hr-ai-maturita ;
+    wf:refersTo wfid:trasformazione-output-first ;
+    wf:refersTo wfid:andrej-karpathy ;
+    wf:refersTo wfid:mappa-teorica-tesi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Debito: i primi 5000 anni ---
+wfid:antropologia-economica-debito-primi-5000-anni a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-debito-primi-5000-anni" ;
+    dcterms:title "Debito: i primi 5000 anni" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Debito: i primi 5000 anni\n\n*Debito: i primi 5000 anni* (2011, ed. it. 2024 con prefazione di Thomas Piketty) è una storia globale del debito che capovolge la teoria economica tradizionale: il debito non è nato dallo scambio, ma è la forma più antica di relazione umana, precedente a moneta e mercat..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:david-graeber ;
+    wf:refersTo wfid:bullshit-jobs ;
+    wf:refersTo wfid:alba-di-tutto .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Antropologia Economica — Topic Index ---
+wfid:antropologia-economica-index a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-index" ;
+    dcterms:title "Antropologia Economica — Topic Index" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Antropologia Economica — Topic Index\n\n## Articles\n\n* [Alba Di Tutto](alba-di-tutto.md) — tags: ['antropologia-economica', 'alba-di-tutto']\n* [Bullshit Jobs](bullshit-jobs.md) — tags: ['antropologia-economica', 'bullshit-jobs']\n* [David Graeber](david-graeber.md) — tags: ['antropologia-economica', ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Indice wiki: Antropologia economica ---
+wfid:antropologia-economica-indice-wiki a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-indice-wiki" ;
+    dcterms:title "Indice wiki: Antropologia economica" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "---\ntype: Concept\ntitle: Indice wiki: Antropologia economica\ndescription: Wiki tematica sulle opere di David Graeber (e David Wengrow) che indagano\nstatus: stable\ngenerated: []\nby: process:migrate-script\nat: 2026-09-02T10:42:12Z\nverified: []\nsources: []\ntags:\n  - author/graeber\n---\n\n# Indice wiki: A..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:david-graeber ;
+    wf:refersTo wfid:bullshit-jobs ;
+    wf:refersTo wfid:debito-primi-5000-anni ;
+    wf:refersTo wfid:alba-di-tutto .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Bullshit jobs ---
+wfid:antropologia-economica-bullshit-jobs a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-bullshit-jobs" ;
+    dcterms:title "Bullshit jobs" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Bullshit jobs\n\nUn *bullshit job* (lavoro senza senso) è un'occupazione che il lavoratore stesso percepisce come priva di utilità sociale, superflua o addirittura dannosa, e che continua a svolgere solo per necessità. Graeber parte da un sospetto poi confermato da migliaia di testimonianze: ampie f..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:david-graeber ;
+    wf:refersTo wfid:debito-primi-5000-anni ;
+    wf:refersTo wfid:intelligenza-artificiale-sovrumano-ani-agi-asi .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: L'alba di tutto ---
+wfid:antropologia-economica-alba-di-tutto a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-alba-di-tutto" ;
+    dcterms:title "L'alba di tutto" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# L'alba di tutto\n\n*L'alba di tutto: una nuova storia dell'umanità* (2021, ed. it. 2022) è scritto da David Graeber e David Wengrow. Rifiuta il racconto lineare che va da cacciatori-raccoglitori \"infantili\" a civiltà gerarchiche, mostrando che i nostri antenati sperimentavano già libertà, eguaglianz..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:david-graeber ;
+    wf:refersTo wfid:debito-primi-5000-anni ;
+    wf:refersTo wfid:bullshit-jobs .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: David Graeber ---
+wfid:antropologia-economica-david-graeber a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-david-graeber" ;
+    dcterms:title "David Graeber" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# David Graeber\n\nDavid Rolfe Graeber (1961-2020) è stato un antropologo, attivista e intellettuale pubblico statunitense. I suoi lavori collegano antropologia, critica dell'economia e teoria politica, puntando a smontare i racconti dominanti su lavoro, denaro e \"civilizzazione\".\n\n## Punti chiave\n\n- ..." ;
+    prov:wasAttributedTo wfid:agent-anonymus ;
+    wf:refersTo wfid:bullshit-jobs ;
+    wf:refersTo wfid:debito-primi-5000-anni ;
+    wf:refersTo wfid:alba-di-tutto ;
+    wf:refersTo wfid:bullshit-jobs ;
+    wf:refersTo wfid:debito-primi-5000-anni ;
+    wf:refersTo wfid:alba-di-tutto .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Versions — Topic Index ---
+wfid:versions-index a wf:PermanentNote ;
+    dcterms:identifier "versions-index" ;
+    dcterms:title "Versions — Topic Index" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Versions — Topic Index\n\n## Articles\n\n* [Versions](README.md) — type: Reference\n\n..." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Nota: Versions ---
+wfid:versions-readme a wf:PermanentNote ;
+    dcterms:identifier "versions-readme" ;
+    dcterms:title "Versions" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "# Versions\nSnapshot delle note per rollback (fase D).\n..." ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agent-anonymus a prov:Agent, foaf:Agent ;
+    foaf:name "Anonymus" .
+
+# --- Link Targets / Stub Notes ---
+wfid:2025-llm-year-in-review a wf:PermanentNote ;
+    dcterms:identifier "2025-llm-year-in-review" ;
+    dcterms:title "Stub 2025-llm-year-in-review" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target 2025-llm-year-in-review" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:adozione-integrazione a wf:PermanentNote ;
+    dcterms:identifier "adozione-integrazione" ;
+    dcterms:title "Stub adozione-integrazione" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target adozione-integrazione" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:agenti-sicurezza a wf:PermanentNote ;
+    dcterms:identifier "agenti-sicurezza" ;
+    dcterms:title "Stub agenti-sicurezza" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target agenti-sicurezza" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:ai-lavoro-tre-letture a wf:PermanentNote ;
+    dcterms:identifier "ai-lavoro-tre-letture" ;
+    dcterms:title "Stub ai-lavoro-tre-letture" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target ai-lavoro-tre-letture" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:alba-di-tutto a wf:PermanentNote ;
+    dcterms:identifier "alba-di-tutto" ;
+    dcterms:title "Stub alba-di-tutto" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target alba-di-tutto" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:alfabetizzazione-riqualificazione a wf:PermanentNote ;
+    dcterms:identifier "alfabetizzazione-riqualificazione" ;
+    dcterms:title "Stub alfabetizzazione-riqualificazione" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target alfabetizzazione-riqualificazione" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:andrej-karpathy a wf:PermanentNote ;
+    dcterms:identifier "andrej-karpathy" ;
+    dcterms:title "Stub andrej-karpathy" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target andrej-karpathy" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:animals-vs-ghosts a wf:PermanentNote ;
+    dcterms:identifier "animals-vs-ghosts" ;
+    dcterms:title "Stub animals-vs-ghosts" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target animals-vs-ghosts" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:antropologia-economica-indice-wikiantropologia-economica a wf:PermanentNote ;
+    dcterms:identifier "antropologia-economica-indice-wikiantropologia-economica" ;
+    dcterms:title "Stub antropologia-economica-indice-wikiantropologia-economica" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target antropologia-economica-indice-wikiantropologia-economica" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:auto-grade-hn a wf:PermanentNote ;
+    dcterms:identifier "auto-grade-hn" ;
+    dcterms:title "Stub auto-grade-hn" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target auto-grade-hn" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:bullshit-jobs a wf:PermanentNote ;
+    dcterms:identifier "bullshit-jobs" ;
+    dcterms:title "Stub bullshit-jobs" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target bullshit-jobs" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:chemical-hygiene a wf:PermanentNote ;
+    dcterms:identifier "chemical-hygiene" ;
+    dcterms:title "Stub chemical-hygiene" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target chemical-hygiene" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:dario-amodei a wf:PermanentNote ;
+    dcterms:identifier "dario-amodei" ;
+    dcterms:title "Stub dario-amodei" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target dario-amodei" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:dati-ai-scenari a wf:PermanentNote ;
+    dcterms:identifier "dati-ai-scenari" ;
+    dcterms:title "Stub dati-ai-scenari" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target dati-ai-scenari" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:david-graeber a wf:PermanentNote ;
+    dcterms:identifier "david-graeber" ;
+    dcterms:title "Stub david-graeber" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target david-graeber" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:debito-primi-5000-anni a wf:PermanentNote ;
+    dcterms:identifier "debito-primi-5000-anni" ;
+    dcterms:title "Stub debito-primi-5000-anni" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target debito-primi-5000-anni" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:dietro-le-quinte-hr-ai a wf:PermanentNote ;
+    dcterms:identifier "dietro-le-quinte-hr-ai" ;
+    dcterms:title "Stub dietro-le-quinte-hr-ai" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target dietro-le-quinte-hr-ai" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:hr-ai-maturita a wf:PermanentNote ;
+    dcterms:identifier "hr-ai-maturita" ;
+    dcterms:title "Stub hr-ai-maturita" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target hr-ai-maturita" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:ignoranza-critica a wf:PermanentNote ;
+    dcterms:identifier "ignoranza-critica" ;
+    dcterms:title "Stub ignoranza-critica" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target ignoranza-critica" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:intelligenza-artificiale-indice-wikiintelligenza-artificiale a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
+    dcterms:title "Stub intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target intelligenza-artificiale-indice-wikiintelligenza-artificiale" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:intelligenza-collettiva a wf:PermanentNote ;
+    dcterms:identifier "intelligenza-collettiva" ;
+    dcterms:title "Stub intelligenza-collettiva" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target intelligenza-collettiva" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:machina-sapiens a wf:PermanentNote ;
+    dcterms:identifier "machina-sapiens" ;
+    dcterms:title "Stub machina-sapiens" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target machina-sapiens" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:machines-of-loving-grace a wf:PermanentNote ;
+    dcterms:identifier "machines-of-loving-grace" ;
+    dcterms:title "Stub machines-of-loving-grace" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target machines-of-loving-grace" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:mappa-teorica-tesi a wf:PermanentNote ;
+    dcterms:identifier "mappa-teorica-tesi" ;
+    dcterms:title "Stub mappa-teorica-tesi" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target mappa-teorica-tesi" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:modello-migliore a wf:PermanentNote ;
+    dcterms:identifier "modello-migliore" ;
+    dcterms:title "Stub modello-migliore" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target modello-migliore" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:nello-cristianini a wf:PermanentNote ;
+    dcterms:identifier "nello-cristianini" ;
+    dcterms:title "Stub nello-cristianini" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target nello-cristianini" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:power-to-the-people a wf:PermanentNote ;
+    dcterms:identifier "power-to-the-people" ;
+    dcterms:title "Stub power-to-the-people" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target power-to-the-people" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:scorciatoia-apprendimento-automatico a wf:PermanentNote ;
+    dcterms:identifier "scorciatoia-apprendimento-automatico" ;
+    dcterms:title "Stub scorciatoia-apprendimento-automatico" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target scorciatoia-apprendimento-automatico" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:sequoia-ascent-2026 a wf:PermanentNote ;
+    dcterms:identifier "sequoia-ascent-2026" ;
+    dcterms:title "Stub sequoia-ascent-2026" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target sequoia-ascent-2026" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:sovrumano-ani-agi-asi a wf:PermanentNote ;
+    dcterms:identifier "sovrumano-ani-agi-asi" ;
+    dcterms:title "Stub sovrumano-ani-agi-asi" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target sovrumano-ani-agi-asi" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:stefano-gatti a wf:PermanentNote ;
+    dcterms:identifier "stefano-gatti" ;
+    dcterms:title "Stub stefano-gatti" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target stefano-gatti" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:test-di-turing a wf:PermanentNote ;
+    dcterms:identifier "test-di-turing" ;
+    dcterms:title "Stub test-di-turing" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target test-di-turing" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:the-adolescence-of-technology a wf:PermanentNote ;
+    dcterms:identifier "the-adolescence-of-technology" ;
+    dcterms:title "Stub the-adolescence-of-technology" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target the-adolescence-of-technology" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:the-space-of-minds a wf:PermanentNote ;
+    dcterms:identifier "the-space-of-minds" ;
+    dcterms:title "Stub the-space-of-minds" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target the-space-of-minds" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:trasformazione-output-first a wf:PermanentNote ;
+    dcterms:identifier "trasformazione-output-first" ;
+    dcterms:title "Stub trasformazione-output-first" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target trasformazione-output-first" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:verifiability a wf:PermanentNote ;
+    dcterms:identifier "verifiability" ;
+    dcterms:title "Stub verifiability" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target verifiability" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:vibe-coding-menugen a wf:PermanentNote ;
+    dcterms:identifier "vibe-coding-menugen" ;
+    dcterms:title "Stub vibe-coding-menugen" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target vibe-coding-menugen" ;
+    prov:wasAttributedTo wfid:agent-anonymus .
+
+wfid:visione-sistemica-manager a wf:PermanentNote ;
+    dcterms:identifier "visione-sistemica-manager" ;
+    dcterms:title "Stub visione-sistemica-manager" ;
+    dcterms:created "2026-01-01"^^xsd:date ;
+    wf:content "Stub note for target visione-sistemica-manager" ;
+    prov:wasAttributedTo wfid:agent-anonymus .

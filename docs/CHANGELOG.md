@@ -5,6 +5,17 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-10-05
+
+### Added
+- **Enterprise Semantic Knowledge Graph & Stateful GraphRAG System (Phase 50)**:
+  - **W3C SHACL Validation Schema (`src/wikiforge/config/shapes.ttl`)**: Created W3C SHACL shape constraints (`wfs:PermanentNoteShape`, `wfs:AgentShape`) for note identifiers, titles, ISO dates, markdown body, author agent IRI attributions, and typed relationship targets (`wf:supports`, `wf:contradicts`, `wf:refersTo`).
+  - **Zettelkasten-to-RDF Converter (`src/wikiforge/semantics/markdown_to_rdf.py`)**: Built `ZettelToRDFConverter` parsing frontmatter YAML, persistent W3ID URI minting (`wfid:`), typed wikilinks (`[[predicate::target]]`), and Turtle RDF graph generation (`.ttl`).
+  - **Neo4j Cypher Property Graph Exporter (`src/wikiforge/semantics/markdown_to_cypher.py`)**: Built `ZettelToCypherConverter` generating idempotent Neo4j Cypher scripts with label constraints, property setters, and typed relationships.
+  - **Stateful GraphRAG Pipeline (`src/wikiforge/semantics/graph_rag_pipeline.py`)**: Implemented stateful `WikiForgeGraphRAG` engine powered by LangGraph / LangChain with nodes for Entity Extraction, Text-to-Cypher generation, Neo4j/Mock Cypher Execution, conditional error self-correction routing, and grounded synthesis with PROV-O provenance.
+  - **Automated CI/CD Workflow (`.github/workflows/shacl_validation.yml`)**: Added GitHub Actions pipeline converting Markdown Zettelkasten notes to Turtle RDF, running PySHACL constraint validation, generating Cypher scripts, and uploading graph artifacts.
+  - **Comprehensive Test Suite & Documentation**: Added unit tests in `tests/test_shacl.py`, `tests/test_converters.py`, and `tests/test_graph_rag.py`; created developer & operator manual in `docs/GRAPH_RAG.md`.
+
 ## [3.2.0] - 2026-10-02
 
 ### Added

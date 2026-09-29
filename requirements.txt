@@ -7,3 +7,6 @@ pydantic
 pyshacl
 owlrl
 pytest
+langgraph
+langchain-openai
+neo4j
