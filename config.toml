@@ -148,3 +148,8 @@ blocked = ["the", "and", "of", "a", "to", "in", "on", "for", "is", "are"]
 [versioning]
 enabled = true
 fields = ["version", "parent_commit", "generated"]
+
+# Enterprise readiness and access control settings
+[enterprise]
+enable_rbac = false
+cloud_backup_webdav = ""

@@ -1,5 +1,6 @@
 import { WikiNote } from '../../core/types/wiki';
 import { escapeHtml } from '../../core/utils/html';
+import { computeNoteTrustTier, isNoteStale, renderTrustTierDot } from './TrustBadge';
 
 interface TreeNode {
   name: string;
@@ -37,6 +38,7 @@ export class Sidebar {
   private activeId: string | null = null;
   private selectedItemPath: string | null = null;
   private query = '';
+  private selectedOkfFilter: 'all' | 'human-reviewed' | 'machine-confirmed' | 'unverified' | 'stale' = 'all';
   private selectedTags = new Set<string>();
   private expanded = new Set<string>(['wiki']);
   private onSelectNoteCb?: (noteId: string) => void;
@@ -82,6 +84,15 @@ export class Sidebar {
       if (q) {
         const hay = `${note.title} ${note.path} ${note.tags.join(' ')}`.toLowerCase();
         if (!hay.includes(q)) return false;
+      }
+      if (this.selectedOkfFilter !== 'all') {
+        const tier = computeNoteTrustTier(note);
+        const stale = isNoteStale(note);
+        if (this.selectedOkfFilter === 'stale') {
+          if (!stale) return false;
+        } else if (tier !== this.selectedOkfFilter) {
+          return false;
+        }
       }
       return true;
     });
@@ -274,10 +285,12 @@ export class Sidebar {
       const active = node.note && node.note.id === this.activeId;
       const selected = this.selectedItemPath === node.path;
       const pad = 8 + depth * 14;
+      const trustDot = node.note ? renderTrustTierDot(node.note) : '';
       html += `
         <div class="tree-file${active ? ' tree-file-active' : ''}${selected ? ' tree-item-selected' : ''}" data-note-id="${escapeHtml(node.note!.id)}" data-path="${escapeHtml(node.path)}" draggable="true"
-             style="padding: 4px 8px 4px ${pad + 14}px; font-size: 13px; color: ${active ? '#fff' : selected ? '#63b3ed' : '#cbd5e1'}; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 4px; ${active ? 'background: #3182ce; font-weight: 600;' : selected ? 'background: #2a4365;' : ''}">
-          <span>📄 ${escapeHtml(node.note!.title)}</span>
+             style="padding: 4px 8px 4px ${pad + 14}px; font-size: 13px; color: ${active ? '#fff' : selected ? '#63b3ed' : '#cbd5e1'}; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 4px; ${active ? 'background: #3182ce; font-weight: 600;' : selected ? 'background: #2a4365;' : ''}">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">📄 ${escapeHtml(node.note!.title)}</span>
+          ${trustDot}
         </div>`;
     }
     return html;
@@ -319,6 +332,18 @@ this.container.innerHTML = `
           <input type="text" id="vault-search-input" value="${escapeHtml(this.query)}" placeholder="Search files... (Ctrl+K)" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; box-sizing: border-box; outline: none;" />
         </div>
 
+        <!-- OKF Lifecycle Filter -->
+        <div style="padding: 4px 10px 8px 10px; border-bottom: 1px solid #2d3748; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
+          <label for="okf-status-filter" style="font-size: 11px; color: #a0aec0; font-weight: 600; white-space: nowrap;">Filtra OKF:</label>
+          <select id="okf-status-filter" style="width: 100%; background: #1a1b1e; border: 1px solid #2d3748; color: #cbd5e0; padding: 4px 6px; border-radius: 4px; font-size: 11px; cursor: pointer; outline: none;">
+            <option value="all" ${this.selectedOkfFilter === 'all' ? 'selected' : ''}>Tutti gli stati OKF</option>
+            <option value="human-reviewed" ${this.selectedOkfFilter === 'human-reviewed' ? 'selected' : ''}>🟢 Human-Reviewed</option>
+            <option value="machine-confirmed" ${this.selectedOkfFilter === 'machine-confirmed' ? 'selected' : ''}>🟡 Machine-Confirmed</option>
+            <option value="unverified" ${this.selectedOkfFilter === 'unverified' ? 'selected' : ''}>⚪ Unverified</option>
+            <option value="stale" ${this.selectedOkfFilter === 'stale' ? 'selected' : ''}>⏰ Note Stale (Scadute)</option>
+          </select>
+        </div>
+
         <!-- File Tree Explorer Dropzone -->
         <div id="file-tree-container" style="flex: 1; overflow-y: auto; padding: 8px 4px; position: relative; min-height: 0;">
           ${treeHTML || '<div style="font-size: 12px; color: #718096; padding: 8px;">No notes match the current filter.</div>'}
@@ -343,6 +368,12 @@ this.container.innerHTML = `
     const search = this.container.querySelector<HTMLInputElement>('#vault-search-input');
     search?.addEventListener('input', () => {
       this.query = search.value;
+      void this.refresh();
+    });
+
+    const okfSelect = this.container.querySelector<HTMLSelectElement>('#okf-status-filter');
+    okfSelect?.addEventListener('change', () => {
+      this.selectedOkfFilter = okfSelect.value as any;
       void this.refresh();
     });
 

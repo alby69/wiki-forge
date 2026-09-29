@@ -38,13 +38,13 @@ describe('Script Control Panel Test Suite', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  test('GET /api/scripts/list returns all 15 registered script tools', async () => {
+  test('GET /api/scripts/list returns all 16 registered script tools', async () => {
     const res = await fetch(`${baseUrl}/api/scripts/list`);
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.success, true);
     assert.ok(Array.isArray(data.scripts));
-    assert.equal(data.scripts.length, 15);
+    assert.equal(data.scripts.length, 16);
 
     const scriptIds = data.scripts.map((s: { id: string }) => s.id);
     assert.ok(scriptIds.includes('conv2md'));
@@ -62,6 +62,7 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(scriptIds.includes('generate_thesis'));
     assert.ok(scriptIds.includes('export_thesis_pdf'));
     assert.ok(scriptIds.includes('wizard'));
+    assert.ok(scriptIds.includes('voice_ingest'));
   });
 
   test('buildCliArgs builds expected command arguments for script definitions', () => {

@@ -47,15 +47,18 @@
 | 33 | Automated Doc/Skill Consistency Verification | ✅ Done | Added `scripts/check_docs_sync.py`, `.pre-commit-config.yaml` hook, CI workflow job, and `make docs-sync` |
 | 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `docs/CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
 | 35 | Open Knowledge Format (OKF v0.2) Integration & Tooling Suite | ✅ Done | Adoption of OKF v0.2 standard across `wiki/`, frontmatter taxonomy validation, migration script, reserved files, Makefile targets, and CI |
-| 36 | Web UI OKF Trust Badges & Lifecycle Filters | ⬜ Todo | Render trust tier badges (unverified/machine-confirmed/human-reviewed) and filter notes by OKF status/stale status |
-| 37 | OKF MCP Server Integration for External Agents | ⬜ Todo | Expose OKF bundle querying via Model Context Protocol (MCP) server for external multi-agent ecosystems |
+| 36 | Web UI OKF Trust Badges & Lifecycle Filters | ✅ Done | Render trust tier badges (unverified/machine-confirmed/human-reviewed) e filtri UI per stato OKF e note "stale". |
+| 37 | OKF MCP Server Integration for External Agents | ✅ Done | Esposizione di `search_wiki`, `get_concept_metadata`, e `get_line_anchored_citation` via Model Context Protocol (MCP) server (`make mcp-serve`). |
 | 38 | Core/API Separation, Caching & Auto-Tests | ✅ Done | `src/api/core.py`, `src/cache.py`, optimized Vite build, `tests/auto/` |
 | 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
 | 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
-| 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 15 Python CLI scripts with real-time SSE log streaming |
-| 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities, interaction modes, and quality/error handling sections |
+| 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 16 Python CLI scripts with real-time SSE log streaming |
+| 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities |
 | 42b | Incremental KB Versioning & Rollback Engine | ✅ Done | Added `scripts/versioning.py`, `wiki/versions/` snapshot backups, and `/rollback` agent command |
-| 43 | Documentation Overhaul & 5-Phase Operator Workflow | ✅ Done | Streamlined `docs/`, eliminated redundant files, updated `TECHNICAL_ARCHITECTURE.md`, `TUTORIAL.md`, `THESIS_GUIDE.md`, and `README.md` with 5-phase operator workflow |
+| 43 | Documentation Overhaul & 5-Phase Operator Workflow | ✅ Done | Streamlined `docs/`, eliminated redundant files, updated architecture and tutorial docs |
+| 44 | Voice & Multimedia Ingestion (No-Code Entry) | ✅ Done | Integrazione di trascrizione/dettatura vocale (`scripts/voice_ingest.py`) per trasformare registrazioni in note OKF strutturate. |
+| 45 | Automated "Thesis Defense" Slide Generation | ✅ Done | Integrazione della skill `slides` e modelli reveal.js (`templates/reveal/`) per generare deck di presentazione offline-ready. |
+| 46 | Enterprise Readiness: RBAC & Cloud Sync Hooks | ✅ Done | Aggiunta configurazione `[enterprise]` in `config.toml` con flag RBAC e hook di backup cloud WebDAV. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 

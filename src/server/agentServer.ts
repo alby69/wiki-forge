@@ -140,6 +140,15 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
       args.push('--preset', preset);
       break;
     }
+    case 'voice_ingest': {
+      const file = String(getVal('file', '')).trim();
+      const output = String(getVal('output', 'raw'));
+      const title = String(getVal('title', '')).trim();
+      if (file) args.push(file);
+      args.push('--output', output);
+      if (title) args.push('--title', title);
+      break;
+    }
     default:
       break;
   }
@@ -314,6 +323,18 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     description: 'Interactive domain setup wizard for academic, business, research, creative, or thesis workflows.',
     parameters: [
       { name: 'preset', label: 'Domain Preset', type: 'select', default: 'academic', options: ['academic', 'business', 'research', 'creative', 'existing', 'thesis'], description: 'Scenario preset configuration.' },
+    ],
+  },
+  voice_ingest: {
+    id: 'voice_ingest',
+    path: 'scripts/voice_ingest.py',
+    displayName: 'Voice & Multimedia Ingest',
+    category: 'Ingestion',
+    description: 'Converts audio dictations or text transcriptions into structured OKF v0.2 notes.',
+    parameters: [
+      { name: 'file', label: 'Audio / Transcript File Path', type: 'text', required: true, placeholder: 'sources/dictation.mp3', description: 'Path to audio or transcript file.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for generated Markdown note.' },
+      { name: 'title', label: 'Note Title', type: 'text', placeholder: 'Voice Note Title', description: 'Optional custom title.' },
     ],
   },
 };
