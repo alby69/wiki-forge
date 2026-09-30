@@ -240,7 +240,12 @@ export class OnboardingWizard {
         config.agent.llm.model = this.selectedModel;
       }
 
-      await this.storage.updateProjectConfig(config);
+      const saved = await this.storage.updateProjectConfig(config);
+
+      if (!saved) {
+        throw new Error('Unable to save project configuration');
+      }
+      
     } catch (_e) {
       // Fallback
     }

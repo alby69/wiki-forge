@@ -405,6 +405,7 @@ export async function resolveOpenCodeCommand(configured?: string): Promise<strin
   }
 
   const envBin = process.env.OPENCODE_BIN;
+  
   if (envBin && (await isFile(envBin))) {
     return envBin;
   }
