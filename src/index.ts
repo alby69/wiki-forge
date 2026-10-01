@@ -18,6 +18,7 @@ import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
 import { ConfigManager } from './components/ConfigManager';
 import { ToolsModal } from './components/tools/ToolsModal';
+import { KEWorkbenchModal } from './components/ke/KEWorkbenchModal';
 import { OnboardingWizard } from './components/simple-mode/OnboardingWizard';
 import { SimpleModeDashboard } from './components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from './components/advanced-mode/VersionTimeline';
@@ -40,6 +41,7 @@ export class WikiForgeApp {
   private chatDrawer!: ChatDrawer;
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
+  private keWorkbenchModal!: KEWorkbenchModal;
   private onboardingWizard!: OnboardingWizard;
   private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
@@ -138,6 +140,10 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
+    this.keWorkbenchModal = new KEWorkbenchModal(() => {
+      void this.loadVault();
+    });
+
     this.onboardingWizard = new OnboardingWizard({
       storage: this.storage,
       onComplete: () => {
@@ -170,6 +176,9 @@ Backlink to [[01-index]].
       },
       () => {
         this.onboardingWizard.open();
+      },
+      () => {
+        void this.keWorkbenchModal.open();
       }
     );
 
