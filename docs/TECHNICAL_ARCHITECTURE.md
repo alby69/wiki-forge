@@ -97,6 +97,12 @@ Implemented in `projects/` and `src/components/ConfigManager.ts`:
 - **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
 - **GUI Config Manager**: Web UI modal allows editing project metadata, folder paths, LLM provider settings, and OKF taxonomy using `smol-toml`.
 
+### 2.10 HTTP API Server Routing & Operations
+Implemented in `src/server/agentServer.ts` and `src/server/httpServer.ts`:
+- **Route Dispatch**: `AgentServer.handleRequest()` dispatches every request and returns `true` once it has written a response, or `false` when no route matches. `httpServer.ts` inspects this value and answers `404` (JSON) for unmatched paths and `500` for uncaught handler errors when headers have not yet been sent. Previously the return value was ignored, leaving unknown paths (including routes missing from a stale process) unanswered and hanging the client.
+- **Dual Base URL Resolution**: The browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service.
+- **No Hot Reload**: The `api` service runs `npx tsx src/server/httpServer.ts`, which loads sources once at startup. Any change under `src/server/**` requires `docker compose restart api` to take effect. The `ui` service (Vite) does hot-reload.
+
 ---
 
 ## 3. Comparative Matrix: `wiki-forge` Local RAG vs. From-Scratch Training (`nanochat`)

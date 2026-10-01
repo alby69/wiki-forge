@@ -7,7 +7,19 @@ const ROOT_DIR = process.cwd();
 const agentServer = new AgentServer(ROOT_DIR);
 
 const server = http.createServer((req, res) => {
-  void agentServer.handleRequest(req, res);
+  void agentServer.handleRequest(req, res).then((handled) => {
+    // handleRequest resolves false when no route matched. Without this the
+    // request would never receive a response and the client would hang.
+    if (!handled && !res.headersSent) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: `Not found: ${req.method} ${req.url}` }));
+    }
+  }).catch((err) => {
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: String(err) }));
+    }
+  });
 });
 
 server.listen(PORT, '0.0.0.0', () => {

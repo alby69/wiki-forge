@@ -51,6 +51,8 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
+> **Nota operativa**: gli endpoint `/api/ke/*` sono serviti dal container `api`, che gira con `npx tsx` **senza hot-reload**. Dopo ogni modifica sotto `src/server/**` esegui `docker compose restart api`, altrimenti la Web UI interroga un processo obsoleto e il pannello resta vuoto. Se l'API non risponde, il modal mostra un box di errore con messaggio ed endpoint in `#ke-usecase-list`.
+
 ---
 
 ## 3. Knowledge Engineer Maturity Model (L1–L4)

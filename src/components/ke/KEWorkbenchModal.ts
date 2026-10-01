@@ -102,6 +102,18 @@ export class KEWorkbenchModal {
         this.useCases = data.useCases;
       }
     } catch (err) {
+      // Surface the failure instead of silently rendering an empty menu.
+      const detail = err instanceof Error ? err.message : String(err);
+      const listEl = this.overlay.querySelector('#ke-usecase-list');
+      if (listEl) {
+        listEl.innerHTML = `
+          <div style="font-size: 12px; color: #feb2b2; background: #742a2a; border: 1px solid #9b2c2c; border-radius: 4px; padding: 10px; line-height: 1.4;">
+            <strong style="display: block; margin-bottom: 4px;">Impossibile caricare gli Use Case</strong>
+            <span style="font-family: monospace; font-size: 11px;">${detail}</span>
+            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: ${url}</div>
+          </div>
+        `;
+      }
       console.error('Failed to load KE Use Cases:', err);
     }
   }
