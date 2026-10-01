@@ -12,9 +12,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [The Space Of Minds](intelligenza-artificiale/the-space-of-minds.md) — tags: ['intelligenza-artificiale', 'the-space-of-minds']
-* [Trasformazione Output First](intelligenza-artificiale/trasformazione-output-first.md) — tags: ['intelligenza-artificiale', 'trasformazione-output-first']
-* [Verifiability: cosa si automatizza con l'AI](intelligenza-artificiale/verifiability.md) — tags: ['intelligenza-artificiale', 'verifiability']
-* [Vibe Coding Menugen](intelligenza-artificiale/vibe-coding-menugen.md) — tags: ['intelligenza-artificiale', 'vibe-coding-menugen']
-* [Visione Sistemica Manager](intelligenza-artificiale/visione-sistemica-manager.md) — tags: ['intelligenza-artificiale', 'visione-sistemica-manager']
+* [Versions](versions/README.md) — type: Reference
+* [Mappa Teorica Tesi](intelligenza-artificiale/mappa-teorica-tesi.md) — tags: ['intelligenza-artificiale', 'mappa-teorica-tesi']
+* [Modello Migliore](intelligenza-artificiale/modello-migliore.md) — tags: ['intelligenza-artificiale', 'modello-migliore']
+* [Nello Cristianini](intelligenza-artificiale/nello-cristianini.md) — tags: ['intelligenza-artificiale', 'nello-cristianini']
+* [Power To The People](intelligenza-artificiale/power-to-the-people.md) — tags: ['intelligenza-artificiale', 'power-to-the-people']
 

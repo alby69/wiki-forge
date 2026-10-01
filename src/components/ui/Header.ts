@@ -16,6 +16,7 @@ export class Header {
   private onOpenToolsCb?: () => void;
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenWizardCb?: () => void;
+  private onOpenKEWorkbenchCb?: () => void;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
   private activeNote: WikiNote | null = null;
@@ -28,7 +29,8 @@ export class Header {
     onOpenConfig?: () => void,
     onProjectSelect?: (projectId: string) => void,
     onOpenTools?: () => void,
-    onOpenWizard?: () => void
+    onOpenWizard?: () => void,
+    onOpenKEWorkbench?: () => void
   ) {
     this.container = container;
     this.onViewModeChangeCb = onViewModeChange;
@@ -37,6 +39,7 @@ export class Header {
     this.onProjectSelectCb = onProjectSelect;
     this.onOpenToolsCb = onOpenTools;
     this.onOpenWizardCb = onOpenWizard;
+    this.onOpenKEWorkbenchCb = onOpenKEWorkbench;
 
     this.unsubscribeStore = appStore.subscribe(() => {
       this.render();
@@ -134,7 +137,8 @@ export class Header {
           <!-- Developer Tools in Advanced Mode -->
           ${
             isAdvancedMode
-              ? `<button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
+              ? `<button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
+                 <button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
                  <button id="header-config-btn" style="background: #334155; color: #ffffff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">⚙️ Config</button>`
               : ''
           }
@@ -151,6 +155,7 @@ export class Header {
     `;
 
     const wizardBtn = this.container.querySelector('#header-wizard-btn');
+    const keBtn = this.container.querySelector('#header-ke-btn');
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
     const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
@@ -163,6 +168,7 @@ export class Header {
     });
 
     if (wizardBtn) wizardBtn.addEventListener('click', () => this.onOpenWizardCb?.());
+    if (keBtn) keBtn.addEventListener('click', () => this.onOpenKEWorkbenchCb?.());
     if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());
     if (chatBtn) chatBtn.addEventListener('click', () => this.onToggleChatCb?.());

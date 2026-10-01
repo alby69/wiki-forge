@@ -12,13 +12,15 @@ Quando affronti un progetto complesso — come una **Tesi Magistrale**, una rice
 1. **Memoria frammentata**: Dopo qualche mese ricordi di aver letto un concetto fondamentale, ma non ricordi più in quale dei tuoi 50 PDF si trovi.
 2. **Chatbot tradizionali inefficienti**: Incollare centinaia di documenti ad ogni domanda è lento, costoso e costringe l'IA a ripartire da zero ogni volta.
 
-Wiki-Forge risolve questo problema trasformando l'IA in un **Knowledge Engineer (Ingegnere della Conoscenza)**. L'IA non si limita a rispondere a una domanda passeggera: **costruisce, aggiorna e organizza nel tempo una Wiki interconnessa in formato Markdown**, che rimane salvata sul tuo computer.
+Wiki-Forge risolve questo problema strutturando e separando chiaramente i ruoli utente in due modalità operative:
+- **Operatore Semplice (Focus Mode 🌱)**: Utente non tecnico che deve caricare documenti, compilarli ed interrogare l'agente per alimentare la Wiki.
+- **Ingegnere della Conoscenza / Knowledge Engineer (Developer Mode 👑 / KE Workbench 🧠)**: Profilo tecnico/specialista di dominio che gestisce la modellazione concettuale, le regole ontologiche, la validazione delle Competency Questions, gli Ontology Design Patterns (ODP), l'inferenza neuro-simbolica e l'esportazione semantica RDF/W3C.
 
-> **L'Analogia del Bibliotecario:** Anziché portare uno scatolone di fogli sfusi al tuo assistente ogni volta che hai un dubbio, assumi un bibliotecario permanente. Ogni volta che porti un nuovo libro, il bibliotecario lo legge, crea schede sintetiche, le organizza per argomento e crea collegamenti incrociati (`[[wikilink]]`). Quando fai una domanda, il bibliotecario va dritto al punto.
+> **L'Analogia del Bibliotecario e dell'Ingegnere:** L'operatore semplice consegna i libri al bibliotecario (inbox `sources/` e `raw/`) e consulta gli scaffali. L'Ingegnere della Conoscenza progetta la tassonomia della biblioteca, definisce le regole di classificazione ontologica e ne garantisce la coerenza formale.
 
 ---
 
-## 2. 🌟 Guida Rapida in 3 Passi (Per Tutti)
+## 2. 🌟 Guida Rapida per l'Operatore Semplice (Modalità Focus 🌱)
 
 In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passaggi senza bisogno di comandi tecnici o di usare il terminale.
 
@@ -82,7 +84,39 @@ La scelta viene ricordata tra un riavvio e l'altra. Passando alla sola vista **G
 
 ---
 
-## 3. 🚀 Workflow Avanzato (Per Utenti Esperti)
+## 3. 🧠 Workflow e Use Case per l'Ingegnere della Conoscenza (KE Workbench 👑)
+
+Per la figura professionale del **Knowledge Engineer**, `wiki-forge` offre la modalità **Developer Mode (👑)** ed il pannello guidato **KE Workbench (🧠)**, con 6 Use Case standardizzati per la governance semantica:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ KNOWLEDGE ENGINEER WORKFLOW & GUIDED USE CASES                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ UC1: Schema & Taxonomy Modeling    ──► schema_infer, schema_lint, suggest_tags │
+│ UC2: Ontological Integrity         ──► ontology_rules, okf_lint                 │
+│ UC3: Competency Questions (CQ)     ──► cq_validator, wiki_stats                 │
+│ UC4: Neuro-Symbolic & ODP          ──► odp_suggester, neuro_symbolic_check      │
+│ UC5: Enterprise Semantic Export    ──► export_semantic (RDF/TTL), okf_reindex   │
+│ UC6: Platform Maturity Evaluation  ──► maturity_calculator, ke_maturity         │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Use Case 1: Schema & Taxonomy Modeling (`ke_schema_modeling`)**:
+   Inferenzia ed estrae i predicati ricorrenti dal vault (`schema_infer`), ne valida i vincoli sintattici (`schema_lint`) e normalizza i tag della tassonomia (`suggest_tags`).
+2. **Use Case 2: Ontological Integrity & Validation (`ke_ontological_validation`)**:
+   Rileva dipendenze circolari dirette (es. A -> B -> A), verifica la revisione umana per le note `stable` (`ontology_rules`) ed esegue il linting dei metadati OKF v0.2 (`okf_lint`).
+3. **Use Case 3: Competency Questions (CQ) & Coverage (`ke_cq_assessment`)**:
+   Valuta la copertura delle domande di competenza definite in `wiki/competency_questions.md` (`cq_validator`) ed aggiorna il report generale delle metriche `METRICS.md` (`wiki_stats`).
+4. **Use Case 4: Neuro-Symbolic Reasoning & ODP (`ke_neuro_symbolic`)**:
+   Raccomanda Ontology Design Patterns formali (`odp_suggester`) ed applica l'inferenza neuro-simbolica per rilevare contraddizioni o suggerire wikilink mancanti (`neuro_symbolic_check`).
+5. **Use Case 5: Enterprise Semantic Graph & RDF Export (`ke_semantic_export`)**:
+   Mappa il vault Zettelkasten in triple RDF W3C esportando `output/wiki_export.ttl` e `.jsonld` (`export_semantic`) e rigenerando la mappa MOC (`okf_reindex`).
+6. **Use Case 6: KE Platform Maturity Evaluation (`ke_maturity_eval`)**:
+   Calcola l'Indice di Maturità delle note (`maturity_calculator`) e valuta il livello L1-L4 di maturità dell'intera piattaforma su 6 dimensioni (`ke_maturity`).
+
+---
+
+## 4. 🚀 Workflow Avanzato in 5 Fasi Cronologiche
 
 Per gli utenti avanzati che desiderano il controllo totale sui processi di ingestion, linting, metadati OKF v0.2 e compilazione, Wiki-Forge offre un flusso strutturato in **5 Fasi Cronologiche**:
 
@@ -274,7 +308,7 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
 
 ---
 
-## 4. Comandi di Manutenzione Periodica della Wiki
+## 5. Comandi di Manutenzione Periodica della Wiki
 
 Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2:
 
@@ -303,7 +337,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 
 ---
 
-## 5. Guida alla Risoluzione Problemi (Troubleshooting)
+## 6. Guida alla Risoluzione Problemi (Troubleshooting)
 
 ### "L'agente non trova i file grezzi in raw/"
 - Verifica che `config.toml` contenga `raw = "raw"`.

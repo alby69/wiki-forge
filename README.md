@@ -177,14 +177,15 @@ Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **K
 
 L'applicazione include un'interfaccia Web avanzata (Vite + TypeScript) con:
 
-### Due modalità operative
+### Ruoli Utente e Due Modalità Operative Separate
 
-- **🌱 Focus Mode (Modalità Semplice)**: i tre passaggi essenziali sono **nella barra in alto, al centro**, sempre visibili: **📥 1. Carica** → **⚡ 2. Compila** → **💬 3. Chiedi**. Nessun comando tecnico richiesto.
-- **👑 Developer Mode**: sblocca **🛠️ Tools** e **⚙️ Config** nella barra. Toggle in alto a destra oppure scorciatoia `Ctrl+Shift+D`.
+- **🌱 Operatore Semplice (Focus Mode / Modalità Semplice)**: i tre passaggi essenziali per utenti non tecnici sono **nella barra in alto, al centro**, sempre visibili: **📥 1. Carica** → **⚡ 2. Compila** → **💬 3. Chiedi**. L'operatore carica documenti in `sources/`, compila l'inbox `raw/` ed interroga l'Agente per nutrire la Wiki. Nessun comando tecnico richiesto.
+- **👑 Knowledge Engineer (Developer Mode / KE Workbench 🧠)**: sblocca il **KE Workbench** per gli specialisti di dominio, oltre a **🛠️ Tools** e **⚙️ Config**. Toggle in alto a destra oppure scorciatoia `Ctrl+Shift+D`.
 
 ### Strumenti dell'interfaccia
 
-- **Pannello Strumenti (🛠️ Tools)**: Esegue tutti i 15 script Python direttamente dal browser con form dinamici e console di log in tempo reale tramite Server-Sent Events (SSE).
+- **🧠 Knowledge Engineer Workbench (KE Workbench)**: Interfaccia guidata wizard per eseguire i 6 Use Case KE professionali (Schema Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, W3C Semantic RDF Export, KE Maturity Evaluation) con SSE log streaming.
+- **Pannello Strumenti (🛠️ Tools)**: Esegue tutti i 15+ script Python direttamente dal browser con form dinamici e console di log in tempo reale tramite Server-Sent Events (SSE).
 - **Gestore Configurazione (⚙️ Config)**: Modifica `config.toml` graficamente.
 - **Project Switcher**: Gestisci più progetti contemporaneamente isolati in `projects/`.
 - **Vault Explorer & CodeMirror 6 Editor**: Naviga nel vault, modifica note con completamento dei `[[wikilink]]` e salvataggio diretto su disco. La barra laterale sinistra si ridimensiona in orizzontale e i pulsanti delle operazioni sui file si dispongono su una riga, andando a capo da soli quando la restringi.

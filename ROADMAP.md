@@ -63,6 +63,7 @@
 | 48 | Lightweight Ontology Rule Engine | ✅ Done | Motore di regole `ontology_rules.py` per la validazione logica (unlinked concepts, circular links, stable human review). |
 | 49 | Typed Schema System & Linting Engine (T1) | ✅ Done | Schema validation (`scripts/schema_lint.py`), inference (`scripts/schema_infer.py`), and `docs/SCHEMA.md`. |
 | 50 | Enterprise Semantic Knowledge Graph & Stateful GraphRAG System | ✅ Done | W3C SHACL shape schema (`src/wikiforge/config/shapes.ttl`), Zettelkasten-to-RDF converter (`markdown_to_rdf.py`), Neo4j Cypher exporter (`markdown_to_cypher.py`), stateful LangGraph GraphRAG pipeline (`graph_rag_pipeline.py`), GitHub Actions CI/CD (`shacl_validation.yml`), unit tests, and `docs/GRAPH_RAG.md`. |
+| 51 | Knowledge Engineer Use Case Management & Guided Workbench | ✅ Done | Dedicated KE Workbench (`src/components/ke/KEWorkbenchModal.ts`), 6 guided Use Cases, REST APIs (`GET /api/ke/use-cases`, `POST /api/ke/use-cases/execute`), role separation (Simple Operator vs Knowledge Engineer), and documentation updates in `docs/KNOWLEDGE_ENGINEERING.md` and `docs/TUTORIAL.md`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -101,6 +102,19 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - Implemented `scripts/ontology_rules.py` for logical rule verification (unlinked `Concept` notes, circular dependencies A -> B -> A, and human verification requirements for `stable` status notes).
 - Registered tools in AgentServer `SCRIPT_REGISTRY` and Web UI Control Panel.
 - Created `docs/KNOWLEDGE_ENGINEERING.md` operating manual for Knowledge Engineers.
+
+---
+
+## Phase 51 — Knowledge Engineer Use Case Management & Guided Workbench ✅ Done
+
+**Goal:** Provide structured Use Case management for Knowledge Engineers with a dedicated KE Workbench UI, 6 guided professional workflows, clear separation from Simple Operator tasks, and full REST API backend integration.
+
+**Deliverables:**
+- Implemented `KE_USE_CASES` registry and REST API endpoints (`GET /api/ke/use-cases`, `POST /api/ke/use-cases/execute`) in `src/server/agentServer.ts`.
+- Implemented `src/components/ke/KEWorkbenchModal.ts` providing an interactive guided workbench modal for Knowledge Engineers with real-time SSE log streaming.
+- Added `🧠 KE Workbench` quick launcher button in `Header.ts` visible in Developer Mode.
+- Structured clear user role separation between Simple Operators (Focus Mode 🌱: Carica -> Compila -> Chiedi) and Knowledge Engineers (Developer Mode 👑: Schema Modeling, Ontological Validation, CQ Assessment, Neuro-Symbolic Reasoning, Semantic RDF Export, Platform Maturity Evaluation).
+- Updated documentation across `docs/KNOWLEDGE_ENGINEERING.md`, `docs/TUTORIAL.md`, `docs/AGENT.md`, `README.md`, and `ROADMAP.md`.
 
 ---
 

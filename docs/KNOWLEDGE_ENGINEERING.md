@@ -20,7 +20,40 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 
 ---
 
-## 2. Knowledge Engineer Maturity Model (L1–L4)
+## 2. Gestione degli Use Case guidati per l'Ingegnere della Conoscenza (KE Workbench)
+
+`wiki-forge` offre un **Pannello di Controllo guidato per il Knowledge Engineer (KE Workbench)** e REST API dedicate (`/api/ke/use-cases` e `/api/ke/use-cases/execute`) che guidano l'Ingegnere della Conoscenza nell'esecuzione dei **6 Use Case professionali** fondamentali per la gestione del ciclo di vita della conoscenza:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🧠 KNOWLEDGE ENGINEER WORKBENCH (GUIDED USE CASES)                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Schema & Taxonomy Modeling    ──► schema_infer, schema_lint, suggest_tags  │
+│ 2. Ontological Validation        ──► ontology_rules, okf_lint                │
+│ 3. Competency Questions (CQ)     ──► cq_validator, wiki_stats                │
+│ 4. Neuro-Symbolic & ODP          ──► odp_suggester, neuro_symbolic_check     │
+│ 5. Enterprise Semantic Export    ──► export_semantic (RDF/TTL/JSON-LD), MOCs │
+│ 6. KE Platform Maturity Eval     ──► maturity_calculator, ke_maturity        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Tabella degli Use Case e REST API
+
+| Use Case ID | Titolo Use Case | Categoria | Script Coinvolti | REST Endpoint / Output |
+| :--- | :--- | :--- | :--- | :--- |
+| `ke_schema_modeling` | **UC1: Schema & Taxonomy Modeling** | Conceptual Modeling | `schema_infer`, `schema_lint`, `suggest_tags` | `POST /api/ke/use-cases/execute` |
+| `ke_ontological_validation` | **UC2: Ontological Integrity & Validation** | Validation & Governance | `ontology_rules`, `okf_lint` | Log di coerenza & cicli diretti |
+| `ke_cq_assessment` | **UC3: Competency Questions (CQ) & Coverage** | Knowledge Audit | `cq_validator`, `wiki_stats` | `output/cq_validation_report.md` |
+| `ke_neuro_symbolic` | **UC4: Neuro-Symbolic Reasoning & ODP** | Pattern Reasoning | `odp_suggester`, `neuro_symbolic_check` | `output/neuro_symbolic_report.md` |
+| `ke_semantic_export` | **UC5: Enterprise Semantic Graph & RDF Export** | Interoperability & Graph | `export_semantic`, `okf_reindex` | `output/wiki_export.ttl` / `.jsonld` |
+| `ke_maturity_eval` | **UC6: KE Platform Maturity Evaluation** | Platform Governance | `maturity_calculator`, `ke_maturity` | `output/ke_maturity_report.md` |
+
+### Integrazione UI & SSE Streaming
+Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
+
+---
+
+## 3. Knowledge Engineer Maturity Model (L1–L4)
 
 `wiki-forge` evaluates knowledge base platform maturity across 4 levels:
 
@@ -37,7 +70,7 @@ make ke-maturity
 
 ---
 
-## 3. Knowledge Modeling, Frontmatter Taxonomy & ODP
+## 4. Knowledge Modeling, Frontmatter Taxonomy & ODP
 
 Every note in the knowledge base declares explicit YAML frontmatter conforming to OKF v0.2:
 
@@ -76,7 +109,7 @@ make suggest-odp
 
 ---
 
-## 4. Competency Questions (CQ) Validation Engine
+## 5. Competency Questions (CQ) Validation Engine
 
 An ontology or knowledge base is valid only if it can answer pre-defined Competency Questions (CQs). CQs are stored in `wiki/competency_questions.md`:
 
@@ -95,7 +128,7 @@ The report classifies CQs into:
 
 ---
 
-## 5. Logical Ontology Validation & Neuro-Symbolic Reasoning
+## 6. Logical Ontology Validation & Neuro-Symbolic Reasoning
 
 `wiki-forge` provides a multi-layered validation architecture:
 
@@ -114,7 +147,7 @@ make neuro-check
 
 ---
 
-## 6. Semantic Interoperability & External Ecosystems
+## 7. Semantic Interoperability & External Ecosystems
 
 ### A. Model Context Protocol (MCP Server)
 The MCP server (`src/server/mcp_server.py`) exposes tools to external AI clients:

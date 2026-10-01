@@ -512,6 +512,24 @@ export interface WizardScenario {
   prompt: string;
 }
 
+export interface KEUseCaseStep {
+  stepNumber: number;
+  title: string;
+  description: string;
+  scriptId: string;
+  defaultArgs?: Record<string, any>;
+}
+
+export interface KEUseCaseDef {
+  id: string;
+  title: string;
+  role: 'Knowledge Engineer';
+  category: string;
+  summary: string;
+  objective: string;
+  steps: KEUseCaseStep[];
+}
+
 export const WIZARD_SCENARIOS: Record<string, WizardScenario> = {
   academic: {
     id: 'academic',
@@ -550,9 +568,169 @@ export const WIZARD_SCENARIOS: Record<string, WizardScenario> = {
   },
 };
 
+export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
+  ke_schema_modeling: {
+    id: 'ke_schema_modeling',
+    title: 'Use Case 1: Schema & Taxonomy Modeling',
+    role: 'Knowledge Engineer',
+    category: 'Conceptual Modeling',
+    summary: 'Infere e valida lo schema tipizzato della wiki, arricchendo le note con tag dal vocabolario controllato.',
+    objective: 'Estrarre predicati e classi dal vault, validare la conformità sintattica [schema] e normalizzare la tassonomia.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Infer Domain Schema',
+        description: 'Analizza i predicati ricorrenti nelle note e propone uno schema TOML di classi e proprietà.',
+        scriptId: 'schema_infer',
+        defaultArgs: {},
+      },
+      {
+        stepNumber: 2,
+        title: 'Lint Schema Constraints',
+        description: 'Verifica la conformità sintattica e i vincoli di tipo delle note rispetto allo schema definito.',
+        scriptId: 'schema_lint',
+        defaultArgs: {},
+      },
+      {
+        stepNumber: 3,
+        title: 'Taxonomy Tag Suggestion',
+        description: 'Arricchisce il frontmatter YAML delle note attingendo al vocabolario controllato del dominio.',
+        scriptId: 'suggest_tags',
+        defaultArgs: { all: true, wiki: 'wiki' },
+      },
+    ],
+  },
+  ke_ontological_validation: {
+    id: 'ke_ontological_validation',
+    title: 'Use Case 2: Ontological Integrity & Validation',
+    role: 'Knowledge Engineer',
+    category: 'Validation & Governance',
+    summary: 'Rileva dipendenze circolari dirette, controlla il ciclo di vita OKF v0.2 e valida la coerenza logica.',
+    objective: 'Garantire l\'assenza di cicli A -> B -> A, verificare la presenza di revisione umana per note stabili ed eseguire il linting OKF.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Ontology Rule Verification',
+        description: 'Esegue i controlli di coerenza logica (concetti orfani, cicli diretti, revisione umana note stable).',
+        scriptId: 'ontology_rules',
+        defaultArgs: { wiki_dir: 'wiki' },
+      },
+      {
+        stepNumber: 2,
+        title: 'OKF Frontmatter & Bundle Lint',
+        description: 'Verifica la presenza dei campi obbligatori OKF v0.2, enumerazioni ed indici di bundle.',
+        scriptId: 'okf_lint',
+        defaultArgs: { wiki_dir: 'wiki' },
+      },
+    ],
+  },
+  ke_cq_assessment: {
+    id: 'ke_cq_assessment',
+    title: 'Use Case 3: Competency Questions (CQ) & Coverage',
+    role: 'Knowledge Engineer',
+    category: 'Knowledge Audit',
+    summary: 'Valuta la capacita della Knowledge Base di rispondere alle Competency Questions del dominio.',
+    objective: 'Validare la copertura delle domande chiave e identificare i gap di conoscenza (knowledge gaps).',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Competency Questions Validation',
+        description: 'Mappa ed esegue le CQ di dominio rispetto alla rete di note generandone il report di copertura.',
+        scriptId: 'cq_validator',
+        defaultArgs: { wiki_dir: 'wiki', cq_file: 'wiki/competency_questions.md', output: 'output/cq_validation_report.md' },
+      },
+      {
+        stepNumber: 2,
+        title: 'Global Analytics & Coverage Metrics',
+        description: 'Aggiorna le metriche generali della wiki e rigenera il report METRICS.md.',
+        scriptId: 'wiki_stats',
+        defaultArgs: {},
+      },
+    ],
+  },
+  ke_neuro_symbolic: {
+    id: 'ke_neuro_symbolic',
+    title: 'Use Case 4: Neuro-Symbolic Reasoning & ODP',
+    role: 'Knowledge Engineer',
+    category: 'Pattern Reasoning',
+    summary: 'Rileva contraddizioni semantiche, suggerisce Ontology Design Patterns (ODP) ed inferisce wikilink mancanti.',
+    objective: 'Combinare l\'inferenza simbolica RDFS/OWL con la capacita semantica del LLM per prevenire trappole di modellazione.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'ODP Pattern Recommender',
+        description: 'Analizza le strutture relazionali emergenti e suggerisce pattern formali (AgentRole, Situations, Temporal).',
+        scriptId: 'odp_suggester',
+        defaultArgs: { wiki_dir: 'wiki', catalog: 'config/odp_catalog.json' },
+      },
+      {
+        stepNumber: 2,
+        title: 'Neuro-Symbolic Consistency Checker',
+        description: 'Esamina contraddizioni tra affermazioni e propone link tipizzati mancanti tra concetti correlati.',
+        scriptId: 'neuro_symbolic_check',
+        defaultArgs: { wiki_dir: 'wiki', output: 'output/neuro_symbolic_report.md' },
+      },
+    ],
+  },
+  ke_semantic_export: {
+    id: 'ke_semantic_export',
+    title: 'Use Case 5: Enterprise Semantic Graph & RDF Export',
+    role: 'Knowledge Engineer',
+    category: 'Interoperability & Graph',
+    summary: 'Mappa l\'intero vault Zettelkasten in triple RDF W3C (JSON-LD e Turtle TTL) con identificatori IRI permanenti.',
+    objective: 'Garantire l\'interoperabilita con sistemi aziendali, GraphDB, Protégé ed engine GraphRAG.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Semantic RDF & JSON-LD Export',
+        description: 'Converte note, relazioni tipizzate e metadati OKF in triple RDF W3C ed esporta output/wiki_export.ttl e .jsonld.',
+        scriptId: 'export_semantic',
+        defaultArgs: { wiki_dir: 'wiki', output_dir: 'output' },
+      },
+      {
+        stepNumber: 2,
+        title: 'OKF Navigation & MOC Reindex',
+        description: 'Rigenera l\'indice generale wiki/index.md e le mappe tematiche MOC a supporto della navigazione.',
+        scriptId: 'okf_reindex',
+        defaultArgs: { wiki_dir: 'wiki' },
+      },
+    ],
+  },
+  ke_maturity_eval: {
+    id: 'ke_maturity_eval',
+    title: 'Use Case 6: KE Platform Maturity Evaluation',
+    role: 'Knowledge Engineer',
+    category: 'Platform Governance',
+    summary: 'Valuta il livello complessivo di maturita dell\'architettura di Ingegneria della Conoscenza su 6 dimensioni (L1-L4).',
+    objective: 'Fornire una scorecard dettagliata sulla formalizzazione, automazione SHACL/CQ e qualita dell\'ancoraggio alle fonti.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Page Maturity Calculation',
+        description: 'Calcola l\'Indice di Maturita (0-100) per ogni nota della wiki basandosi su 5 criteri ponderati.',
+        scriptId: 'maturity_calculator',
+        defaultArgs: { path: 'wiki', write: true },
+      },
+      {
+        stepNumber: 2,
+        title: 'KE Maturity Assessment (L1-L4)',
+        description: 'Genera il report L1-L4 sulle 6 dimensioni dell\'Ingegneria della Conoscenza salvandolo in output/ke_maturity_report.md.',
+        scriptId: 'ke_maturity',
+        defaultArgs: { wiki_dir: 'wiki', output: 'output/ke_maturity_report.md' },
+      },
+    ],
+  },
+};
+
 function formatWizardList(): string {
   return Object.values(WIZARD_SCENARIOS)
     .map(s => `- \`/wizard ${s.id}\` — **${s.name}**: ${s.description}`)
+    .join('\n');
+}
+
+function formatKeUseCaseList(): string {
+  return Object.values(KE_USE_CASES)
+    .map(u => `- **${u.title}** (\`${u.id}\`): ${u.summary}`)
     .join('\n');
 }
 
@@ -766,6 +944,90 @@ export class AgentServer {
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
+      return true;
+    }
+
+    // Knowledge Engineer Use Cases Endpoints
+    if (pathname === '/api/ke/use-cases' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, useCases: Object.values(KE_USE_CASES) }));
+      return true;
+    }
+
+    if (pathname === '/api/ke/use-cases/execute' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ useCaseId?: string; stepIndex?: number; args?: Record<string, any> }>(req);
+        const useCaseId = body.useCaseId;
+        if (!useCaseId || !KE_USE_CASES[useCaseId]) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Invalid or unregistered Knowledge Engineer Use Case ID '${useCaseId}'` }));
+          return true;
+        }
+
+        const useCase = KE_USE_CASES[useCaseId];
+        const projRoot = await this.resolveProjectRoot(projectId);
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        });
+
+        res.write(`data: ${JSON.stringify({ type: 'start', useCase: useCase.title, objective: useCase.objective })}\n\n`);
+
+        const stepsToRun = typeof body.stepIndex === 'number' && body.stepIndex >= 0 && body.stepIndex < useCase.steps.length
+          ? [useCase.steps[body.stepIndex]]
+          : useCase.steps;
+
+        for (const step of stepsToRun) {
+          const scriptDef = SCRIPT_REGISTRY[step.scriptId];
+          if (!scriptDef) {
+            res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Script '${step.scriptId}' for step ${step.stepNumber} not found.` })}\n\n`);
+            continue;
+          }
+
+          const userArgs = { ...step.defaultArgs, ...(body.args || {}) };
+          const cliArgs = buildCliArgs(scriptDef, userArgs);
+          const scriptPath = path.resolve(projRoot, scriptDef.path);
+
+          res.write(`data: ${JSON.stringify({ type: 'step_start', stepNumber: step.stepNumber, title: step.title, script: scriptDef.displayName, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
+
+          await new Promise<void>((resolveStep) => {
+            const child = spawn('python3', [scriptPath, ...cliArgs], {
+              cwd: projRoot,
+              env: { ...process.env, PYTHONUNBUFFERED: '1' },
+            });
+
+            child.stdout.on('data', (data: Buffer) => {
+              res.write(`data: ${JSON.stringify({ type: 'stdout', stepNumber: step.stepNumber, text: data.toString('utf-8') })}\n\n`);
+            });
+
+            child.stderr.on('data', (data: Buffer) => {
+              res.write(`data: ${JSON.stringify({ type: 'stderr', stepNumber: step.stepNumber, text: data.toString('utf-8') })}\n\n`);
+            });
+
+            child.on('error', (err: Error) => {
+              res.write(`data: ${JSON.stringify({ type: 'stderr', stepNumber: step.stepNumber, text: `Failed to start process: ${err.message}` })}\n\n`);
+              resolveStep();
+            });
+
+            child.on('close', (code: number | null) => {
+              res.write(`data: ${JSON.stringify({ type: 'step_end', stepNumber: step.stepNumber, code: code ?? 0 })}\n\n`);
+              resolveStep();
+            });
+          });
+        }
+
+        res.write(`data: ${JSON.stringify({ type: 'exit', code: 0, message: `Use Case '${useCase.title}' execution finished.` })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      } catch (err) {
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+      }
       return true;
     }
 
