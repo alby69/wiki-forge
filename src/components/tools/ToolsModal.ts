@@ -1,4 +1,5 @@
 import { ScriptDef, ScriptParamDef } from '../../server/agentServer';
+import { resolveApiBaseUrl } from '../../storage/ApiStorage';
 import { LogConsole } from './LogConsole';
 
 export class ToolsModal {
@@ -8,6 +9,7 @@ export class ToolsModal {
   private logConsole!: LogConsole;
   private onVaultRefreshCb?: () => void;
   private activeCategory: string = 'Ingestion';
+  private apiBaseUrl: string = resolveApiBaseUrl();
 
   constructor(onVaultRefresh?: () => void) {
     this.onVaultRefreshCb = onVaultRefresh;
@@ -86,14 +88,30 @@ export class ToolsModal {
   }
 
   private async fetchScriptRegistry(): Promise<void> {
+    const url = `${this.apiBaseUrl}/api/scripts/list`;
     try {
-      const res = await fetch('/api/scripts/list');
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.scripts)) {
         this.scripts = data.scripts;
       }
-    } catch (_err) {
-      // Fallback
+    } catch (err) {
+      // Surface the failure instead of silently rendering an empty menu.
+      const detail = err instanceof Error ? err.message : String(err);
+      const listEl = this.overlay.querySelector('#tools-categories-list');
+      if (listEl) {
+        listEl.innerHTML = `
+          <div style="font-size: 12px; color: #feb2b2; background: #742a2a; border: 1px solid #9b2c2c; border-radius: 4px; padding: 10px; line-height: 1.4;">
+            <strong style="display: block; margin-bottom: 4px;">Impossibile caricare gli script</strong>
+            <span style="font-family: monospace; font-size: 11px;">${detail}</span>
+            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: ${url}</div>
+          </div>
+        `;
+      }
+      console.error('Failed to load script registry:', err);
     }
   }
 
@@ -281,7 +299,7 @@ export class ToolsModal {
     });
 
     try {
-      const response = await fetch('/api/scripts/execute', {
+      const response = await fetch(`${this.apiBaseUrl}/api/scripts/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scriptId: script.id, args }),

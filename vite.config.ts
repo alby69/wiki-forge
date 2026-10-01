@@ -2,10 +2,21 @@ import { defineConfig, Plugin } from 'vite';
 import { AgentServer } from './src/server/agentServer';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+// Browser-facing API origin, baked into the client bundle. From the user's
+// browser 127.0.0.1:3001 is the published host port, so this is correct.
 const API_BASE_URL = process.env.VITE_API_BASE_URL;
 
+// Server-side proxy target used by the dev server itself. Inside the UI
+// container 127.0.0.1 does NOT reach the API container, so Docker sets this to
+// the compose service name (http://api:3001). Falls back to the browser origin
+// for single-host local development.
+const PROXY_TARGET = process.env.VITE_PROXY_TARGET || API_BASE_URL;
+
 function getOriginalUrl(req: IncomingMessage): string {
-  return (req as any).originalUrl || req.url || '';
+  const url = (req as any).originalUrl || req.url || '';
+  // Connect strips the mount path ('/api') from req.url, so restore it before
+  // forwarding; otherwise the upstream would receive /scripts/list and 404.
+  return url.startsWith('/api') ? url : `/api${url}`;
 }
 
 function agentApiPlugin(): Plugin {
@@ -14,10 +25,10 @@ function agentApiPlugin(): Plugin {
   return {
     name: 'wiki-forge-agent-api',
     configureServer(server) {
-      if (API_BASE_URL) {
+          if (PROXY_TARGET) {
         // Proxy API requests to external backend
         server.middlewares.use('/api', (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-          const targetUrl = `${API_BASE_URL}${getOriginalUrl(req)}`;
+          const targetUrl = `${PROXY_TARGET}${getOriginalUrl(req)}`;
           const headers: Record<string, string> = {};
           Object.entries(req.headers).forEach(([key, value]) => {
             if (value !== undefined) {
@@ -74,9 +85,9 @@ function agentApiPlugin(): Plugin {
       });
     },
     configurePreviewServer(server) {
-      if (API_BASE_URL) {
+          if (PROXY_TARGET) {
         server.middlewares.use('/api', (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-          const targetUrl = `${API_BASE_URL}${getOriginalUrl(req)}`;
+          const targetUrl = `${PROXY_TARGET}${getOriginalUrl(req)}`;
           const headers: Record<string, string> = {};
           Object.entries(req.headers).forEach(([key, value]) => {
             if (value !== undefined) {

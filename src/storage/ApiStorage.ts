@@ -16,18 +16,25 @@ export interface ProjectInfo {
   path: string;
 }
 
+/** Resolve the API origin in the browser.
+ *
+ *  Components must call this instead of using bare `/api/...` paths: in the
+ *  Docker setup the UI (Vite, :5173) and the API (:3001) are separate origins,
+ *  and a relative URL would be resolved against the Vite dev server instead. */
+export function resolveApiBaseUrl(fallback: string = ''): string {
+  if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL) {
+    return (import.meta as any).env.VITE_API_BASE_URL;
+  }
+  return fallback;
+}
+
 export class ApiStorage implements IStorage {
   private fallback = new FileStorage();
   private baseUrl: string;
   private activeProjectIdMemory: string = 'default';
 
   constructor(baseUrl: string = '') {
-    // In browser, use VITE_API_BASE_URL if available; otherwise use provided baseUrl
-    if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL) {
-      this.baseUrl = (import.meta as any).env.VITE_API_BASE_URL;
-    } else {
-      this.baseUrl = baseUrl;
-    }
+    this.baseUrl = resolveApiBaseUrl(baseUrl);
   }
 
   public getActiveProjectId(): string {

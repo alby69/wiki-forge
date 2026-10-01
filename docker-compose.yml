@@ -44,7 +44,12 @@ services:
       - /app/node_modules
     environment:
       - OPENCODE_BIN=/usr/local/bin/opencode
+      # Browser-facing origin: from the user's browser 127.0.0.1:3001 is the
+      # published host port of the `api` service below.
       - VITE_API_BASE_URL=http://127.0.0.1:3001
+      # Dev-server proxy target: inside this container 127.0.0.1 is NOT the api
+      # container, so the target must use the compose service name.
+      - VITE_PROXY_TARGET=http://api:3001
     working_dir: /app
     ports:
       - "5173:5173"
