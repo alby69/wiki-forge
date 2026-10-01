@@ -3,7 +3,10 @@ export interface AppState {
   activeProjectId: string;
   onboardingCompleted: boolean;
   theme: 'dark' | 'light';
+  viewMode: ViewMode;
 }
+
+export type ViewMode = 'editor' | 'graph' | 'split';
 
 type Listener = (state: AppState) => void;
 
@@ -11,6 +14,9 @@ const ADVANCED_MODE_KEY = 'wiki-forge:advanced-mode';
 const ONBOARDING_KEY = 'wiki-forge:onboarding-completed';
 const PROJECT_KEY = 'wiki-forge:active-project';
 const THEME_KEY = 'wiki-forge:theme';
+const VIEW_MODE_KEY = 'wiki-forge:view-mode';
+
+const VIEW_MODES: ViewMode[] = ['editor', 'graph', 'split'];
 
 class AppStore {
   private state: AppState;
@@ -25,6 +31,7 @@ class AppStore {
     let onboardingCompleted = false;
     let activeProjectId = 'default';
     let theme: 'dark' | 'light' = 'dark';
+    let viewMode: ViewMode = 'split';
 
     if (typeof localStorage !== 'undefined') {
       try {
@@ -39,6 +46,9 @@ class AppStore {
 
         const storedTheme = localStorage.getItem(THEME_KEY);
         if (storedTheme === 'light' || storedTheme === 'dark') theme = storedTheme;
+
+        const storedView = localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
+        if (storedView && VIEW_MODES.includes(storedView)) viewMode = storedView;
       } catch (_e) {
         // Fallback
       }
@@ -49,6 +59,7 @@ class AppStore {
       activeProjectId,
       onboardingCompleted,
       theme,
+      viewMode,
     };
   }
 
@@ -100,9 +111,23 @@ class AppStore {
   }
 
   public setTheme(theme: 'dark' | 'light'): void {
+    if (this.state.theme === theme) return;
     this.state.theme = theme;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(THEME_KEY, theme);
+    }
+    this.notify();
+  }
+
+  public setViewMode(mode: ViewMode): void {
+    if (this.state.viewMode === mode) return;
+    this.state.viewMode = mode;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(VIEW_MODE_KEY, mode);
+      } catch (_e) {
+        // Persisting is best-effort
+      }
     }
     this.notify();
   }

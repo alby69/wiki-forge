@@ -176,11 +176,21 @@ Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **K
 ## 🌐 Web UI & Pannello di Controllo Strumenti
 
 L'applicazione include un'interfaccia Web avanzata (Vite + TypeScript) con:
+
+### Due modalità operative
+
+- **🌱 Focus Mode (Modalità Semplice)**: i tre passaggi essenziali sono **nella barra in alto, al centro**, sempre visibili: **📥 1. Carica** → **⚡ 2. Compila** → **💬 3. Chiedi**. Nessun comando tecnico richiesto.
+- **👑 Developer Mode**: sblocca **🛠️ Tools** e **⚙️ Config** nella barra. Toggle in alto a destra oppure scorciatoia `Ctrl+Shift+D`.
+
+### Strumenti dell'interfaccia
+
 - **Pannello Strumenti (🛠️ Tools)**: Esegue tutti i 15 script Python direttamente dal browser con form dinamici e console di log in tempo reale tramite Server-Sent Events (SSE).
 - **Gestore Configurazione (⚙️ Config)**: Modifica `config.toml` graficamente.
 - **Project Switcher**: Gestisci più progetti contemporaneamente isolati in `projects/`.
-- **Vault Explorer & CodeMirror 6 Editor**: Naviga nel vault, modifica note con completamento dei `[[wikilink]]` e salvataggio diretto su disco.
+- **Vault Explorer & CodeMirror 6 Editor**: Naviga nel vault, modifica note con completamento dei `[[wikilink]]` e salvataggio diretto su disco. La barra laterale sinistra si ridimensiona in orizzontale e i pulsanti delle operazioni sui file si dispongono su una riga, andando a capo da soli quando la restringi.
 - **Force Graph Viewer**: Mappa interattiva delle relazioni tra note.
+- **Node Metadata**: Barra orizzontale sotto l'editor con titolo, tag, badge di affidabilità OKF, backlink, link in uscita e stato dell'agente. Si ridimensiona in verticale.
+- **Selettore vista (📝 Editor / 🕸️ Graph / ◧ Split)**: Sceglie il layout dell'area di lavoro — solo editor, solo grafo, o affiancati con trascinatore. La scelta viene ricordata.
 - **Chat Drawer**: Assistente agente integrato con streaming delle risposte, tasti scorciatoia ed il pulsante **📌 Attach to Wiki**.
 
 ---

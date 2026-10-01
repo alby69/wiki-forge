@@ -314,16 +314,12 @@ export class Sidebar {
 this.container.innerHTML = `
       <div style="width: 100%; background: #121316; height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
         <!-- File Operations Toolbar -->
-        <div style="padding: 8px 10px; border-bottom: 1px solid #2d3748; background: #1a1b1e; flex-shrink: 0;">
-          <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; overflow-x: auto;" id="toolbar-primary">
-            <button id="btn-new-folder" title="New Folder" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📁+</button>
-            <button id="btn-new-file" title="New File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📄+</button>
-            <button id="btn-upload-file" title="Upload File" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">📤</button>
-          </div>
-          <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 4px; overflow-x: auto;" id="toolbar-secondary">
-            <button id="btn-rename-item" title="Rename Selected" style="background: #2d3748; color: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">✏️</button>
-            <button id="btn-delete-item" title="Delete Selected" style="background: #742a2a; color: #feb2b2; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">🗑️</button>
-          </div>
+        <div class="sidebar-toolbar" id="sidebar-toolbar">
+          <button id="btn-new-folder" title="New Folder" aria-label="New Folder">📁+</button>
+          <button id="btn-new-file" title="New File" aria-label="New File">📄+</button>
+          <button id="btn-upload-file" title="Upload File" aria-label="Upload File">📤</button>
+          <button id="btn-rename-item" title="Rename Selected" aria-label="Rename Selected">✏️</button>
+          <button id="btn-delete-item" title="Delete Selected" aria-label="Delete Selected">🗑️</button>
           <input type="file" id="sidebar-file-input" multiple style="display: none;" />
         </div>
 

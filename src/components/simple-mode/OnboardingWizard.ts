@@ -24,6 +24,7 @@ export class OnboardingWizard {
     this.container = document.createElement('div');
     this.container.className = 'wf-modal-overlay';
     this.container.id = 'onboarding-wizard-modal';
+    this.container.style.display = 'none';
     document.body.appendChild(this.container);
   }
 
@@ -233,7 +234,11 @@ export class OnboardingWizard {
       if (!config.agent) config.agent = {};
       if (!config.agent.llm) config.agent.llm = {};
 
-      config.project.context = `Scenario preset: ${this.selectedScenario}`;
+      // Never clobber an existing project context: the wizard may run again
+      // from the header, and a hand-written description must survive.
+      if (!config.project.context) {
+        config.project.context = `Scenario preset: ${this.selectedScenario}`;
+      }
       if (this.selectedModel === 'opencode' || this.selectedModel === 'ollama') {
         config.agent.llm.provider = this.selectedModel;
       } else {

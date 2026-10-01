@@ -1,10 +1,16 @@
 import { ProjectInfo } from '../../storage/ApiStorage';
 import { WikiNote } from '../../core/types/wiki';
-import { appStore } from '../../store/appStore';
+import { appStore, ViewMode } from '../../store/appStore';
+
+const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[] = [
+  { id: 'editor', label: 'Editor', title: 'Solo Editor', icon: '📝' },
+  { id: 'graph', label: 'Graph', title: 'Solo Knowledge Graph', icon: '🕸️' },
+  { id: 'split', label: 'Split', title: 'Editor e Graph affiancati', icon: '◧' },
+];
 
 export class Header {
   private container: HTMLElement;
-  private onViewModeChangeCb?: (mode: 'editor' | 'graph' | 'split') => void;
+  private onViewModeChangeCb?: (mode: ViewMode) => void;
   private onToggleChatCb?: () => void;
   private onOpenConfigCb?: () => void;
   private onOpenToolsCb?: () => void;
@@ -17,7 +23,7 @@ export class Header {
 
   constructor(
     container: HTMLElement,
-    onViewModeChange?: (mode: 'editor' | 'graph' | 'split') => void,
+    onViewModeChange?: (mode: ViewMode) => void,
     onToggleChat?: () => void,
     onOpenConfig?: () => void,
     onProjectSelect?: (projectId: string) => void,
@@ -76,7 +82,7 @@ export class Header {
   }
 
   public render(): void {
-    const { isAdvancedMode } = appStore.getState();
+    const { isAdvancedMode, viewMode } = appStore.getState();
 
     const projOptions = this.projects.length > 0
       ? this.projects.map(p => `<option value="${p.id}" ${p.id === this.activeProjectId ? 'selected' : ''}>${p.name}</option>`).join('')
@@ -106,10 +112,16 @@ export class Header {
 
         <div style="display: flex; align-items: center; gap: 10px;">
           <!-- View Mode Toggles -->
-          <div style="display: flex; background: #1e293b; padding: 2px; border-radius: 6px; border: 1px solid #334155;">
-            <button id="view-mode-editor" title="Editor View" style="background: transparent; color: #f8fafc; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Editor</button>
-            <button id="view-mode-graph" title="Knowledge Graph View" style="background: transparent; color: #f8fafc; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Graph</button>
-            <button id="view-mode-split" title="Split Screen View" style="background: #4f46e5; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">Split</button>
+          <div class="seg-control" role="tablist" aria-label="Vista">
+            ${VIEW_MODES.map(
+              m => `<button
+                id="view-mode-${m.id}"
+                class="seg-btn ${viewMode === m.id ? 'active' : ''}"
+                role="tab"
+                aria-selected="${viewMode === m.id}"
+                title="${m.title}"
+              >${m.icon} ${m.label}</button>`
+            ).join('')}
           </div>
 
           <div style="width: 1px; height: 20px; background: #334155; margin: 0 2px;"></div>
@@ -138,9 +150,6 @@ export class Header {
       </header>
     `;
 
-    const editorBtn = this.container.querySelector('#view-mode-editor');
-    const graphBtn = this.container.querySelector('#view-mode-graph');
-    const splitBtn = this.container.querySelector('#view-mode-split');
     const wizardBtn = this.container.querySelector('#header-wizard-btn');
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
@@ -148,9 +157,11 @@ export class Header {
     const devToggle = this.container.querySelector('#developer-mode-toggle') as HTMLInputElement;
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement;
 
-    if (editorBtn) editorBtn.addEventListener('click', () => this.onViewModeChangeCb?.('editor'));
-    if (graphBtn) graphBtn.addEventListener('click', () => this.onViewModeChangeCb?.('graph'));
-    if (splitBtn) splitBtn.addEventListener('click', () => this.onViewModeChangeCb?.('split'));
+    VIEW_MODES.forEach(m => {
+      const btn = this.container.querySelector(`#view-mode-${m.id}`);
+      btn?.addEventListener('click', () => this.onViewModeChangeCb?.(m.id));
+    });
+
     if (wizardBtn) wizardBtn.addEventListener('click', () => this.onOpenWizardCb?.());
     if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());

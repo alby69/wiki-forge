@@ -5,11 +5,12 @@ export class MainLayout {
   public graphContainer!: HTMLElement;
   public contextContainer!: HTMLElement;
   public headerContainer!: HTMLElement;
+  public simpleModeSlot!: HTMLElement;
   public graphControlsContainer!: HTMLElement;
   public chatContainer!: HTMLElement;
   public mainContentArea!: HTMLElement;
   private sidebarWidth = 280;
-  private contextWidth = 280;
+  private contextHeight = 168;
   private editorFlex = 1;
   private graphFlex = 1;
   private isResizingSidebar = false;
@@ -23,20 +24,23 @@ export class MainLayout {
   public render(): void {
     this.container.innerHTML = `
       <div id="wiki-forge-app" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; background: #121316; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; overflow: hidden;">
-        <div id="header-root"></div>
+        <div id="header-root" style="position: relative; flex-shrink: 0;">
+          <div id="header-bar-root"></div>
+          <div id="simple-mode-slot" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 52px; display: flex; align-items: center; pointer-events: none; z-index: 30;"></div>
+        </div>
         <div style="flex: 1; display: flex; overflow: hidden; position: relative;">
           <div id="sidebar-root" style="width: ${this.sidebarWidth}px; min-width: 200px; max-width: 500px; flex-shrink: 0;"></div>
           <div id="sidebar-resizer" class="resizer" data-resizer="sidebar" style="width: 4px; cursor: col-resize; background: transparent; position: relative; z-index: 10; touch-action: none;"></div>
           <div id="main-content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #18191c; min-width: 0;">
             <div id="graph-controls-root"></div>
-            <div style="flex: 1; display: flex; overflow: hidden; position: relative;">
+            <div style="flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0;">
               <div id="editor-root" style="flex: ${this.editorFlex}; height: 100%; display: flex; flex-direction: column; min-width: 0;"></div>
               <div id="graph-resizer" class="resizer" data-resizer="graph" style="width: 4px; cursor: col-resize; background: transparent; position: relative; z-index: 10; touch-action: none;"></div>
               <div id="graph-root" style="flex: ${this.graphFlex}; height: 100%; position: relative; min-width: 0;"></div>
             </div>
+            <div id="context-resizer" class="resizer" data-resizer="context" style="height: 4px; cursor: row-resize; background: transparent; position: relative; z-index: 10; touch-action: none; flex-shrink: 0;"></div>
+            <div id="context-root" style="height: ${this.contextHeight}px; min-height: 0; flex-shrink: 0; border-top: 1px solid #2d3748; background: #121316;"></div>
           </div>
-          <div id="context-resizer" class="resizer" data-resizer="context" style="width: 4px; cursor: col-resize; background: transparent; position: relative; z-index: 10; touch-action: none;"></div>
-          <div id="context-root" style="width: ${this.contextWidth}px; min-width: 200px; max-width: 500px; height: 100%; border-left: 1px solid #2d3748; flex-shrink: 0;"></div>
           <div id="chat-root" style="display: none; height: 100%; z-index: 100;"></div>
         </div>
         <footer style="height: 24px; background: #0d0e10; border-top: 1px solid #2d3748; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 11px; color: #718096;">
@@ -46,7 +50,8 @@ export class MainLayout {
       </div>
     `;
 
-    this.headerContainer = this.container.querySelector('#header-root')!;
+    this.headerContainer = this.container.querySelector('#header-bar-root')!;
+    this.simpleModeSlot = this.container.querySelector('#simple-mode-slot')!;
     this.sidebarContainer = this.container.querySelector('#sidebar-root')!;
     this.editorContainer = this.container.querySelector('#editor-root')!;
     this.graphContainer = this.container.querySelector('#graph-root')!;
@@ -63,6 +68,9 @@ export class MainLayout {
     const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
     const contextResizer = this.container.querySelector('#context-resizer') as HTMLElement;
 
+    const CONTEXT_MIN = 84;
+    const CONTEXT_MAX = 420;
+
     const startResize = (e: MouseEvent, type: 'sidebar' | 'graph' | 'context') => {
       e.preventDefault();
       if (type === 'sidebar') this.isResizingSidebar = true;
@@ -71,7 +79,7 @@ export class MainLayout {
 
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = 'col-resize';
+      document.body.style.cursor = type === 'context' ? 'row-resize' : 'col-resize';
       document.body.style.userSelect = 'none';
     };
 
@@ -93,11 +101,12 @@ export class MainLayout {
           this.graphContainer.style.flex = String(this.graphFlex);
         }
       } else if (this.isResizingContext) {
-        const appRect = this.container.querySelector('#wiki-forge-app')!.getBoundingClientRect();
-        const offset = appRect.right - e.clientX;
-        const newWidth = Math.max(200, Math.min(500, offset));
-        this.contextWidth = newWidth;
-        this.contextContainer.style.width = `${newWidth}px`;
+        const newHeight = Math.max(
+          CONTEXT_MIN,
+          Math.min(CONTEXT_MAX, window.innerHeight - e.clientY)
+        );
+        this.contextHeight = newHeight;
+        this.contextContainer.style.height = `${newHeight}px`;
       }
     };
 

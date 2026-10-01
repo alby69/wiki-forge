@@ -20,18 +20,39 @@ Wiki-Forge risolve questo problema trasformando l'IA in un **Knowledge Engineer 
 
 ## 2. 🌟 Guida Rapida in 3 Passi (Per Tutti)
 
-In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passaggi senza bisogno di comandi tecnici o di usare il terminale:
+In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passaggi senza bisogno di comandi tecnici o di usare il terminale.
+
+I tre pulsanti sono **nella barra in alto, al centro** (Modalità Semplice), sempre visibili:
 
 ```
-  ┌───────────────────┐      ┌───────────────────┐      ┌───────────────────┐
-  │ 1. 📥 Carica     │ ───> │ 2. ⚡ Compila     │ ───> │ 3. 💬 Esplora     │
-  │    Documenti      │      │    Wiki           │      │    o Esporta      │
-  └───────────────────┘      └───────────────────┘      └───────────────────┘
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ ⚒️ Wiki-Forge   🌱 Focus Mode   [Project: …]                     │
+  │              📥 1. Carica   ⚡ 2. Compila   💬 3. Chiedi          │
+  │                              Documenti  Converti&Link  Alla Wiki  │
+  └──────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Carica**: Trascina i tuoi documenti PDF, DOCX, EPUB o TXT nell'area **"📥 Carica Documenti"** nella Web UI (oppure incollali nella cartella `sources/`).
-2. **Elabora**: Premi il pulsante **"⚡ Compila Wiki"**. Il sistema converte automaticamente i file, estrae i concetti principali e crea i collegamenti tra le note.
-3. **Esplora o Esporta**: Chiedi risposte e mappe concettuali alla chat tramite **"💬 Chiedi alla Wiki"**, oppure clicca su **"📄 Esporta PDF"** per generare il documento finale.
+| # | Pulsante | Cosa fa |
+|---|----------|---------|
+| 1 | **📥 1. Carica** | Apre la finestra di caricamento: PDF, EPUB, DOCX, TXT. I file finiscono in `sources/`. |
+| 2 | **⚡ 2. Compila** | Converte i documenti, estrae i concetti chiave e crea i collegamenti `[[wikilink]]` tra le note. Mostra una barra di avanzamento. |
+| 3 | **💬 3. Chiedi** | Apre l'assistente in chat per interrogare la wiki (sintesi, mappe concettuali, citazioni). |
+
+1. **Carica**: clicca **📥 1. Carica** e trascina i tuoi documenti PDF, DOCX, EPUB o TXT (oppure incollali direttamente nella cartella `sources/`).
+2. **Elabora**: clicca **⚡ 2. Compila**. Il sistema converte automaticamente i file, estrae i concetti principali e crea i collegamenti tra le note.
+3. **Esplora**: clicca **💬 3. Chiedi** e fai le tue domande alla chat, oppure esplora il grafo della conoscenza.
+
+> I pulsanti 1–3 sono visibili solo in **Focus Mode** (Modalità Semplice). In **Developer Mode** spariscono e accedi agli strumenti avanzati. Il toggle **Dev Mode** è in alto a destra; scorciatoia: `Ctrl+Shift+D`.
+
+### 🖥️ Viste dell'area di lavoro
+
+I tre pulsanti in alto a destra (**📝 Editor**, **🕸️ Graph**, **◧ Split**) scelgono come disporre l'area di lavoro:
+
+- **📝 Editor** — solo editor di testo a tutto schermo.
+- **🕸️ Graph** — solo grafo della conoscenza (i controlli del grafo compaiono in alto).
+- **◧ Split** — editor e grafo affiancati, separati da un trascinatore. È la vista predefinita.
+
+La scelta viene ricordata tra un riavvio e l'altra. Passando alla sola vista **Graph**, il pannello **Node Metadata** sotto l'editor resta visibile; cliccando una nota dalla barra laterale si torna automaticamente a **Split** per leggerne il testo.
 
 ---
 
@@ -40,9 +61,9 @@ In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passag
 #### Scenario A: Lo Studente Universitario (Tesi di Laurea)
 - **Obiettivo**: Gestire 50+ paper accademici e produrre una tesi di laurea formattata.
 - **Flusso**:
-  1. Carica i PDF dei paper nell'area **"Carica Documenti"**.
-  2. Clicca su **"Compila Wiki"**.
-  3. Fai domande alla chat: *"Crea una mappa concettuale che colleghi le teorie di Graeber e Cristianini presenti nei paper"*.
+  1. Carica i PDF dei paper con **📥 1. Carica**.
+  2. Clicca su **⚡ 2. Compila**.
+  3. Fai domande alla chat con **💬 3. Chiedi**: *"Crea una mappa concettuale che colleghi le teorie di Graeber e Cristianini presenti nei paper"*.
   4. Per generare la tesi finale, usa il comando `/thesis-chapter` per unire le note e scarica il PDF finale pronto per la stampa.
 
 #### Scenario B: Il Professionista (Gestione Riunioni e Progetti)

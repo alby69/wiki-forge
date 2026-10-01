@@ -20,9 +20,10 @@ export class ContextPanel {
   public render(): void {
     if (!this.selectedNote) {
       this.container.innerHTML = `
-        <div style="padding: 16px; color: #718096; font-size: 13px;">
-          <h3 style="margin-top: 0; color: #a0aec0; font-size: 14px; font-weight: 600;">Node Metadata & Context</h3>
-          <p>No node selected.</p>
+        <div class="context-panel" style="display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 16px; background: #121316; color: #a0aec0; font-size: 13px; box-sizing: border-box;">
+          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #718096;">Node Metadata</span>
+          <span style="width: 1px; height: 16px; background: #2d3748;"></span>
+          <span>Nessun nodo selezionato.</span>
         </div>
       `;
       return;
@@ -33,87 +34,92 @@ export class ContextPanel {
         ? this.selectedNote.backlinks
             .map(
               b =>
-                 `<li class="context-link-item" data-note-id="${escapeHtml(b.sourceId)}" style="cursor: pointer; color: #64b5f6; margin-bottom: 6px; font-size: 13px;">[[${escapeHtml(b.sourceTitle)}]]</li>`
+                `<span class="context-link-item" data-note-id="${escapeHtml(b.sourceId)}" title="${escapeHtml(b.sourceTitle)}" style="display: inline-block; cursor: pointer; color: #64b5f6; background: #1a2332; border: 1px solid #2d4a63; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; vertical-align: top;">[[${escapeHtml(b.sourceTitle)}]]</span>`
             )
             .join('')
-        : `<li style="color: #718096; font-size: 12px; list-style: none;">None</li>`;
+        : `<span style="color: #718096; font-size: 11px;">Nessuno</span>`;
 
     const outboundHTML =
       this.selectedNote.outboundLinks.length > 0
         ? this.selectedNote.outboundLinks
             .map(
               target =>
-                 `<li class="context-link-item" data-note-id="${escapeHtml(target)}" style="cursor: pointer; color: #81c784; margin-bottom: 6px; font-size: 13px;">[[${escapeHtml(target)}]]</li>`
+                `<span class="context-link-item" data-note-id="${escapeHtml(target)}" style="display: inline-block; cursor: pointer; color: #81c784; background: #16261c; border: 1px solid #2d4a37; padding: 2px 7px; border-radius: 4px; font-size: 11px; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; vertical-align: top;">[[${escapeHtml(target)}]]</span>`
             )
             .join('')
-        : `<li style="color: #718096; font-size: 12px; list-style: none;">None</li>`;
+        : `<span style="color: #718096; font-size: 11px;">Nessuno</span>`;
 
     const tagsHTML =
       this.selectedNote.tags.length > 0
         ? this.selectedNote.tags
             .map(
               t =>
-                `<span style="background: #2d3748; color: #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px;">#${t}</span>`
+                `<span style="display: inline-block; background: #2d3748; color: #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap;">#${escapeHtml(t)}</span>`
             )
             .join('')
-        : `<span style="color: #718096; font-size: 12px;">No tags</span>`;
+        : `<span style="color: #718096; font-size: 11px;">Nessun tag</span>`;
 
     const trustTier = this.selectedNote.trustTier || 'unverified';
     const status = this.selectedNote.status || 'draft';
     const staleAfter = this.selectedNote.staleAfter;
     const isStale = staleAfter && staleAfter < new Date().toISOString().slice(0, 10);
 
-    let trustBadge = `<span style="background: #4a5568; color: #cbd5e0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">Unverified</span>`;
+    let trustBadge = `<span style="display: inline-block; background: #4a5568; color: #cbd5e0; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap;">Unverified</span>`;
     if (trustTier === 'human-reviewed') {
-      trustBadge = `<span style="background: #22543d; color: #9ae6b4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ Human-Reviewed</span>`;
+      trustBadge = `<span style="display: inline-block; background: #22543d; color: #9ae6b4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">✓ Human-Reviewed</span>`;
     } else if (trustTier === 'machine-confirmed') {
-      trustBadge = `<span style="background: #2a4365; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">🤖 Machine-Confirmed</span>`;
+      trustBadge = `<span style="display: inline-block; background: #2a4365; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">🤖 Machine-Confirmed</span>`;
     }
 
-    let statusBadge = `<span style="background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(status)}</span>`;
+    let statusBadge = `<span style="display: inline-block; background: #2d3748; color: #a0aec0; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap;">${escapeHtml(status)}</span>`;
     if (status === 'stable') {
-      statusBadge = `<span style="background: #1a365d; color: #63b3ed; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">stable</span>`;
+      statusBadge = `<span style="display: inline-block; background: #1a365d; color: #63b3ed; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">stable</span>`;
     } else if (status === 'deprecated') {
-      statusBadge = `<span style="background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">⚠️ deprecated</span>`;
+      statusBadge = `<span style="display: inline-block; background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">⚠️ deprecated</span>`;
     }
 
-    const staleBadge = isStale ? `<span style="background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px;">⏰ Stale (${staleAfter})</span>` : '';
+    const staleBadge = isStale ? `<span style="display: inline-block; background: #742a2a; color: #feb2b2; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap;">⏰ Stale (${escapeHtml(staleAfter ?? '')})</span>` : '';
 
     const verifiersList = (this.selectedNote.verified || []).length > 0
-      ? (this.selectedNote.verified || []).map(v => `<span style="background: #1a1b1e; border: 1px solid #2d3748; color: #a0aec0; padding: 1px 5px; border-radius: 3px; font-size: 10px; margin-right: 4px;">${escapeHtml(v)}</span>`).join('')
-      : `<span style="color: #718096; font-size: 11px;">None</span>`;
+      ? (this.selectedNote.verified || []).map(v => `<span style="display: inline-block; background: #1a1b1e; border: 1px solid #2d3748; color: #a0aec0; padding: 1px 5px; border-radius: 3px; font-size: 10px; white-space: nowrap;">${escapeHtml(v)}</span>`).join('')
+      : `<span style="color: #718096; font-size: 11px;">Nessuno</span>`;
+
+    const section = (label: string, body: string, extra: string = ''): string => `
+      <div style="flex: 1 1 0; min-width: 0; padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; ${extra}">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; white-space: nowrap;">${label}</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start;">${body}</div>
+      </div>
+    `;
 
     this.container.innerHTML = `
-      <div class="context-panel" style="padding: 16px; background: #121316; height: 100%; color: #e2e8f0; font-size: 13px; box-sizing: border-box; overflow-y: auto;">
-        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; border-bottom: 1px solid #2d3748; padding-bottom: 8px;">Node Metadata</h3>
-        <div style="margin-bottom: 16px;">
-          <strong style="color: #fff; font-size: 15px;">${escapeHtml(this.selectedNote.title)}</strong>
-          <div style="margin-top: 6px;">${tagsHTML}</div>
-          <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+      <div class="context-panel" style="display: flex; align-items: stretch; height: 100%; background: #121316; color: #e2e8f0; font-size: 13px; box-sizing: border-box; overflow: hidden;">
+
+        <div style="flex: 0 0 auto; max-width: 300px; padding: 8px 14px; display: flex; flex-direction: column; gap: 5px; border-right: 1px solid #2d3748; overflow-y: auto;">
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #718096;">Node Metadata</div>
+          <strong style="color: #fff; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(this.selectedNote.title)}</strong>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${tagsHTML}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
             ${trustBadge}
             ${statusBadge}
             ${staleBadge}
           </div>
-          <div style="margin-top: 8px; font-size: 11px; color: #a0aec0;">
+          <div style="font-size: 11px; color: #a0aec0; display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
             <strong>Verifiers:</strong> ${verifiersList}
           </div>
         </div>
 
-        <h4 style="margin-bottom: 8px; font-size: 12px; color: #a0aec0;">Backlinks (${this.selectedNote.backlinks.length})</h4>
-        <ul style="padding-left: 16px; margin-top: 0; margin-bottom: 16px;">
-          ${backlinksHTML}
-        </ul>
+        ${section(`Backlinks (${this.selectedNote.backlinks.length})`, backlinksHTML, 'border-right: 1px solid #2d3748;')}
 
-        <h4 style="margin-bottom: 8px; font-size: 12px; color: #a0aec0;">Outbound Links (${this.selectedNote.outboundLinks.length})</h4>
-        <ul style="padding-left: 16px; margin-top: 0; margin-bottom: 16px;">
-          ${outboundHTML}
-        </ul>
+        ${section(`Outbound Links (${this.selectedNote.outboundLinks.length})`, outboundHTML, 'border-right: 1px solid #2d3748;')}
 
-        <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #2d3748;">
-          <h4 style="margin-bottom: 8px; font-size: 12px; color: #a0aec0;">LLM Agent Status</h4>
-          <span style="display: inline-block; width: 8px; height: 8px; background: #48bb78; border-radius: 50%; margin-right: 6px;"></span>
-          <span style="font-size: 12px; color: #cbd5e1;">Agent Ready (Idle)</span>
+        <div style="flex: 0 0 auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; justify-content: center;">
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096;">LLM Agent</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 8px; height: 8px; background: #48bb78; border-radius: 50%; flex-shrink: 0;"></span>
+            <span style="font-size: 12px; color: #cbd5e1; white-space: nowrap;">Agent Ready (Idle)</span>
+          </div>
         </div>
+
       </div>
     `;
 

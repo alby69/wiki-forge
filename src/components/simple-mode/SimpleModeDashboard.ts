@@ -18,79 +18,79 @@ export class SimpleModeDashboard {
   private compileStatusMsg: string = '';
 
   constructor(parent: HTMLElement, options: SimpleModeDashboardOptions) {
-    this.container = document.createElement('div');
-    this.container.id = 'simple-mode-dashboard';
-    this.container.style.cssText = `
-      background: #18191c;
-      border-bottom: 1px solid #2d3748;
-      padding: 14px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      color: #e2e8f0;
-    `;
-    parent.insertBefore(this.container, parent.firstChild);
-
     this.storage = options.storage;
     this.onOpenChat = options.onOpenChat;
     this.onVaultUpdated = options.onVaultUpdated;
+
+    this.container = document.createElement('div');
+    this.container.id = 'simple-mode-dashboard';
+    this.container.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    `;
+    parent.appendChild(this.container);
 
     this.render();
   }
 
   public render(): void {
+    const pill = `
+      border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 11px; font-weight: 600; font-size: 12px; line-height: 1.15;
+      transition: background 0.2s, opacity 0.2s;
+    `;
+    const col = `display: flex; flex-direction: column; align-items: flex-start; gap: 1px;`;
+    const sub = `font-size: 9px; font-weight: 400; opacity: 0.85; letter-spacing: 0.1px;`;
+
     this.container.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 18px;">🌟</span>
-          <span style="font-weight: 600; font-size: 14px; color: #64b5f6;">Modalità Semplice — Flusso in 3 Passi</span>
-        </div>
-        <div style="font-size: 11px; color: #a0aec0;">
-          Carica -> Elabora -> Esplora
-        </div>
-      </div>
+      <button id="simple-upload-btn" title="1. Carica Documenti — PDF, EPUB, DOCX, TXT" style="
+        background: #2b6cb0; color: #ffffff;
+        ${pill}
+      " onmouseover="this.style.background='#3182ce'" onmouseout="this.style.background='#2b6cb0'">
+        <span style="font-size: 15px;">📥</span>
+        <span style="${col}">
+          <span>1. Carica</span>
+          <span style="${sub}">Documenti</span>
+        </span>
+      </button>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-        <button id="simple-upload-btn" style="
-          background: #2b6cb0; color: #ffffff; border: none; padding: 12px 16px; border-radius: 8px;
-          display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
-          font-weight: 600; font-size: 13px; transition: background 0.2s;
-        " onmouseover="this.style.background='#3182ce'" onmouseout="this.style.background='#2b6cb0'">
-          <span style="font-size: 22px;">📥</span>
-          <span>1. Carica Documenti</span>
-          <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">PDF, EPUB, DOCX, TXT</span>
-        </button>
+      <button id="simple-compile-btn" title="2. Compila Wiki — Converti e interconnetti" ${this.isCompiling ? 'disabled' : ''} style="
+        background: ${this.isCompiling ? '#4a5568' : '#2f855a'}; color: #ffffff; cursor: ${this.isCompiling ? 'not-allowed' : 'pointer'};
+        ${pill}
+      " onmouseover="if(!this.disabled) this.style.background='#38a169'" onmouseout="if(!this.disabled) this.style.background='#2f855a'">
+        <span style="font-size: 15px;">⚡</span>
+        <span style="${col}">
+          <span>2. Compila</span>
+          <span style="${sub}">Converti &amp; Link</span>
+        </span>
+      </button>
 
-        <button id="simple-compile-btn" ${this.isCompiling ? 'disabled' : ''} style="
-          background: ${this.isCompiling ? '#4a5568' : '#2f855a'}; color: #ffffff; border: none; padding: 12px 16px; border-radius: 8px;
-          display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: ${this.isCompiling ? 'not-allowed' : 'pointer'};
-          font-weight: 600; font-size: 13px; transition: background 0.2s;
-        " onmouseover="if(!this.disabled) this.style.background='#38a169'" onmouseout="if(!this.disabled) this.style.background='#2f855a'">
-          <span style="font-size: 22px;">⚡</span>
-          <span>${this.isCompiling ? 'Compilazione...' : '2. Compila Wiki'}</span>
-          <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Converti & Interconnetti</span>
-        </button>
-
-        <button id="simple-chat-btn" style="
-          background: #4c51bf; color: #ffffff; border: none; padding: 12px 16px; border-radius: 8px;
-          display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
-          font-weight: 600; font-size: 13px; transition: background 0.2s;
-        " onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#4c51bf'">
-          <span style="font-size: 22px;">💬</span>
-          <span>3. Chiedi alla Wiki</span>
-          <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Assistente e Ricerca</span>
-        </button>
-      </div>
+      <button id="simple-chat-btn" title="3. Chiedi alla Wiki — Assistente e ricerca" style="
+        background: #4c51bf; color: #ffffff;
+        ${pill}
+      " onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#4c51bf'">
+        <span style="font-size: 15px;">💬</span>
+        <span style="${col}">
+          <span>3. Chiedi</span>
+          <span style="${sub}">Alla Wiki</span>
+        </span>
+      </button>
 
       ${
         this.isCompiling || this.compileStatusMsg
           ? `
-          <div style="background: #1a202c; border: 1px solid #2d3748; padding: 10px 14px; border-radius: 6px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #cbd5e0;">
-              <span>${this.compileStatusMsg || 'Elaborazione in corso...'}</span>
-              <span>${this.compileProgress}%</span>
+          <div title="${this.compileStatusMsg || 'Elaborazione in corso...'}" style="
+            display: flex; flex-direction: column; gap: 3px; min-width: 108px; max-width: 150px;
+            padding: 0 2px;
+          ">
+            <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: #cbd5e0;">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.compileStatusMsg || 'Elaborazione...'}</span>
+              <span style="flex-shrink: 0;">${this.compileProgress}%</span>
             </div>
-            <div style="width: 100%; height: 6px; background: #2d3748; border-radius: 3px; overflow: hidden;">
+            <div style="width: 100%; height: 4px; background: #2d3748; border-radius: 2px; overflow: hidden;">
               <div style="width: ${this.compileProgress}%; height: 100%; background: #48bb78; transition: width 0.3s;"></div>
             </div>
           </div>
@@ -173,12 +173,12 @@ export class SimpleModeDashboard {
 
     this.isCompiling = true;
     this.compileProgress = 15;
-    this.compileStatusMsg = 'Inizio conversione ed ingestione dei documenti...';
+    this.compileStatusMsg = 'Inizio conversione...';
     this.render();
 
     try {
       this.compileProgress = 40;
-      this.compileStatusMsg = 'Compilazione articoli e creazione wikilinks...';
+      this.compileStatusMsg = 'Creazione wikilinks...';
       this.render();
 
       await this.storage.sendChatStream('/compile', (chunk: string) => {
@@ -189,7 +189,7 @@ export class SimpleModeDashboard {
       });
 
       this.compileProgress = 100;
-      this.compileStatusMsg = '✅ Compilazione completata con successo!';
+      this.compileStatusMsg = 'Completato';
       this.isCompiling = false;
       this.render();
 
@@ -202,7 +202,7 @@ export class SimpleModeDashboard {
       }, 4000);
     } catch (err) {
       this.isCompiling = false;
-      this.compileStatusMsg = `⚠️ Errore durante la compilazione: ${String(err)}`;
+      this.compileStatusMsg = 'Errore';
       this.render();
     }
   }

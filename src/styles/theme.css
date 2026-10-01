@@ -116,6 +116,53 @@ body {
   transform: scale(0.98);
 }
 
+/* View mode segmented control (Editor / Graph / Split) */
+.seg-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.seg-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.seg-btn:hover {
+  background: rgba(99, 102, 241, 0.16);
+  color: var(--text-primary);
+}
+
+.seg-btn:focus-visible {
+  outline: 2px solid var(--indigo-500);
+  outline-offset: 1px;
+}
+
+.seg-btn.active {
+  background: var(--indigo-600);
+  color: #ffffff;
+}
+
+.seg-btn.active:hover {
+  background: var(--indigo-700);
+  color: #ffffff;
+}
+
 /* Dropzone Ingest */
 .dropzone-container {
   border: 2px dashed var(--border-subtle);

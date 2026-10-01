@@ -153,7 +153,7 @@ Backlink to [[01-index]].
     this.header = new Header(
       this.layout.headerContainer,
       mode => {
-        this.layout.setViewMode(mode);
+        appStore.setViewMode(mode);
       },
       () => {
         this.chatDrawer.toggle();
@@ -235,7 +235,7 @@ Backlink to [[01-index]].
     this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });
     this.graphViewer.onNodeClick(nodeId => {
       this.selectNote(nodeId);
-      this.layout.setViewMode('split');
+      appStore.setViewMode('split');
     });
 
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
@@ -264,7 +264,7 @@ Backlink to [[01-index]].
       target => this.openWikilink(target)
     );
 
-    this.simpleDashboard = new SimpleModeDashboard(this.layout.mainContentArea, {
+    this.simpleDashboard = new SimpleModeDashboard(this.layout.simpleModeSlot, {
       storage: this.storage,
       onOpenChat: () => this.chatDrawer.open(),
       onVaultUpdated: () => void this.loadVault(),
@@ -272,10 +272,11 @@ Backlink to [[01-index]].
 
     appStore.subscribe(state => {
       this.simpleDashboard.setVisible(!state.isAdvancedMode);
+      this.layout.setViewMode(state.viewMode);
     });
     this.simpleDashboard.setVisible(!appStore.getState().isAdvancedMode);
 
-    this.layout.setViewMode('split');
+    this.layout.setViewMode(appStore.getState().viewMode);
   }
 
   private refreshAll(): void {
@@ -302,6 +303,12 @@ Backlink to [[01-index]].
       this.editor.setNote(found);
       this.contextPanel.setSelectedNote(found);
       this.graphViewer.highlightNode(found.id);
+
+      // In Graph-only mode the editor is hidden, so selecting a note
+      // would look like a no-op: reveal it by falling back to Split.
+      if (appStore.getState().viewMode === 'graph') {
+        appStore.setViewMode('split');
+      }
     }
   }
 

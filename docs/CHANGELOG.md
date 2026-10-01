@@ -5,6 +5,23 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Web UI Favicon**: Added `public/favicon.svg` and linked it from `index.html`, removing a 404 on `/favicon.ico`.
+- **View Mode Persistence**: The Editor/Graph/Split selection is now stored in `appStore` (`wiki-forge:view-mode`) and restored across reloads.
+
+### Changed
+- **Simple Mode Relocated to the Header**: The 3-step flow (`📥 Carica` → `⚡ Compila` → `💬 Chiedi`) moved from a full-width panel above the editor into a compact pill group centred in the top bar, rendered via a new `#simple-mode-slot` in `MainLayout`. The previously hardcoded 60–140% scale slider was removed in favour of fixed compact sizing.
+- **Node Metadata Panel Moved Below the Editor**: `ContextPanel` changed from a 280px right-hand sidebar to a full-width horizontal bar under the editor/graph row, with title, tags, OKF trust badges, backlinks and outbound links laid out as inline clickable chips. Its resizer changed from horizontal (`col-resize`, 200–500px) to vertical (`row-resize`, 84–420px).
+- **Sidebar Toolbar Single Row**: The five file-operation buttons were hardcoded into two separate containers (`#toolbar-primary` / `#toolbar-secondary`), forcing two rows regardless of available width. They now share one `.sidebar-toolbar` flex container with `flex-wrap`, so they fit on one line and wrap only when the sidebar is narrowed. The previously dead `.sidebar-toolbar` rules in `sidebar.css` were activated and extended with hover/focus states.
+
+### Fixed
+- **Onboarding Wizard Blocked the Whole UI**: The wizard overlay was appended to `<body>` with the `.wf-modal-overlay` class (`display: flex`, blurred backdrop) but was never hidden unless `open()` was called. When onboarding had already been completed, the app rendered permanently blurred and unclickable with an invisible modal. The container is now hidden at construction.
+- **Onboarding Wizard Clobbered `config.toml`**: `finishOnboarding()` unconditionally overwrote `project.context`, destroying any hand-written project description on re-run. It now only sets the scenario default when the field is empty.
+- **View Mode Buttons Had No Active State**: The `Split` button's highlight was hardcoded in `Header`, so clicking `Editor` or `Graph` changed the layout without updating any button. Active state and `aria-selected` are now derived from `appStore.viewMode`.
+- **Note Selection Was a No-Op in Graph-Only View**: Selecting a note from the sidebar while the editor was hidden appeared to do nothing; it now falls back to `Split`.
+
 ## [3.3.0] - 2026-10-05
 
 ### Added
