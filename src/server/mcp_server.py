@@ -107,6 +107,20 @@ TOOLS = [
             "type": "object",
             "properties": {}
         }
+    },
+    {
+        "name": "execute_ke_use_case",
+        "description": "Executes a Knowledge Engineering (KE) Use Case workflow (ke_schema_modeling, ke_ontological_validation, ke_cq_assessment, ke_neuro_symbolic, ke_semantic_export, ke_maturity_eval) and returns completion status and generated report paths.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "use_case_id": {
+                    "type": "string",
+                    "description": "Target Knowledge Engineering use case identifier (e.g., 'ke_schema_modeling', 'ke_ontological_validation', 'ke_cq_assessment', 'ke_neuro_symbolic', 'ke_semantic_export', 'ke_maturity_eval')."
+                }
+            },
+            "required": ["use_case_id"]
+        }
     }
 ]
 
@@ -331,6 +345,96 @@ def tool_get_ontology_gaps(repo_root: Path) -> dict:
     except Exception as e:
         return {"error": f"Failed to analyze ontology gaps: {e}"}
 
+KE_USE_CASE_COMMANDS = {
+    "ke_schema_modeling": {
+        "title": "Schema & Taxonomy Modeling",
+        "scripts": [
+            [sys.executable, "scripts/schema_infer.py"],
+            [sys.executable, "scripts/schema_lint.py"],
+            [sys.executable, "scripts/suggest_tags.py", "--all", "--wiki", "wiki"]
+        ],
+        "report": "config/schema.toml"
+    },
+    "ke_ontological_validation": {
+        "title": "Ontological Integrity & SHACL Validation",
+        "scripts": [
+            [sys.executable, "scripts/ontology_rules.py", "wiki"],
+            [sys.executable, "scripts/okf_lint.py", "wiki"]
+        ],
+        "report": "wiki/log.md"
+    },
+    "ke_cq_assessment": {
+        "title": "Competency Questions (CQ) & Coverage",
+        "scripts": [
+            [sys.executable, "scripts/cq_validator.py", "--wiki-dir", "wiki", "--cq-file", "wiki/competency_questions.md", "--output", "output/cq_validation_report.md"],
+            [sys.executable, "scripts/wiki_stats.py"]
+        ],
+        "report": "output/cq_validation_report.md"
+    },
+    "ke_neuro_symbolic": {
+        "title": "Neuro-Symbolic Reasoning & ODP",
+        "scripts": [
+            [sys.executable, "scripts/odp_suggester.py", "--wiki-dir", "wiki", "--catalog", "config/odp_catalog.json"],
+            [sys.executable, "scripts/neuro_symbolic_check.py", "--wiki-dir", "wiki", "--output", "output/neuro_symbolic_report.md"]
+        ],
+        "report": "output/neuro_symbolic_report.md"
+    },
+    "ke_semantic_export": {
+        "title": "Enterprise Semantic Graph & RDF Export",
+        "scripts": [
+            [sys.executable, "scripts/export_semantic.py", "--wiki-dir", "wiki", "--output-dir", "output"],
+            [sys.executable, "scripts/okf_reindex.py", "wiki"]
+        ],
+        "report": "output/wiki_export.ttl"
+    },
+    "ke_maturity_eval": {
+        "title": "KE Platform Maturity Evaluation",
+        "scripts": [
+            [sys.executable, "scripts/maturity_calculator.py", "wiki", "--write"],
+            [sys.executable, "scripts/ke_maturity.py", "--wiki-dir", "wiki", "--output", "output/ke_maturity_report.md"]
+        ],
+        "report": "output/ke_maturity_report.md"
+    }
+}
+
+def tool_execute_ke_use_case(repo_root: Path, use_case_id: str) -> dict:
+    import subprocess
+    clean_id = (use_case_id or "").strip().lower()
+
+    if clean_id not in KE_USE_CASE_COMMANDS:
+        return {
+            "error": f"Invalid or unregistered use_case_id '{use_case_id}'. Supported IDs: {list(KE_USE_CASE_COMMANDS.keys())}"
+        }
+
+    uc = KE_USE_CASE_COMMANDS[clean_id]
+    executed_steps = []
+    logs = []
+
+    for cmd in uc["scripts"]:
+        cmd_str = " ".join(cmd)
+        try:
+            res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=60)
+            executed_steps.append({"cmd": cmd_str, "exit_code": res.returncode})
+            if res.stdout:
+                logs.append(res.stdout[:300])
+            if res.stderr and res.returncode != 0:
+                logs.append(res.stderr[:300])
+        except Exception as e:
+            executed_steps.append({"cmd": cmd_str, "error": str(e)})
+
+    report_file = repo_root / uc["report"]
+    report_exists = report_file.exists()
+
+    return {
+        "use_case_id": clean_id,
+        "title": uc["title"],
+        "status": "completed",
+        "executed_steps": executed_steps,
+        "report_path": uc["report"] if report_exists else None,
+        "report_exists": report_exists,
+        "logs_summary": "\n".join(logs)[:500] if logs else "Executed successfully."
+    }
+
 def execute_tool(repo_root: Path, name: str, args: dict) -> dict:
     if name == "search_wiki":
         return tool_search_wiki(repo_root, args.get("query", ""))
@@ -346,6 +450,8 @@ def execute_tool(repo_root: Path, name: str, args: dict) -> dict:
         return tool_validate_competency_question(repo_root, args.get("question", ""))
     elif name == "get_ontology_gaps":
         return tool_get_ontology_gaps(repo_root)
+    elif name == "execute_ke_use_case":
+        return tool_execute_ke_use_case(repo_root, args.get("use_case_id", ""))
     else:
         return {"error": f"Unknown tool '{name}'"}
 

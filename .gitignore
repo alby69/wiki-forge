@@ -31,3 +31,4 @@ raw/
 # The compiled wiki (your knowledge base) IS kept in git by default so the
 # knowledge base is version-controlled. Comment the next line to exclude it.
 # wiki/
+.coverage

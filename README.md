@@ -42,6 +42,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 - **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per ingegneri della conoscenza (modellazione ontologica, validazione di vincoli logici ed esportazione semantica RDF/JSON-LD).
 - **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale operativo per la validazione W3C SHACL, la conversione duale RDF/Cypher, il supporto RDF-star, lo Shortcut Engine, la sincronizzazione incrementale Live ed il retrieval ibrido LangGraph GraphRAG.
 - **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Registro bibliografico e guida alla tracciabilità delle fonti.
+- **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — **Roadmap di Sviluppo**: Pianificazione degli obiettivi a breve termine (Q4 2026) e medio/lungo termine (2027).
 
 ### ⚙️ Per Sviluppatori ed Ingegneri del Software (Technical Architecture)
 - **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Architettura Tecnica**: Analisi dettagliata dell'architettura del sistema, server API FastAPI e CLI, client LLM multi-provider, isolamento della memoria non-parametrica, motore di script SSE e confronto con l'addestramento *nanochat*.

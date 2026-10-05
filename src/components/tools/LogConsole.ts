@@ -89,29 +89,98 @@ export class LogConsole {
     this.setStatus('Idle', '#a0aec0');
   }
 
+  public isPythonError(text: string): boolean {
+    return (
+      text.includes('Traceback (most recent call last):') ||
+      /^(ModuleNotFoundError|ImportError|YAMLError|SyntaxError|FileNotFoundError|ValueError|TypeError|AttributeError|RuntimeError|KeyError|ZeroDivisionError|Error):/m.test(text) ||
+      (text.includes('File "') && text.includes('line ') && text.includes('in '))
+    );
+  }
+
+  public getSuggestedHint(text: string): string {
+    if (text.includes('ModuleNotFoundError') || text.includes('ImportError') || text.includes('No module named')) {
+      return '💡 Suggerimento: Verifica di aver installato le dipendenze con `pip install -r requirements.txt` o controlla la sintassi del file YAML.';
+    }
+    if (text.includes('YAMLError') || text.includes('yaml') || text.includes('ScannerError') || text.includes('ParserError')) {
+      return '💡 Suggerimento: Verifica la sintassi del file YAML o il frontmatter della nota per evitare errori di indentazione o virgolette non chiuse.';
+    }
+    if (text.includes('FileNotFoundError') || text.includes('No such file')) {
+      return '💡 Suggerimento: Verifica che il file o la cartella specificata nei parametri esista e sia all\'interno del vault.';
+    }
+    return '💡 Suggerimento: Verifica i parametri dello script, le dipendenze in `requirements.txt` e la validità del file YAML/Markdown.';
+  }
+
+  public truncateStackTrace(text: string): string {
+    const lines = text.split('\n');
+    if (lines.length <= 12) {
+      return text.trim();
+    }
+    const header = lines.slice(0, 2);
+    const tail = lines.slice(-8);
+    return [...header, '   ... [stack trace origin truncated for readability] ...', ...tail].join('\n').trim();
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   public appendLine(line: LogLine): void {
     if (this.lines.length === 0) {
       this.logElement.innerHTML = '';
     }
     this.lines.push(line);
 
-    const div = document.createElement('div');
-    if (line.type === 'start') {
-      div.style.color = '#64b5f6';
-      div.style.fontWeight = 'bold';
-      div.style.margin = '4px 0';
-    } else if (line.type === 'stderr') {
-      div.style.color = '#feb2b2';
-    } else if (line.type === 'exit') {
-      div.style.color = line.text.includes('code 0') ? '#68d391' : '#fc8181';
-      div.style.fontWeight = 'bold';
-      div.style.margin = '4px 0';
-    } else {
-      div.style.color = '#e2e8f0';
-    }
+    if (this.isPythonError(line.text)) {
+      const truncated = this.truncateStackTrace(line.text);
+      const hint = this.getSuggestedHint(line.text);
 
-    div.textContent = `[${line.timestamp}] ${line.text}`;
-    this.logElement.appendChild(div);
+      const alertBox = document.createElement('div');
+      alertBox.className = 'alert-error';
+      alertBox.style.cssText = `
+        border: 1px solid #e53e3e;
+        background: #2d1517;
+        padding: 10px 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        color: #fed7d7;
+        font-family: monospace;
+        font-size: 11px;
+      `;
+
+      alertBox.innerHTML = `
+        <div style="font-weight: bold; color: #feb2b2; margin-bottom: 6px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+          <span>⚠️ Python Execution Error Detected</span>
+        </div>
+        <pre style="white-space: pre-wrap; word-break: break-all; margin: 0 0 8px 0; font-family: inherit; color: #fed7d7;">[${this.escapeHtml(line.timestamp)}] ${this.escapeHtml(truncated)}</pre>
+        <div style="font-style: italic; color: #fbd38d; border-top: 1px dashed #742a2a; padding-top: 6px;">
+          ${this.escapeHtml(hint)}
+        </div>
+      `;
+      this.logElement.appendChild(alertBox);
+    } else {
+      const div = document.createElement('div');
+      if (line.type === 'start') {
+        div.style.color = '#64b5f6';
+        div.style.fontWeight = 'bold';
+        div.style.margin = '4px 0';
+      } else if (line.type === 'stderr') {
+        div.style.color = '#feb2b2';
+      } else if (line.type === 'exit') {
+        div.style.color = line.text.includes('code 0') ? '#68d391' : '#fc8181';
+        div.style.fontWeight = 'bold';
+        div.style.margin = '4px 0';
+      } else {
+        div.style.color = '#e2e8f0';
+      }
+
+      div.textContent = `[${line.timestamp}] ${line.text}`;
+      this.logElement.appendChild(div);
+    }
 
     if (this.autoScroll) {
       this.logElement.scrollTop = this.logElement.scrollHeight;
