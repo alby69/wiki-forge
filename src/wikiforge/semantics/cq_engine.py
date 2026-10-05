@@ -137,7 +137,10 @@ class CQEngine:
             if p.is_file():
                 content = p.read_text(encoding="utf-8")
                 if yaml:
-                    suite_data = yaml.safe_load(content) or {}
+                    try:
+                        suite_data = yaml.safe_load(content) or {}
+                    except Exception:
+                        suite_data = {}
         elif isinstance(suite_source, dict):
             suite_data = suite_source
 

@@ -32,7 +32,7 @@ services:
     working_dir: /app
     ports:
       - "3001:3001"
-    command: sh -c "npm install && npx tsx src/server/httpServer.ts"
+    command: sh -c "npm install && npx tsx watch src/server/httpServer.ts"
 
   ui:
     image: ghcr.io/alby69/wiki-forge-ui:latest

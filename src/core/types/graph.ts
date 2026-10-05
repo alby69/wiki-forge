@@ -27,4 +27,5 @@ export interface GraphFilterOptions {
   searchQuery?: string;
   minDegree?: number;
   folder?: string;
+  enableClustering?: boolean;
 }

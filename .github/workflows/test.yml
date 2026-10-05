@@ -40,3 +40,8 @@ jobs:
 
       - name: Test docs-sync consistency
         run: python scripts/check_docs_sync.py
+
+      - name: Run Python unit tests with coverage
+        run: |
+          pip install pytest pytest-cov
+          PYTHONPATH=.:scripts pytest tests/python/ --cov=scripts --cov=src/wikiforge/semantics --cov-report=term-missing

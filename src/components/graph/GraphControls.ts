@@ -29,26 +29,34 @@ export class GraphControls {
           Min connections:
           <input type="number" id="graph-degree-input" min="0" max="20" value="0" style="width: 45px; background: #2d3748; border: 1px solid #4a5568; color: #fff; padding: 4px; border-radius: 4px; font-size: 12px;" />
         </label>
+        <label style="color: #a0aec0; display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Raggruppa i nodi per cartella/tipo in super-nodi per migliorare le prestazioni con wiki di grandi dimensioni">
+          <input type="checkbox" id="graph-cluster-toggle" style="cursor: pointer;" />
+          Attiva Clustering
+        </label>
         <button id="reset-graph-btn" style="background: #4a5568; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reset</button>
       </div>
     `;
 
     const searchInput = this.container.querySelector('#graph-search-input') as HTMLInputElement;
     const degreeInput = this.container.querySelector('#graph-degree-input') as HTMLInputElement;
+    const clusterToggle = this.container.querySelector('#graph-cluster-toggle') as HTMLInputElement;
     const resetBtn = this.container.querySelector('#reset-graph-btn') as HTMLButtonElement;
 
     const triggerChange = () => {
       this.cb.onFilterChange({
         searchQuery: searchInput.value,
         minDegree: parseInt(degreeInput.value, 10) || 0,
+        enableClustering: clusterToggle.checked,
       });
     };
 
     searchInput.addEventListener('input', triggerChange);
     degreeInput.addEventListener('change', triggerChange);
+    clusterToggle.addEventListener('change', triggerChange);
     resetBtn.addEventListener('click', () => {
       searchInput.value = '';
       degreeInput.value = '0';
+      clusterToggle.checked = false;
       triggerChange();
     });
 
