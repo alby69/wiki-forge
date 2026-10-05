@@ -177,12 +177,15 @@ class WikiForgeGraphRAG:
         for t in subgraph_triples:
             subgraph_context.append(f"- ({t['source']}) --[{t['relation']}]--> ({t['target']})")
 
+        vector_joined = "\n".join(vector_context)
+        subgraph_joined = "\n".join(subgraph_context)
+
         answer = (
             f"In base al Knowledge Graph e all'Indice Vettoriale di wiki-forge per la domanda '{question}':\n\n"
             f"### Context Vettoriale (Top Similarity):\n"
-            f"{'\n'.join(vector_context)}\n\n"
+            f"{vector_joined}\n\n"
             f"### Sottografo k-Hop Estratto:\n"
-            f"{'\n'.join(subgraph_context)}\n\n"
+            f"{subgraph_joined}\n\n"
             f"Tutte le informazioni sono verificate e tracciate con prov:wasAttributedTo per evitare allucinazioni."
         )
         return {**state, "final_answer": answer}
