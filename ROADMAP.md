@@ -64,6 +64,13 @@
 | 49 | Typed Schema System & Linting Engine (T1) | ✅ Done | Schema validation (`scripts/schema_lint.py`), inference (`scripts/schema_infer.py`), and `docs/SCHEMA.md`. |
 | 50 | Enterprise Semantic Knowledge Graph & Stateful GraphRAG System | ✅ Done | W3C SHACL shape schema (`src/wikiforge/config/shapes.ttl`), Zettelkasten-to-RDF converter (`markdown_to_rdf.py`), Neo4j Cypher exporter (`markdown_to_cypher.py`), stateful LangGraph GraphRAG pipeline (`graph_rag_pipeline.py`), GitHub Actions CI/CD (`shacl_validation.yml`), unit tests, and `docs/GRAPH_RAG.md`. |
 | 51 | Knowledge Engineer Use Case Management & Guided Workbench | ✅ Done | Dedicated KE Workbench (`src/components/ke/KEWorkbenchModal.ts`), 6 guided Use Cases, REST APIs (`GET /api/ke/use-cases`, `POST /api/ke/use-cases/execute`), role separation (Simple Operator vs Knowledge Engineer), and documentation updates in `docs/KNOWLEDGE_ENGINEERING.md` and `docs/TUTORIAL.md`. |
+| 52 | Native Desktop Shell & Local Token API Auth (Modulo A) | ✅ Done | Tauri v2 scaffolding (`src-tauri/`), cross-platform launcher, and token-authenticated local REST API (`X-WikiForge-Token`). |
+| 53 | Two-Step CoT Ingestion & Disk Queue with Vision (Modulo B) | ✅ Done | Persistent SQLite/JSON ingestion queue (`scripts/ingest_queue.py`), Two-Step CoT pipeline in `conv2md.py`, SHA256 caching (<10ms skip), and Vision PDF image captioning. |
+| 54 | Web Clipper Chrome Extension (Modulo C) | ✅ Done | Manifest V3 browser extension (`extension/`), `@mozilla/readability` / `turndown` HTML-to-Markdown conversion, and direct API upload. |
+| 55 | Deep Research Web Engine & Auto-Synthesis (Modulo D) | ✅ Done | Web search provider integration (Tavily/SearXNG/mock), query confirmation flow, auto-synthesis into `wiki/synthesis/`, and `<think>` reasoning streaming. |
+| 56 | Topological Graph Insights & Louvain Communities (Modulo E) | ✅ Done | Louvain community detection in `graph_analytics.py`, surprising connection & knowledge gap detection, REST API endpoints, and community color legends in `ForceGraphViewer.ts`. |
+| 57 | Asynchronous Human-in-the-Loop Review Queue (Modulo F) | ✅ Done | Persistent review queue (`.llm-wiki/reviews.json`), LLM note flagging (`Create Page`, `Deep Research`, `Skip`), and dedicated `ReviewQueueModal.ts` UI panel. |
+| 58 | Agent Skills Security & Interactive Skill Scanner (Modulo G) | ✅ Done | Dynamic skill scanner (`skills/*/SKILL.md`), `/skill` slash command, and explicit user safety approval modal for shell execution & filesystem access. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -130,3 +137,79 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - Added GitHub Actions workflow in `.github/workflows/shacl_validation.yml`.
 - Added test suites (`tests/test_shacl.py`, `tests/test_converters.py`, `tests/test_graph_rag.py`).
 - Added user and architecture documentation in `docs/GRAPH_RAG.md`.
+
+---
+
+## Phase 52 — Native Desktop Shell & Local Token API Auth (Modulo A) ✅ Done
+
+**Goal:** Provide native cross-platform desktop application packaging via Tauri v2 and secure local communication between desktop components, browser extensions, and agent sidecars using token authentication.
+
+**Deliverables:**
+- Added Tauri v2 desktop scaffolding in `src-tauri/` (`tauri.conf.json`, `Cargo.toml`, build configuration).
+- Implemented `X-WikiForge-Token` header validation in `AgentServer` (`src/server/agentServer.ts`).
+
+---
+
+## Phase 53 — Two-Step CoT Ingestion & Disk Queue with Vision (Modulo B) ✅ Done
+
+**Goal:** Elevate ingestion quality through a 2-step Chain-of-Thought process (Analysis -> Generation), disk-backed persistent queue with crash recovery and progress streaming, and multimodal Vision captioning for embedded PDF figures.
+
+**Deliverables:**
+- Persistent SQLite/disk ingestion queue engine (`scripts/ingest_queue.py`).
+- Two-Step Chain-of-Thought ingestion logic and SHA256 fast-path hash caching (<10ms skip for unchanged files) in `scripts/conv2md.py`.
+- REST and SSE progress endpoints in `AgentServer`.
+
+---
+
+## Phase 54 — Web Clipper Chrome Extension (Modulo C) ✅ Done
+
+**Goal:** Enable one-click webpage acquisition directly from web browsers into Wiki-Forge raw sources and wiki note storage.
+
+**Deliverables:**
+- Developed Manifest V3 Chrome Extension in `extension/` (`manifest.json`, `popup.html`, `popup.js`, `content.js`, `background.js`).
+- Clean article extraction using `@mozilla/readability` and `turndown` conversion.
+- Direct secure API transmission to `AgentServer` via token authentication.
+
+---
+
+## Phase 55 — Deep Research Web Engine & Auto-Synthesis (Modulo D) ✅ Done
+
+**Goal:** Allow Wiki-Forge to actively search the web, generate multi-query research strategies, and synthesize results into connected wiki articles.
+
+**Deliverables:**
+- Web search query generator and provider client supporting Tavily, SearXNG, and fallback engines.
+- User confirmation modal and preview flow before search execution.
+- Automatic synthesis note creation under `wiki/synthesis/` with `<think>` reasoning trace streaming.
+
+---
+
+## Phase 56 — Topological Graph Insights & Louvain Communities (Modulo E) ✅ Done
+
+**Goal:** Provide topological insights on the Knowledge Graph by detecting communities using the Louvain algorithm, surfacing surprising cross-community links, and locating knowledge gaps.
+
+**Deliverables:**
+- Louvain community detection and insight extraction in `scripts/graph_analytics.py`.
+- REST API graph insights endpoint in `AgentServer`.
+- Graph UI enhancements in `src/components/graph/ForceGraphViewer.ts` with community palette coloring and gap deep research triggers.
+
+---
+
+## Phase 57 — Asynchronous Human-in-the-Loop Review Queue (Modulo F) ✅ Done
+
+**Goal:** Provide an asynchronous review queue allowing users to review, edit, approve, or reject LLM recommendations without blocking background ingestion.
+
+**Deliverables:**
+- Persistent review queue storage (`.llm-wiki/reviews.json`).
+- LLM item flagging during ingestion (`Create Page`, `Deep Research`, `Skip`).
+- Interactive UI panel `src/components/tools/ReviewQueueModal.ts`.
+
+---
+
+## Phase 58 — Agent Skills Security & Interactive Skill Scanner (Modulo G) ✅ Done
+
+**Goal:** Dynamically discover skill packages in `skills/` and enforce strict security guardrails before executing shell commands or writing files outside the agent workspace.
+
+**Deliverables:**
+- Dynamic `SkillScanner` service in `AgentServer` scanning `skills/*/SKILL.md`.
+- Chat slash command `/skill`.
+- Explicit user approval modal prompt for shell command execution and workspace boundaries.

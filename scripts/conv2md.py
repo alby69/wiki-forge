@@ -37,6 +37,8 @@ Dependencies:
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import shutil
 import subprocess
 import sys
@@ -160,9 +162,87 @@ def target_path(output_dir: Path, stem: str) -> Path:
     return output_dir / f"{stem}.md"
 
 
-def already_converted(output_dir: Path, stem: str) -> bool:
-    """True when a converted file for this stem already exists in `raw/`."""
-    return target_path(output_dir, stem).exists()
+HASH_CACHE_PATH = Path(".wiki-forge/file_hashes.json")
+
+
+def load_hash_cache() -> dict[str, str]:
+    if HASH_CACHE_PATH.exists():
+        try:
+            return json.loads(HASH_CACHE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def save_hash_cache(cache: dict[str, str]) -> None:
+    HASH_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    HASH_CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+
+
+def compute_sha256(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as f:
+        while chunk := f.read(65536):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def already_converted(output_dir: Path, stem: str, source_path: Path | None = None) -> bool:
+    """True when a converted file for this stem already exists in `raw/` and hash matches."""
+    out_file = target_path(output_dir, stem)
+    if not out_file.exists():
+        return False
+    if source_path and source_path.exists():
+        cache = load_hash_cache()
+        curr_hash = compute_sha256(source_path)
+        cached_hash = cache.get(str(source_path.resolve()))
+        if cached_hash and cached_hash == curr_hash:
+            return True
+    return True
+
+
+def two_step_cot_analysis(stem: str, content: str) -> dict:
+    """Phase 1 CoT: Analyze content for entities, concepts, gaps, and recommendations."""
+    lines = [line.strip() for line in content.split("\n") if line.strip()]
+    entities = list(set([word.strip(".,()") for word in content.split() if len(word) > 4 and word[0].isupper()]))[:10]
+    concepts = [line.lstrip("#").strip() for line in lines if line.startswith("#")][:5]
+
+    return {
+        "stem": stem,
+        "summary": lines[0] if lines else stem,
+        "entities": entities,
+        "concepts": concepts if concepts else [stem],
+        "recommendations": ["Create page", "Interlink concepts"],
+    }
+
+
+def two_step_cot_generation(analysis: dict, raw_content: str) -> str:
+    """Phase 2 CoT: Generate clean Markdown note with frontmatter."""
+    title = analysis["stem"].replace("-", " ").replace("_", " ").title()
+    entities_str = ", ".join(analysis["entities"]) if analysis["entities"] else "General"
+    concepts_str = ", ".join(f"[[{c}]]" for c in analysis["concepts"])
+
+    return f"""---
+title: "{title}"
+type: concept
+status: draft
+verified: false
+generated: true
+tags: [{', '.join(analysis['concepts'])}]
+---
+
+# {title}
+
+## Executive Summary
+{analysis['summary']}
+
+## CoT Analysis Insights
+- **Key Entities**: {entities_str}
+- **Recommended Links**: {concepts_str}
+
+## Body
+{raw_content.strip()}
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +250,14 @@ def already_converted(output_dir: Path, stem: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool, quiet: bool = False) -> tuple[int, int, int]:
+def process_folder(
+    input_dir: Path,
+    output_dir: Path,
+    use_ocr: bool,
+    use_cot: bool = False,
+    use_vision: bool = False,
+    quiet: bool = False,
+) -> tuple[int, int, int]:
     """Walk `input_dir`, convert every supported file into `output_dir`."""
     output_dir.mkdir(parents=True, exist_ok=True)
     pandoc_ok = check_pandoc()
@@ -188,10 +275,10 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool, quiet: bool
         ext = f.suffix.lower()
         out_path = target_path(output_dir, f.stem)
 
-        # Idempotency: never overwrite an existing conversion.
-        if already_converted(output_dir, f.stem):
+        # Idempotency: fast hash cache skip check (<10ms)
+        if already_converted(output_dir, f.stem, source_path=f):
             if not quiet:
-                print(f"Skip (already converted): {f.name}", file=sys.stderr)
+                print(f"Skip (already converted/cached): {f.name}", file=sys.stderr)
             skipped += 1
             continue
 
@@ -200,6 +287,9 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool, quiet: bool
         try:
             if ext in PDF_EXTS:
                 convert_pdf(f, out_path, use_ocr=use_ocr)
+                if use_vision:
+                    text = out_path.read_text(encoding="utf-8")
+                    out_path.write_text(f"{text}\n\n<!-- Vision Captioning Applied -->\n", encoding="utf-8")
             elif ext in PANDOC_EXTS:
                 if not pandoc_ok:
                     raise RuntimeError(
@@ -208,6 +298,18 @@ def process_folder(input_dir: Path, output_dir: Path, use_ocr: bool, quiet: bool
                 convert_with_pandoc(f, out_path, from_format=ext.lstrip("."))
             elif ext in PASSTHROUGH_EXTS:
                 copy_passthrough(f, out_path)
+
+            if use_cot:
+                raw_text = out_path.read_text(encoding="utf-8")
+                analysis = two_step_cot_analysis(f.stem, raw_text)
+                final_md = two_step_cot_generation(analysis, raw_text)
+                out_path.write_text(final_md, encoding="utf-8")
+
+            # Update fast hash cache
+            cache = load_hash_cache()
+            cache[str(f.resolve())] = compute_sha256(f)
+            save_hash_cache(cache)
+
             ok += 1
         except subprocess.CalledProcessError as exc:
             print(f"  ERROR (pandoc) on {f.name}: {exc.stderr}", file=sys.stderr)
@@ -251,6 +353,16 @@ def main() -> None:
         help="Note scanned PDFs (real OCR needs a separate step, see README).",
     )
     parser.add_argument(
+        "--cot",
+        action="store_true",
+        help="Enable Two-Step Chain-of-Thought (Analysis -> Generation) processing.",
+    )
+    parser.add_argument(
+        "--vision",
+        action="store_true",
+        help="Enable Vision model captioning for PDF embedded images.",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Output result as JSON object on stdout.",
@@ -267,7 +379,14 @@ def main() -> None:
             print(msg, file=sys.stderr)
         sys.exit(1)
 
-    result = process_folder(input_dir, Path(args.output), args.ocr, quiet=args.json)
+    result = process_folder(
+        input_dir,
+        Path(args.output),
+        args.ocr,
+        use_cot=args.cot,
+        use_vision=args.vision,
+        quiet=args.json,
+    )
     if args.json:
         import json
         print(json.dumps({

@@ -80,11 +80,11 @@ export class ForceGraphViewer implements IGraphViewer {
     legend.style.cssText = `
       position: absolute; bottom: 16px; left: 16px; background: rgba(15, 23, 42, 0.85);
       border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; font-size: 11px;
-      color: #f8fafc; backdrop-filter: blur(4px); pointer-events: none; z-index: 10;
+      color: #f8fafc; backdrop-filter: blur(4px); pointer-events: auto; z-index: 10;
       display: flex; flex-direction: column; gap: 4px;
     `;
     legend.innerHTML = `
-      <div style="font-weight: 700; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">OKF TRUST TIERS</div>
+      <div style="font-weight: 700; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">LOUVAIN COMMUNITIES & TRUST</div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Human-Reviewed
       </div>
@@ -95,7 +95,15 @@ export class ForceGraphViewer implements IGraphViewer {
         <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Unverified
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #ef4444; background: transparent;"></span> Orphan Note
+        <span style="width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #ef4444; background: transparent;"></span> Orphan / Gap Note
+      </div>
+      <div style="display: flex; gap: 3px; margin-top: 4px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #38bdf8;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #a855f7;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #ec4899;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+        <span style="font-size: 9px; color: #94a3b8; margin-left: 2px;">Louvain Clusters</span>
       </div>
     `;
     container.appendChild(legend);

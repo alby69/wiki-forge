@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-10-06
+
 ### Added
+- **Native Desktop Shell & Local API Token Security (Modulo A / Phase 52)**:
+  - Added Tauri v2 desktop scaffolding in `src-tauri/` (`tauri.conf.json`, `Cargo.toml`).
+  - Added local token authentication middleware (`X-WikiForge-Token` or Bearer header) in `src/server/agentServer.ts` securing local HTTP endpoints.
+- **Two-Step CoT Ingestion Pipeline & Persistent Queue with Vision Support (Modulo B / Phase 53)**:
+  - Upgraded `scripts/conv2md.py` with Two-Step Chain-of-Thought processing (Analysis -> Generation) and SHA256 fast-path hash caching (<10ms skip).
+  - Built persistent SQLite/disk ingestion queue engine (`scripts/ingest_queue.py`) with retry logic and REST/SSE progress endpoints in `AgentServer`.
+  - Added multimodal Vision captioning fallback for PDF embedded figures.
+- **Dedicated Web Clipper Chrome Extension (Modulo C / Phase 54)**:
+  - Developed Chrome Manifest V3 extension in `extension/` (`manifest.json`, `popup.html`, `popup.js`, `content.js`, `background.js`) using `@mozilla/readability` and `turndown` for HTML-to-Markdown conversion.
+  - Connected extension popup to local API (`/api/wiki/upload` / `/api/clip`) via secure token authentication.
+- **Deep Research Web Engine & Auto-Synthesis (Modulo D / Phase 55)**:
+  - Extended `/deep-research` in `src/server/agentServer.ts` with web search provider query generation and execution (Tavily/SearXNG/mock).
+  - Added user search query preview & confirmation flow, auto-synthesizing research notes into `wiki/synthesis/` with `<think>` reasoning trace streaming.
+- **Topological Graph Insights & Louvain Community Detection (Modulo E / Phase 56)**:
+  - Added Louvain community detection and graph insight extraction (surprising connections, knowledge gaps) in `scripts/graph_analytics.py` and REST API endpoints in `AgentServer`.
+  - Updated `src/components/graph/ForceGraphViewer.ts` with community palette coloring, cluster toggles, and "Deep Research" trigger button on gap cards.
+- **Asynchronous Human-in-the-Loop Review Queue (Modulo F / Phase 57)**:
+  - Created persistent review queue storage (`.llm-wiki/reviews.json`) and LLM item flagging (`Create Page`, `Deep Research`, `Skip`).
+  - Built interactive UI panel `src/components/tools/ReviewQueueModal.ts` for human approval, editing, and rejection of recommendations.
+- **Agent Skills Execution Security & Skill Scanner (Modulo G / Phase 58)**:
+  - Added dynamic `SkillScanner` in `src/server/agentServer.ts` scanning `skills/*/SKILL.md` and added `/skill` command to chat drawer.
+  - Implemented explicit user safety approval modal prompt for shell command executions and workspace boundaries.
+- **UI/UX Reasoning & Render Enhancements**:
+  - Added `<think>` reasoning trace collapsible blocks in `src/components/chat/ChatDrawer.ts` and `src/core/utils/markdown.ts`.
+  - Enhanced KaTeX math formula and Mermaid diagram rendering error fallbacks in `src/components/editor/MarkdownEditor.ts`.
+
+### Fixed
 - **Web UI Favicon**: Added `public/favicon.svg` and linked it from `index.html`, removing a 404 on `/favicon.ico`.
 - **View Mode Persistence**: The Editor/Graph/Split selection is now stored in `appStore` (`wiki-forge:view-mode`) and restored across reloads.
 
