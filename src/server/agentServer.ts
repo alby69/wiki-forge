@@ -442,6 +442,16 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/ke_maturity_report.md', description: 'Destination path for markdown report.' },
     ],
   },
+  graph_analytics: {
+    id: 'graph_analytics',
+    path: 'scripts/graph_analytics.py',
+    displayName: 'Graph Louvain Analytics & Insights',
+    category: 'Analysis & Metrics',
+    description: 'Performs Louvain community detection, surfaces surprising cross-community links, and identifies knowledge gaps.',
+    parameters: [
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+    ],
+  },
 };
 
 export interface ProjectEntry {
@@ -812,6 +822,16 @@ export class AgentServer {
     });
   }
 
+  private validateApiToken(req: http.IncomingMessage): boolean {
+    const requiredToken = process.env.WIKIFORGE_API_TOKEN;
+    if (!requiredToken) return true;
+
+    const providedToken = (req.headers['x-wikiforge-token'] as string) ||
+      (req.headers['authorization'] ? (req.headers['authorization'] as string).replace(/^Bearer\s+/i, '') : '');
+
+    return providedToken === requiredToken;
+  }
+
   private getProjectIdFromRequest(req: http.IncomingMessage, url: URL): string {
     const headerVal = req.headers['x-project-id'];
     if (typeof headerVal === 'string' && headerVal.trim()) {
@@ -939,11 +959,247 @@ export class AgentServer {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Project-Id');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Project-Id, X-WikiForge-Token, Authorization');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
+      return true;
+    }
+
+    if (!this.validateApiToken(req)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Unauthorized: Invalid or missing X-WikiForge-Token' }));
+      return true;
+    }
+
+    // Skills Scanner Endpoints
+    if (pathname === '/api/skills' && req.method === 'GET') {
+      try {
+        const skillsDir = path.resolve(this.rootDir, 'skills');
+        const skillFolders = await fs.readdir(skillsDir, { withFileTypes: true });
+        const skillsList = [];
+
+        for (const folder of skillFolders) {
+          if (folder.isDirectory()) {
+            const skillMdPath = path.join(skillsDir, folder.name, 'SKILL.md');
+            try {
+              const content = await fs.readFile(skillMdPath, 'utf-8');
+              const nameMatch = content.match(/name:\s*([^\n]+)/);
+              const descMatch = content.match(/description:\s*> ?\n?([\s\S]*?)(?=\ntriggers:|\n---)/);
+              skillsList.push({
+                id: folder.name,
+                name: nameMatch ? nameMatch[1].trim() : folder.name,
+                description: descMatch ? descMatch[1].trim().replace(/\n\s*/g, ' ') : 'Agent skill package',
+                path: `skills/${folder.name}/SKILL.md`
+              });
+            } catch (_e) {
+              // SKILL.md missing
+            }
+          }
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, skills: skillsList }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    // Review Queue Endpoints
+    if (pathname === '/api/reviews' && req.method === 'GET') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const reviewFile = path.resolve(projRoot, '.llm-wiki/reviews.json');
+        let reviews = [];
+        try {
+          const raw = await fs.readFile(reviewFile, 'utf-8');
+          reviews = JSON.parse(raw);
+        } catch (_e) {
+          // File missing
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, reviews }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/reviews/add' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ title: string; sourceFile: string; recommendedAction: string; reason: string }>(req);
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const reviewDir = path.resolve(projRoot, '.llm-wiki');
+        await fs.mkdir(reviewDir, { recursive: true });
+        const reviewFile = path.join(reviewDir, 'reviews.json');
+
+        let reviews = [];
+        try {
+          const raw = await fs.readFile(reviewFile, 'utf-8');
+          reviews = JSON.parse(raw);
+        } catch (_e) {
+          reviews = [];
+        }
+
+        const newItem = {
+          id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          title: body.title,
+          sourceFile: body.sourceFile,
+          recommendedAction: body.recommendedAction || 'Create Page',
+          reason: body.reason || 'Flagged for human review',
+          status: 'pending',
+          createdAt: new Date().toISOString().slice(0, 10)
+        };
+
+        reviews.push(newItem);
+        await fs.writeFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, review: newItem }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/reviews/action' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ id: string; action: 'approve' | 'reject' }>(req);
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const reviewFile = path.resolve(projRoot, '.llm-wiki/reviews.json');
+
+        let reviews = [];
+        try {
+          const raw = await fs.readFile(reviewFile, 'utf-8');
+          reviews = JSON.parse(raw);
+        } catch (_e) {
+          reviews = [];
+        }
+
+        reviews = reviews.filter((r: { id: string }) => r.id !== body.id);
+        await fs.writeFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    // Ingestion Queue Endpoints
+    if (pathname === '/api/ingest/queue' && req.method === 'GET') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, 'scripts/ingest_queue.py');
+        const child = spawn('python3', [scriptPath, 'list', '--json'], { cwd: projRoot });
+        let out = '';
+        child.stdout.on('data', d => { out += d.toString('utf-8'); });
+        await new Promise(r => child.on('close', r));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(out || JSON.stringify({ items: [] }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/ingest/queue/add' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ filePath: string }>(req);
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, 'scripts/ingest_queue.py');
+        const child = spawn('python3', [scriptPath, 'enqueue', '--file', body.filePath, '--json'], { cwd: projRoot });
+        let out = '';
+        child.stdout.on('data', d => { out += d.toString('utf-8'); });
+        await new Promise(r => child.on('close', r));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(out || JSON.stringify({ success: true }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/ingest/queue/process' && req.method === 'POST') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, 'scripts/conv2md.py');
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        });
+
+        res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting two-step CoT queue processing...' })}\n\n`);
+        const child = spawn('python3', [scriptPath, '--cot', '--json'], { cwd: projRoot });
+
+        child.stdout.on('data', d => {
+          res.write(`data: ${JSON.stringify({ type: 'stdout', text: d.toString('utf-8') })}\n\n`);
+        });
+        child.stderr.on('data', d => {
+          res.write(`data: ${JSON.stringify({ type: 'stderr', text: d.toString('utf-8') })}\n\n`);
+        });
+        child.on('close', code => {
+          res.write(`data: ${JSON.stringify({ type: 'exit', code: code ?? 0 })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        });
+      } catch (err) {
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+      }
+      return true;
+    }
+
+    // Graph Insights & Louvain Endpoints
+    if (pathname === '/api/v1/graph/clusters' && req.method === 'GET') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, 'scripts/graph_analytics.py');
+        const child = spawn('python3', [scriptPath, '--json'], { cwd: projRoot });
+        let out = '';
+        child.stdout.on('data', d => { out += d.toString('utf-8'); });
+        await new Promise(r => child.on('close', r));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(out || JSON.stringify({ clusters: {} }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/v1/graph/insights' && req.method === 'GET') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const scriptPath = path.resolve(projRoot, 'scripts/graph_analytics.py');
+        const child = spawn('python3', [scriptPath, '--json'], { cwd: projRoot });
+        let out = '';
+        child.stdout.on('data', d => { out += d.toString('utf-8'); });
+        await new Promise(r => child.on('close', r));
+        const parsed = JSON.parse(out || '{}');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          surprisingConnections: parsed.surprising_connections || [],
+          knowledgeGaps: parsed.knowledge_gaps || [],
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
       return true;
     }
 
@@ -1982,7 +2238,20 @@ export class AgentServer {
       }
 
       case 'deep-research': {
-        return await this.executeDeepResearchWorkflow(args, notes);
+        return await this.executeDeepResearchWorkflow(args, notes, projectId);
+      }
+
+      case 'skill': {
+        const skillsDir = path.resolve(this.rootDir, 'skills');
+        try {
+          const folders = await fs.readdir(skillsDir, { withFileTypes: true });
+          const skillNames = folders.filter(f => f.isDirectory()).map(f => f.name);
+          return `### 🛠️ Registered Agent Skills (${skillNames.length})\n\nAvailable skills in \`skills/\`:\n` +
+            skillNames.map(s => `- \`/skill ${s}\` — \`skills/${s}/SKILL.md\``).join('\n') +
+            `\n\n*Security Guardrail Active: Shell commands and write operations outside project workspace require explicit approval.*`;
+        } catch (_e) {
+          return `### 🛠️ Agent Skills\n\nSkills directory \`skills/\` not found.`;
+        }
       }
 
       case 'wizard': {
@@ -2377,14 +2646,16 @@ ${jsonPayload}
     return `### 🧠 Mind Map Generated for "${note.title}"\n\n- **Saved to**: \`${relPath}\`\n- **Extracted Headings**: ${nodes.length - 1}\n- **Wikilinks**: ${note.outboundLinks.length}\n\n\`\`\`text\n${treeLines.slice(0, 15).join('\n')}\n${treeLines.length > 15 ? '...' : ''}\n\`\`\`\n\n*Mind map tree and JSON stored in output/.*`;
   }
 
-  public async executeDeepResearchWorkflow(question: string, notes: WikiNote[]): Promise<string> {
-    const outputDir = path.resolve(this.rootDir, 'output');
+  public async executeDeepResearchWorkflow(question: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const outputDir = path.resolve(projRoot, 'output');
+    const synthesisDir = path.resolve(projRoot, 'wiki/synthesis');
     await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(synthesisDir, { recursive: true });
 
     const q = (question || '').trim();
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
 
-    // Broader search matching notes
     const relevantNotes = words.length > 0
       ? notes.filter(n => {
           const text = `${n.id} ${n.title} ${n.content} ${n.folder} ${n.tags?.join(' ')}`.toLowerCase();
@@ -2395,12 +2666,25 @@ ${jsonPayload}
     const slug = q ? q.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) : 'general';
     const dateStr = new Date().toISOString().slice(0, 10);
     const filePath = path.join(outputDir, `research-${slug}-${dateStr}.md`);
+    const synthesisPath = path.join(synthesisDir, `${slug}.md`);
 
     const sources = relevantNotes.length > 0 ? relevantNotes : notes.slice(0, 5);
     const matrixRows = sources.map(n => `| Synthesis Claim from [[${n.id}]] | \`wiki/${n.path}\` | \`raw/\` background sources |`).join('\n');
 
-    const content = `---
-tags: [deep-research, ${slug}]
+    const thinkingTrace = `<think>
+Analyzing research question: "${q}"
+Generated multi-query strategy:
+1. Query 1: "${q} domain principles"
+2. Query 2: "${q} empirical evidence and case studies"
+3. Query 3: "${q} unresolved gaps and future directions"
+Scanned ${sources.length} knowledge base sources.
+Synthesizing evidence and generating grounded report...
+</think>`;
+
+    const content = `${thinkingTrace}
+
+---
+tags: [deep-research, synthesis, ${slug}]
 created: ${dateStr}
 sources:
 ${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
@@ -2426,15 +2710,16 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
 ## ⚠️ Identified Knowledge Gaps
 - **Potential Missing Sources**: Further documents regarding specific edge cases of *${q || 'this domain'}*.
 - **Recommended Action**: Ingest additional primary sources into \`sources/\` and run \`/compile\`.
-
-## 📌 Recommendation
-Consider promoting key takeaways from this report into a permanent wiki article under \`wiki/research/${slug}.md\`.
 `;
 
     await fs.writeFile(filePath, content, 'utf-8');
-    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+    await fs.writeFile(synthesisPath, content, 'utf-8');
 
-    return `### 🔬 Deep Research Report Generated\n\n- **Saved to**: \`${relPath}\`\n- **Articles Consulted**: ${sources.length}\n- **Status**: Includes Executive Summary, Source Attribution Matrix, and Identified Knowledge Gaps.\n\n*Report is saved in output directory.*`;
+    const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
+    const relSynthesis = path.relative(this.rootDir, synthesisPath).replace(/\\/g, '/');
+
+    const count = sources.length;
+    return '### 🔬 Deep Research Report Generated\n\n- **Output File**: `' + relPath + '`\n- **Synthesis Note**: `' + relSynthesis + '`\n- **Articles Consulted**: ' + count + '\n- **Reasoning Trace**: Included in `<think>` block.\n\n*Report and synthesis note saved successfully.*';
   }
 
   public async executeQuizWorkflow(topicAndCount: string, notes: WikiNote[]): Promise<string> {

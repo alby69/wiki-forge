@@ -16,7 +16,15 @@ marked.setOptions({ breaks: true, gfm: true });
 export function renderMarkdown(raw: string): string {
   const stripped = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
 
-  let html = marked.parse(stripped) as string;
+  let html = stripped;
+
+  // Convert <think>...</think> blocks into collapsible reasoning traces
+  html = html.replace(
+    /<think>([\s\S]*?)<\/think>/gi,
+    (_m, trace: string) => `\n\n<details class="wf-think-trace" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;margin:12px 0;font-size:12px;color:#cbd5e1;"><summary style="cursor:pointer;font-weight:600;color:#38bdf8;">💭 Agent Reasoning Trace</summary><div class="wf-think-content" style="margin-top:8px;white-space:pre-wrap;font-family:monospace;color:#94a3b8;">${escapeHtml(trace.trim())}</div></details>\n\n`
+  );
+
+  html = marked.parse(html) as string;
 
   // Sanitize HTML output to neutralize XSS payloads
   html = sanitizeHtml(html);

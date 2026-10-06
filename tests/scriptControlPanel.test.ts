@@ -44,9 +44,10 @@ describe('Script Control Panel Test Suite', () => {
     const data = await res.json();
     assert.equal(data.success, true);
     assert.ok(Array.isArray(data.scripts));
-    assert.equal(data.scripts.length, 22);
+    assert.equal(data.scripts.length, Object.keys(SCRIPT_REGISTRY).length);
 
     const scriptIds = data.scripts.map((s: { id: string }) => s.id);
+    assert.ok(scriptIds.includes('graph_analytics'));
     assert.ok(scriptIds.includes('conv2md'));
     assert.ok(scriptIds.includes('clip2md'));
     assert.ok(scriptIds.includes('notebooklm_import'));
