@@ -224,6 +224,37 @@ body {
   color: var(--text-primary);
 }
 
+/* Sidebar Toolbar Styles */
+.sidebar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #2d3748;
+  flex-shrink: 0;
+  background: #18191c;
+}
+
+.sidebar-toolbar button {
+  background: #2d3748;
+  color: #edf2f7;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.sidebar-toolbar button:hover {
+  background: #4a5568;
+}
+
 /* Skeleton Loading */
 .skeleton-loader {
   background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);

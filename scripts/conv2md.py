@@ -41,6 +41,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import List, Tuple
 
 # --- Supported formats ------------------------------------------------------
 
@@ -111,22 +112,60 @@ def check_pandoc() -> bool:
     return True
 
 
+def extract_pdf_images(pdf_path: Path, assets_dir: Path) -> List[Tuple[int, str]]:
+    """Extract images from PDF pages and save into assets_dir."""
+    extracted = []
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        return extracted
+
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        doc = fitz.open(str(pdf_path))
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            image_list = page.get_images(full=True)
+            for img_index, img_info in enumerate(image_list, start=1):
+                xref = img_info[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                image_ext = base_image["ext"]
+                img_filename = f"{pdf_path.stem}_p{page_num + 1}_img{img_index}.{image_ext}"
+                img_file_path = assets_dir / img_filename
+                img_file_path.write_bytes(image_bytes)
+                extracted.append((page_num + 1, img_filename))
+        doc.close()
+    except Exception as e:
+        print(f"  [warning] Image extraction failed for {pdf_path.name}: {e}", file=sys.stderr)
+
+    return extracted
+
+
 def convert_pdf(path: Path, out_path: Path, use_ocr: bool) -> None:
-    """Convert a PDF to Markdown using pymupdf4llm."""
+    """Convert a PDF to Markdown using pymupdf4llm and extract images."""
     import pymupdf4llm  # imported lazily so the dep is only needed for PDFs
 
     if use_ocr:
-        # pymupdf4llm does not perform OCR by itself; this flag only documents
-        # the intent. Scanned PDFs without a text layer may yield empty output.
         print(
             f"  [note] {path.name}: OCR requested, but pymupdf4llm extracts the "
             "native text layer. For scans, run an OCR step (e.g. Tesseract) first."
         )
-    # `to_markdown` returns a string by default, but may return a list of chunk
-    # dicts; normalize both cases so the writer always receives text.
+
     md = pymupdf4llm.to_markdown(str(path))
     if isinstance(md, list):
         md = "\n\n".join(chunk.get("text", "") for chunk in md)
+
+    # Extract images to wiki/assets or output_dir/assets
+    assets_dir = out_path.parent / "assets"
+    extracted_imgs = extract_pdf_images(path, assets_dir)
+
+    if extracted_imgs:
+        img_md_lines = ["\n\n## 🖼️ Estratte Immagini dal Documento\n"]
+        for page_num, img_filename in extracted_imgs:
+            img_md_lines.append(f"![Immagine estratta da pag. {page_num}](../assets/{img_filename})")
+        md += "\n".join(img_md_lines)
+
     out_path.write_text(md, encoding="utf-8")
 
 

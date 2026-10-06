@@ -84,7 +84,7 @@ export class ForceGraphViewer implements IGraphViewer {
       display: flex; flex-direction: column; gap: 4px;
     `;
     legend.innerHTML = `
-      <div style="font-weight: 700; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">OKF TRUST TIERS</div>
+      <div style="font-weight: 700; color: #94a3b8; font-size: 10px; margin-bottom: 2px;">GRAPH ANALYTICS & LEGEND</div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Human-Reviewed
       </div>
@@ -96,6 +96,9 @@ export class ForceGraphViewer implements IGraphViewer {
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #ef4444; background: transparent;"></span> Orphan Note
+      </div>
+      <div style="margin-top: 4px; border-top: 1px solid #334155; padding-top: 4px; font-size: 10px; color: #a0aec0;">
+        Louvain Communities: Auto-Clustered by /api/v1/graph/clusters
       </div>
     `;
     container.appendChild(legend);

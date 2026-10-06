@@ -12,9 +12,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Mappa Teorica Tesi](intelligenza-artificiale/mappa-teorica-tesi.md) — tags: ['intelligenza-artificiale', 'mappa-teorica-tesi']
-* [Modello Migliore](intelligenza-artificiale/modello-migliore.md) — tags: ['intelligenza-artificiale', 'modello-migliore']
-* [Nello Cristianini](intelligenza-artificiale/nello-cristianini.md) — tags: ['intelligenza-artificiale', 'nello-cristianini']
-* [Power To The People](intelligenza-artificiale/power-to-the-people.md) — tags: ['intelligenza-artificiale', 'power-to-the-people']
 * [Scorciatoia Apprendimento Automatico](intelligenza-artificiale/scorciatoia-apprendimento-automatico.md) — tags: ['intelligenza-artificiale', 'scorciatoia-apprendimento-automatico']
+* [Sequoia Ascent 2026](intelligenza-artificiale/sequoia-ascent-2026.md) — tags: ['intelligenza-artificiale', 'sequoia-ascent-2026']
+* [Sovrumano Ani Agi Asi](intelligenza-artificiale/sovrumano-ani-agi-asi.md) — tags: ['intelligenza-artificiale', 'sovrumano-ani-agi-asi']
+* [Stefano Gatti](intelligenza-artificiale/stefano-gatti.md) — tags: ['intelligenza-artificiale', 'stefano-gatti']
+* [Test Di Turing](intelligenza-artificiale/test-di-turing.md) — tags: ['intelligenza-artificiale', 'test-di-turing']
 

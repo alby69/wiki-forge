@@ -6,12 +6,17 @@ Provides REST endpoints for graph synchronization, SHACL quality validation,
 and interactive GraphRAG query execution.
 """
 
+import asyncio
+import json
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from rdflib import Graph
 
+from scripts.graph_analytics import compute_clusters
+from scripts.ingest_queue import IngestQueue
 from src.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
 from src.wikiforge.semantics.shacl_validator import validate_shacl
 from src.wikiforge.semantics.graph_rag_pipeline import WikiForgeGraphRAG, GraphRAGState
@@ -45,6 +50,18 @@ class RAGQueryResponse(BaseModel):
     entities: List[str]
     cypher_query: str
     final_answer: str
+
+class IngestEnqueueRequest(BaseModel):
+    path: str = Field(..., description="File or directory path to enqueue for ingestion")
+    max_retries: int = Field(default=3, description="Max retries per job")
+
+
+@app.get("/api/v1/graph/clusters")
+def get_graph_clusters(wiki_dir: str = "wiki"):
+    try:
+        return compute_clusters(wiki_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Graph analytics error: {str(e)}")
 
 
 @app.get("/api/v1/health")
@@ -137,6 +154,39 @@ def query_rag(req: RAGQueryRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"GraphRAG error: {str(e)}")
+
+
+@app.post("/api/v1/ingest/enqueue")
+def enqueue_ingest(req: IngestEnqueueRequest):
+    p = Path(req.path)
+    if not p.exists():
+        raise HTTPException(status_code=404, detail=f"Target path '{req.path}' not found.")
+
+    q = IngestQueue()
+    if p.is_dir():
+        count = q.enqueue_directory(str(p))
+        return {"status": "SUCCESS", "message": f"Enqueued {count} files from folder", "count": count}
+    else:
+        job_id = q.enqueue_file(str(p), max_retries=req.max_retries)
+        return {"status": "SUCCESS", "message": f"Enqueued file {p.name}", "job_id": job_id}
+
+
+@app.get("/api/v1/ingest/status")
+def get_ingest_status():
+    q = IngestQueue()
+    return q.get_status_summary()
+
+
+@app.get("/api/v1/ingest/events")
+async def ingest_events():
+    async def event_generator():
+        q = IngestQueue()
+        while True:
+            summary = q.get_status_summary()
+            yield f"data: {json.dumps(summary)}\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 if __name__ == "__main__":
