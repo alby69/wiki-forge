@@ -224,7 +224,10 @@ export class Sidebar {
         const folders = await this.actionCb.getFolders();
         for (const folderPath of folders) {
           if (folderPath === 'wiki' || folderPath === '.') continue;
-          const segments = folderPath.split('/');
+          // Folders from the API are relative to the wiki dir, while note paths
+          // (and the tree root) are relative to the project root. Nest them
+          // under 'wiki' so they don't appear as empty top-level duplicates.
+          const segments = `wiki/${folderPath}`.split('/');
           let cursor = root;
           segments.forEach((seg, idx) => {
             if (!cursor.children.has(seg)) {

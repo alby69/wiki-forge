@@ -1,0 +1,98 @@
+[project]
+name = "tesi"
+title = "TESI Wiki"
+context = "Master's thesis on AI and the transformation of work: sources span anthropology of labor (Graeber), nature of machine learning (Cristianini), AI impact and governance (Amodei, Karpathy), and organizational/HR practice (Gatti)."
+language = "en"
+
+[paths]
+sources = "backup"
+raw = "raw"
+wiki = "wiki"
+output = "output"
+notes = "notes"
+templates = "templates"
+
+[conversion]
+ocr = false
+
+[agent]
+confirm_destructive = true
+
+[agent.llm]
+provider = "opencode"
+opencode_command = ""
+opencode_args = [ "run", "--format", "json" ]
+api_base_url = ""
+api_key_env = "WIKIFORGE_LLM_API_KEY"
+model = "claude-sonnet-4-6"
+max_tokens = 4096
+timeout_seconds = 60
+
+[naming]
+article_case = "kebab-case"
+wiki_folder_case = "kebab-case"
+forbidden_chars = [ " ", "_", "/", "\\", ":", "*", "?", "\"", "<", ">", "|" ]
+
+[export]
+formats = [ "json", "html" ]
+include_raw = false
+include_sources = false
+
+[webclip]
+enabled = false
+folder = "sources/web-clips"
+format = "markdown"
+
+[audio]
+provider = "none"
+voice_host_a = "alloy"
+voice_host_b = "echo"
+output_folder = "output/audio"
+
+[i18n]
+default_language = "en"
+supported_languages = [ "en", "it", "es", "fr", "de" ]
+fallback_language = "en"
+
+[okf]
+version = "0.2"
+type_vocabulary = [ "Concept", "Paper", "Book", "Tool", "Process", "Playbook", "Reference", "StudyGuide", "Quiz", "Attested Computation" ]
+
+[okf.migration]
+default_type = "Concept"
+
+[[okf.migration.folder_type_map]]
+folder = "intelligenza-artificiale"
+type = "Concept"
+
+[[okf.migration.folder_type_map]]
+folder = "antropologia-economica"
+type = "Concept"
+
+[[okf.migration.folder_type_map]]
+folder = "papers"
+type = "Paper"
+
+[[okf.migration.folder_type_map]]
+folder = "tools"
+type = "Tool"
+
+[[okf.migration.folder_type_map]]
+folder = "processes"
+type = "Process"
+
+[[okf.migration.folder_type_map]]
+folder = "playbooks"
+type = "Playbook"
+
+[tags]
+allowed = [ "topic/ai", "topic/economics", "topic/hr", "topic/anthropology", "type/paper", "type/essay", "type/book", "author/karpathy", "author/amodei", "author/graeber", "author/cristianini", "author/gatti", "status/draft", "status/review" ]
+blocked = [ "the", "and", "of", "a", "to", "in", "on", "for", "is", "are" ]
+
+[versioning]
+enabled = true
+fields = [ "version", "parent_commit", "generated" ]
+
+[enterprise]
+enable_rbac = false
+cloud_backup_webdav = ""

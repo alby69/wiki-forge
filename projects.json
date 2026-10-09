@@ -1,0 +1,12 @@
+[
+  {
+    "id": "default",
+    "name": "Default Wiki",
+    "path": "."
+  },
+  {
+    "id": "tesi",
+    "name": "TESI Wiki",
+    "path": "projects/tesi"
+  }
+]
