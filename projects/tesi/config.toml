@@ -2,7 +2,7 @@
 name = "tesi"
 title = "TESI Wiki"
 context = "Master's thesis on AI and the transformation of work: sources span anthropology of labor (Graeber), nature of machine learning (Cristianini), AI impact and governance (Amodei, Karpathy), and organizational/HR practice (Gatti)."
-language = "en"
+language = "it"
 
 [paths]
 sources = "backup"

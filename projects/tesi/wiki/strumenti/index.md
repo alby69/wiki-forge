@@ -1,6 +1,7 @@
-# Strumenti — Topic Index
+# STRUMENTI Index
+
+Thematic index for **strumenti**.
 
 ## Articles
 
-* [Wiki-Forge Script Control Panel](wiki-forge-script-panel.md) `[draft]` — Panoramica degli script Python per gestione e compilazione wiki-forge
-
+- [[wiki-forge-script-panel]] — Guida Completa agli Script del Wiki-Forge Script Control Panel

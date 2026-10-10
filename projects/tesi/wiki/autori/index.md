@@ -1,11 +1,12 @@
-# Autori — Topic Index
+# AUTORI Index
+
+Thematic index for **autori**.
 
 ## Articles
 
-* [Andrej Karpathy](andrej-karpathy.md) `[draft]` — Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro cognitivo e HR.
-* [David Graeber](david-graeber.md) `[draft]` — Critica antropologica di bullshit jobs, automazione e feudalesimo manageriale applicata all'IA e alle HR.
-* [Geoffrey Hinton](geoffrey-hinton.md) `[draft]` — Padrino dell'IA: connessionismo, job shock 2026, allineamento e ridefinizione delle competenze.
-* [Nello Cristianini](nello-cristianini.md) `[draft]` — Scienziato dei dati: IA comportamentale e teleologica, scorciatoia statistica e dignità umana nel lavoro.
-* [Salvatore Sanfilippo](salvatore-sanfilippo.md) `[draft]` — Creatore di Redis: programmazione automatica, intenzionalità umana e trasformazione del lavoro cognitivo.
-* [Stefano Gatti](stefano-gatti.md) `[draft]` — Head of Data & Analytics: IA ibrida come amplificatore di competenze, non equalizzatore, nelle organizzazioni.
-
+- [[andrej-karpathy]] — L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: L'Analisi del Pensiero di Andrej Karpathy
+- [[david-graeber]] — Analisi del Pensiero di David Graeber applicato all'Intelligenza Artificiale, al Lavoro e alle Risorse Umane
+- [[geoffrey-hinton]] — L'Impatto dell'Intelligenza Artificiale su Lavoro e Risorse Umane nel Pensiero di Geoffrey Hinton: Quadro Sintetico per una Tesi di Laurea
+- [[nello-cristianini]] — L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane nell'Inquadramento Teorico di Nello Cristianini
+- [[salvatore-sanfilippo]] — L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane — Analisi Sistematica del Pensiero di Salvatore Sanfilippo (antirez)
+- [[stefano-gatti]] — L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane nel Pensiero di Stefano Gatti
