@@ -1,3 +1,14 @@
+---
+type: Reference
+title: Previsioni sul futuro del lavoro e dell'HR sotto l'impatto dell'IA
+description: Argomentazione sintetica sul futuro del lavoro con confidenze esplicite e ancore ai sorgenti raw del corpus tesi.
+status: draft
+tags: ["topic/hr", "topic/ai", "status/draft"]
+generated:
+  by: process:wiki-forge
+  at: "2026-10-10T00:00:00Z"
+---
+
 # Previsioni sul futuro del lavoro (e dell'HR) sotto l'impatto dell'IA — argomentazione
 
 ## 0. La tesi-guida: prevedere le scelte, non la tecnologia
