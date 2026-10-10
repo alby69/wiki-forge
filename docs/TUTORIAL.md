@@ -316,6 +316,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 |---------|----------------|
 | `adversarial-review` / `/adversarial-review` | Stress-test e revisione avversaria di note/tesi per contraddizioni e citazioni mancano |
 | `digest` / `/digest` | Riassunto in linguaggio naturale dei cambiamenti recenti e della salute della wiki |
+| `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana OKF di una nota (`verified: - by: human:<id>`), unica azione che la porta al tier `human-reviewed` 🟢 |
 | `slides` / `/slides` (`/generate-slides`) | Generazione di una presentazione reveal.js da note mature o capitoli |
 | `audit` / `/audit` | Controllo generale di salute (link rotti, orfani, sovrapposizioni) |
 | `reindex` / `/reindex` | Rigenerazione automatica degli indici master e tematici |
