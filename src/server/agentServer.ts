@@ -78,6 +78,10 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
       break;
     }
     case 'migrate_to_okf': {
+      const wikiDir = String(getVal('wiki_dir', '')).trim();
+      if (wikiDir) args.push('--wiki-dir', wikiDir);
+      const confirm = Boolean(getVal('confirm', false));
+      if (confirm) args.push('--confirm');
       break;
     }
     case 'okf_lint': {
@@ -277,9 +281,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/migrate_to_okf.py',
     displayName: 'Migrate to OKF v0.2',
     category: 'OKF Maintenance',
-    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter.',
+    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter. Hint: as of the multi-project layout the default wiki is auto-detected, e.g. projects/tesi/wiki or a subfolder such as projects/tesi/wiki/Q&A.',
     parameters: [
       { name: 'confirm', label: 'Confirm Migration (Danger / Backup first)', type: 'boolean', default: false, required: true, description: 'Check to acknowledge irreversible frontmatter migration.' },
+      { name: 'wiki_dir', label: 'Wiki Directory (optional)', type: 'text', default: '', placeholder: 'auto → projects/tesi/wiki (o Q&A)', description: 'Target wiki dir (relative to project): leave empty for auto, or set e.g. wiki/Q&A.' },
     ],
   },
   okf_lint: {

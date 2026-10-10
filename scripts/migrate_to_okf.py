@@ -134,16 +134,41 @@ def migrate_file(file_path: Path, wiki_root: Path, cfg: dict, now_iso: str) -> b
     file_path.write_text(new_content, encoding="utf-8")
     return True
 
+def resolve_default_wiki(repo_root: Path) -> Path:
+    """Auto-detect the wiki to migrate.
+
+    Resolution order:
+      1. WIKI_FORGE_WIKI_DIR env var (absolute or repo-relative)
+      2. <cwd>/wiki  (the runner spawns scripts with cwd = project root)
+      3. first existing projects/<id>/wiki (multi-project layout)
+      4. legacy repo-root wiki/ folder
+    """
+    env = os.environ.get("WIKI_FORGE_WIKI_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+
+    cwd_wiki = Path.cwd() / "wiki"
+    if cwd_wiki.is_dir():
+        return cwd_wiki.resolve()
+
+    for candidate in sorted((repo_root / "projects").glob("*/wiki")):
+        if candidate.is_dir():
+            return candidate.resolve()
+
+    return (repo_root / "wiki").resolve()
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="One-shot Migration Script to OKF v0.2 compliant frontmatter")
-    parser.add_argument("--wiki-dir", help="Wiki directory to migrate (default: wiki)")
+    parser.add_argument("--wiki-dir", help="Wiki directory to migrate (default: auto-detected project wiki)")
+    parser.add_argument("--file", action="append", default=[], help="Only migrate this file (relative to --wiki-dir); repeatable. Skips log/index/reindex.")
     parser.add_argument("--confirm", action="store_true", help="Confirm migration execution")
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
     repo_root = Path(__file__).resolve().parent.parent
-    wiki_root = Path(args.wiki_dir).resolve() if args.wiki_dir else repo_root / "wiki"
+    wiki_root = Path(args.wiki_dir).resolve() if args.wiki_dir else resolve_default_wiki(repo_root)
 
     if not wiki_root.exists():
         msg = f"Error: wiki directory does not exist at '{wiki_root}'"
@@ -158,6 +183,28 @@ def main():
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     migrated_count = 0
+
+    # Targeted migration: only the listed files, no log/index/reindex updates.
+    if args.file:
+        missing = [rel for rel in args.file if not (wiki_root / rel).resolve().is_file()]
+        if missing:
+            msg = f"Error: file(s) not found under '{wiki_root}': {', '.join(missing)}"
+            if args.json:
+                import json
+                print(json.dumps({"status": "error", "message": msg}))
+            else:
+                print(msg, file=sys.stderr)
+            sys.exit(1)
+        for rel in args.file:
+            migrate_file((wiki_root / rel).resolve(), wiki_root, cfg, now_iso)
+            migrated_count += 1
+        if args.json:
+            import json
+            print(json.dumps({"status": "success", "migrated_count": migrated_count, "files": args.file}))
+        else:
+            print(f"✅ Successfully migrated {migrated_count} Markdown article(s) to OKF v0.2 standard!")
+        return
+
     for file_path in sorted(wiki_root.glob("**/*.md")):
         if file_path.name.lower() in ("index.md", "log.md"):
             continue
