@@ -90,6 +90,22 @@ Body.
     assert.strictEqual(noneNote.trustTier, 'unverified');
   });
 
+  test('should resolve agent-cited sources by relative path with or without .md', () => {
+    const note = parser.parseNote(
+      'linee-guida-tesi-hr',
+      'Linee Guida Tesi HR',
+      'Content',
+      'analisi',
+      'analisi/linee-guida-tesi-hr.md'
+    );
+
+    assert.strictEqual(parser.resolveLinkTarget('linee-guida-tesi-hr', [note])?.id, 'linee-guida-tesi-hr');
+    assert.strictEqual(parser.resolveLinkTarget('analisi/linee-guida-tesi-hr', [note])?.id, 'linee-guida-tesi-hr');
+    assert.strictEqual(parser.resolveLinkTarget('analisi/linee-guida-tesi-hr.md', [note])?.id, 'linee-guida-tesi-hr');
+    assert.strictEqual(parser.resolveLinkTarget('./analisi/linee-guida-tesi-hr.md', [note])?.id, 'linee-guida-tesi-hr');
+    assert.strictEqual(parser.resolveLinkTarget('analisi/not-exist.md', [note]), null);
+  });
+
   test('should compute backlinks across multiple notes', () => {
     const note1 = parser.parseNote('note1', 'Index', 'Contains [[Note2]] link.');
     const note2 = parser.parseNote('note2', 'Note2', 'Target note content.');

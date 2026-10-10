@@ -132,6 +132,15 @@ export class MarkdownEditor {
           if (target && this.onOpenLinkCb) this.onOpenLinkCb(target);
         });
       });
+      this.container.querySelectorAll('a.note-link, a.source-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const ref = link.getAttribute('data-note-ref') || link.getAttribute('data-source-file');
+          if (ref && this.onOpenLinkCb) {
+            this.onOpenLinkCb(ref.replace(/^raw\//i, '').replace(/\.md$/i, ''));
+          }
+        });
+      });
     } else {
       const cmWrapper = this.container.querySelector('#codemirror-wrapper') as HTMLElement;
       if (cmWrapper) {

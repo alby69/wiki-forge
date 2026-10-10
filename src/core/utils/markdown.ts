@@ -50,5 +50,16 @@ export function renderMarkdown(raw: string): string {
     }
   );
 
+  // Turn bare wiki file references the agent may write (e.g. "analisi/foo.md"
+  // or just "foo.md") into clickable note links. Tokens already embedded in
+  // href values, code spans, or existing anchors are skipped.
+  html = html.replace(
+    /(?<!["`>/.\w-])\b((?:[a-zA-Z0-9][\w-]*\/)*[a-zA-Z0-9][\w-]*\.md)(?:#([^\s"<)\]]+))?/g,
+    (_match, filePath: string, anchor?: string) => {
+      const text = anchor ? `${filePath}#${anchor}` : filePath;
+      return `<a href="#" class="note-link" data-note-ref="${escapeHtml(filePath)}">${escapeHtml(text)}</a>`;
+    }
+  );
+
   return html;
 }

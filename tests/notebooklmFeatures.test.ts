@@ -73,6 +73,13 @@ Synthesizes knowledge graphs.
     assert.ok(html.includes('data-line-anchor="L3-L4"'));
   });
 
+  await t.test('renderMarkdown turns bare .md agent citations into clickable note links', async () => {
+    const html = renderMarkdown('La scissione del corpus (analisi/linee-guida-tesi-hr.md, pilastro 2).');
+
+    assert.ok(html.includes('class="note-link"'));
+    assert.ok(html.includes('data-note-ref="analisi/linee-guida-tesi-hr.md"'));
+  });
+
   await t.test('/trace extracts line-anchored passages from raw sources', async () => {
     const response = await agentServer.processChatCommand({ command: '/trace Agent' });
     assert.ok(response.includes('Passage Trace for "Agent"'));

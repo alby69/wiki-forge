@@ -450,15 +450,65 @@ export class ChatDrawer {
       });
     });
 
-    this.container.querySelectorAll('a.wikilink').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        const target = link.getAttribute('data-wikilink');
-        if (target && this.onOpenLinkCb) {
-          this.onOpenLinkCb(target);
-        }
+    this.bindMessageLinks(this.container);
+  }
+
+  /**
+   * Binds navigation for every kind of link an agent reply can contain:
+   *  - [[wikilinks]]    -> a.wikilink[data-wikilink]
+   *  - raw sources      -> a.source-link[data-source-file] (raw/file.md#L..)
+   *  - bare .md refs    -> a.note-link[data-note-ref]
+   *  - markdown links   -> a[href*=".md"]
+   * A `data-bound` flag avoids double-binding when innerHTML is rewritten.
+   */
+  private bindMessageLinks(scope: Element): void {
+    const bind = (links: NodeListOf<Element>, resolve: (el: HTMLElement) => void) => {
+      links.forEach(node => {
+        const link = node as HTMLElement;
+        if (link.dataset.bound) return;
+        link.dataset.bound = '1';
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          resolve(link);
+        });
       });
-    });
+    };
+
+    bind(
+      scope.querySelectorAll('a.wikilink'),
+      link => {
+        const target = link.getAttribute('data-wikilink');
+        if (target && this.onOpenLinkCb) this.onOpenLinkCb(target);
+      }
+    );
+
+    bind(
+      scope.querySelectorAll('a.source-link'),
+      link => {
+        const file = link.getAttribute('data-source-file');
+        if (file && this.onOpenLinkCb) {
+          const stem = file.replace(/^raw\/?/i, '').replace(/\.md$/i, '');
+          this.onOpenLinkCb(stem || file);
+        }
+      }
+    );
+
+    bind(
+      scope.querySelectorAll('a.note-link'),
+      link => {
+        const ref = link.getAttribute('data-note-ref');
+        if (ref && this.onOpenLinkCb) this.onOpenLinkCb(ref);
+      }
+    );
+
+    bind(
+      scope.querySelectorAll('a[href]'),
+      link => {
+        const href = (link.getAttribute('href') || '').split('#')[0].split('?')[0].replace(/^\.?\//, '');
+        if (!href.toLowerCase().endsWith('.md')) return;
+        if (this.onOpenLinkCb) this.onOpenLinkCb(href);
+      }
+    );
   }
 
   public async handleSendMessage(text: string): Promise<void> {
@@ -496,15 +546,7 @@ export class ChatDrawer {
         assistantMsg.text += chunk;
         if (msgWrapper) {
           msgWrapper.innerHTML = renderMarkdown(assistantMsg.text);
-          msgWrapper.querySelectorAll('a.wikilink').forEach(link => {
-            link.addEventListener('click', e => {
-              e.preventDefault();
-              const target = link.getAttribute('data-wikilink');
-              if (target && this.onOpenLinkCb) {
-                this.onOpenLinkCb(target);
-              }
-            });
-          });
+          this.bindMessageLinks(msgWrapper);
         }
         if (list) list.scrollTop = list.scrollHeight;
       }

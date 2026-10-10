@@ -222,7 +222,15 @@ export class MarkdownParser {
     // 4. by title
     found = notes.find(n => n.title.toLowerCase() === tLower);
     if (found) return found;
-    return null;
+    // 5. by relative path (with or without trailing .md); tolerates a leading
+    //    "./" and backslashes. Covers agent-cited sources such as
+    //    "analisi/linee-guida-tesi-hr.md" or "analisi/linee-guida-tesi-hr".
+    const tPath = tLower.replace(/^\.\//, '').replace(/\.md$/i, '');
+    found = notes.find(n => {
+      const np = (n.path || '').replace(/\\/g, '/').toLowerCase().replace(/\.md$/i, '');
+      return np === tPath || np.endsWith('/' + tPath);
+    });
+    return found || null;
   }
 
   /**
