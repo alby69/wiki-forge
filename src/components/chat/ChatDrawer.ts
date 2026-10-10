@@ -3,6 +3,7 @@ import { renderMarkdown } from '../../core/utils/markdown';
 import { ApiStorage, AttachOptions } from '../../storage/ApiStorage';
 import { appStore } from '../../store/appStore';
 import { AttachModal } from './AttachModal';
+import { COMMAND_CATALOG } from './commandCatalog';
 
 export interface ChatMessage {
   id: string;
@@ -12,11 +13,17 @@ export interface ChatMessage {
 }
 
 const STORAGE_KEY = 'wiki-forge:chat-history';
+const CHAT_WIDTH_KEY = 'wiki-forge:chat-width';
+const CHAT_MIN_WIDTH = 320;
 
 export class ChatDrawer {
   private container: HTMLElement;
   private apiStorage: ApiStorage;
   private isOpen: boolean = false;
+  private commandsOpen: boolean = false;
+  private isMaximized: boolean = false;
+  private chatWidth: number = 380;
+  private isResizingChat: boolean = false;
   private messages: ChatMessage[] = [];
   private notesGetter: () => WikiNote[];
   private onAttachSuccessCb?: () => void;
@@ -36,11 +43,52 @@ export class ChatDrawer {
     this.onOpenLinkCb = onOpenLink;
 
     this.loadHistory();
+    this.loadChatWidth();
     this.render();
 
     appStore.subscribe(() => {
       this.render();
     });
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', e => this.handleDocumentClick(e));
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && this.isMaximized) {
+          this.setMaximized(false);
+        }
+      });
+    }
+  }
+
+  private loadChatWidth(): void {
+    try {
+      const saved = localStorage.getItem(CHAT_WIDTH_KEY);
+      if (saved) {
+        const w = Number.parseInt(saved, 10);
+        if (Number.isFinite(w) && w >= CHAT_MIN_WIDTH) {
+          this.chatWidth = w;
+        }
+      }
+    } catch (_e) {
+      // fallback
+    }
+  }
+
+  private saveChatWidth(): void {
+    try {
+      localStorage.setItem(CHAT_WIDTH_KEY, String(this.chatWidth));
+    } catch (_e) {
+      // fallback
+    }
+  }
+
+  private handleDocumentClick(e: MouseEvent): void {
+    if (!this.commandsOpen) return;
+    const target = e.target as HTMLElement | null;
+    if (target && (target.closest('#chat-commands-panel') || target.closest('#chat-commands-toggle'))) {
+      return;
+    }
+    this.setCommandsOpen(false);
   }
 
   private loadHistory(): void {
@@ -115,38 +163,32 @@ export class ChatDrawer {
   }
 
   public render(): void {
-    this.container.style.display = this.isOpen ? 'flex' : 'none';
-    this.container.style.flexDirection = 'column';
-    this.container.style.width = '380px';
-    this.container.style.height = '100%';
-    this.container.style.background = '#0f172a';
-    this.container.style.borderLeft = '1px solid #1e293b';
-    this.container.style.boxSizing = 'border-box';
+    this.applyFrameStyles();
 
     this.container.innerHTML = `
-      <div style="padding: 12px 16px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;">
+      <div id="chat-resize-handle" title="Trascina per ridimensionare" style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 20; touch-action: none; display: ${this.isMaximized ? 'none' : 'block'};"></div>
+
+      <div id="chat-header-bar" title="Doppio click per ingrandire/ripristinare" style="padding: 12px 16px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; cursor: default;">
         <div style="font-weight: 600; color: #60a5fa; font-size: 14px; display: flex; align-items: center; gap: 6px;">
           <span>💬</span> Agent Assistant
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="chat-maximize-btn" title="${this.isMaximized ? 'Ripristina dimensione' : 'Massimizza finestra'}" style="background: none; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px 6px; line-height: 1.2;">${this.isMaximized ? '🗗' : '⛶'}</button>
           <button id="chat-clear-btn" title="Clear history" style="background: none; border: none; color: #94a3b8; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px;">🗑️ Clear</button>
           <button id="chat-close-btn" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;">&times;</button>
         </div>
       </div>
 
-      <div style="padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 6px; overflow-x: auto;" class="chat-shortcuts">
-        <button data-cmd="/consult" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔍 /consult</button>
-        <button data-cmd="/compile" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ /compile</button>
-        ${
-          appStore.getState().isAdvancedMode
-            ? `
-            <button data-cmd="/audit" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🛡️ /audit</button>
-            <button data-cmd="/trace" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🕸️ /trace</button>
-            <button data-cmd="/reindex" style="background: #334155; color: #f8fafc; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔄 /reindex</button>
-          `
-            : ''
-        }
-        <button data-cmd="/wizard" style="background: #4f46e5; color: #ffffff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">🪄 /wizard</button>
+      <div id="chat-commands-toggle" style="padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+        <span style="font-size: 11px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+          <span>⚡</span> Comandi
+          <span style="font-weight: 400; color: #64748b;">· tutti gli strumenti dell'agente</span>
+        </span>
+        <span id="chat-commands-chevron" style="font-size: 10px; color: #94a3b8;">${this.commandsOpen ? '▴' : '▾'}</span>
+      </div>
+
+      <div id="chat-commands-panel" style="display: ${this.commandsOpen ? 'block' : 'none'}; background: #0b1220; border-bottom: 1px solid #334155; max-height: 55vh; overflow-y: auto; padding: 8px 10px; box-sizing: border-box;">
+        ${this.renderCommandCatalog()}
       </div>
 
       <div id="chat-messages-list" style="flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.5;">
@@ -163,6 +205,119 @@ export class ChatDrawer {
     `;
 
     this.attachEventListeners();
+  }
+
+  private applyFrameStyles(): void {
+    const c = this.container.style;
+    c.display = this.isOpen ? 'flex' : 'none';
+    c.flexDirection = 'column';
+    c.background = '#0f172a';
+    c.boxSizing = 'border-box';
+
+    if (this.isMaximized) {
+      c.position = 'fixed';
+      c.top = '0';
+      c.left = '0';
+      c.right = '0';
+      c.bottom = '0';
+      c.width = '100vw';
+      c.height = '100vh';
+      c.borderLeft = 'none';
+      c.borderRadius = '0';
+      c.boxShadow = '0 0 0 1px #1e293b, 0 0 60px rgba(0, 0, 0, 0.65)';
+      c.zIndex = '1000';
+    } else {
+      c.position = 'relative';
+      c.top = '';
+      c.left = '';
+      c.right = '';
+      c.bottom = '';
+      c.width = `${this.chatWidth}px`;
+      c.height = '100%';
+      c.borderLeft = '1px solid #1e293b';
+      c.borderRadius = '';
+      c.boxShadow = '';
+      c.zIndex = '100';
+    }
+
+    const handle = this.container.querySelector('#chat-resize-handle') as HTMLElement | null;
+    if (handle) handle.style.display = this.isMaximized ? 'none' : 'block';
+  }
+
+  private setMaximized(maximized: boolean): void {
+    this.isMaximized = maximized;
+    this.applyFrameStyles();
+    const btn = this.container.querySelector('#chat-maximize-btn') as HTMLElement | null;
+    if (btn) {
+      btn.textContent = maximized ? '🗗' : '⛶';
+      btn.title = maximized ? 'Ripristina dimensione' : 'Massimizza finestra';
+    }
+  }
+
+  private toggleMaximize(): void {
+    if (!this.isOpen) return;
+    this.setMaximized(!this.isMaximized);
+  }
+
+  private startChatResize(e: MouseEvent): void {
+    e.preventDefault();
+    this.isResizingChat = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev: MouseEvent): void => {
+      if (this.isMaximized) return;
+      const maxWidth = Math.max(520, window.innerWidth - CHAT_MIN_WIDTH);
+      const raw = window.innerWidth - ev.clientX;
+      this.chatWidth = Math.min(Math.max(raw, CHAT_MIN_WIDTH), maxWidth);
+      this.container.style.width = `${this.chatWidth}px`;
+    };
+
+    const onUp = (): void => {
+      this.isResizingChat = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      this.saveChatWidth();
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  private renderCommandCatalog(): string {
+    const escape = (s: string): string =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    return COMMAND_CATALOG.map(category => {
+      const items = category.commands
+        .map(cmd => {
+          const tooltip = cmd.description ? `${cmd.label} — ${cmd.description}` : cmd.label;
+          const usage = cmd.usage ? ` <span style="opacity: 0.5;">${escape(cmd.usage)}</span>` : '';
+          return `
+            <button class="chat-cmd-item" data-cmd="/${escape(cmd.cmd)}" title="${escape(tooltip)}" style="display: inline-flex; align-items: center; gap: 4px; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">
+              <span>${cmd.icon}</span> /${escape(cmd.cmd)}${usage}
+            </button>`;
+        })
+        .join('');
+
+      return `
+        <div style="margin-bottom: 10px;">
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; font-weight: 700; margin: 2px 2px 6px;">
+            ${category.icon} ${escape(category.label)}
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">${items}</div>
+        </div>`;
+    }).join('');
+  }
+
+  private setCommandsOpen(open: boolean): void {
+    this.commandsOpen = open;
+    const panel = this.container.querySelector('#chat-commands-panel') as HTMLElement | null;
+    const chevron = this.container.querySelector('#chat-commands-chevron');
+    if (panel) panel.style.display = open ? 'block' : 'none';
+    if (chevron) chevron.textContent = open ? '▴' : '▾';
   }
 
   private renderMessages(): string {
@@ -219,6 +374,21 @@ export class ChatDrawer {
     const clearBtn = this.container.querySelector('#chat-clear-btn');
     clearBtn?.addEventListener('click', () => this.clearHistory());
 
+    const maximizeBtn = this.container.querySelector('#chat-maximize-btn');
+    maximizeBtn?.addEventListener('click', () => this.toggleMaximize());
+
+    const headerBar = this.container.querySelector('#chat-header-bar');
+    headerBar?.addEventListener('dblclick', () => this.toggleMaximize());
+
+    const resizeHandle = this.container.querySelector('#chat-resize-handle') as HTMLElement | null;
+    resizeHandle?.addEventListener('mousedown', e => this.startChatResize(e));
+    resizeHandle?.addEventListener('mouseenter', () => {
+      if (!this.isMaximized) resizeHandle.style.background = 'rgba(96, 165, 250, 0.35)';
+    });
+    resizeHandle?.addEventListener('mouseleave', () => {
+      if (!this.isResizingChat) resizeHandle.style.background = 'transparent';
+    });
+
     const input = this.container.querySelector('#chat-input') as HTMLTextAreaElement;
     const sendBtn = this.container.querySelector('#chat-send-btn');
 
@@ -237,12 +407,18 @@ export class ChatDrawer {
       }
     });
 
-    this.container.querySelectorAll('.chat-shortcuts button').forEach(btn => {
+    const toggle = this.container.querySelector('#chat-commands-toggle');
+    toggle?.addEventListener('click', () => {
+      this.setCommandsOpen(!this.commandsOpen);
+    });
+
+    this.container.querySelectorAll('.chat-cmd-item').forEach(btn => {
       btn.addEventListener('click', () => {
         const cmd = btn.getAttribute('data-cmd');
         if (cmd) {
           input.value = `${cmd} `;
           input.focus();
+          this.setCommandsOpen(false);
         }
       });
     });

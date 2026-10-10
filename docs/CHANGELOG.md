@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Agent chat window enlarging (`src/components/chat/ChatDrawer.ts`)**: a `⛶` header button (or double-click on the title bar, or `Esc` to restore) maximizes the chat drawer into a full-screen overlay; a drag handle on the drawer's left edge lets the user resize the docked width (320px–~viewport), with the chosen width persisted in `localStorage`. Sticky sizing: opening the chat keeps the last maximized/resized state.
+- **Expanded Agent Command Menu (`src/components/chat/commandCatalog.ts`)**: a clickable "Comandi" bar in the agent top bar expands an inline panel with every agent slash-command grouped by topic (Ingestione, Curatela, Audit, Ricerca, Studio, Knowledge Engineering, Presentazioni, Utility). Clicking a command pre-fills the chat input. Replaces the fixed shortcut buttons.
+- **Human Review Command (`/verify`)** in `src/server/agentServer.ts`: records an OKF v0.2 `verified: - by: human:<id>` entry on a note, optionally promoting it to `status: stable`, and appends a dated entry to `wiki/log.md`. This is the only action that flips a node to the `human-reviewed` trust tier (🟢) in the graph and sidebar. Alias: `/human-review`. Documented in `skills/wiki-curate/SKILL.md` and `docs/AGENT.md`.
+
+### Fixed
+- **`make okf-lint` on fresh CI checkouts** (`Makefile`): the targets linted `wiki/`, which is gitignored and absent on a fresh checkout (CI failed with `Path 'wiki/' does not exist`). `okf-lint`/`okf-validate` now auto-detect the wiki: root `wiki/` if present, otherwise every populated `projects/*/wiki`, failing only when no wiki is found.
+- **OKF lint violations in the `tesi` project wiki**: added missing OKF v0.2 frontmatter to `projects/tesi/wiki/tools/comandi-uso-wiki.md` and `projects/tesi/wiki/Q&A/sintesi-previsioni-lavoro-hr-md.md`, so `make okf-lint` passes on project wikis.
+- **KE Workbench "script not found" + `spawn python3 ENOENT`** in `src/server/agentServer.ts`:
+  - Registered the previously missing `schema_infer` and `schema_lint` tools in `SCRIPT_REGISTRY` (with dedicated `buildCliArgs` cases), so KE Use Case 1 (`ke_schema_modeling`) and the Script panel can run them.
+  - Resolved Python scripts against the repository root instead of the per-project root (`projects/<id>`), fixing ENOENT/`can't open file` for any non-default project.
+  - Added `resolvePythonCommand()`/`PYTHON_CMD` fallback (`python3` → `python`) for host environments where the `python3` alias is unavailable.
+  - Auto-injected `--project <id>` when running schema tools for a non-default project, so project-local `config.toml`/wiki paths are used.
+  - `Dockerfile.ui`: installed `python3`, `pip`, and `requirements.txt` so the API/UI containers can actually spawn the python script runners (rebuild required: `docker compose up -d --build`).
+- **Nested `verified` parsing** in `src/services/markdownParser.ts`: added `MarkdownParser.extractVerifiedActors()` so OKF v0.2 `verified: - by:` object lists are read correctly; previously nested human/process actors were invisible, causing notes to be mis-tiered (e.g. a human-verified note shown as `machine-confirmed`).
+
 ## [3.4.0] - 2026-10-06
 
 ### Added

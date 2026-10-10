@@ -2,7 +2,8 @@
 #
 # Based on Node 20 (Debian Bookworm slim, glibc).
 # The project sources are mounted at runtime, so this image provides
-# the Node toolchain and the OpenCode CLI required by the API/UI.
+# the Node toolchain and the OpenCode CLI required by the API/UI, plus the
+# Python runtime needed by the KE / Scripts endpoints ("spawn python3 ...").
 FROM node:20-bookworm-slim
 
 WORKDIR /app
@@ -13,6 +14,19 @@ ENV NODE_ENV=development
 # Install OpenCode inside the Linux container.
 # This avoids depending on a Windows-host executable.
 RUN npm install -g opencode-ai
+
+# Python runtime + project Python dependencies. The API container launches
+# scripts (schema_infer, schema_lint, suggest_tags, okf_*, ...) via
+# `spawn python3`, so python must exist inside this image (node slim bases
+# do not ship it). Requires a rebuild: `docker compose build api ui`.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+# --break-system-packages: Debian Bookworm python is "externally managed" (PEP 668);
+# this image is a purpose-built dev container, so we install into the system env.
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 EXPOSE 5173
 

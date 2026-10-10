@@ -70,11 +70,35 @@ note:
 docs-sync:
 	python3 scripts/check_docs_sync.py
 
+# Effective OKF wiki directories: the template default wiki/, or (when the
+# root wiki/ is absent, e.g. a fresh CI checkout) every populated project wiki.
+OKF_WIKIS := $(if $(wildcard wiki),wiki,$(wildcard projects/*/wiki))
+
 okf-validate:
-	@python3 scripts/okf_lint.py wiki/
+	@echo "OKF validation targets: $(OKF_WIKIS)"; \
+	fail=0; \
+	for w in $(OKF_WIKIS); do \
+	  echo "linting $$w/"; \
+	  python3 scripts/okf_lint.py $$w/ || fail=1; \
+	done; \
+	if [ -z "$(OKF_WIKIS)" ]; then \
+	  echo "No wiki directory found (create wiki/ or a project under projects/)." >&2; \
+	  fail=1; \
+	fi; \
+	exit $$fail
 
 okf-lint:
-	@python3 scripts/okf_lint.py wiki/
+	@echo "OKF lint targets: $(OKF_WIKIS)"; \
+	fail=0; \
+	for w in $(OKF_WIKIS); do \
+	  echo "linting $$w/"; \
+	  python3 scripts/okf_lint.py $$w/ || fail=1; \
+	done; \
+	if [ -z "$(OKF_WIKIS)" ]; then \
+	  echo "No wiki directory found (create wiki/ or a project under projects/)." >&2; \
+	  fail=1; \
+	fi; \
+	exit $$fail
 
 okf-reindex:
 	@python3 scripts/okf_reindex.py wiki/

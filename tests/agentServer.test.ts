@@ -99,4 +99,37 @@ This is a test note linking to [[other-note]].
     const reindexReply = await apiStorage.sendChat('/reindex');
     assert.ok(reindexReply.includes('Reindex Complete'));
   });
+
+  await t.test('POST /api/chat /verify records human verification and sets trust tier', async () => {
+    await fs.writeFile(
+      path.join(wikiDir, 'human-target.md'),
+      `---
+title: Human Target
+status: draft
+tags: [test]
+---
+# Human Target
+
+Body of the target note.
+`,
+      'utf-8'
+    );
+
+    const reply = await apiStorage.sendChat('/verify human-target reviewer=studente stable');
+    assert.ok(reply.includes('Human Verification Recorded'));
+    assert.ok(reply.includes('human-reviewed'));
+
+    const notes = await apiStorage.getAllNotes();
+    const target = notes.find(n => n.id === 'human-target');
+    assert.ok(target);
+    assert.equal(target.trustTier, 'human-reviewed');
+    assert.equal(target.status, 'stable');
+
+    const onDisk = await fs.readFile(path.join(wikiDir, 'human-target.md'), 'utf-8');
+    assert.ok(onDisk.includes('by: human:studente'));
+    assert.ok(onDisk.includes('status: stable'));
+
+    const log = await fs.readFile(path.join(wikiDir, 'log.md'), 'utf-8');
+    assert.ok(log.includes('Human-verified'));
+  });
 });

@@ -70,6 +70,8 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(scriptIds.includes('odp_suggester'));
     assert.ok(scriptIds.includes('neuro_symbolic_check'));
     assert.ok(scriptIds.includes('ke_maturity'));
+    assert.ok(scriptIds.includes('schema_infer'));
+    assert.ok(scriptIds.includes('schema_lint'));
   });
 
   test('buildCliArgs builds expected command arguments for script definitions', () => {
@@ -92,6 +94,14 @@ describe('Script Control Panel Test Suite', () => {
     const ontologyDef = SCRIPT_REGISTRY['ontology_rules'];
     const ontologyArgs = buildCliArgs(ontologyDef, { wiki_dir: 'wiki', strict: true });
     assert.deepEqual(ontologyArgs, ['wiki', '--strict']);
+
+    const schemaInferDef = SCRIPT_REGISTRY['schema_infer'];
+    const schemaInferArgs = buildCliArgs(schemaInferDef, { project: 'tesi', wiki_dir: 'wiki' });
+    assert.deepEqual(schemaInferArgs, ['--project', 'tesi', '--wiki-dir', 'wiki']);
+
+    const schemaLintDef = SCRIPT_REGISTRY['schema_lint'];
+    const schemaLintArgs = buildCliArgs(schemaLintDef, { project: 'tesi', wiki_dir: 'wiki', strict: true, path: 'wiki/analisi', config: 'config.toml' });
+    assert.deepEqual(schemaLintArgs, ['--project', 'tesi', '--wiki-dir', 'wiki', '--strict', '--path', 'wiki/analisi', '--config', 'config.toml']);
   });
 
   test('POST /api/scripts/execute streams SSE response events for wiki_stats', async () => {

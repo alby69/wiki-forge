@@ -236,3 +236,27 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Agent Command Menu */
+#chat-commands-toggle:hover {
+  background: #243450;
+}
+
+#chat-commands-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat-commands-panel::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.chat-cmd-item:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+.chat-cmd-item:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}

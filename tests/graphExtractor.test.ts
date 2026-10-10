@@ -37,6 +37,59 @@ Here is an inline tag #python.
     assert.ok(tags.includes('python'));
   });
 
+  test('should not let nested frontmatter keys clobber top-level ones', () => {
+    const rawContent = `---
+type: Concept
+title: Competenze e Risorse Umane
+tags: [topic/hr, status/draft]
+generated:
+  by: process:wiki-forge-compile
+  at: "2026-10-09T00:00:00Z"
+sources:
+  - id: analisi-impatto-ia-lavoro
+    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+    title: "L'Impatto dell'Intelligenza Artificiale sul Lavoro"
+    author: process:notebooklm
+---
+Body.
+`;
+    const { frontmatter } = parser.parseFrontmatter(rawContent);
+    assert.strictEqual(frontmatter.title, 'Competenze e Risorse Umane');
+    assert.deepStrictEqual(frontmatter.tags, ['topic/hr', 'status/draft']);
+    assert.strictEqual(frontmatter.type, 'Concept');
+  });
+
+  test('should extract nested verified actors and derive human-reviewed tier', () => {
+    const rawContent = `---
+title: Verified Note
+status: stable
+verified:
+  - by: human:alby69
+    at: 2026-09-02T12:30:00Z
+  - by: process:compile
+    at: 2026-09-01T00:00:00Z
+---
+Body.
+`;
+    const actors = parser.extractVerifiedActors(rawContent);
+    assert.deepStrictEqual(actors, ['human:alby69', 'process:compile']);
+
+    const note = parser.parseNote('verified-note', 'Verified Note', rawContent, 'wiki');
+    assert.deepStrictEqual(note.verified, ['human:alby69', 'process:compile']);
+    assert.strictEqual(note.trustTier, 'human-reviewed');
+  });
+
+  test('should not misreport machine-only or absent verification as human-reviewed', () => {
+    const machineOnly = `---\ntitle: Machine\nverified:\n  - by: process:compile\n    at: 2026-09-01T00:00:00Z\n---\nBody.\n`;
+    const machineNote = parser.parseNote('machine', 'Machine', machineOnly, 'wiki');
+    assert.strictEqual(machineNote.trustTier, 'machine-confirmed');
+
+    const none = `---\ntitle: None\nverified:\n---\nBody.\n`;
+    const noneNote = parser.parseNote('none', 'None', none, 'wiki');
+    assert.deepStrictEqual(noneNote.verified, []);
+    assert.strictEqual(noneNote.trustTier, 'unverified');
+  });
+
   test('should compute backlinks across multiple notes', () => {
     const note1 = parser.parseNote('note1', 'Index', 'Contains [[Note2]] link.');
     const note2 = parser.parseNote('note2', 'Note2', 'Target note content.');

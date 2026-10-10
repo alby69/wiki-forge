@@ -6,7 +6,7 @@ description: >
   claude-code", "merge article A into article B", "split article X", "stub missing link",
   "retag note".
 triggers:
-  commands: [new-article, merge, split, stub, retag, export-semantic]
+  commands: [new-article, merge, split, stub, retag, export-semantic, verify, human-review]
 reads:
   - templates/article.md
   - wiki/**/*.md
@@ -76,3 +76,21 @@ confirm_destructive: true
 - Executes `python3 scripts/export_semantic.py --wiki-dir wiki --output-dir output`.
 - Generates `output/wiki_export.jsonld` and `output/wiki_export.ttl`.
 **Output:** Paths to exported semantic graph files.
+
+### `verify <note> [reviewer=<id>] [stable] [comment=<text>]` (alias: `human-review`)
+**Scope:** Record a **human** verification event on a note — the only action that promotes a node to the `human-reviewed` trust tier (🟢 instead of 🟡/⚪ in the graph and sidebar).
+**Action:**
+1. Resolve `<note>` by id, title, or path.
+2. Append an OKF v0.2 entry to the note's `verified` list:
+   ```yaml
+   verified:
+     - by: human:<reviewer>
+       at: <ISO-8601 timestamp>
+   ```
+3. If `stable` is passed, set `status: stable` (ontology Rule 3 only permits `stable` for human-verified notes).
+4. Append a dated entry to `wiki/log.md`.
+**Idempotent:** Re-running for the same reviewer does not duplicate the entry.
+**Handled by:** the agent server (`/verify` dispatches to `executeVerifyWorkflow`) — no LLM call, deterministic file edit.
+**Example:** `/verify stefano-gatti reviewer=studente stable`
+**Output:** Note id, reviewer, timestamp, resulting trust tier, status, and log update.
+

@@ -19,12 +19,12 @@ ocr = false
 confirm_destructive = true
 
 [agent.llm]
-provider = "opencode"
+provider = "ollama"
 opencode_command = ""
 opencode_args = [ "run", "--format", "json" ]
 api_base_url = ""
 api_key_env = "WIKIFORGE_LLM_API_KEY"
-model = "claude-sonnet-4-6"
+model = "qwen2.5-coder:3b"
 max_tokens = 4096
 timeout_seconds = 60
 

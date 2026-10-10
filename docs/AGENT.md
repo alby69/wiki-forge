@@ -147,6 +147,7 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`consult`**: Multi-source context retrieval → passage-level claim tracing → interactive synthesis with confidence levels and `[[wikilinks]]`.
 - **`ke-usecase` / `ke-wizard`**: Guided execution of the 6 Knowledge Engineer Use Cases (Schema & Taxonomy Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, Semantic RDF Export, KE Maturity Evaluation).
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.
+- **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`.
 - **`study-guide`**: Aggregates wiki knowledge into structured study guides (`output/study-guide-*.md`) with summaries, key terms, and self-assessment questions.
 
 ---

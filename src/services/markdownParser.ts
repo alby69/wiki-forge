@@ -53,6 +53,12 @@ export class MarkdownParser {
     const frontmatter: Record<string, unknown> = {};
 
     yamlBlock.split('\n').forEach(line => {
+      // Only capture top-level mapping keys. Indented lines belong to nested
+      // mappings/sequences (e.g. the `sources:` list) and would otherwise
+      // clobber their parent's value — notably a source's `title:` overwriting
+      // the note's real title. Blank lines and sequence markers are skipped too.
+      if (/^\s/.test(line) || line.trimStart().startsWith('-')) return;
+
       const colonIdx = line.indexOf(':');
       if (colonIdx !== -1) {
         const key = line.slice(0, colonIdx).trim();
@@ -74,6 +80,69 @@ export class MarkdownParser {
   }
 
   /**
+   * Extracts the verification actors from an OKF v0.2 `verified` block.
+   *
+   * The spec allows several shapes (docs/OKF_SPEC.md §4-§6):
+   *   verified:
+   *     - by: human:alby69
+   *       at: 2026-09-02T12:30:00Z
+   * or a flat scalar / inline array:
+   *   verified: [human:alby69, process:compile]
+   *
+   * The trust tier keys off the actor string (`human:*` => human-reviewed),
+   * so this returns the list of actors regardless of the concrete shape.
+   * Because the frontmatter parser only keeps top-level keys, the nested
+   * `- by:` entries would otherwise be invisible to the trust-tier logic.
+   */
+  public extractVerifiedActors(rawContent: string): string[] {
+    const fmMatch = /^---\r?\n([\s\S]*?)\r?\n---/.exec(rawContent);
+    if (!fmMatch) return [];
+
+    const lines = fmMatch[1].split('\n');
+    const actors: string[] = [];
+    let inVerified = false;
+    let verifiedIndent = 0;
+
+    for (const line of lines) {
+      const indent = (line.match(/^\s*/)?.[0].length) ?? 0;
+      const trimmed = line.trim();
+
+      if (!inVerified && indent === 0 && /^verified\s*:/.test(trimmed)) {
+        inVerified = true;
+        verifiedIndent = indent;
+        const inline = trimmed.slice(trimmed.indexOf(':') + 1).trim();
+        if (inline.startsWith('[') && inline.endsWith(']')) {
+          for (const item of inline.slice(1, -1).split(',')) {
+            const actor = item.trim().replace(/^['"]|['"]$/g, '');
+            if (actor) actors.push(actor);
+          }
+        } else if (inline) {
+          actors.push(inline.replace(/^['"]|['"]$/g, ''));
+        }
+        continue;
+      }
+
+      if (!inVerified) continue;
+
+      // A new top-level key ends the verified block.
+      if (trimmed && indent <= verifiedIndent) {
+        inVerified = false;
+        continue;
+      }
+      if (!trimmed) continue;
+
+      // Nested form: `- by: human:alby69` or `- human:alby69`, plus the
+      // continuation line `by: human:alby69` without a leading dash.
+      const item = trimmed.replace(/^-\s*/, '');
+      const byMatch = item.match(/^by\s*:\s*(.+)$/);
+      const actor = (byMatch ? byMatch[1] : item).trim().replace(/^['"]|['"]$/g, '');
+      if (actor && !/^at\s*:/i.test(actor)) actors.push(actor);
+    }
+
+    return actors;
+  }
+
+  /**
    * Processes a raw note file to produce a structured WikiNote
    */
   public parseNote(
@@ -88,11 +157,16 @@ export class MarkdownParser {
     const tags = this.extractTags(content, fTags);
     const outboundLinks = this.extractWikiLinks(content);
 
-    const verified = Array.isArray(frontmatter.verified)
-      ? (frontmatter.verified as string[])
-      : typeof frontmatter.verified === 'string'
-      ? [frontmatter.verified]
-      : [];
+    // Prefer the OKF-aware extraction (handles nested `- by:` objects); fall
+    // back to a flat inline array / scalar string when present.
+    let verified = this.extractVerifiedActors(rawContent);
+    if (verified.length === 0) {
+      if (Array.isArray(frontmatter.verified)) {
+        verified = (frontmatter.verified as unknown[]).map(v => String(v).trim()).filter(Boolean);
+      } else if (typeof frontmatter.verified === 'string' && frontmatter.verified.trim()) {
+        verified = [frontmatter.verified.trim()];
+      }
+    }
 
     const status = typeof frontmatter.status === 'string' ? frontmatter.status.toLowerCase() : 'draft';
     const staleAfter = typeof frontmatter.stale_after === 'string' ? frontmatter.stale_after : undefined;

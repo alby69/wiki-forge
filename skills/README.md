@@ -8,7 +8,7 @@ Each skill defines a specific area of capability using YAML frontmatter metadata
 | Skill Directory | Description & Scope | Primary Commands Covered |
 |---|---|---|
 | [`skills/wiki-ingest/`](./wiki-ingest/SKILL.md) | Ingestion and conversion of raw source materials into Markdown wiki pages | `compile`, `convert-only`, `ingest`, `recompile` |
-| [`skills/wiki-curate/`](./wiki-curate/SKILL.md) | Article creation, merging, splitting, stubbing, and tag management | `new-article`, `merge`, `split`, `stub`, `retag` |
+| [`skills/wiki-curate/`](./wiki-curate/SKILL.md) | Article creation, merging, splitting, stubbing, tag management, and human verification | `new-article`, `merge`, `split`, `stub`, `retag`, `verify` |
 | [`skills/wiki-audit/`](./wiki-audit/SKILL.md) | Knowledge base health checks, broken link audit, reindexing, and frontmatter linting | `audit`, `reindex`, `prune`, `lint-frontmatter` |
 | [`skills/wiki-query/`](./wiki-query/SKILL.md) | Querying, searching, claim tracing, and deep multi-source research reports | `consult`, `search`, `backlinks`, `related`, `trace`, `deep-research` |
 | [`skills/wiki-study/`](./wiki-study/SKILL.md) | NotebookLM-inspired study guides, quizzes, mind maps, audio scripts, and scratchpad notes | `study-guide`, `quiz`, `mindmap`, `audio-overview`, `note`, `promote-note` |
