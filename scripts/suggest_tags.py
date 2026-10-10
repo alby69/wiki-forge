@@ -34,6 +34,7 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 # ---------------------------------------------------------------------------
 # Configuration (mirrors conv2md.py: tomllib with safe defaults)
@@ -302,7 +303,7 @@ def main() -> None:
             print("Falling back to RAKE frequency scoring.", file=sys.stderr)
 
     if args.all:
-        folder = Path(args.wiki)
+        folder = resolve_dir(args.wiki)
         files = sorted(folder.rglob("*.md"))
         if not files:
             print(f"No Markdown notes found in {folder}")
@@ -313,7 +314,7 @@ def main() -> None:
 
     if not args.file:
         parser.error("provide a MARKDOWN file or use --all")
-    path = Path(args.file)
+    path = resolve_path(args.file)
     if not path.is_file():
         print(f"File not found: {path}", file=sys.stderr)
         sys.exit(1)

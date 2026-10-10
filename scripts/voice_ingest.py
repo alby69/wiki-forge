@@ -10,6 +10,7 @@ import os
 import argparse
 import datetime
 import json
+from okf_common import resolve_dir, resolve_path
 from pathlib import Path
 
 def ingest_voice_record(file_path: str, output_dir: str = "raw", title: str | None = None) -> dict:
@@ -106,7 +107,11 @@ def main():
         sys.exit(1)
 
     try:
-        res = ingest_voice_record(input_file, args.output, args.title)
+        res = ingest_voice_record(
+            resolve_path(input_file),
+            resolve_dir(args.output, default="raw"),
+            args.title,
+        )
         if args.json:
             print(json.dumps(res))
         else:

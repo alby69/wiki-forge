@@ -14,6 +14,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 try:
     import yaml
@@ -194,9 +195,9 @@ def main():
     args = parser.parse_args()
 
     repo_root = Path.cwd()
-    wiki_dir = repo_root / args.wiki_dir
-    cq_file = repo_root / args.cq_file
-    output_file = repo_root / args.output
+    wiki_dir = resolve_dir(args.wiki_dir)
+    cq_file = resolve_path(args.cq_file, "wiki/competency_questions.md")
+    output_file = resolve_path(args.output, "output/cq_validation_report.md")
 
     cqs = extract_competency_questions(cq_file)
     notes = load_wiki_notes(wiki_dir)

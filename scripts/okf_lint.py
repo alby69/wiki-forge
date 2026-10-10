@@ -18,6 +18,7 @@ import re
 import os
 from pathlib import Path
 from datetime import datetime
+from okf_common import resolve_dir
 
 try:
     import yaml
@@ -160,7 +161,7 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    wiki_root = Path(args.wiki_dir).resolve()
+    wiki_root = resolve_dir(args.wiki_dir)
 
     if not wiki_root.exists() or not wiki_root.is_dir():
         msg = f"Error: Path '{wiki_root}' does not exist or is not a directory."

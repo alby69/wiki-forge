@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone
 import re
+from okf_common import resolve_dir, resolve_path
 
 def generate_okf_frontmatter(title: str, source_name: str) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -74,10 +75,12 @@ def main():
             parser.print_help()
         sys.exit(1)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    target_input = resolve_path(str(target_input))
+    output_dir = resolve_dir(str(args.output_dir), default="raw")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        out_path = process_file(target_input, args.output_dir, args.source)
+        out_path = process_file(target_input, output_dir, args.source)
         if args.json:
             import json
             print(json.dumps({"status": "success", "output_path": str(out_path)}))

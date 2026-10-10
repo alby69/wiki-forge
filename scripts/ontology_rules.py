@@ -18,6 +18,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir
 
 try:
     import yaml
@@ -163,7 +164,7 @@ def main():
     parser.add_argument("--strict", action="store_true", help="Exit with non-zero code if violations exist")
 
     args = parser.parse_args()
-    wiki_path = Path(args.wiki_dir).resolve()
+    wiki_path = resolve_dir(args.wiki_dir, default="wiki")
 
     if not wiki_path.exists():
         msg = f"Wiki directory not found: {wiki_path}"

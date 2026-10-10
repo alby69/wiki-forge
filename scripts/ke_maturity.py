@@ -20,6 +20,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 try:
     import yaml
@@ -238,8 +239,8 @@ def main():
     args = parser.parse_args()
 
     repo_root = Path.cwd()
-    wiki_dir = repo_root / args.wiki_dir
-    output_file = repo_root / args.output
+    wiki_dir = resolve_dir(args.wiki_dir)
+    output_file = resolve_path(args.output, "output/ke_maturity_report.md")
 
     assessment = assess_ke_maturity(repo_root, wiki_dir)
     generate_report(assessment, output_file)

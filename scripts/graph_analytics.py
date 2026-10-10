@@ -12,6 +12,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from okf_common import resolve_dir
 import networkx as nx
 
 
@@ -99,7 +100,7 @@ def main() -> None:
     parser.add_argument("--json", action="store_true", help="Output JSON results")
 
     args = parser.parse_args()
-    wiki_path = Path(args.wiki_dir)
+    wiki_path = resolve_dir(args.wiki_dir)
 
     if not wiki_path.exists():
         if args.json:

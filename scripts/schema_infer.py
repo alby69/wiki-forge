@@ -12,6 +12,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from ke_common import Page, iter_pages, load_config, resolve_wikilink
+from okf_common import detect_project_id
 
 
 def infer_schema(
@@ -106,13 +107,14 @@ def main():
 
     args = parser.parse_args()
 
-    toml_output = infer_schema(project=args.project, wiki_dir=args.wiki_dir)
+    project = args.project or detect_project_id()
+    toml_output = infer_schema(project=project, wiki_dir=args.wiki_dir)
 
     if args.json:
         import json
         print(json.dumps({
             "tool": "schema_infer",
-            "project": args.project or "default",
+            "project": project or "default",
             "ok": True,
             "proposed_schema_toml": toml_output
         }, indent=2))

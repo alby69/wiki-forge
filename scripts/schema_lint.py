@@ -22,6 +22,7 @@ from ke_common import (
     load_schema,
     resolve_wikilink,
 )
+from okf_common import detect_project_id
 
 
 def extract_wikilinks_from_value(val: Any) -> list[str]:
@@ -245,7 +246,7 @@ def main():
     args = parser.parse_args()
 
     result = lint_schema(
-        project=args.project,
+        project=args.project or detect_project_id(),
         strict_override=args.strict,
         path_pattern=args.path,
         wiki_dir=args.wiki_dir,

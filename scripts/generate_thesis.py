@@ -12,6 +12,7 @@ import os
 import re
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 try:
     import yaml
@@ -105,8 +106,8 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    out_path = Path(args.output).resolve()
-    build_thesis(Path(args.wiki_dir).resolve(), out_path, args.min_maturity, args.title)
+    out_path = resolve_path(args.output, "output/thesis_compiled.md")
+    build_thesis(resolve_dir(args.wiki_dir), out_path, args.min_maturity, args.title)
     if args.json:
         import json
         print(json.dumps({

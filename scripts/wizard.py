@@ -62,7 +62,14 @@ def run_conv2md(sources_dir: str, raw_dir: str) -> bool:
     """Execute conv2md.py transparently using Python subprocess."""
     import subprocess
 
-    cmd = [sys.executable, "conv2md.py", "--input", sources_dir, "--output", raw_dir]
+    cmd = [
+        sys.executable,
+        str(Path(__file__).resolve().parent / "conv2md.py"),
+        "--input",
+        sources_dir,
+        "--output",
+        raw_dir,
+    ]
     try:
         console.print(f"[bold cyan][WIZARD ACTION][/bold cyan] Running 'conv2md.py' ({sources_dir} -> {raw_dir})...")
         res = subprocess.run(cmd, capture_output=True, text=True, check=True)

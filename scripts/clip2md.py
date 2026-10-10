@@ -14,6 +14,7 @@ import sys
 import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
+from okf_common import resolve_dir
 
 
 def load_config() -> dict:
@@ -134,7 +135,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        saved_path = clip_url(target_url, Path(args.output))
+        saved_path = clip_url(target_url, resolve_dir(args.output, default="sources/web-clips"))
         if args.json:
             import json
             print(json.dumps({"status": "success", "url": target_url, "output_path": str(saved_path)}))

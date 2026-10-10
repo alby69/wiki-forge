@@ -43,6 +43,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 # --- Supported formats ------------------------------------------------------
 
@@ -369,7 +370,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    input_dir = Path(args.input)
+    input_dir = resolve_dir(args.input, default=str(paths.get("sources", "backup")))
     if not input_dir.is_dir():
         msg = f"Invalid input folder: {input_dir}"
         if args.json:
@@ -379,9 +380,10 @@ def main() -> None:
             print(msg, file=sys.stderr)
         sys.exit(1)
 
+    output_dir = resolve_dir(args.output, default=str(paths.get("raw", "raw")))
     result = process_folder(
         input_dir,
-        Path(args.output),
+        output_dir,
         args.ocr,
         use_cot=args.cot,
         use_vision=args.vision,
@@ -394,7 +396,7 @@ def main() -> None:
             "ok": result[0],
             "skipped": result[1],
             "failed": result[2],
-            "output_dir": str(args.output),
+            "output_dir": str(output_dir),
         }))
 
 

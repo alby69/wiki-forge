@@ -15,6 +15,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 try:
     import yaml
@@ -116,8 +117,8 @@ def main():
     args = parser.parse_args()
 
     repo_root = Path.cwd()
-    wiki_dir = repo_root / args.wiki_dir
-    catalog_file = repo_root / args.catalog
+    wiki_dir = resolve_dir(args.wiki_dir)
+    catalog_file = resolve_path(args.catalog, "config/odp_catalog.json")
 
     patterns = load_odp_catalog(catalog_file)
     results = []

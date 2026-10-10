@@ -18,6 +18,7 @@ import os
 import re
 import argparse
 from pathlib import Path
+from okf_common import resolve_path
 
 try:
     import yaml
@@ -116,7 +117,7 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    target_path = Path(args.path).resolve()
+    target_path = resolve_path(args.path, default="wiki")
 
     if not target_path.exists():
         msg = f"Error: Path '{target_path}' does not exist."

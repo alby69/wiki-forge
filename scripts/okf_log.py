@@ -12,6 +12,7 @@ import re
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
+from okf_common import resolve_dir
 
 def append_to_log(log_path: Path, message: str, entry_type: str = "Update", date_str: str = None):
     if not date_str:
@@ -51,7 +52,7 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    wiki_root = Path(args.wiki_dir).resolve()
+    wiki_root = resolve_dir(args.wiki_dir)
 
     target_msg = args.opt_message or args.message
     if not target_msg:

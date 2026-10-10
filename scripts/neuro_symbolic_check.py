@@ -15,6 +15,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
+from okf_common import resolve_dir, resolve_path
 
 try:
     import yaml
@@ -177,8 +178,8 @@ def main():
     args = parser.parse_args()
 
     repo_root = Path.cwd()
-    wiki_dir = repo_root / args.wiki_dir
-    output_file = repo_root / args.output
+    wiki_dir = resolve_dir(args.wiki_dir)
+    output_file = resolve_path(args.output, "output/neuro_symbolic_report.md")
 
     analysis = check_neuro_symbolic_consistency(repo_root, wiki_dir)
     generate_report(analysis, output_file)

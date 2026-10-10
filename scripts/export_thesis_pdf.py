@@ -9,6 +9,7 @@ import os
 import subprocess
 import argparse
 from pathlib import Path
+from okf_common import resolve_path
 
 def export_pdf(input_md: Path, output_pdf: Path, pdf_engine: str = "xelatex", toc: bool = True):
     if not input_md.exists():
@@ -52,9 +53,9 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
     args = parser.parse_args()
-    out_pdf = Path(args.output).resolve()
+    out_pdf = resolve_path(args.output, "output/thesis_final.pdf")
     try:
-        export_pdf(Path(args.input).resolve(), out_pdf, args.engine, not args.no_toc)
+        export_pdf(resolve_path(args.input, "output/thesis_compiled.md"), out_pdf, args.engine, not args.no_toc)
         if args.json:
             import json
             print(json.dumps({

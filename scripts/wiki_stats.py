@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from pathlib import Path
+from okf_common import resolve_dir
 
 
 def load_config() -> dict:
@@ -152,8 +153,8 @@ def main() -> None:
     args = parser.parse_args()
     cfg = load_config()
     paths = cfg.get("paths", {})
-    wiki_dir = Path(args.wiki_dir or paths.get("wiki", "wiki"))
-    raw_dir = Path(args.raw_dir or paths.get("raw", "raw"))
+    wiki_dir = resolve_dir(args.wiki_dir, default=str(paths.get("wiki", "wiki")))
+    raw_dir = resolve_dir(args.raw_dir, default=str(paths.get("raw", "raw")))
 
     stats = analyze_wiki(wiki_dir, raw_dir)
 
