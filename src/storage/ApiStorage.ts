@@ -16,6 +16,12 @@ export interface ProjectInfo {
   path: string;
 }
 
+export interface ScratchpadEntry {
+  id: string;
+  timestamp: string;
+  text: string;
+}
+
 /** Resolve the API origin in the browser.
  *
  *  Components must call this instead of using bare `/api/...` paths: in the
@@ -161,6 +167,40 @@ export class ApiStorage implements IStorage {
       // Backend unavailable; fallback to static FileStorage
     }
     return this.fallback.getAllNotes();
+  }
+
+  public async getScratchpad(): Promise<ScratchpadEntry[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/scratchpad`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; entries?: ScratchpadEntry[] };
+        if (json.success && Array.isArray(json.entries)) {
+          return json.entries;
+        }
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return [];
+  }
+
+  public async deleteScratchpad(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/scratchpad/delete`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean };
+        return json.success === true;
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return false;
   }
 
   public async getNote(id: string): Promise<WikiNote | null> {

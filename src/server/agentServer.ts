@@ -550,6 +550,16 @@ export interface AttachNoteRequest {
   mode?: 'append' | 'create' | 'overwrite';
 }
 
+export interface ScratchpadEntry {
+  id: string;
+  timestamp: string;
+  text: string;
+}
+
+export interface DeleteScratchpadRequest {
+  id: string;
+}
+
 export interface CreateFolderRequest {
   folderPath: string;
 }
@@ -1550,6 +1560,31 @@ export class AgentServer {
       return true;
     }
 
+    if (pathname === '/api/wiki/scratchpad' && req.method === 'GET') {
+      try {
+        const entries = await this.readScratchpadEntries(projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, entries }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/scratchpad/delete' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<DeleteScratchpadRequest>(req);
+        const ok = await this.deleteScratchpadEntry(body.id, projectId);
+        res.writeHead(ok ? 200 : 404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: ok }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     if (pathname === '/api/wiki/save' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<SaveNoteRequest>(req);
@@ -1895,6 +1930,68 @@ export class AgentServer {
 
     await walk(wikiDir);
     return this.parser.computeBacklinks(notes);
+  }
+
+  /** Parse the quick-notes scratchpad (`notes/quick-notes.md`) into individual
+   *  entries delimited by `## [timestamp]` headings. */
+  public async readScratchpadEntries(projectId: string = 'default'): Promise<ScratchpadEntry[]> {
+    const notesFilePath = path.join(await this.resolveProjectRoot(projectId), 'notes', 'quick-notes.md');
+    let raw = '';
+    try {
+      raw = await fs.readFile(notesFilePath, 'utf-8');
+    } catch (_e) {
+      return [];
+    }
+
+    const entries: ScratchpadEntry[] = [];
+    const normalized = raw.replace(/\r\n/g, '\n');
+    const tokens = normalized.split(/^## \[([^\]]+)\]/m);
+    for (let i = 1; i < tokens.length; i += 2) {
+      const timestamp = tokens[i].trim();
+      const body = (tokens[i + 1] ?? '').trim();
+      if (!body) continue;
+      const id = timestamp.replace(/\D/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      entries.push({
+        id: id || `note-${entries.length + 1}`,
+        timestamp,
+        text: body,
+      });
+    }
+    return entries;
+  }
+
+  /** Remove a single scratchpad entry (matched by id) from `notes/quick-notes.md`. */
+  public async deleteScratchpadEntry(id: string, projectId: string = 'default'): Promise<boolean> {
+    const notesFilePath = path.join(await this.resolveProjectRoot(projectId), 'notes', 'quick-notes.md');
+    let raw = '';
+    try {
+      raw = await fs.readFile(notesFilePath, 'utf-8');
+    } catch (_e) {
+      return false;
+    }
+
+    const normalized = raw.replace(/\r\n/g, '\n');
+    const tokens = normalized.split(/^## \[([^\]]+)\]/m);
+    const entryIdOf = (ts: string): string =>
+      ts.trim().replace(/\D/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+    let deleted = false;
+    const out: string[] = [tokens[0].trim()];
+    for (let i = 1; i < tokens.length; i += 2) {
+      const ts = tokens[i].trim();
+      const body = (tokens[i + 1] ?? '').trim();
+      if (!ts || !body) continue;
+      if (entryIdOf(ts) === id) {
+        deleted = true;
+        continue;
+      }
+      out.push(`## [${ts}]\n${body}`);
+    }
+
+    if (deleted) {
+      await fs.writeFile(notesFilePath, `${out.join('\n\n')}\n`, 'utf-8');
+    }
+    return deleted;
   }
 
   public async getAllFolders(projectId: string = 'default'): Promise<string[]> {
@@ -2294,7 +2391,7 @@ export class AgentServer {
       }
 
       case 'note': {
-        return await this.executeNoteWorkflow(args);
+        return await this.executeNoteWorkflow(args, projectId);
       }
 
       case 'promote-note': {
@@ -2526,8 +2623,8 @@ ${sections || 'No notes found for topic.'}
     return `### ðŸ“š Study Guide Generated\n\n- **Saved to**: \`${relPath}\`\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Study guide is ready in output directory.*`;
   }
 
-  public async executeNoteWorkflow(noteText: string): Promise<string> {
-    const notesDir = path.resolve(this.rootDir, 'notes');
+  public async executeNoteWorkflow(noteText: string, projectId: string = 'default'): Promise<string> {
+    const notesDir = path.join(await this.resolveProjectRoot(projectId), 'notes');
     await fs.mkdir(notesDir, { recursive: true });
 
     const text = (noteText || '').trim();
@@ -2599,7 +2696,7 @@ ${sections || 'No notes found for topic.'}
       return `### ðŸš€ Promote Note\n\nUsage: \`/promote-note <note-id> [wiki-folder]\``;
     }
 
-    const notesDir = path.resolve(this.rootDir, 'notes');
+    const notesDir = path.join(await this.resolveProjectRoot(projectId), 'notes');
     const notesFilePath = path.join(notesDir, 'quick-notes.md');
 
     let noteContent = '';

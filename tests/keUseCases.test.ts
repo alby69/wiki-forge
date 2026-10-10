@@ -9,9 +9,10 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
   let server: http.Server;
   let agentServer: AgentServer;
   let baseUrl: string;
+  let tmpDir: string;
 
   before(async () => {
-    const tmpDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-ke-test-'));
+    tmpDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-ke-test-'));
     await fs.mkdir(path.join(tmpDir, 'wiki'), { recursive: true });
     await fs.mkdir(path.join(tmpDir, 'raw'), { recursive: true });
     await fs.mkdir(path.join(tmpDir, 'output'), { recursive: true });
@@ -37,6 +38,7 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
 
   after(async () => {
     await new Promise<void>(resolve => server.close(() => resolve()));
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it('GET /api/ke/use-cases returns all 6 registered KE Use Cases', async () => {

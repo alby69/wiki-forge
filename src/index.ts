@@ -74,6 +74,7 @@ export class WikiForgeApp {
     this.notes = this.parser.computeBacklinks(notes);
     this.selectedNote = this.notes[0] ?? null;
     this.refreshAll();
+    void this.sidebar.loadScratchpad();
   }
 
   private buildSampleVault(): WikiNote[] {
@@ -223,6 +224,17 @@ Backlink to [[01-index]].
         },
         getFolders: async () => {
           return this.storage.getAllFolders();
+        },
+        getScratchpad: async () => {
+          return this.storage.getScratchpad();
+        },
+        onPromoteScratchpad: (noteId) => {
+          void this.chatDrawer.handleSendMessage(`/promote-note ${noteId}`);
+          void this.chatDrawer.open();
+        },
+        deleteScratchpad: async (noteId) => {
+          const ok = await this.storage.deleteScratchpad(noteId);
+          return ok;
         },
       }
     );

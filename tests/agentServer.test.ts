@@ -132,4 +132,44 @@ Body of the target note.
     const log = await fs.readFile(path.join(wikiDir, 'log.md'), 'utf-8');
     assert.ok(log.includes('Human-verified'));
   });
+
+  await t.test('GET /api/wiki/scratchpad parses quick notes from notes/quick-notes.md', async () => {
+    const notesDir = path.join(tmpDir, 'notes');
+    await fs.mkdir(notesDir, { recursive: true });
+    await fs.writeFile(
+      path.join(notesDir, 'quick-notes.md'),
+      `# Quick Notes Scratchpad\n\nNotes recorded here remain unindexed until promoted with \`/promote-note\`.\n\n## [2026-10-10 14:58:13]\nnota di prova\n\n## [2026-10-11 09:30:00]\nseconda nota su due righe\ncontinua\n`,
+      'utf-8'
+    );
+
+    const entries = await apiStorage.getScratchpad();
+    assert.equal(entries.length, 2);
+    assert.equal(entries[0].id, '2026-10-10-14-58-13');
+    assert.equal(entries[0].timestamp, '2026-10-10 14:58:13');
+    assert.equal(entries[0].text, 'nota di prova');
+    assert.equal(entries[1].id, '2026-10-11-09-30-00');
+    assert.ok(entries[1].text.includes('continua'));
+  });
+
+  await t.test('POST /api/wiki/scratchpad/delete removes a single entry', async () => {
+    const ok = await apiStorage.deleteScratchpad('2026-10-10-14-58-13');
+    assert.equal(ok, true);
+
+    const entries = await apiStorage.getScratchpad();
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].id, '2026-10-11-09-30-00');
+
+    const fileOnDisk = await fs.readFile(path.join(tmpDir, 'notes', 'quick-notes.md'), 'utf-8');
+    assert.ok(!fileOnDisk.includes('14:58:13'));
+    assert.ok(fileOnDisk.includes('09:30:00'));
+
+    const notFound = await apiStorage.deleteScratchpad('2026-10-10-14-58-13');
+    assert.equal(notFound, false);
+  });
+
+  await t.test('GET /api/wiki/scratchpad returns empty when scratchpad missing', async () => {
+    await fs.rm(path.join(tmpDir, 'notes', 'quick-notes.md'), { force: true });
+    const entries = await apiStorage.getScratchpad();
+    assert.deepEqual(entries, []);
+  });
 });
