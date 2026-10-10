@@ -338,7 +338,139 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 
 ---
 
-## 6. Guida alla Risoluzione Problemi (Troubleshooting)
+## 6. 🎓 Tutorial per la Tesi Magistrale (esempio applicato: `projects/tesi`)
+
+Questa sezione mostra come usare Wiki-Forge dall'inizio alla fine per una **Tesi Magistrale**, applicandolo concretamente alla knowledge base di esempio `projects/tesi/wiki`. Le domande proposte sono progettate per essere incollate direttamente nella chat dell'agente e per essere abbinate ai comandi specifici di Wiki-Forge.
+
+### 6.1 Analisi Approfondita del Repository e della Wiki
+
+#### Filosofia e Architettura del Progetto
+
+Wiki-Forge non è un semplice archivio di documenti, ma un template "agent-agnostic" per costruire una base di conoscenza dinamica. Si basa sul pattern **"LLM Wiki"** (ispirato ad Andrej Karpathy) e sul formato **Open Knowledge Format (OKF v0.2)**.
+
+A differenza del classico RAG (che risponde "al volo" pescando da documenti grezzi), qui l'LLM agisce come un **Knowledge Engineer attivo**: compila, valuta, collega e mantiene in modo incrementale una wiki persistente in Markdown, che può poi essere trasformata in capitoli di tesi pronti per la stampa (PDF via Pandoc).
+
+#### Mappatura della directory `projects/tesi/wiki`
+
+La cartella della tesi è già ben strutturata in aree semantiche — segno che l'agente ha già elaborato una base di conoscenza solida:
+
+- `temi/`: I concetti fondanti. Include file come `competenze-e-hr.md`, `sostituzione-o-trasformazione.md`, `capacita-emergenti-llm.md`, `governance-controllo-responsabilita.md` e `concezioni-dell-ia.md`.
+- `analisi/`: Approfondimenti contestuali e dati. Include `evidenza-mercato-del-lavoro.md`, `geopolitica-ia-poli-us-eu-cn.md` e `linee-guida-tesi-hr.md`.
+- `Q&A/`: Sintesi argomentative pronte all'uso, come `sintesi-previsioni-lavoro-hr.md`, che affronta già il nucleo della tesi (il problema del "junior ladder", la biforcazione dei ruoli HR).
+- `autori/`: Schede sui pensatori chiave citati (es. Andrew Ng, Geoffrey Hinton, David Graeber, Stefano Gatti, Andrej Karpathy).
+- `strumenti/` e `tools/`: Definizioni dei comandi dell'agente, workflow di verifica (`/verify`) e script di manutenzione della conoscenza.
+
+#### Tematiche Chiave già emerse nella Wiki
+
+- **Ricomposizione dei task, non sostituzione di massa**: L'AI automatizza compiti specifici, non intere professioni (principio Human-in-the-Loop).
+- **Biforcazione della funzione HR**: L'HR si dividerà tra "architetti di flussi agentici" (Prompt & Process Architect) e "garanti della sostenibilità/dignità" del lavoro.
+- **Il paradosso del "Junior Ladder"**: I neolaureati sono i "canarini nella miniera". L'automazione dei task entry-level rischia di distruggere le fondamenta su cui si costruisce l'esperienza senior.
+- **Sovranità dei dati**: La tensione tra l'adozione di modelli open-weights interni ("own your AI") e i rischi esistenziali o di compliance (UE vs USA/Cina).
+
+### 6.2 Elenco di Domande da Porre all'Agente
+
+Copia e incolla queste prompt nella chat dell'agente. Ogni blocco abbina le domande ai comandi più adatti.
+
+#### A. Esplorazione Concettuale e Collegamenti (`/consult` + `/backlinks`)
+
+Queste domande aiutano a far emergere connessioni non ovvie tra i file già presenti nella wiki.
+
+1. "Analizza le relazioni tra il concetto di 'lavori di merda' (bullshit jobs) di David Graeber e la previsione secondo cui l'AI automatizzerà principalmente la 'routine igienica'. Quali nuove forme di 'lavoro di cura' o 'sostanza espressiva' potrebbero emergere nel settore HR come risposta?"
+2. "Mappa le contraddizioni presenti nella wiki tra la visione di Geoffrey Hinton sui rischi degli open-weights e l'argomento di 'sovranità dei dati'. Come può un dipartimento HR bilanciare l'uso di strumenti AI potenti con la compliance e la sicurezza dei dati dei dipendenti?"
+3. "Quali sono i collegamenti diretti (backlinks) tra il file `competenze-e-hr.md` e `geopolitica-ia-poli-us-eu-cn.md`? Esiste un impatto geopolitico specifico sulle competenze che le aziende europee richiedono rispetto a quelle USA o cinesi?"
+
+#### B. Approfondimento Critico e Stress-Test (`/adversarial-review` + `/deep-research`)
+
+Usa queste domande per sfidare le ipotesi della tesi e trovare punti deboli da rafforzare.
+
+4. "Esegui una `/adversarial-review` della seguente affermazione presente nella wiki: 'L'IA non sostituisce figure professionali in blocco, ma ricompone i task'. Fornisci i 3 controargomenti più forti basati su dati recenti o teorie economiche contrarie, e poi confutali usando le fonti già presenti nel progetto."
+5. "Approfondisci con `/deep-research` il concetto di 'Junior Ladder'. Se i task entry-level (sintesi, primo filtraggio CV, coding base) sono automatizzati, quali meccanismi concreti di 'reskilling preventivo' o 'apprendimento aumentato' possono essere implementati dalle aziende per formare la prossima generazione di senior HR o manager?"
+6. "La wiki menziona un aumento del 13% delle performance con l'AI (citando Lazazzara). Quali sono le condizioni al contorno (contesto, tipo di task, livello di formazione) necessarie affinché questo dato si realizzi? Quando l'AI ha invece un effetto negativo o nullo sulla performance?"
+
+#### C. Tracciabilità e Validazione delle Fonti (`/trace` + `/verify`)
+
+Fondamentale per una tesi di laurea: assicurarsi che ogni affermazione sia radicata nelle fonti originali (`raw/`).
+
+7. "Usa `/trace` sull'affermazione: 'Solo il 2,5% dei compiti lavorativi reali è completato con successo in autonomia dai sistemi più avanzati (Remote Labor Index)'. Mostrami il passaggio esatto nel documento sorgente `raw/` e il contesto in cui è stato affermato."
+8. "Quali fonti nel database `raw/` supportano l'idea dei '5 nuovi ruoli HR' (architetti del cambiamento, manager aumentati, ecc.)? C'è una fonte primaria o è una sintesi deduttiva dell'agente? Se è deduttiva, `/promote-note` questa sintesi in un nuovo articolo verificabile."
+
+#### D. Generazione di Scenari e Output Pratici (`/mindmap` + `/thesis-chapter`)
+
+Per trasformare la conoscenza in materiale strutturato per la tesi.
+
+9. "Genera una `/mindmap` testuale che mostri l'evoluzione del 'Ciclo di vita del collaboratore' (recruiting, onboarding, performance, retention) prima e dopo l'integrazione di agenti AI autonomi, evidenziando per ogni fase il ruolo umano residuo (HITL)."
+10. "Scrivi una bozza di sottocapitolo (usando `/thesis-chapter`) intitolato 'La biforcazione della funzione HR: tra Prompt Engineering e Garanzia Etica'. Integra i concetti di `competenze-e-hr.md` e `governance-controllo-responsabilita.md`, mantenendo un tono accademico e citando le fonti nel formato OKF."
+11. "Crea un `/study-guide` o un `/quiz` di 10 domande a risposta multipla basate sui file nella cartella `temi/`, focalizzandomi sulle differenze tra 'automazione di task' e 'sostituzione di professioni', utile per preparare la discussione di tesi."
+
+### 6.3 Come Lanciare i Comandi: Prompt Combinato vs Sequenziale
+
+I comandi con la slash (`/`) sono istruzioni modulari. Non devi digitarli uno dopo l'altro in modo meccanico (es. `/consult`, invio, poi `/backlinks`, invio) — anche se puoi farlo. Il modo più efficace è **combinare l'intento in un'unica prompt ben strutturata**.
+
+#### Metodo 1: il Prompt Combinato (consigliato per efficienza)
+
+Chiedi all'agente di consultare la knowledge base e di includere nella stessa risposta collegamenti e fonti:
+
+```
+/consult e /backlinks
+Approfondisci la tensione tra la visione di David Graeber sui "bullshit jobs" e l'automazione della "routine igienica" da parte dell'IA.
+Quali nuove forme di "lavoro di cura" o "sostanza espressiva" potrebbero emergere specificamente nel settore HR?
+Elenca i backlink e i file della wiki (es. dalla cartella temi/ o autori/) che supportano o contraddicono questa tesi.
+Usa il comando /trace per indicarmi esattamente in quale file della cartella raw/ si trova il riferimento originale a Graeber.
+```
+
+L'agente eseguirà una ricerca semantica nella wiki, sintetizzerà una risposta argomentata, fornirà un elenco puntato dei file `.md` collegati al concetto e citerà la riga o il paragrafo esatto del documento sorgente grezzo.
+
+#### Metodo 2: l'Approccio Sequenziale (consigliato per l'esplorazione profonda)
+
+Usa questo metodo se la prima risposta è molto ricca e vuoi "navigare" nella wiki come un ipertesto.
+
+- **Passo 1 — Consultazione iniziale**:
+  ```
+  /consult
+  Analizza il concetto di "Junior Ladder" nella wiki. Se i task entry-level (come il primo filtraggio CV o la sintesi di base) sono automatizzati, quali meccanismi concreti di "reskilling preventivo" possono essere implementati dalle aziende per formare la prossima generazione di senior HR?
+  ```
+  (L'agente risponderà con una sintesi basata sui file `competenze-e-hr.md` e `sintesi-previsioni-lavoro-hr.md`.)
+
+- **Passo 2 — Scavo su un concetto emerso**:
+  Supponiamo che la risposta menzioni il concetto di "Manager Aumentati" o citi un autore specifico. A quel punto lancia:
+  ```
+  /backlinks e /related
+  Mostrami tutti i collegamenti entranti e uscenti rispetto al concetto di "Manager Aumentati" nella wiki. Quali altri temi (es. governance, etica) sono collegati a questo ruolo?
+  ```
+
+#### Metodo 3: Trasformare la risposta in nuova conoscenza (il vero potere di Wiki-Forge)
+
+Se l'agente dà una risposta particolarmente brillante, non limitarti a leggerla: chiedigli di salvarla nella wiki.
+
+```
+/adversarial-review
+Metti alla prova questa affermazione presente nella wiki: "L'IA non sostituisce figure professionali in blocco, ma ricompone i task".
+Fornisci i 3 controargomenti più forti basati su dati recenti, e poi confutali usando le fonti già presenti nel progetto.
+```
+
+Azione successiva: se la sintesi è valida, usa `/promote-note` per trasformare questa analisi in un nuovo file markdown nella cartella `temi/` dal titolo `limiti-teoria-ricomposizione-task.md`, assicurandoti di includere il frontmatter OKF v0.2 corretto e i tag appropriati.
+
+### 6.4 Consigli per Interagire con l'Agente
+
+- **Sfrutta il contesto locale**: L'agente conosce già la struttura OKF. Inizia le tue prompt con "Basandoti sui file `competenze-e-hr.md` e `sostituzione-o-trasformazione.md`..." per ancorare la risposta al materiale esistente.
+- **Chiedi esplicitamente le fonti**: Aggiungi sempre "Cita i file sorgente nella cartella `raw/` o i link specifici alle sezioni" per evitare allucinazioni e costruire una bibliografia solida.
+- **Itera con la wiki**: Se l'agente fornisce una risposta brillante, chiedigli: "Promuovi questa risposta a una nuova nota nella cartella `temi/` con titolo `Nuove-dinamiche-junior-ladder.md`, applicando il frontmatter OKF v0.2". Questo è il vero potere di Wiki-Forge: la conoscenza si auto-costruisce.
+- **Usa `/verify`**: Per le affermazioni critiche (es. dati sul mercato del lavoro), chiedi all'agente di segnare la voce come "in attesa di verifica umana" (`/verify`) così puoi controllarla tu stesso prima della compilazione finale del PDF.
+
+#### 💡 Suggerimento Pro: forzare un aggiornamento incrociato dei file
+
+Quando noti che l'agente ha fatto un'ottima connessione tra due file (es. tra `geopolitica-ia-poli-us-eu-cn.md` e `competenze-e-hr.md`), puoi **forzare l'aggiornamento della wiki** con una richiesta diretta (non è un comando dedicato da catalogo):
+
+```
+Ho notato una forte connessione tra il tema della sovranità dei dati (UE vs USA) e le nuove competenze richieste agli specialisti HR.
+Aggiorna il file competenze-e-hr.md per includere un paragrafo su questo aspetto e aggiungi il collegamento incrociato nella sezione ## Related di entrambi i file.
+```
+
+In questo modo non stai solo facendo domande all'agente, ma lo stai usando attivamente per scrivere e strutturare la tesi in tempo reale. Dopo l'aggiornamento manuale dei link incrociati, esegui `/audit` (per rilevare eventuali link rotti) e `/reindex` (per rigenerare gli indici).
+
+---
+
+## 7. Guida alla Risoluzione Problemi (Troubleshooting)
 
 ### "L'agente non trova i file grezzi in raw/"
 - Verifica che `config.toml` contenga `raw = "raw"`.
