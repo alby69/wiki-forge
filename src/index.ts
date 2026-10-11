@@ -161,6 +161,7 @@ Backlink to [[01-index]].
       this.layout.headerContainer,
       mode => {
         appStore.setViewMode(mode);
+        this.layout.setViewMode(mode);
       },
       () => {
         this.chatDrawer.toggle();
