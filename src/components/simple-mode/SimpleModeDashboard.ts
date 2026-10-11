@@ -1,5 +1,6 @@
 import { ApiStorage } from '../../storage/ApiStorage';
 import { DropZoneIngest } from './DropZoneIngest';
+import { MarkdownImportModal } from './MarkdownImportModal';
 
 export interface SimpleModeDashboardOptions {
   storage: ApiStorage;
@@ -13,6 +14,7 @@ export class SimpleModeDashboard {
   private onOpenChat: () => void;
   private onVaultUpdated: () => void;
   private dropZoneModal?: HTMLElement;
+  private markdownImport?: MarkdownImportModal;
   private isCompiling: boolean = false;
   private compileProgress: number = 0;
   private compileStatusMsg: string = '';
@@ -54,6 +56,17 @@ export class SimpleModeDashboard {
         <span style="${col}">
           <span>1. Carica</span>
           <span style="${sub}">Documenti</span>
+        </span>
+      </button>
+
+      <button id="simple-import-md-btn" title="Importa un file Markdown direttamente nella wiki" style="
+        background: #805ad5; color: #ffffff;
+        ${pill}
+      " onmouseover="this.style.background='#6b46c1'" onmouseout="this.style.background='#805ad5'">
+        <span style="font-size: 15px;">📝</span>
+        <span style="${col}">
+          <span>Importa</span>
+          <span style="${sub}">.md nella wiki</span>
         </span>
       </button>
 
@@ -104,11 +117,16 @@ export class SimpleModeDashboard {
 
   private attachEventListeners(): void {
     const uploadBtn = this.container.querySelector('#simple-upload-btn');
+    const importMdBtn = this.container.querySelector('#simple-import-md-btn');
     const compileBtn = this.container.querySelector('#simple-compile-btn');
     const chatBtn = this.container.querySelector('#simple-chat-btn');
 
     uploadBtn?.addEventListener('click', () => {
       this.openUploadModal();
+    });
+
+    importMdBtn?.addEventListener('click', () => {
+      this.openMarkdownImport();
     });
 
     compileBtn?.addEventListener('click', () => {
@@ -118,6 +136,16 @@ export class SimpleModeDashboard {
     chatBtn?.addEventListener('click', () => {
       this.onOpenChat();
     });
+  }
+
+  private openMarkdownImport(): void {
+    if (!this.markdownImport) {
+      this.markdownImport = new MarkdownImportModal({
+        storage: this.storage,
+        onSuccess: () => this.onVaultUpdated(),
+      });
+    }
+    void this.markdownImport.open();
   }
 
   private openUploadModal(): void {

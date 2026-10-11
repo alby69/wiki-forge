@@ -1,5 +1,5 @@
 import { WikiNote } from '../core/types/wiki';
-import { IStorage } from '../core/interfaces/IStorage';
+import { IStorage, IngestResult } from '../core/interfaces/IStorage';
 import { MarkdownParser } from '../services/markdownParser';
 
 /**
@@ -96,5 +96,9 @@ export class FileStorage implements IStorage {
 
   public async uploadFile(_folderPath: string, _fileName: string, _content: string | ArrayBuffer): Promise<boolean> {
     return true;
+  }
+
+  public async ingestMarkdownFile(_fileName: string, _content: string, _targetFolder: string): Promise<IngestResult> {
+    return { success: false, error: 'Import requires the backend API (offline viewer is read-only).' };
   }
 }

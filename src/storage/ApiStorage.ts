@@ -1,5 +1,5 @@
 import { WikiNote } from '../core/types/wiki';
-import { IStorage } from '../core/interfaces/IStorage';
+import { IStorage, IngestResult } from '../core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
 
 export interface AttachOptions {
@@ -373,6 +373,38 @@ export class ApiStorage implements IStorage {
       // Fallback
     }
     return this.fallback.uploadFile(folderPath, fileName, content);
+  }
+
+  /**
+   * One-shot import: stages a Markdown file in `raw/`, then compiles it into the
+   * chosen wiki folder. Returns the created note and whether the LLM compile
+   * ran (false means the raw markdown was copied verbatim).
+   */
+  public async ingestMarkdownFile(
+    fileName: string,
+    content: string,
+    targetFolder: string
+  ): Promise<IngestResult> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/ingest`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ fileName, content, targetFolder }),
+      });
+      const json = (await res.json().catch(() => ({}))) as Partial<IngestResult> & { error?: string };
+      if (res.ok && json.success) {
+        return {
+          success: true,
+          note: json.note as WikiNote | undefined,
+          compiled: json.compiled,
+          targetFolder: json.targetFolder,
+          message: json.message,
+        };
+      }
+      return { success: false, error: json.error || `HTTP ${res.status}` };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
   }
 
   public async searchNotes(query: string): Promise<WikiNote[]> {

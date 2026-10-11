@@ -596,6 +596,14 @@ export interface UploadRequest {
   isBase64?: boolean;
 }
 
+export interface IngestRequest {
+  fileName: string;
+  content: string;
+  /** Wiki sub-folder where the compiled note is placed (e.g. "fonti"). */
+  targetFolder?: string;
+  isBase64?: boolean;
+}
+
 export interface WizardScenario {
   id: string;
   name: string;
@@ -1736,6 +1744,20 @@ export class AgentServer {
       return true;
     }
 
+    if (pathname === '/api/wiki/ingest' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<IngestRequest>(req);
+        const result = await this.ingestMarkdownHandler(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     if (pathname === '/api/wiki/save' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<SaveNoteRequest>(req);
@@ -2474,14 +2496,103 @@ export class AgentServer {
     }
   }
 
-  private async executeCompileWorkflow(projectId: string = 'default'): Promise<string> {
+  /**
+   * One-shot "import a markdown file" workflow used by the simple UI.
+   *
+   * This intentionally reuses the *canonical* ingestion pipeline instead of
+   * re-implementing it, so an import behaves exactly like the script/agent flow
+   * a power user would run from the Script Control Panel:
+   *
+   *   1. Stage the source in `raw/<file>.md`, mirroring what
+   *      `scripts/conv2md.py` does for plain-Markdown inputs (a passthrough
+   *      copy from `sources/` into `raw/`).
+   *   2. Run the very same `executeCompileWorkflow` that powers the `/compile`
+   *      agent command (LLM compile following AGENT.md §5.1 + reindex); the
+   *      only difference is that the target wiki sub-folder is overridden with
+   *      the folder chosen by the user.
+   *
+   * When no LLM provider is configured the compile step fails and the file is
+   * left in `raw/` for a later `/compile`, exactly like the normal offline flow.
+   */
+  public async ingestMarkdownHandler(
+    data: IngestRequest,
+    projectId: string = 'default'
+  ): Promise<{ note: WikiNote | undefined; compiled: boolean; targetFolder: string; message: string }> {
+    const badRequest = (msg: string) => {
+      const err = new Error(msg);
+      (err as unknown as { status: number }).status = 400;
+      return err;
+    };
+
+    let fileName = path.basename((data.fileName || '').trim());
+    if (!fileName) throw badRequest('fileName is required');
+    if (!/\.md$/i.test(fileName)) fileName = `${fileName}.md`;
+
+    const rawFolder = (data.targetFolder || '').trim().replace(/^wiki\/?/i, '').replace(/^\/+/, '');
+    const targetFolder =
+      (rawFolder || 'general').split('/').filter(seg => seg && seg !== '.' && seg !== '..').join('/') || 'general';
+
+    const rawDir = path.resolve(await this.getRawDir(projectId));
+    const rawPath = path.join(rawDir, fileName);
+    await this.validateSafePath(rawPath, projectId);
+
+    const content = data.isBase64
+      ? Buffer.from(data.content, 'base64').toString('utf-8')
+      : data.content;
+
+    // Step 1 — stage in raw/ (same as conv2md.py's Markdown passthrough).
+    await fs.mkdir(rawDir, { recursive: true });
+    await fs.writeFile(rawPath, content, 'utf-8');
+
+    // Step 2 — compile through the exact `/compile` code path.
+    try {
+      await this.executeCompileWorkflow(projectId, { targetFolder, onlyFile: fileName });
+    } catch (_err) {
+      // No LLM provider (or prompt failure): the raw file stays staged for a
+      // later `/compile`, mirroring the normal offline behaviour.
+    }
+
+    const compiledPath = path.join(rawDir, fileName.replace(/\.md$/i, '_COMPILED.md'));
+    let compiled = false;
+    try {
+      await fs.access(compiledPath);
+      compiled = true;
+    } catch {
+      // Not compiled yet.
+    }
+
+    const stem = fileName.replace(/\.md$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    let note: WikiNote | undefined;
+    if (compiled) {
+      const notes = await this.readAllWikiNotes(projectId);
+      note = notes.find(
+        n => (n.folder || 'general') === targetFolder && path.basename(n.path).toLowerCase() === `${stem}.md`
+      );
+    }
+
+    const message = compiled
+      ? `Importato e compilato in wiki/${targetFolder}/${stem}.md`
+      : `File copiato in raw/${fileName}: compilazione differita (agente/LLM non disponibile). Usa "Compila" per completare.`;
+
+    return { note, compiled, targetFolder, message };
+  }
+
+  private async executeCompileWorkflow(
+    projectId: string = 'default',
+    options: { targetFolder?: string; onlyFile?: string } = {}
+  ): Promise<string> {
     const rawDir = await this.getRawDir(projectId);
     const uncompiledFiles: string[] = [];
 
     try {
       const entries = await fs.readdir(rawDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith('.md') && !entry.name.includes('_COMPILED')) {
+        if (
+          entry.isFile() &&
+          entry.name.endsWith('.md') &&
+          !entry.name.includes('_COMPILED') &&
+          (!options.onlyFile || entry.name === options.onlyFile)
+        ) {
           uncompiledFiles.push(entry.name);
         }
       }
@@ -2512,7 +2623,7 @@ export class AgentServer {
 
         // Determine title / note ID
         const stem = fileName.replace(/\.md$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const folder = 'general';
+        const folder = options.targetFolder || 'general';
         await this.saveWikiNote({
           id: stem,
           folder,

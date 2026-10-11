@@ -86,6 +86,36 @@ This is a test note linking to [[other-note]].
     assert.ok(fileOnDisk.includes('Extra response from agent.'));
   });
 
+  await t.test('POST /api/wiki/ingest stages + compiles a markdown file into the chosen folder', async () => {
+    const result = await apiStorage.ingestMarkdownFile('Guida HR.md', '# Guida HR\n\nContenuto di prova.', 'fonti');
+
+    assert.equal(result.success, true);
+    assert.equal(result.compiled, true);
+    assert.equal(result.targetFolder, 'fonti');
+    assert.equal(result.note?.id, 'guida-hr');
+
+    const onDisk = await fs.readFile(path.join(wikiDir, 'fonti', 'guida-hr.md'), 'utf-8');
+    assert.ok(onDisk.includes('Consult Synthesis'));
+
+    const rawFiles = await fs.readdir(path.join(tmpDir, 'raw'));
+    assert.ok(rawFiles.includes('Guida HR_COMPILED.md'));
+    assert.ok(!rawFiles.includes('Guida HR.md'));
+  });
+
+  await t.test('POST /api/wiki/ingest rejects folder traversal', async () => {
+    const result = await apiStorage.ingestMarkdownFile('evil.md', '# evil', '../escape');
+    assert.equal(result.success, true);
+    // Traversal segments are stripped; the note stays inside the wiki dir.
+    const escaped = path.join(tmpDir, 'escape', 'evil.md');
+    let exists = true;
+    try {
+      await fs.access(escaped);
+    } catch {
+      exists = false;
+    }
+    assert.equal(exists, false);
+  });
+
   await t.test('POST /api/chat handles slash commands (/consult, /audit, /compile, /reindex)', async () => {
     const consultReply = await apiStorage.sendChat('/consult sample');
     assert.ok(consultReply.includes('Consult Synthesis'));

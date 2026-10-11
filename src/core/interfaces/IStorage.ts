@@ -1,5 +1,15 @@
 import { WikiNote } from '../types/wiki';
 
+/** Result of a one-shot Markdown import (stage in `raw/` + compile). */
+export interface IngestResult {
+  success: boolean;
+  note?: WikiNote;
+  compiled?: boolean;
+  targetFolder?: string;
+  message?: string;
+  error?: string;
+}
+
 /**
  * Storage Abstraction Layer Interface (Vault Adapter)
  */
@@ -53,4 +63,10 @@ export interface IStorage {
    * Uploads a file (text or binary encoded) into target folder
    */
   uploadFile?(folderPath: string, fileName: string, content: string | ArrayBuffer): Promise<boolean>;
+
+  /**
+   * Stages a Markdown file in `raw/`, compiles it and places the resulting
+   * note in the chosen wiki folder (one-shot ingest + compile).
+   */
+  ingestMarkdownFile?(fileName: string, content: string, targetFolder: string): Promise<IngestResult>;
 }
