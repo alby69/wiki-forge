@@ -11,8 +11,9 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-echo [2/3] Download degli aggiornamenti (se presenti)...
-docker compose pull >nul 2>&1
+echo [2/3] Preparazione delle immagini (solo se mancanti)...
+rem docker compose up scarica automaticamente le immagini non presenti,
+rem senza rallentare l'avvio quando sono gia in cache locale.
 echo [3/3] Avvio di Wiki-Forge in background...
 docker compose up -d
 echo.
