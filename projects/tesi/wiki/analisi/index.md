@@ -4,6 +4,6 @@ Thematic index for **analisi**.
 
 ## Articles
 
-- [[evidenza-mercato-del-lavoro]] — Analisi Sistemica delle Fonti per Tesi di Laurea: L'Impatto dell'IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR
-- [[geopolitica-ia-poli-us-eu-cn]] — Analisi Sistemica delle Fonti per Tesi di Laurea: L'Impatto dell'IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR
-- [[linee-guida-tesi-hr]] — Analisi Sistemica delle Fonti per Tesi di Laurea: L'Impatto dell'IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR
+- [[evidenza-mercato-del-lavoro]] â€” Evidenza empirica sul mercato del lavoro e l'IA
+- [[geopolitica-ia-poli-us-eu-cn]] â€” Geopolitica dell'IA - I Poli Statunitense, Europeo e Cinese
+- [[linee-guida-tesi-hr]] â€” Linee guida per la tesi HR sull'impatto dell'IA

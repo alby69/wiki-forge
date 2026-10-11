@@ -4,4 +4,4 @@ Thematic index for **strumenti**.
 
 ## Articles
 
-- [[wiki-forge-script-panel]] — Guida Completa agli Script del Wiki-Forge Script Control Panel
+- [[wiki-forge-script-panel]] â€” Wiki-Forge Script Control Panel
