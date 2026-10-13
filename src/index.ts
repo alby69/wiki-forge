@@ -8,6 +8,7 @@ import { MarkdownParser } from './services/markdownParser';
 import { GraphService } from './services/graphService';
 import { ApiStorage } from './storage/ApiStorage';
 import { appStore } from './store/appStore';
+import type { ViewMode } from './store/appStore';
 import { MainLayout } from './components/ui/MainLayout';
 import { Header } from './components/ui/Header';
 import { Sidebar } from './components/ui/Sidebar';
@@ -16,6 +17,7 @@ import { ContextPanel } from './components/editor/ContextPanel';
 import { ForceGraphViewer } from './components/graph/ForceGraphViewer';
 import { GraphControls } from './components/graph/GraphControls';
 import { ChatDrawer } from './components/chat/ChatDrawer';
+import { ScratchpadPanel } from './components/scratchpad/ScratchpadPanel';
 import { ConfigManager } from './components/ConfigManager';
 import { ToolsModal } from './components/tools/ToolsModal';
 import { KEWorkbenchModal } from './components/ke/KEWorkbenchModal';
@@ -31,6 +33,7 @@ export class WikiForgeApp {
   private selectedNote: WikiNote | null = null;
   private filterTags: string[] = [];
   private excludedFolders: string[] = [];
+  private contextVisible = true;
 
   private layout!: MainLayout;
   private header!: Header;
@@ -40,6 +43,7 @@ export class WikiForgeApp {
   private graphViewer!: ForceGraphViewer;
   private graphControls!: GraphControls;
   private chatDrawer!: ChatDrawer;
+  private scratchpadPanel!: ScratchpadPanel;
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
   private keWorkbenchModal!: KEWorkbenchModal;
@@ -77,7 +81,7 @@ export class WikiForgeApp {
     this.notes = this.parser.computeBacklinks(notes);
     this.selectedNote = this.notes.find(n => n.id === currentId) ?? this.notes[0] ?? null;
     this.refreshAll();
-    void this.sidebar.loadScratchpad();
+    void this.scratchpadPanel.load();
   }
 
   private buildSampleVault(): WikiNote[] {
@@ -162,10 +166,7 @@ Backlink to [[01-index]].
 
     this.header = new Header(
       this.layout.headerContainer,
-      mode => {
-        appStore.setViewMode(mode);
-        this.layout.setViewMode(mode);
-      },
+      mode => this.handleViewModeToggle(mode),
       () => {
         this.chatDrawer.toggle();
       },
@@ -229,17 +230,6 @@ Backlink to [[01-index]].
         getFolders: async () => {
           return this.storage.getAllFolders();
         },
-        getScratchpad: async () => {
-          return this.storage.getScratchpad();
-        },
-        onPromoteScratchpad: (noteId) => {
-          void this.chatDrawer.handleSendMessage(`/promote-note ${noteId}`);
-          void this.chatDrawer.open();
-        },
-        deleteScratchpad: async (noteId) => {
-          const ok = await this.storage.deleteScratchpad(noteId);
-          return ok;
-        },
       }
     );
 
@@ -249,7 +239,8 @@ Backlink to [[01-index]].
         void this.updateAndSaveNote(noteId, content);
       },
       target => this.openWikilink(target),
-      () => this.notes
+      () => this.notes,
+      () => this.toggleContext()
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
@@ -289,6 +280,15 @@ Backlink to [[01-index]].
       },
       target => this.openWikilink(target)
     );
+
+    this.scratchpadPanel = new ScratchpadPanel(this.layout.scratchContainer, {
+      getScratchpad: () => this.storage.getScratchpad(),
+      onPromoteScratchpad: noteId => {
+        void this.chatDrawer.handleSendMessage(`/promote-note ${noteId}`);
+        void this.chatDrawer.open();
+      },
+      deleteScratchpad: noteId => this.storage.deleteScratchpad(noteId),
+    });
 
     this.simpleDashboard = new SimpleModeDashboard(this.layout.simpleModeSlot, {
       storage: this.storage,
@@ -342,10 +342,29 @@ Backlink to [[01-index]].
 
       // In Graph-only mode the editor is hidden, so selecting a note
       // would look like a no-op: reveal it by falling back to Split.
-      if (appStore.getState().viewMode === 'graph') {
+      const mode = appStore.getState().viewMode;
+      if (mode === 'graph') {
         appStore.setViewMode('split');
+      } else if (mode === 'scratchpad' || mode === 'closed') {
+        appStore.setViewMode('editor');
       }
     }
+  }
+
+  /** Editor / Scratchpad / Graph / Split act as toggles: re-clicking the active
+   *  pane closes it ('closed'), Split shows both at half width. */
+  private handleViewModeToggle(mode: ViewMode): void {
+    if (appStore.getState().viewMode === mode) {
+      appStore.setViewMode('closed');
+    } else {
+      appStore.setViewMode(mode);
+    }
+  }
+
+  private toggleContext(): void {
+    this.contextVisible = !this.contextVisible;
+    this.layout.setContextVisible(this.contextVisible);
+    this.editor.setContextVisible(this.contextVisible);
   }
 
   public openWikilink(target: string): void {

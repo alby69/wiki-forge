@@ -1,7 +1,6 @@
 import { WikiNote } from '../../core/types/wiki';
 import { escapeHtml } from '../../core/utils/html';
 import { computeNoteTrustTier, isNoteStale, renderTrustTierDot } from './TrustBadge';
-import { ScratchpadEntry } from '../../storage/ApiStorage';
 
 interface TreeNode {
   name: string;
@@ -31,9 +30,6 @@ export interface FileActionCallbacks {
   onDelete?: (path: string) => Promise<void>;
   onUpload?: (folderPath: string, files: FileList) => Promise<void>;
   getFolders?: () => Promise<string[]>;
-  getScratchpad?: () => Promise<ScratchpadEntry[]>;
-  onPromoteScratchpad?: (noteId: string) => void;
-  deleteScratchpad?: (noteId: string) => Promise<boolean>;
 }
 
 export class Sidebar {
@@ -45,10 +41,8 @@ export class Sidebar {
   private selectedOkfFilter: 'all' | 'human-reviewed' | 'machine-confirmed' | 'unverified' | 'stale' = 'all';
   private selectedTags = new Set<string>();
   private expanded = new Set<string>(['wiki']);
-  private scratchEntries: ScratchpadEntry[] = [];
-  private scratchExpandedIds = new Set<string>();
-  private scratchCollapsed = false;
-  private scratchpadHeight: number;
+  private tagCloudCollapsed = false;
+  private tagCloudHeight: number;
   private onSelectNoteCb?: (noteId: string) => void;
   private onFilterTagsCb?: (tags: string[]) => void;
   private actionCb?: FileActionCallbacks;
@@ -63,10 +57,11 @@ export class Sidebar {
     this.onSelectNoteCb = onSelectNote;
     this.onFilterTagsCb = onFilterTags;
     this.actionCb = actionCb;
-    const storedHeight = parseInt(localStorage.getItem('wiki-forge:scratchpad-height') ?? '', 10);
-    this.scratchpadHeight = Number.isFinite(storedHeight) && storedHeight > 0 ? storedHeight : 220;
+    const storedHeight = parseInt(localStorage.getItem('wiki-forge:tagcloud-height') ?? '', 10);
+    this.tagCloudHeight = Number.isFinite(storedHeight) && storedHeight > 0 ? storedHeight : 160;
+    const storedCollapsed = localStorage.getItem('wiki-forge:tagcloud-collapsed');
+    this.tagCloudCollapsed = storedCollapsed === 'true';
     void this.render();
-    void this.loadScratchpad();
   }
 
   public setNotes(notes: WikiNote[]): void {
@@ -74,73 +69,30 @@ export class Sidebar {
     void this.render();
   }
 
-  public async loadScratchpad(): Promise<void> {
-    if (!this.actionCb?.getScratchpad) return;
-    try {
-      this.scratchEntries = await this.actionCb.getScratchpad();
-    } catch (_e) {
-      this.scratchEntries = [];
-    }
-    await this.render();
-  }
-
-  private renderScratchpadSection(): string {
+  /** Tag cloud section: collapsible header + horizzontally scrollable chips.
+   *  Height is resizable with the handle on top; state persists in localStorage. */
+  private renderTagCloudSection(tagsHTML: string, clearHTML: string): string {
     const header = `
-      <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-        <span style="cursor: pointer;" id="scratch-header">🗒️ Scratchpad (${this.scratchEntries.length})</span>
-        <span style="display: flex; gap: 6px;">
-          <span id="scratch-refresh" title="Reload scratches" style="cursor: pointer; color: #63b3ed;">↻</span>
-        </span>
+      <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; gap: 6px; cursor: pointer;" id="tag-cloud-header" title="Clicca per collassare/espandere">
+        <span id="tag-cloud-toggle">${this.tagCloudCollapsed ? '▸' : '▾'} Tag cloud ${clearHTML}</span>
+        <span style="font-size: 10px; color: #718096; font-weight: 400; text-transform: none;" title="Trascina per ridimensionare" id="tag-cloud-height-hint">↕</span>
       </div>`;
 
-    if (this.scratchCollapsed) {
+    if (this.tagCloudCollapsed) {
       return `
-        <div style="border-top: 1px solid #2d3748; flex-shrink: 0;">
-          <div class="scratch-resize-handle" style="height: 6px; cursor: ns-resize;"></div>
-          <div style="padding: 6px 12px 8px 12px;">${header}</div>
+        <div style="border-top: 1px solid #2d3748; flex-shrink: 0; padding: 4px 12px 8px 12px;">
+          ${header}
         </div>`;
     }
-
-    if (this.scratchEntries.length === 0) {
-      return `
-        <div id="scratchpad-section" style="height: ${this.scratchpadHeight}px; display: flex; flex-direction: column; flex-shrink: 0; border-top: 1px solid #2d3748;">
-          <div class="scratch-resize-handle" style="height: 6px; cursor: ns-resize; flex-shrink: 0;"></div>
-          <div style="flex: 1; overflow-y: auto; padding: 6px 12px 8px 12px; min-height: 0;">
-            ${header}
-            <div style="font-size: 11px; color: #718096;">No notes saved yet. Use <code style="color:#cbd5e0;">/note</code> in the chat.</div>
-          </div>
-        </div>`;
-    }
-
-    const items = this.scratchEntries
-      .map(entry => {
-        const open = this.scratchExpandedIds.has(entry.id);
-        const firstLine = entry.text.split('\n')[0].trim();
-        const preview = firstLine.length > 60 ? `${firstLine.slice(0, 60)}…` : firstLine;
-        return `
-        <div style="padding: 5px 8px; border-radius: 4px; cursor: pointer; background: #1a1b1e; border: 1px solid #2d3748; margin-bottom: 5px;">
-          <div class="scratch-item" data-scratch-id="${escapeHtml(entry.id)}" style="display: flex; align-items: center; gap: 5px; color: #cbd5e1;">
-            <span style="color: #718096; width: 10px; display: inline-block;">${open ? '▾' : '▸'}</span>
-            <span style="font-size: 11px; color: #f6ad55; white-space: nowrap;">${escapeHtml(entry.timestamp)}</span>
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; flex: 1;">${escapeHtml(preview)}</span>
-          </div>
-          ${open ? `<div style="padding: 6px 4px 4px 14px; font-size: 12px; color: #e2e8f0; white-space: pre-wrap; word-break: break-word;">${escapeHtml(entry.text)}</div>
-          <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
-            <button class="scratch-delete" data-scratch-id="${escapeHtml(entry.id)}" title="Delete this note" style="background: #742a2a; color: #fff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;">🗑️ Cancella</button>
-            <button class="scratch-promote" data-scratch-id="${escapeHtml(entry.id)}" title="Promote to wiki article (via /promote-note)" style="background: #2b6cb0; color: #fff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;">🚀 Promuovi</button>
-          </div>` : ''}
-        </div>`;
-      })
-      .join('');
 
     return `
-        <div id="scratchpad-section" style="height: ${this.scratchpadHeight}px; display: flex; flex-direction: column; flex-shrink: 0; border-top: 1px solid #2d3748;">
-          <div class="scratch-resize-handle" style="height: 6px; cursor: ns-resize; flex-shrink: 0;" title="Trascina per ridimensionare"></div>
-          <div style="flex: 1; overflow-y: auto; padding: 6px 12px 8px 12px; min-height: 0;">
-            ${header}
-            ${items}
-          </div>
-        </div>`;
+      <div id="tag-cloud-section" style="border-top: 1px solid #2d3748; flex-shrink: 0; height: ${this.tagCloudHeight}px; display: flex; flex-direction: column;">
+        <div class="tagcloud-resize-handle" title="Trascina per ridimensionare" style="height: 6px; cursor: ns-resize; flex-shrink: 0; background: transparent;"></div>
+        <div style="flex: 1; overflow-y: auto; padding: 0 12px 8px 12px; min-height: 0;">
+          ${header}
+          <div style="line-height: 1.5;">${tagsHTML || '<span style="font-size: 11px; color: #718096;">No tags</span>'}</div>
+        </div>
+      </div>`;
   }
 
   public setActiveNote(noteId: string): void {
@@ -429,13 +381,7 @@ this.container.innerHTML = `
         </div>
 
         <!-- Tag Cloud -->
-        <div style="padding: 10px 12px; border-top: 1px solid #2d3748; flex-shrink: 0; max-height: 40%; overflow-y: auto;">
-          <div style="font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase;">Tag cloud ${clearHTML}</div>
-          <div>${tagsHTML || '<span style="font-size: 11px; color: #718096;">No tags</span>'}</div>
-        </div>
-
-        <!-- Scratchpad (quick notes) -->
-        ${this.renderScratchpadSection()}
+        ${this.renderTagCloudSection(tagsHTML, clearHTML)}
       </div>
     `;
 
@@ -600,66 +546,31 @@ this.container.innerHTML = `
       void this.refresh();
     });
 
-    this.container.querySelector('#scratch-header')?.addEventListener('click', () => {
-      this.scratchCollapsed = !this.scratchCollapsed;
+    this.container.querySelector('#tag-cloud-header')?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.tag-clear')) return;
+      this.tagCloudCollapsed = !this.tagCloudCollapsed;
+      localStorage.setItem('wiki-forge:tagcloud-collapsed', String(this.tagCloudCollapsed));
       void this.refresh();
     });
 
-    this.container.querySelector('#scratch-refresh')?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      await this.loadScratchpad();
-    });
-
-    this.container.querySelectorAll('.scratch-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const id = item.getAttribute('data-scratch-id');
-        if (!id) return;
-        if (this.scratchExpandedIds.has(id)) this.scratchExpandedIds.delete(id);
-        else this.scratchExpandedIds.add(id);
-        void this.refresh();
-      });
-    });
-
-    this.container.querySelectorAll('.scratch-promote').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-scratch-id');
-        if (id && this.actionCb?.onPromoteScratchpad) {
-          this.actionCb.onPromoteScratchpad(id);
-        }
-      });
-    });
-
-    this.container.querySelectorAll('.scratch-delete').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-scratch-id');
-        if (!id || !this.actionCb?.deleteScratchpad) return;
-        if (!confirm(`Eliminare questa nota dallo scratchpad?\n\n${id}`)) return;
-        await this.actionCb.deleteScratchpad(id);
-        await this.loadScratchpad();
-      });
-    });
-
-    this.container.querySelectorAll('.scratch-resize-handle').forEach(handle => {
+    this.container.querySelectorAll('.tagcloud-resize-handle').forEach(handle => {
       handle.addEventListener('mousedown', (e) => {
         e.preventDefault();
         const startY = (e as MouseEvent).clientY;
-        const startH = this.scratchpadHeight;
-        const section = handle.parentElement && handle.parentElement.id === 'scratchpad-section'
-          ? handle.parentElement as HTMLElement
-          : null;
-        const maxH = Math.max(90, this.container.clientHeight * 0.75);
+        const startH = this.tagCloudHeight;
+        const section = handle.parentElement as HTMLElement | null;
+        const maxH = Math.max(80, this.container.clientHeight * 0.6);
 
         const onMove = (ev: MouseEvent): void => {
-          const newH = Math.min(Math.max(startH + (startY - ev.clientY), 90), maxH);
+          const newH = Math.min(Math.max(startH + (startY - ev.clientY), 80), maxH);
+          this.tagCloudHeight = newH;
           if (section) section.style.height = `${newH}px`;
-          this.scratchpadHeight = newH;
         };
         const onUp = (): void => {
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
-          localStorage.setItem('wiki-forge:scratchpad-height', String(this.scratchpadHeight));
+          localStorage.setItem('wiki-forge:tagcloud-height', String(this.tagCloudHeight));
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);

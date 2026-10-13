@@ -41,3 +41,36 @@
 .editor-save-btn:hover {
   background: var(--accent-button-hover);
 }
+
+/* Toggle Node Metadata / Backlinks / Outbound Links in the editor header */
+.editor-info-toggle {
+  appearance: none;
+  background: var(--bg-tertiary);
+  color: #cbd5e1;
+  border: 1px solid #3d4759;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.editor-info-toggle:hover {
+  background: rgba(99, 102, 241, 0.16);
+  color: #fff;
+}
+
+.editor-info-toggle.active {
+  background: #2b6cb0;
+  color: #fff;
+  border-color: #2b6cb0;
+}
+
+.editor-info-toggle.active:hover {
+  background: #2c5282;
+  color: #fff;
+}

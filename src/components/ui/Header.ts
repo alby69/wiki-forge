@@ -3,8 +3,9 @@ import { WikiNote } from '../../core/types/wiki';
 import { appStore, ViewMode } from '../../store/appStore';
 
 const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[] = [
-  { id: 'editor', label: 'Editor', title: 'Solo Editor', icon: '📝' },
-  { id: 'graph', label: 'Graph', title: 'Solo Knowledge Graph', icon: '🕸️' },
+  { id: 'editor', label: 'Editor', title: 'Solo Editor (riclicca per chiudere)', icon: '📝' },
+  { id: 'scratchpad', label: 'Scratchpad', title: 'Note veloci nello spazio editor (riclicca per chiudere)', icon: '📒' },
+  { id: 'graph', label: 'Graph', title: 'Solo Knowledge Graph (riclicca per chiudere)', icon: '🕸️' },
   { id: 'split', label: 'Split', title: 'Editor e Graph affiancati', icon: '◧' },
 ];
 
@@ -117,13 +118,17 @@ export class Header {
           <!-- View Mode Toggles -->
           <div class="seg-control" role="tablist" aria-label="Vista">
             ${VIEW_MODES.map(
-              m => `<button
+              m => {
+                const isActive =
+                  m.id === viewMode || (m.id !== 'split' && viewMode === 'split');
+                return `<button
                 id="view-mode-${m.id}"
-                class="seg-btn ${viewMode === m.id ? 'active' : ''}"
+                class="seg-btn ${isActive ? 'active' : ''}"
                 role="tab"
-                aria-selected="${viewMode === m.id}"
+                aria-selected="${isActive}"
                 title="${m.title}"
-              >${m.icon} ${m.label}</button>`
+              >${m.icon} ${m.label}</button>`;
+              }
             ).join('')}
           </div>
 

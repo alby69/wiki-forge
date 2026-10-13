@@ -2,6 +2,8 @@ export class MainLayout {
   private container: HTMLElement;
   public sidebarContainer!: HTMLElement;
   public editorContainer!: HTMLElement;
+  public scratchContainer!: HTMLElement;
+  public emptyContainer!: HTMLElement;
   public graphContainer!: HTMLElement;
   public contextContainer!: HTMLElement;
   public headerContainer!: HTMLElement;
@@ -34,9 +36,11 @@ export class MainLayout {
           <div id="main-content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #18191c; min-width: 0;">
             <div id="graph-controls-root"></div>
             <div style="flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0;">
+              <div id="scratch-root" style="display: none; flex: 1; height: 100%; position: relative; min-width: 0;"></div>
               <div id="editor-root" style="flex: ${this.editorFlex}; height: 100%; display: flex; flex-direction: column; min-width: 0;"></div>
               <div id="graph-resizer" class="resizer" data-resizer="graph" style="width: 4px; cursor: col-resize; background: transparent; position: relative; z-index: 10; touch-action: none;"></div>
               <div id="graph-root" style="flex: ${this.graphFlex}; height: 100%; position: relative; min-width: 0;"></div>
+              <div id="view-empty" style="display: none; flex: 1; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: #18191c; color: #718096;"></div>
             </div>
             <div id="context-resizer" class="resizer" data-resizer="context" style="height: 4px; cursor: row-resize; background: transparent; position: relative; z-index: 10; touch-action: none; flex-shrink: 0;"></div>
             <div id="context-root" style="height: ${this.contextHeight}px; min-height: 0; flex-shrink: 0; border-top: 1px solid #2d3748; background: #121316;"></div>
@@ -54,11 +58,20 @@ export class MainLayout {
     this.simpleModeSlot = this.container.querySelector('#simple-mode-slot')!;
     this.sidebarContainer = this.container.querySelector('#sidebar-root')!;
     this.editorContainer = this.container.querySelector('#editor-root')!;
+    this.scratchContainer = this.container.querySelector('#scratch-root')!;
+    this.emptyContainer = this.container.querySelector('#view-empty')!;
     this.graphContainer = this.container.querySelector('#graph-root')!;
     this.contextContainer = this.container.querySelector('#context-root')!;
     this.graphControlsContainer = this.container.querySelector('#graph-controls-root')!;
     this.chatContainer = this.container.querySelector('#chat-root')!;
     this.mainContentArea = this.container.querySelector('#main-content-area')!;
+
+    this.emptyContainer.innerHTML = `
+      <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+        <div style="font-size: 40px; opacity: 0.6;">🕳️</div>
+        <div style="font-size: 15px; font-weight: 600; color: #a0aec0;">Vista chiusa</div>
+        <div style="font-size: 12px; color: #718096;">Usa Editor, Scratchpad o Graph nella barra in alto per aprirla.</div>
+      </div>`;
 
     this.bindResizers();
   }
@@ -139,25 +152,26 @@ export class MainLayout {
 
   private isResizingGraph = false;
 
-  public setViewMode(mode: 'editor' | 'graph' | 'split'): void {
-    if (mode === 'editor') {
-      this.editorContainer.style.display = 'flex';
-      this.graphContainer.style.display = 'none';
-      this.graphControlsContainer.style.display = 'none';
-      const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
-      if (graphResizer) graphResizer.style.display = 'none';
-    } else if (mode === 'graph') {
-      this.editorContainer.style.display = 'none';
-      this.graphContainer.style.display = 'block';
-      this.graphControlsContainer.style.display = 'block';
-      const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
-      if (graphResizer) graphResizer.style.display = 'none';
-    } else {
-      this.editorContainer.style.display = 'flex';
-      this.graphContainer.style.display = 'block';
-      this.graphControlsContainer.style.display = 'block';
-      const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
-      if (graphResizer) graphResizer.style.display = 'block';
-    }
+  public setViewMode(mode: 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed'): void {
+    const showEditor = mode === 'editor' || mode === 'split';
+    const showGraph = mode === 'graph' || mode === 'split';
+    const showScratch = mode === 'scratchpad';
+    const showEmpty = mode === 'closed';
+
+    this.editorContainer.style.display = showEditor ? 'flex' : 'none';
+    this.graphContainer.style.display = showGraph ? 'block' : 'none';
+    this.scratchContainer.style.display = showScratch ? 'flex' : 'none';
+    this.emptyContainer.style.display = showEmpty ? 'flex' : 'none';
+    this.graphControlsContainer.style.display = showGraph ? 'block' : 'none';
+
+    const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
+    if (graphResizer) graphResizer.style.display = showEditor && showGraph ? 'block' : 'none';
+  }
+
+  public setContextVisible(visible: boolean): void {
+    const context = this.container.querySelector('#context-root') as HTMLElement;
+    const resizer = this.container.querySelector('#context-resizer') as HTMLElement;
+    if (context) context.style.display = visible ? 'block' : 'none';
+    if (resizer) resizer.style.display = visible ? 'block' : 'none';
   }
 }

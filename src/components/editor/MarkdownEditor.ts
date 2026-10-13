@@ -17,18 +17,22 @@ export class MarkdownEditor {
   private onSaveCb?: (noteId: string, content: string) => void;
   private onOpenLinkCb?: (target: string) => void;
   private getNotesCb?: () => WikiNote[];
+  private onToggleContextCb?: () => void;
+  private contextVisible = true;
   private editorView: EditorView | null = null;
 
   constructor(
     container: HTMLElement,
     onSave?: (noteId: string, content: string) => void,
     onOpenLink?: (target: string) => void,
-    getNotes?: () => WikiNote[]
+    getNotes?: () => WikiNote[],
+    onToggleContext?: () => void
   ) {
     this.container = container;
     this.onSaveCb = onSave;
     this.onOpenLinkCb = onOpenLink;
     this.getNotesCb = getNotes;
+    this.onToggleContextCb = onToggleContext;
     this.render();
   }
 
@@ -42,6 +46,12 @@ export class MarkdownEditor {
     this.mode = 'preview';
     this.saveStatusMessage = '';
     this.render();
+  }
+
+  public setContextVisible(visible: boolean): void {
+    this.contextVisible = visible;
+    const btn = this.container.querySelector('#editor-context-toggle');
+    if (btn) btn.classList.toggle('active', visible);
   }
 
   public showSaveStatus(msg: string): void {
@@ -94,6 +104,7 @@ export class MarkdownEditor {
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
+            <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
             ${
               isPreview
                 ? `<button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save</button>
@@ -116,6 +127,11 @@ export class MarkdownEditor {
     const saveBtn = this.container.querySelector('#editor-save-btn');
     saveBtn?.addEventListener('click', () => {
       this.saveCurrentContent();
+    });
+
+    const contextToggle = this.container.querySelector('#editor-context-toggle');
+    contextToggle?.addEventListener('click', () => {
+      this.onToggleContextCb?.();
     });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');

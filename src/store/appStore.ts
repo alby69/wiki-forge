@@ -6,7 +6,7 @@ export interface AppState {
   viewMode: ViewMode;
 }
 
-export type ViewMode = 'editor' | 'graph' | 'split';
+export type ViewMode = 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed';
 
 type Listener = (state: AppState) => void;
 
@@ -16,7 +16,7 @@ const PROJECT_KEY = 'wiki-forge:active-project';
 const THEME_KEY = 'wiki-forge:theme';
 const VIEW_MODE_KEY = 'wiki-forge:view-mode';
 
-const VIEW_MODES: ViewMode[] = ['editor', 'graph', 'split'];
+const VIEW_MODES: ViewMode[] = ['editor', 'graph', 'split', 'scratchpad', 'closed'];
 
 class AppStore {
   private state: AppState;
