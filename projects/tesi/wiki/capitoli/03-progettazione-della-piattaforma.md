@@ -93,14 +93,90 @@ Nell'economia generale del sistema, lo stadio di compilazione delle note atomich
 * **Esternalizzazione**: Le intuizioni, gli appunti informali e le elaborazioni dialogiche sorte durante l'esplorazione su NotebookLM vengono articolate in concetti espliciti, autonomi e rigorosamente tracciati.
 * **Combinazione**: Le note atomiche così create non restano atomi isolati, ma vengono intrecciate nel Knowledge Graph, sintetizzando e riorganizzando diverse fonti di conoscenza esplicita in una rete concettuale coerente e interrogabile via GraphRAG.
 
+### 3.3.2 Il Tagging Semantico come "Ponte Bilingue": Dai Metadati alla Struttura del Grafo
+Un elemento centrale nella compilazione delle note atomiche è il **tagging semantico**. Lungi dall'essere un'etichetta decorativa o una semplice parola chiave testuale, il tag semantico funge da **"ponte bilingue"**: traduce l'intenzione e la categorizzazione concettuale dell'utente umano in metadati strutturati che la macchina può processare in modo deterministico.
+
+Nel workflow di Wiki-Forge, il tagging semantico opera sinergicamente a tre livelli architetturali distinti:
+
+1. **Per l'Utente (Ricercatore / HR Manager): Orientamento Cognitivo e Serendipità**
+   - **Ricerca Facettata (Filtraggio congiunto)**: Invece di affidarsi esclusivamente a ricerche testuali indefinite, l'utente può applicare filtri booleani e tassonomici incrociati (es. *"Mostrami tutte le note che possiedono sia il tag `#SECI` sia il tag `#limiti_RAG`"*).
+   - **Mappatura Mentale e Clustering**: I tag riflettono visivamente l'emergere di cluster tematici nella wiki. Se il tag `#SHACL` co-occorre frequentemente con `#validazione` o `#governance`, il sistema evidenzia automaticamente l'opportunità di consolidare quella convergenza in un paragrafo o capitolo dedicato.
+   - **Serendipità Strutturata**: La navigazione per tag semantici fa emergere connessioni non evidenti a prima vista (es. raccordi tra concetti di filosofia dell'informazione e pattern di ingegneria del software ontologica).
+
+2. **Per l'LLM: Disambiguazione Contestuale e "Prompt Conditioning"**
+   - **Disambiguazione del Contesto**: Di fronte a termini polisemici (es. la parola *"Rete"*), l'assegnazione del tag `#KnowledgeGraph` impone all'LLM di interpretare la voce come grafo di nodi e archi anziché come rete neurale o infrastruttura di rete dati, riducendo le allucinazioni semantiche.
+   - **Iniezione Contestuale nei Prompt**: Durante le interrogarioni GraphRAG, i tag consentono di generare prompt fortemente condizionati (es. *"Basandoti unicamente sulle note con tag `#SECI` e `#Combinazione`, spiega come..."*), delimitando lo spazio di ricerca e riducendo il rumore informativo.
+   - **Ponderazione nel Retrieval**: Nel recupero ibrido, la presenza di tag rilevanti conferisce un punteggio di incremento (*boost*) alla similarità vettoriale, promuovendo in cima ai risultati le note concettualmente pertinenti.
+
+3. **Per il Sistema GraphRAG: Trasformazione da Metadato a Struttura di Grafo**
+   - **Nodo e Proprietà di Primo Livello**: In un Knowledge Graph, il tag si evolve da semplice stringa a nodo ontologico o attributo di primo livello.
+   - **Ibridazione della Ricerca (Hybrid Search)**: Permette di combinare la similarità vettoriale ("sfocata" e probabilistica) con query booleane o SPARQL/Cypher ("rigide" ed esatte). Ad esempio, consente di eseguire query complesse come: *"Trova i concetti vettorialmente vicini ad 'allucinazione', ma che siano obbligatoriamente collegati al nodo `#W3C_SHACL`"*.
+   - **Attivazione di Regole di Validazione**: I tag costituiscono la condizione di innesco per i vincoli di governance (es. se una nota contiene il tag `#fonte_primaria`, il motore di validazione esige la presenza dei metadati `ha_url_origine` o `ha_autore`).
+
+Sotto il profilo del modello SECI, il tagging semantico abilita pienamente la fase di **Combinazione**: non si limita a sommare informazioni, ma le riorganizza secondo una griglia concettuale formale, trasformando la conoscenza esplicita grezza prodotta nella fase di Discovery in un **sistema di conoscenza esplicita interconnesso, validato e interrogabile**.
+
 ## 3.4 Le Tre Tecnologie Abilitanti la Spirale SECI
 L'integrazione tra l'LLM e la piattaforma si basa su tre pilastri tecnologici e metodologici che potenziano e rendono rigorose le diverse fasi della spirale della conoscenza:
 
 ### A. Esternalizzazione Affidabile tramite "Trust Tiers" (Tracciabilità delle Fonti)
 Nella fase di Esternalizzazione, la trasformazione del know-how grezzo o degli appunti informali in conoscenza esplicita richiede garanzie di affidabilità. I **Trust Tiers** (livelli di fiducia: `unverified`, `machine-confirmed`, `human-reviewed`) assegnano uno stato di validazione trasparente a ogni affermazione o nota generata. Attraverso meccanismi di *source grounding* e ancoraggio puntuale al rigo di origine (`#L<start>-L<end>`), ogni concetto estratto dall'LLM resta collegato alla fonte primaria. Ciò elimina le allucinazioni e rende l'esternalizzazione tracciabile, verificabile e auditabile.
 
-### B. Combinazione Rigorosa tramite "W3C SHACL" (Validazione Ontologica)
-Durante la fase di Combinazione, le diverse tessere di conoscenza esplicita estratte dall'LLM devono convergere in un sistema coerente. Per evitare che l'agente introduca relazioni illogiche o ridondanti nel grafo, la piattaforma integra lo standard W3C **SHACL (Shapes Constraint Language)**. SHACL funge da "validatore di qualità ontologico" eseguendo vincoli definiti (`shapes.ttl`): verifica la correttezza delle tipologie di entità, la presenza di metadati obbligatori e la validità delle relazioni interconnesse. Questo trasforma l'LLM da semplice generatore di testo libero ad architetto di conoscenza strutturalmente valida e interoperabile.
+### B. Combinazione Rigorosa e Governance Ontologica tramite Vincoli W3C SHACL
+Durante la fase di **Combinazione**, la conoscenza esplicita decostruita e ricompilata dall'agente LLM non deve limitarsi a confluire in un archivio indistinto: deve integrarsi in modo coerente nel Knowledge Graph senza introdurre incoerenze o frammentazioni. Nei database a grafo basati su RDF, la flessibilità nativa dei dati privi di uno schema rigido a priori rappresenta un punto di forza ma anche un rischio per la governance. Per garantire l'integrità strutturale della Knowledge Base, la piattaforma adotta lo standard **W3C SHACL (Shapes Constraint Language)**.
+
+I vincoli W3C espressi in SHACL agiscono come un **"controllo di qualità automatico e deterministico"** dei dati.
+
+#### 1. L'Analogia Concettuale: Il Modulo con Campi Obbligatori
+In un sistema informativo aziendale o in una biblioteca, la compilazione di una scheda informativa richiede il rispetto di vincoli precisi (es. il campo *"Titolo"* è obbligatorio, *"Anno di pubblicazione"* deve essere un numero a quattro cifre, *"Tipo fonte"* deve appartenere a un vocabolario controllato). SHACL trasforma queste regole formali in **Forme** (*Shapes*, designate come `sh:Shape`) archiviate in file di configurazione ontologica (`shapes.ttl` in sintassi Turtle RDF).
+
+#### 2. Definizione Tecnica delle Forme in `shapes.ttl`
+Una forma SHACL descrive le condizioni di validità alle quali un nodo (es. una Nota Atomica) o le sue proprietà devono sottostare. Di seguito si riporta un frammento rappresentativo del file `shapes.ttl` implementato nel sistema per validare le note compilate dall'agente Wiki-Forge:
+
+```turtle
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix tesi: <http://example.org/tesi/ontology#> .
+
+# Definizione della "Forma" (NodeShape) per la validazione di una Nota Atomica
+tesi:NotaAtomicaShape
+    a sh:NodeShape ;
+    sh:targetClass tesi:NotaAtomica ; # La regola si applica a tutte le istanze di Nota Atomica
+
+    # VINCOLO 1: Cardinalità (Obbligatorietà del Titolo)
+    sh:property [
+        sh:path tesi:haTitolo ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Ogni nota atomica deve possedere esattamente un titolo univoco." ;
+    ] ;
+
+    # VINCOLO 2: Tipo di Dato Formale (Data Type)
+    sh:property [
+        sh:path tesi:dataCreazione ;
+        sh:datatype xsd:date ;
+        sh:message "La data di creazione deve rispettare tassativamente il formato ISO xsd:date (AAAA-MM-GG)." ;
+    ] ;
+
+    # VINCOLO 3: Insieme Chiuso di Valori Ammessi (Value Range / Vocabolario Controllato)
+    sh:property [
+        sh:path tesi:trustTier ;
+        sh:in ( "unverified" "machine-confirmed" "human-reviewed" ) ;
+        sh:message "Il Trust Tier deve corrispondere a uno dei livelli previsti dallo standard OKF." ;
+    ] .
+```
+
+#### 3. Il Processo di Validazione Deterministico a Quattro Fasi
+Il sistema di governance non si affida alla sola correttezza probabilistica dell'LLM, ma esegue una verifica automatizzata in quattro fasi:
+1. **Input 1 — Data Graph (Grafo dei Dati)**: Il set di note atomiche in formato OKF/Markdown/RDF prodotte dall'agente.
+2. **Input 2 — Shapes Graph (Grafo delle Forme)**: Il file `shapes.ttl` contenente le regole ontologiche W3C.
+3. **Elaborazione — Motore di Validazione SHACL**: Un motore di validazione dedicato (es. `PySHACL` in ambito Python) esegue la verifica incrociata tra Data Graph e Shapes Graph.
+4. **Output — Validation Report e Gatekeeper**: Viene generato un report di validazione (`sh:ValidationReport`). Se una nota viola un vincolo (es. l'LLM omette il `trustTier` o assegna una data in testo libero), la nota viene **bloccata** e collocata nella coda di revisione (`/api/reviews`), impedendone la promozione nel Knowledge Graph principale finché non viene corretta.
+
+#### 4. Ruolo Strategico nella Prevenzione delle Allucinazioni Strutturali
+L'integrazione dei vincoli W3C SHACL risolve criticità fondamentali per la stabilità dei sistemi basati su LLM e Knowledge Graph:
+* **Antidoto alle Allucinazioni Strutturali**: Sebbene un LLM possa produrre inesattezze nel testo libero, i vincoli SHACL costituiscono un *firewall* strutturale impassibile, impedendo la creazione di nodi orfani, relazioni sintatticamente invalide o l'omissione di metadati di provenienza.
+* **Preservazione dell'Integrità per GraphRAG**: Le query traversali complesse (es. *"Recupera le note collegate a fonti ad alto Trust Tier che analizzano i limiti del RAG"*) presuppongono l'esistenza rigorosa dei percorsi relazionali (`sh:path`). SHACL garantisce la presenza e la coerenza dei percorsi su cui viaggiano le query Cypher e SPARQL.
+* **Codifica Informatica della Combinazione SECI**: I vincoli SHACL rappresentano la formalizzazione software del principio di Combinazione di Nonaka & Takeuchi, trasformando una raccolta disarticolata di documenti in una **base di conoscenza ingegnerizzata, coerente e auditabile**.
 
 ### C. Internalizzazione Potenziata tramite "GraphRAG" (Interrogazione Traversale)
 Per favorire l'Internalizzazione, gli utenti dell'organizzazione devono poter recuperare in modo fluido ed esaustivo il sapere accumulato per risolvere problemi complessi. Il sistema **GraphRAG (Graph Retrieval-Augmented Generation)** supera i limiti del RAG vettoriale tradizionale (spesso cieco alle connessioni concettuali multi-hop). Sfruttando la struttura a grafo in cui i nodi rappresentano concetti/entità e gli archi esplicitano le relazioni, GraphRAG permette all'LLM di eseguire navigazioni traversali k-hop. Le risposte agli utenti risultano così contestualizzate, logicamente connesse e direttamente riconducibili alle fonti, accelerando il processo di apprendimento e assimilazione individuale.
