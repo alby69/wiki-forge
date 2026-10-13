@@ -12,6 +12,7 @@ tags:
 ## 2026-10-13
 
 * **Update**: Aggiunto preambolo definitorio della pipeline nella [Introduzione](capitoli/01-introduzione.md), come ponte tra l'apertura del capitolo e il paragrafo §1.2.1.
+* **Update**: Riscritto in forma più estesa e discorsiva il §1.2.3 della [Introduzione](capitoli/01-introduzione.md) (Limite Strutturale #2: perdita di struttura logica e allucinazioni sui confronti).
 
 ## 2026-10-09
 
