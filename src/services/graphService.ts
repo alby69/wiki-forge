@@ -9,14 +9,17 @@ export class GraphService {
    * Transforms WikiNotes into standard GraphData JSON for Graph Viewer engine
    */
   public generateGraphData(notes: WikiNote[]): GraphData {
+    // Index pages (bundle-root and topic `index.md`) and the audit trail
+    // (`log.md`) are structural files, not articles: keep them out of the graph.
+    const articleNotes = notes.filter(note => !this.isStructural(note));
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     const knownNoteIds = new Set<string>();
 
-    notes.forEach(note => knownNoteIds.add(note.id));
+    articleNotes.forEach(note => knownNoteIds.add(note.id));
 
     // 1. Create nodes
-    notes.forEach(note => {
+    articleNotes.forEach(note => {
       const inDegree = note.backlinks?.length || 0;
       const outDegree = note.outboundLinks?.length || 0;
       const val = Math.max(1, inDegree + outDegree);
@@ -32,7 +35,7 @@ export class GraphService {
     });
 
     // 2. Create edges from wiki links (resolves same- and cross-folder links)
-    notes.forEach(note => {
+    articleNotes.forEach(note => {
       note.outboundLinks.forEach(target => {
         const targetNote = this.parser.resolveLinkTarget(target, notes);
 
@@ -167,5 +170,14 @@ export class GraphService {
     if (note.tags.includes('llm') || note.tags.includes('agent')) return '#ba68c8';
     if (note.folder === 'wiki') return '#64b5f6';
     return '#90a4ae';
+  }
+
+  /**
+   * Structural files (bundle-root / topic indexes and the OKF audit log) that
+   * should never render as article nodes in the graph.
+   */
+  private isStructural(note: WikiNote): boolean {
+    const fileName = (note.path || note.id).toLowerCase().split('/').pop() || '';
+    return fileName === 'index' || fileName === 'index.md' || fileName === 'log' || fileName === 'log.md';
   }
 }
