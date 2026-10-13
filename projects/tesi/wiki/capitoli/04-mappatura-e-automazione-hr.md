@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione"
 description: "Mappatura e automazione delle funzioni HR: analisi percentuale, modello SECI e analogia tra Competency Questions e Competency Framework"
 status: draft
-maturita: 50
+maturita: 75
 tags: [thesis/chapter, topic/hr, topic/automation, status/draft]
 generated:
   by: process:jules-agent
@@ -33,7 +33,7 @@ Analisi storica e funzionale dei processi chiave delle Risorse Umane:
 
 ## 4.3 Il Modello SECI ed il Competency Framework
 - **Applicazione del Modello SECI**: Come la conoscenza tacita degli HR specialist viene *esternalizzata* ed *ingegnerizzata* nell'infrastruttura.
-- **Analogia Operativa**: Le *Competency Questions* (CQ) dell'ingegneria ontologica rispecchiano la struttura formale dei *Competency Framework* usati dalle HR per mappare le mansioni.
+- **Analogia Operativa**: Le *Competency Questions* (CQ) dell'ingegneria ontologica rispecchiano la struttura formale dei *Competency Framework* usati dalle HR per mappare le mansioni. Nell'interfaccia grafica di Wiki-Forge, l'operatore non tecnico può verificare la copertura delle competenze inviando il comando `/validate-cq` nella chat **💬 3. Chiedi** oppure aprendo la finestra **🧠 KE Workbench**.
 
 ## 4.4 Rischi d'Integrazione: La Discriminazione Algoritmica (Algorithmic Bias) nei Processi HR
 L'introduzione dell'intelligenza artificiale nei processi Risorse Umane comporta rischi etici e giuridici di primaria grandezza. Tra questi, la **discriminazione algoritmica** (*algorithmic bias*) rappresenta la produzione sistematica ed ingiusta di risultati pregiudizievoli nei confronti di specifici individui o gruppi sensibili, basandosi su caratteristiche protette (genere, età, etnia, disabilità, estrazione socioeconomica).
@@ -51,13 +51,13 @@ La discriminazione algoritmica non minaccia unicamente il recruiting, ma si este
 * **Predizione dell'Abbandono (Predictive Attrition)**: Algoritmi predittivi possono classificare erroneamente dipendenti in specifiche fasce di età o genere come *"ad alto rischio di dimissioni"*, portando ad un'esclusione preventiva da opportunità di carriera o progetti strategici.
 * **Revisioni Salariali**: Sistemi che raccomandano aumenti retributivi basandosi sullo storico retributivo ereditano ed amplificano il *gender pay gap* pregresso.
 
-### 4.4.3 La Soluzione Infrastrutturale: Wiki-Forge, GraphRAG e SHACL come Presidio Etico
+### 4.4.3 La Soluzione Infrastrutturale: Wiki-Forge Web UI, GraphRAG e SHACL come Presidio Etico
 In un sistema RAG tradizionale, l'algoritmo recupera chunk di testo estratti da documenti storici senza contestualizzazione critica, col rischio che un giudizio storico viziato da bias venga riproposto dall'LLM come un fatto oggettivo.
 
-L'architettura **Wiki-Forge + GraphRAG + SHACL** fornisce un presidio strutturale contro la discriminazione algoritmica:
-* **Firewall Etico con Vincoli SHACL**: I vincoli W3C escludono o segnalano alla revisione umana obbligatoria qualsiasi scheda o decisione di promozione priva di evidenze trasparenti ed adeguate.
+L'architettura **Wiki-Forge + GraphRAG + SHACL** gestita tramite la Web UI fornisce un presidio strutturale contro la discriminazione algoritmica:
+* **Firewall Etico con Vincoli SHACL**: I vincoli W3C escludono o segnalano alla revisione umana obbligatoria (visibile nella finestra **📥 Review Queue**) qualsiasi scheda o decisione di promozione priva di evidenze trasparenti ed adeguate.
 * **Tracciabilità e Ponderazione via Trust Tiers**: I giudizi informali o non verificati ricevono un *Trust Tier* basso (`unverified`), impedendo che opinioni soggettive storiche influenzino le sintesi del sistema.
-* **Ispezionabilità del Grafo (Auditability)**: A differenza delle "black box" dei modelli predittivi chiusi, un Knowledge Graph è pienamente navigabile tramite query Cypher e SPARQL, consentendo agli audit interni di tracciare e neutralizzare nodi o correlazioni discriminatorie.
+* **Ispezionabilità del Grafo (Auditability)**: A differenza delle "black box" dei modelli predittivi chiusi, il Knowledge Graph è pienamente navigabile sia visivamente nella vista **🕸️ Graph** sia tramite la chat **💬 3. Chiedi**, consentendo agli HR Manager di tracciare e neutralizzare nodi o correlazioni discriminatorie.
 
 ## Collegamenti Correlati
 - [[competenze-e-hr]]
@@ -65,3 +65,4 @@ L'architettura **Wiki-Forge + GraphRAG + SHACL** fornisce un presidio struttural
 - [[evidenza-mercato-del-lavoro]]
 - [[sostituzione-o-trasformazione]]
 - [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/05-considerazioni-personali|Capitolo 5: Considerazioni Personali]]
