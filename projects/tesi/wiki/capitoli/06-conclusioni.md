@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 6: Conclusioni"
 description: "Sintesi del percorso, prospettive future per le Risorse Umane e direzioni di ricerca"
 status: draft
-maturita: 50
+maturita: 75
 tags: [thesis/chapter, topic/conclusions, status/draft]
 generated:
   by: process:jules-agent
@@ -20,18 +20,23 @@ sources:
 # Capitolo 6: Conclusioni — Sintesi del Percorso e Prospettive Future per le Risorse Umane
 
 ## 6.1 Sintesi dei Risultati
-La ricerca ha dimostrato la fattibilità e l'efficacia di un modello ibrido di Knowledge Management basato sull'integrazione tra NotebookLM e Wiki-Forge. L'adozione del formato OKF v0.2 e della validazione ontologica SHACL permette di superare le criticità del RAG convenzionale, garantendo una sintesi rigorosa della letteratura e la tracciabilità delle fonti.
+La ricerca condotta in questo lavoro di tesi magistrale ha dimostrato la fattibilità e l'efficacia strategica di un modello ibrido di Knowledge Management basato sull'integrazione tra Google NotebookLM (fase di *Discovery*) e Wiki-Forge (fase di *Consolidation*).
 
-## 6.2 Il Futuro della Funzione HR
-La funzione HR si posiziona al centro della trasformazione digitale:
-- Non più mera amministrazione o recruiting reattivo, ma gestione strategica del capitale intellettuale.
-- Presidio etico contro le allucinazioni e le discriminazioni algoritmiche.
+L'adozione del formato Open Knowledge Format (OKF v0.2), della validazione ontologica W3C SHACL e dell'interrogazione GraphRAG consente di superare in modo radicale i limiti strutturali del RAG convenzionale (effimerità delle risposte, perdita delle relazioni e allucinazioni sui confronti). Inoltre, l'implementazione di un'interfaccia grafica (Web UI) incentrata sulla **Modalità Semplice (Focus Mode)** ha dimostrato che una complessa architettura di Knowledge Engineering può essere utilizzata in modo fluido ed autonomo da operatori non tecnici (HR Specialist, manager e tesisti), riducendo a tre semplici passaggi visuali (**📥 1. Carica**, **⚡ 2. Compila**, **💬 3. Chiedi**) l'intero flusso di costruzione e consultazione della base di conoscenza.
+
+## 6.2 Il Futuro della Funzione HR: La Governance del Capitale Intellettuale
+La funzione Risorse Umane si posiziona al centro della trasformazione digitale aziendale:
+- **Da gestione amministrativa a Knowledge Curation**: L'HR Manager evolve in un **Knowledge Curation Officer (KCO)**, responsabile della definizione delle tassonomie aziendali, della qualità dei dati e della governance dell'intelligenza organizzativa.
+- **Presidio etico e tutela delle persone**: L'infrastruttura di Knowledge Engineering, combinando la tracciabilità delle fonti (Trust Tiers) ed i vincoli di validazione (SHACL), agisce come un presidio strutturale contro la discriminazione algoritmica (*algorithmic bias*) e le allucinazioni nei processi di valutazione e selezione.
+- **Valorizzazione del tempo umano**: Automatizzando la "routine igienica" della ricerca informativa e della prima sintetizzazione dei testi, il sistema libera risorse che il professionista HR può reindirizzare verso la cura delle relazioni interpersonali, lo sviluppo del talento ed il benessere organizzativo.
 
 ## 6.3 Sviluppi Futuri della Ricerca
-- Estensione dell'architettura a casi d'uso aziendali reali ed integrazione con sistemi HRIS (Human Resource Information Systems).
-- Sperimentazione di agenti autonomi di manutenzione della conoscenza (*Auto-Gardener*) su vasta scala.
+- **Integrazione con i sistemi HRIS aziendali**: Estensione dell'architettura per dialogare direttamente con i software gestionali delle Risorse Umane (es. Workday, SAP SuccessFactors) mediante connettori semantici e API REST.
+- **Agenti Autonomi di Manutenzione della Conoscenza (*Auto-Gardener*)**: Sperimentazione di routine automatizzate per l'identificazione preventiva di schede obsolete, link rotti e concetti duplicati su Knowledge Base di grandi dimensioni.
+- **Estensione dei Framework di Competenza (ESCO/ISCO)**: Mappatura automatica delle note atomiche sui vocabolari europei standardizzati per facilitare la mobilità interna ed il reskilling continuo dei lavoratori.
 
 ## Collegamenti Correlati
 - [[capitoli/00-frontespizio-e-sinossi|Frontespizio e Sinossi]]
 - [[capitoli/01-introduzione|Capitolo 1: Introduzione]]
+- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
 - [[capitoli/05-considerazioni-personali|Capitolo 5: Considerazioni Personali]]

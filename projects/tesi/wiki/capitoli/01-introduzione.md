@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 1: Introduzione"
 description: "Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale"
 status: draft
-maturita: 75
+maturita: 80
 tags: [thesis/chapter, topic/ai, topic/hr, status/draft]
 generated:
   by: process:jules-agent
@@ -67,7 +67,7 @@ Qualora l'utente ponga una domanda comparativa o sintetica ("Qual è la soluzion
 2. **Allucinazioni relazionali**: Generazione di inferenze non supportate o errate sulle relazioni reciproche.
 3. **Incapacità di ragionamento multi-hop e aggregativo**: Impossibilità di rispondere con accuratezza a quesiti che richiedono l'aggregazione di dati distribuiti su più sezioni (es. conteggi, filtraggi condizionali o analisi di dipendenza).
 
-La radice del problema risiede nel fatto che il RAG tradizionale treats il sapere come un insieme discreto di **frammenti isolati**, anziché come un **grafo di entità e relazioni**. La *similarity search* si limita ad individuare la prossimità semantica nello spazio vettoriale, ma rimane "cieca" di fronte alla natura delle relazioni (es. *is-a*, *costa*, *dipende-da*, *adatto-a*).
+La radice del problema risiede nel fatto che il RAG tradizionale tratta il sapere come un insieme discreto di **frammenti isolati**, anziché come un **grafo di entità e relazioni**. La *similarity search* si limita ad individuare la prossimità semantica nello spazio vettoriale, ma rimane "cieca" di fronte alla natura delle relazioni (es. *is-a*, *costa*, *dipende-da*, *adatto-a*).
 
 ### 1.2.4 Sintesi Comparativa: Il RAG come "Ponte Incompleto"
 I limiti descritti mostrano come il RAG classico rappresenti un ottimo strumento di recupero informativo puntuale, ma un'infrastruttura del tutto inadeguata per l'ingegneria e la governance della conoscenza organizzativa.
@@ -81,16 +81,23 @@ I limiti descritti mostrano come il RAG classico rappresenti un ottimo strumento
 
 Per superare questa condizione di "ponte incompleto", si rende necessario l'avanzamento verso un'architettura **GraphRAG**, supportata da meccanismi di tracciabilità (*Trust Tiers*) e validazione ontologica (*SHACL*), in grado di preservare la rete relazionale della conoscenza e di trasformare ogni interazione in un tassello di arricchimento permanente della Knowledge Base aziendale (tematiche sviluppate nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]).
 
-## 1.3 Il Paradigma del Knowledge Engineering
+## 1.3 Il Paradigma del Knowledge Engineering e la Democratizzazione dell'Interfaccia
 Il passaggio fondamentale consiste nel passare da un approccio passivo di retrieval a una pratica attiva di **Knowledge Engineering**. In questo modello, l'LLM non è un oracolo usa-e-getta, ma un partner di ricerca che compila e aggiorna una Knowledge Base dinamica interconnessa.
+
+Affinché questo paradigma sia concretamente applicabile nell'ambito delle Risorse Umane — dove gli operatori e i manager possiedono competenze prevalentemente organizzative e giuridico-sociali piuttosto che informatiche —, la piattaforma elimina ogni barriera d'ingresso tecnica. L'infrastruttura di Knowledge Engineering viene messa a disposizione attraverso un'interfaccia visiva (Web UI) suddivisa in due livelli:
+* **Modalità Semplice (Focus Mode 🌱)**: Progetta l'interazione attorno a tre azioni visive immediate (**📥 1. Carica**, **⚡ 2. Compila**, **💬 3. Chiedi**), consentendo all'HR Specialist di alimentare il sistema, avviare l'estrazione dei concetti e consultare il Knowledge Graph senza dover scrivere codice o righe di comando.
+* **Modalità Sviluppatore / Governance (Developer Mode 👑)**: Offre al Knowledge Engineer o al referente di Data Governance strumenti di audit, gestione delle tassonomie (**🏷️ Tag Manager**), validazione delle domande di competenza (**🧠 KE Workbench**) e revisione della coda di approvazione (**📥 Review Queue**).
+
+In questo modo, la complessità tecnologica del Knowledge Engineering viene totalmente "astratta" e resa usabile, permettendo al professionista HR di concentrarsi sulla qualità dei contenuti e sul valore organizzativo della conoscenza.
 
 ## 1.4 Ipotesi di Ricerca
 1. L'AI generativa nelle HR non sostituisce il fattore umano, ma richiede nuove competenze di *Knowledge Curation* e *Data Governance*.
-2. Un'architettura ibrida (Discovery via NotebookLM + Consolidation via Wiki-Forge) permette di costruire una Knowledge Base aziendale accademica ed enterprise priva dei limiti del RAG classico.
+2. Un'architettura ibrida (Discovery via NotebookLM + Consolidation via Wiki-Forge Web UI) permette di costruire una Knowledge Base aziendale accademica ed enterprise priva dei limiti del RAG classico e pienamente usabile da operatori non tecnici.
 
 ## Collegamenti Correlati
 - [[capitoli/00-frontespizio-e-sinossi|Frontespizio e Sinossi]]
 - [[capitoli/02-studio-degli-attori-principali|Capitolo 2: Studio degli Attori Principali]]
+- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
 - [[sostituzione-o-trasformazione]]
 - [[concezioni-dell-ia]]
 - [[competenze-e-hr]]
