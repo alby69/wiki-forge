@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Frontespizio e Sinossi"
 description: Breve riassunto esecutivo della tesi magistrale: obiettivi di ricerca,
 status: draft
 maturita: 32

@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
+title: Evidenza empirica sul mercato del lavoro e l'IA
 description: Analisi empirica di Stanford SIEPR sull'impatto dell'IA sull'occupazione
 status: draft
 tags:

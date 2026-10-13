@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida"
 description: Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation):
 status: draft
 maturita: 90

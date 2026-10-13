@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione"
 description: Mappatura e automazione delle funzioni HR: analisi percentuale, modello
 status: draft
 maturita: 90

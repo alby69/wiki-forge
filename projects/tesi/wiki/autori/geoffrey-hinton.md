@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: L''Impatto dell''Intelligenza Artificiale su Lavoro e Risorse Umane nel
+title: Geoffrey Hinton
 description: Padrino dell''IA: connessionismo, job shock 2026, allineamento e ridefinizione
 status: draft
 tags:

@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: Analisi del Pensiero di David Graeber applicato all'Intelligenza Artificiale,
+title: David Graeber
 description: Critica antropologica di bullshit jobs, automazione e feudalesimo manageriale
 status: draft
 tags:

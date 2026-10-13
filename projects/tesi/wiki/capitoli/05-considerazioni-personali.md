@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 5: Considerazioni Personali"
 description: Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering,
 status: draft
 maturita: 90

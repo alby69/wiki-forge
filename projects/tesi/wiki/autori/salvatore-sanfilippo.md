@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane
+title: Salvatore Sanfilippo
 description: Creatore di Redis: programmazione automatica, intenzionalità umana e
 status: draft
 tags:

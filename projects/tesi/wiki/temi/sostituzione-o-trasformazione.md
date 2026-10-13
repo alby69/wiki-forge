@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Sostituzione o Trasformazione del Lavoro
 description: Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del
 status: draft
 tags:

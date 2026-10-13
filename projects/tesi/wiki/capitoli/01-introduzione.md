@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 1: Introduzione"
 description: Panoramica, premesse e ipotesi di ricerca: l''impatto dell''AI sulle
 status: draft
 maturita: 90

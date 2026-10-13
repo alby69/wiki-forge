@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane
+title: Stefano Gatti
 description: Head of Data & Analytics: IA ibrida come amplificatore di competenze,
 status: draft
 tags:

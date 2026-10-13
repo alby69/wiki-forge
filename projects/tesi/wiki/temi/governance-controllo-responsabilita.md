@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Governance, Controllo e Responsabilità
 description: Fiducia e responsabilità nell''EU AI Act: piramide del rischio, obblighi
 status: draft
 tags:

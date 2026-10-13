@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
+title: Linee guida per la tesi HR sull'impatto dell'IA
 description: Quattro pilastri strategici per la governance HR nell'era dell'IA
 status: draft
 tags:

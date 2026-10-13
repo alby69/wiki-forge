@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: Guida Completa agli Script del Wiki-Forge Script Control Panel
+title: Wiki-Forge Script Control Panel
 description: Panoramica degli script Python per gestione e compilazione wiki-forge
 status: draft
 tags:

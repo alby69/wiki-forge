@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane
+title: Nello Cristianini
 description: Scienziato dei dati: IA comportamentale e teleologica, scorciatoia statistica
 status: draft
 tags:

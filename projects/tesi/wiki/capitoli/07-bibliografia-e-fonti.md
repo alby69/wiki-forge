@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Bibliografia e Fonti"
 description: Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia
 status: draft
 maturita: 90

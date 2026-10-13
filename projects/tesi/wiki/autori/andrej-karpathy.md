@@ -1,6 +1,6 @@
 ---
 type: Reference
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Andrej Karpathy
 description: Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro
 status: draft
 tags:

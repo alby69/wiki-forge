@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Concezioni dell'Intelligenza Artificiale
 description: L''IA come strumento probabilistico non antropomorfo: determinismo,
 status: draft
 tags:

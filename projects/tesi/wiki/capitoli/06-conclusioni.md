@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 6: Conclusioni"
 description: Sintesi del percorso, prospettive future per le Risorse Umane e direzioni
 status: draft
 maturita: 90

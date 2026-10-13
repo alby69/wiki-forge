@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
+title: Geopolitica dell'IA - I Poli Statunitense, Europeo e Cinese
 description: Confronto tra Stati Uniti, Europa e Cina nello sviluppo dell'IA
 status: draft
 tags:

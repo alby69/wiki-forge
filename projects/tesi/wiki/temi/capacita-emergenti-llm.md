@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Capacità Emergenti dei Large Language Models
 description: Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità
 status: draft
 tags:

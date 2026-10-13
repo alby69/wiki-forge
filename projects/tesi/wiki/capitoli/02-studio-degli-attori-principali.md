@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Documento di Progettazione della Tesi Magistrale
+title: "Capitolo 2: Studio degli Attori Principali del Settore AI"
 description: Il dibattito sull''IA: attori tecnici (Karpathy, Hinton, Amodei) e prospettive
 status: draft
 maturita: 90

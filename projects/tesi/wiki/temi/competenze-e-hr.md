@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+title: Competenze e Risorse Umane
 description: Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore
 status: draft
 tags:
