@@ -76,6 +76,11 @@ export class GraphService {
       filteredNodes = filteredNodes.filter(node => node.group === options.folder);
     }
 
+    if (options.excludedFolders && options.excludedFolders.length > 0) {
+      const excluded = new Set(options.excludedFolders);
+      filteredNodes = filteredNodes.filter(node => !(node.group && excluded.has(node.group)));
+    }
+
     const validNodeIds = new Set(filteredNodes.map(n => n.id));
     const filteredLinks = data.links.filter(
       link => validNodeIds.has(link.source) && validNodeIds.has(link.target)

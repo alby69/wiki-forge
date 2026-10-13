@@ -30,6 +30,7 @@ export class WikiForgeApp {
   private notes: WikiNote[] = [];
   private selectedNote: WikiNote | null = null;
   private filterTags: string[] = [];
+  private excludedFolders: string[] = [];
 
   private layout!: MainLayout;
   private header!: Header;
@@ -262,6 +263,7 @@ Backlink to [[01-index]].
 
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
       onFilterChange: options => {
+        this.excludedFolders = options.excludedFolders ?? [];
         const fullData = this.graphService.generateGraphData(this.notes);
         const filtered = this.graphService.filterGraphData(fullData, {
           ...options,
@@ -310,9 +312,19 @@ Backlink to [[01-index]].
   }
 
   private refreshGraph(): void {
+    this.graphControls.setAvailableFolders(this.collectFolders(), this.excludedFolders);
     const full = this.graphService.generateGraphData(this.notes);
-    const filtered = this.graphService.filterGraphData(full, { selectedTags: this.filterTags });
+    const filtered = this.graphService.filterGraphData(full, {
+      selectedTags: this.filterTags,
+      excludedFolders: this.excludedFolders,
+    });
     this.graphViewer.updateData(filtered);
+  }
+
+  private collectFolders(): string[] {
+    const groups = new Set<string>();
+    this.notes.forEach(note => groups.add(note.folder || 'default'));
+    return Array.from(groups).sort();
   }
 
   public selectNote(noteId: string): void {
