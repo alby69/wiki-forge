@@ -1,16 +1,8 @@
----
-tags:
-  - topic/hr
-  - topic/ai
-  - status/draft
-  - topic/economics
-  - topic/anthropology
----
-
 # Temi — Topic Index
 
 ## Articles
 
+* [Architetture Multi-Agente ed AI Workflows](architetture-multi-agente.md) `[draft]` — Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi coordinati per il dominio HR e il Knowledge Engineering
 * [Capacità Emergenti dei Large Language Models](capacita-emergenti-llm.md) `[draft]` — Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.
 * [Competenze e Risorse Umane](competenze-e-hr.md) `[draft]` — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
 * [Concezioni dell'Intelligenza Artificiale](concezioni-dell-ia.md) `[draft]` — L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.

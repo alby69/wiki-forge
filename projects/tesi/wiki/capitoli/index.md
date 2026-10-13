@@ -1,13 +1,3 @@
----
-tags:
-  - status/draft
-  - topic/ai
-  - topic/hr
-  - topic/economics
-  - topic/anthropology
-  - author/karpathy
----
-
 # Capitoli — Topic Index
 
 ## Articles

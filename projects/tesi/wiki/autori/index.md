@@ -1,13 +1,3 @@
----
-tags:
-  - topic/hr
-  - status/draft
-  - topic/ai
-  - topic/economics
-  - topic/anthropology
-  - author/karpathy
----
-
 # Autori — Topic Index
 
 ## Articles

@@ -1,12 +1,3 @@
----
-tags:
-  - topic/hr
-  - status/draft
-  - topic/ai
-  - topic/economics
-  - topic/anthropology
----
-
 # Analisi — Topic Index
 
 ## Articles

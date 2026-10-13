@@ -92,7 +92,7 @@ def generate_root_index(wiki_root: Path):
             continue
         meta = parse_metadata(file_path)
         rel_path = file_path.relative_to(wiki_root)
-        meta["rel_path"] = str(rel_path)
+        meta["rel_path"] = rel_path.as_posix()
         meta["mtime"] = file_path.stat().st_mtime
         all_articles.append(meta)
 
@@ -161,7 +161,7 @@ def main():
             "topic_indexes_generated": topic_count
         }))
     else:
-        print("✅ OKF §8 reindexing completed successfully.")
+        print("OKF v0.2 reindexing completed successfully (8: topics and bundle-root index written).")
 
 if __name__ == "__main__":
     main()
