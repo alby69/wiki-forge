@@ -555,6 +555,12 @@ export interface AttachNoteRequest {
   mode?: 'append' | 'create' | 'overwrite';
 }
 
+export interface ApplyEditRequest {
+  file: string;
+  find: string;
+  replace: string;
+}
+
 export interface ScratchpadEntry {
   id: string;
   timestamp: string;
@@ -868,6 +874,26 @@ export class AgentServer {
     return this.llmClient;
   }
 
+  /**
+   * The repository root `AGENT.md` is often just a one-line pointer to the
+   * real operating manual (e.g. `docs/AGENT.md`). Following the pointer makes
+   * the manual actually reach the LLM instead of the bare pointer string.
+   */
+  private async resolveAgentManual(content: string): Promise<string> {
+    const trimmed = content.trim();
+    if (!trimmed || /\s/.test(trimmed)) return content;
+    if (!/\.md$/i.test(trimmed) || trimmed.includes(':')) return content;
+    const candidate = path.resolve(this.rootDir, trimmed);
+    const rel = path.relative(this.rootDir, candidate);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) return content;
+    try {
+      const resolved = await fs.readFile(candidate, 'utf-8');
+      return resolved.trim() ? resolved : content;
+    } catch (_e) {
+      return content;
+    }
+  }
+
   public async getSystemPrompt(): Promise<string> {
     if (this.systemPromptCache) {
       return this.systemPromptCache;
@@ -876,6 +902,7 @@ export class AgentServer {
     let agentMd = '';
     try {
       agentMd = await fs.readFile(path.join(this.rootDir, 'AGENT.md'), 'utf-8');
+      agentMd = await this.resolveAgentManual(agentMd);
     } catch (_e) {
       agentMd = 'You are the librarian of a personal knowledge base (an LLM Wiki). Synthesize answers from wiki notes in Markdown with [[wikilinks]].';
     }
@@ -891,8 +918,37 @@ export class AgentServer {
       // Ignore
     }
 
-    this.systemPromptCache = `${projectContext}=== OPERATING MANUAL (AGENT.md) ===\n${agentMd}`;
+    this.systemPromptCache = `${projectContext}=== OPERATING MANUAL (AGENT.md) ===\n${agentMd}${this.getEditProtocol()}`;
     return this.systemPromptCache;
+  }
+
+  /**
+   * Protocol appended to every system prompt so agents propose file changes in
+   * a machine-readable form the UI can apply deterministically (see
+   * /api/wiki/apply-edit). Without it, edits live only in the chat as prose and
+   * a confirmation like "sì, procedi" cannot be turned into a file write.
+   */
+  private getEditProtocol(): string {
+    return [
+      '',
+      '=== EDIT PROPOSAL PROTOCOL ===',
+      'When you propose a concrete change to an existing wiki note and you expect the user to confirm it, include ONE fenced block per change, in exactly this format:',
+      '',
+      '```wiki-edit',
+      'file: capitoli/01-introduzione.md',
+      'find: |',
+      '  <exact text currently present in the file, copied verbatim>',
+      'replace: |',
+      '  <the new text>',
+      '```',
+      '',
+      'Rules:',
+      '- `file` is the note path relative to the wiki directory (e.g. `capitoli/01-introduzione.md`).',
+      '- `find` MUST be copied verbatim from the file and MUST match exactly once; include enough surrounding lines to be unique.',
+      '- The user can approve with a short reply (e.g. "sì, procedi"); on approval the system applies the block deterministically.',
+      '- Never claim you already modified the file: propose the block and wait for confirmation.',
+      '- If you only answer a question, do NOT emit a wiki-edit block.',
+    ].join('\n');
   }
 
   private parseJsonBody<T>(req: http.IncomingMessage): Promise<T> {
@@ -1612,6 +1668,20 @@ export class AgentServer {
       return true;
     }
 
+    if (pathname === '/api/wiki/apply-edit' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<ApplyEditRequest>(req);
+        const result = await this.applyWikiEdit(body, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, note: result }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     if (pathname === '/api/wiki/attach' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<AttachNoteRequest>(req);
@@ -2087,6 +2157,128 @@ export class AgentServer {
     );
   }
 
+  /**
+   * Applies a single, deterministic find/replace edit proposed by the agent.
+   * The `find` block must match exactly once so the edit can never touch the
+   * wrong location; ambiguous or missing matches are rejected instead of
+   * letting the LLM rewrite an entire file.
+   */
+  public async applyWikiEdit(data: ApplyEditRequest, projectId: string = 'default'): Promise<WikiNote> {
+    if (!data || typeof data.file !== 'string' || !data.file.trim()) {
+      const err = new Error('Missing "file" in edit proposal');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+    if (typeof data.find !== 'string' || data.find.length === 0) {
+      const err = new Error('Missing or empty "find" block in edit proposal');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+    if (typeof data.replace !== 'string') {
+      const err = new Error('Missing "replace" block in edit proposal');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
+    const rel = data.file.replace(/\\/g, '/').replace(/^\.?\//, '').trim();
+
+    const resolveCandidates = (): string[] => {
+      const rels = /\.md$/i.test(rel) ? [rel] : [rel, `${rel}.md`];
+      const raw: string[] = [];
+      for (const candidateRel of rels) {
+        raw.push(path.resolve(wikiDir, candidateRel.replace(/^wiki\//i, '')));
+        raw.push(path.resolve(projRoot, candidateRel));
+      }
+      const seen = new Set<string>();
+      const candidates: string[] = [];
+      for (const candidate of raw) {
+        if (seen.has(candidate)) continue;
+        seen.add(candidate);
+        const candidateRel = path.relative(wikiDir, candidate);
+        if (!candidateRel.startsWith('..') && !path.isAbsolute(candidateRel)) {
+          candidates.push(candidate);
+        }
+      }
+      return candidates;
+    };
+
+    const containment = (candidate: string): string => path.relative(wikiDir, candidate);
+
+    let targetPath: string | null = null;
+    for (const candidate of resolveCandidates()) {
+      try {
+        await fs.access(candidate);
+        targetPath = candidate;
+        break;
+      } catch (_e) {
+        // try next candidate
+      }
+    }
+
+    if (!targetPath) {
+      const err = new Error(`Access denied or note not found: "${data.file}" must be an existing note inside the wiki directory`);
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    const relToWiki = containment(targetPath);
+    if (relToWiki.startsWith('..') || path.isAbsolute(relToWiki)) {
+      const err = new Error('Access denied: target path must reside inside wiki directory');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    const raw = await fs.readFile(targetPath, 'utf-8');
+    const normalize = (value: string): string => value.replace(/\r\n/g, '\n');
+    const rtrimLines = (value: string): string => value.split('\n').map(line => line.replace(/[ \t]+$/, '')).join('\n');
+    const countMatches = (haystack: string, needle: string): number => haystack.split(needle).length - 1;
+
+    let haystack = normalize(raw);
+    let needle = normalize(data.find).replace(/\n+$/, '');
+    let replacement = normalize(data.replace);
+    let occurrences = countMatches(haystack, needle);
+
+    if (occurrences === 0) {
+      const trimmedHaystack = rtrimLines(haystack);
+      const trimmedNeedle = rtrimLines(needle);
+      const trimmedOccurrences = countMatches(trimmedHaystack, trimmedNeedle);
+      if (trimmedOccurrences > 0) {
+        haystack = trimmedHaystack;
+        needle = trimmedNeedle;
+        replacement = rtrimLines(replacement);
+        occurrences = trimmedOccurrences;
+      }
+    }
+
+    if (occurrences === 0) {
+      const err = new Error('Edit not applied: the "find" block was not found in the note (no exact match).');
+      (err as unknown as { status: number }).status = 409;
+      throw err;
+    }
+    if (occurrences > 1) {
+      const err = new Error(`Edit not applied: the "find" block is ambiguous (${occurrences} matches). Add more surrounding context.`);
+      (err as unknown as { status: number }).status = 409;
+      throw err;
+    }
+
+    const updated = haystack.replace(needle, replacement);
+    await fs.writeFile(targetPath, updated, 'utf-8');
+
+    const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
+    const stem = path.basename(targetPath, '.md');
+    const relativePath = path.relative(projRoot, targetPath).replace(/\\/g, '/');
+
+    return this.parser.parseNote(
+      stem,
+      stem.replace(/[-_]/g, ' '),
+      updated,
+      folderName === '.' ? 'wiki' : folderName,
+      relativePath
+    );
+  }
+
   private async validateSafePath(targetPath: string, projectId: string = 'default'): Promise<void> {
     const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const rawDir = path.resolve(await this.getRawDir(projectId));
@@ -2253,7 +2445,7 @@ export class AgentServer {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
-    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'verify' || command === 'human-review') {
+    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'verify' || command === 'human-review' || command === 'apply' || command === 'applica') {
       const result = await this.processChatCommand(req, projectId);
       onChunk(result);
       return result;
@@ -2468,6 +2660,11 @@ export class AgentServer {
         } catch (err) {
           return `### ðŸª„ Wizard: ${scenario.name}\n\n**Workflow:** ${scenario.workflow.join(' â†’ ')}\n\n**Prompt:** ${scenario.prompt}\n\n*(LLM provider unavailable (${String(err)}).)*`;
         }
+      }
+
+      case 'apply':
+      case 'applica': {
+        return '### ✅ Applica modifica\n\nNessuna proposta pendente da applicare. Chiedi prima una modifica all\'agente: se la sua risposta include un blocco `wiki-edit`, questa la applicherà (usando il pulsante **Applica modifica** o rispondendo "sì, procedi").';
       }
 
       default: {

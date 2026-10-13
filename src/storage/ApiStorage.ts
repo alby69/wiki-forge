@@ -1,6 +1,7 @@
 import { WikiNote } from '../core/types/wiki';
 import { IStorage, IngestResult } from '../core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
+import { WikiEdit } from '../core/utils/wikiEdit';
 
 export interface AttachOptions {
   noteId?: string;
@@ -8,6 +9,12 @@ export interface AttachOptions {
   folder?: string;
   content: string;
   mode?: 'append' | 'create' | 'overwrite';
+}
+
+export interface ApplyEditResult {
+  success: boolean;
+  note?: WikiNote;
+  error?: string;
 }
 
 export interface ProjectInfo {
@@ -258,6 +265,24 @@ export class ApiStorage implements IStorage {
 
     const targetId = options.noteId || options.title?.toLowerCase().replace(/\s+/g, '-') || `attached-${Date.now()}`;
     return this.fallback.saveNote({ id: targetId, content: options.content });
+  }
+
+  public async applyEdit(edit: WikiEdit): Promise<ApplyEditResult> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/apply-edit`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(edit),
+      });
+
+      const json = (await res.json()) as { success: boolean; note?: WikiNote; error?: string };
+      if (res.ok && json.success && json.note) {
+        return { success: true, note: json.note };
+      }
+      return { success: false, error: json.error || `HTTP ${res.status}` };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
   }
 
   public async deleteNote(id: string): Promise<boolean> {

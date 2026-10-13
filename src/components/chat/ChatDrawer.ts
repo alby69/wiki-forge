@@ -1,5 +1,6 @@
 import { WikiNote } from '../../core/types/wiki';
 import { renderMarkdown } from '../../core/utils/markdown';
+import { isAffirmative, parseWikiEdits, WikiEdit } from '../../core/utils/wikiEdit';
 import { ApiStorage, AttachOptions } from '../../storage/ApiStorage';
 import { appStore } from '../../store/appStore';
 import { AttachModal } from './AttachModal';
@@ -328,6 +329,10 @@ export class ChatDrawer {
         const isUser = msg.sender === 'user';
         const bg = isUser ? '#4338ca' : '#1e293b';
         const align = isUser ? 'flex-end' : 'flex-start';
+        const pendingEdits = isUser ? [] : parseWikiEdits(msg.text);
+        const applyBtnHtml = pendingEdits.length > 0
+          ? `<button class="apply-edit-btn" data-msg-id="${msg.id}" title="Applica la modifica proposta al file (find/replace deterministico)" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">✅ Applica modifica${pendingEdits.length > 1 ? ` (${pendingEdits.length})` : ''}</button>`
+          : '';
 
         const actionChipsHtml = !isUser
           ? `
@@ -361,6 +366,7 @@ export class ChatDrawer {
                   : ''
               }
             </div>
+            ${applyBtnHtml ? `<div style="display: flex; justify-content: flex-end; padding: 0 4px;">${applyBtnHtml}</div>` : ''}
           </div>
         `;
       })
@@ -450,6 +456,18 @@ export class ChatDrawer {
       });
     });
 
+    this.container.querySelectorAll('.apply-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msgId = btn.getAttribute('data-msg-id');
+        const msg = this.messages.find(m => m.id === msgId);
+        if (!msg) return;
+        const edits = parseWikiEdits(msg.text);
+        if (edits.length > 0) {
+          void this.applyWikiEdits(edits);
+        }
+      });
+    });
+
     this.bindMessageLinks(this.container);
   }
 
@@ -514,6 +532,9 @@ export class ChatDrawer {
   public async handleSendMessage(text: string): Promise<void> {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    const lastAssistant = [...this.messages].reverse().find(m => m.sender === 'assistant');
+    const pendingEdits = lastAssistant ? parseWikiEdits(lastAssistant.text) : [];
+
     this.messages.push({
       id: `msg-${Date.now()}`,
       sender: 'user',
@@ -523,6 +544,15 @@ export class ChatDrawer {
 
     this.saveHistory();
     this.render();
+
+    // A short confirmation ("sì, procedi") for a proposal that contains
+    // machine-readable edits is applied deterministically instead of being sent
+    // to the LLM (which has no memory of the proposal and would answer a RAG
+    // query instead of writing the file).
+    if (pendingEdits.length > 0 && isAffirmative(text)) {
+      await this.applyWikiEdits(pendingEdits);
+      return;
+    }
 
     const assistantMsgId = `msg-${Date.now() + 1}`;
     const assistantMsg: ChatMessage = {
@@ -556,6 +586,37 @@ export class ChatDrawer {
 
     // The agent may have written wiki files while answering (compile, verify,
     // reindex, edits to notes): reload the vault so the UI mirrors the disk.
+    if (this.onVaultUpdatedCb) this.onVaultUpdatedCb();
+  }
+
+  /**
+   * Applies the pending `wiki-edit` proposals through the deterministic
+   * /api/wiki/apply-edit endpoint and reports the outcome in the chat.
+   */
+  public async applyWikiEdits(edits: WikiEdit[]): Promise<void> {
+    const lines: string[] = [];
+    let allOk = true;
+
+    for (const edit of edits) {
+      const result = await this.apiStorage.applyEdit(edit);
+      if (result.success && result.note) {
+        lines.push(`- ✅ \`${edit.file}\` aggiornato`);
+      } else {
+        allOk = false;
+        lines.push(`- ⚠️ \`${edit.file}\`: ${result.error || 'applicazione fallita'}`);
+      }
+    }
+
+    this.messages.push({
+      id: `msg-${Date.now()}-apply`,
+      sender: 'assistant',
+      text: `### ${allOk ? '✅ Modifica applicata' : '⚠️ Applicazione non riuscita'}\n\n${lines.join('\n')}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    });
+
+    this.saveHistory();
+    this.render();
+
     if (this.onVaultUpdatedCb) this.onVaultUpdatedCb();
   }
 }

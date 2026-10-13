@@ -45,6 +45,7 @@ export const COMMAND_CATALOG: CommandCategory[] = [
       { cmd: 'stub', label: 'Stub', icon: '🧩', usage: '<concept>', description: 'Crea un articolo segnaposto per un concetto mancante.' },
       { cmd: 'retag', label: 'Retag', icon: '🏷️', usage: '<path> [+tag] [-tag]', description: 'Modifica i tag di un articolo.' },
       { cmd: 'export-semantic', label: 'Export Semantic', icon: '🌐', description: 'Esporta in JSON-LD e Turtle (OKF v0.2).' },
+      { cmd: 'apply', label: 'Apply Edit', icon: '✅', description: 'Applica le modifiche proposte nell\'ultimo messaggio dell\'agente.' },
     ],
   },
   {

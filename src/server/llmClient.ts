@@ -343,7 +343,7 @@ function buildUserContentWithContext(userMessage: string, contextNotes?: WikiNot
   }
 
   const contextText = contextNotes
-    .map(n => `--- Note: ${n.title} (ID: [[${n.id}]], Folder: ${n.folder}) ---\n${n.content}`)
+    .map(n => `--- Note: ${n.title} (ID: [[${n.id}]], Folder: ${n.folder}, Path: ${n.path}) ---\n${n.content}`)
     .join('\n\n');
 
   return `Context notes from Wiki Knowledge Base:\n\n${contextText}\n\nUser Question / Task:\n${userMessage}`;
