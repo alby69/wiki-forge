@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 6: Conclusioni"
 description: "Sintesi del percorso, prospettive future per le Risorse Umane e direzioni di ricerca"
 status: draft
-maturita: 75
+maturita: 90
 tags: [thesis/chapter, topic/conclusions, status/draft]
 generated:
   by: process:jules-agent
@@ -22,7 +22,7 @@ sources:
 ## 6.1 Sintesi dei Risultati
 La ricerca condotta in questo lavoro di tesi magistrale ha dimostrato la fattibilità e l'efficacia strategica di un modello ibrido di Knowledge Management basato sull'integrazione tra Google NotebookLM (fase di *Discovery*) e Wiki-Forge (fase di *Consolidation*).
 
-L'adozione del formato Open Knowledge Format (OKF v0.2), della validazione ontologica W3C SHACL e dell'interrogazione GraphRAG consente di superare in modo radicale i limiti strutturali del RAG convenzionale (effimerità delle risposte, perdita delle relazioni e allucinazioni sui confronti). Inoltre, l'implementazione di un'interfaccia grafica (Web UI) incentrata sulla **Modalità Semplice (Focus Mode)** ha dimostrato che una complessa architettura di Knowledge Engineering può essere utilizzata in modo fluido ed autonomo da operatori non tecnici (HR Specialist, manager e tesisti), riducendo a tre semplici passaggi visuali (**📥 1. Carica**, **⚡ 2. Compila**, **💬 3. Chiedi**) l'intero flusso di costruzione e consultazione della base di conoscenza.
+L'adozione del formato Open Knowledge Format (OKF v0.2), della validazione ontologica W3C SHACL e dell'interrogazione GraphRAG consente di superare in modo radicale i limiti strutturali del RAG convenzionale (effimerità delle risposte, perdita delle relazioni e allucinazioni sui confronti). Inoltre, l'implementazione di un'interfaccia grafica (Web UI) incentrata sulla **Modalità Semplice (Focus Mode)** ha dimostrato che una complessa architettura di Knowledge Engineering può essere utilizzata in modo fluido ed autonomo da operatori non tecnici (HR Specialist, manager e tesisti), sintetizzando nel flusso operativo a tre fasi descritto nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]] l'intero ciclo di costruzione e consultazione della base di conoscenza.
 
 ## 6.2 Il Futuro della Funzione HR: La Governance del Capitale Intellettuale
 La funzione Risorse Umane si posiziona al centro della trasformazione digitale aziendale:
