@@ -3,7 +3,7 @@ type: Concept
 title: Documento di Progettazione della Tesi Magistrale
 description: Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation):
 status: draft
-maturita: 68
+maturita: 90
 tags:
   - thesis/chapter
   - topic/architecture
@@ -70,12 +70,7 @@ Nel workflow ibrido, le note atomiche vengono generate attraverso una sequenza a
   4. *Salvataggio e Connessione*: Le note vengono archiviate nel filesystem (`wiki/`) in formato Markdown/OKF v0.2, tessendo archi di relazione visibili nella **Graph View**.
 
 #### Risoluzione dei Limiti Strutturali del RAG Tradizionale
-Le note atomiche rappresentano la risposta diretta ai due principali difetti del RAG convenzionale evidenziati nel [[capitoli/01-introduzione|Capitolo 1]]:
-
-| Limite del RAG Tradizionale | Soluzione delle Note Atomiche in Wiki-Forge |
-| :--- | :--- |
-| **Risposte effimere** (nessun accumulo di capitale intellettuale) | Le note atomiche **persistono** nel filesystem (`wiki/`). Ogni estrazione e riflessione arricchisce in modo permanente la base di conoscenza della tesi o dell'organizzazione. |
-| **Perdita di struttura logica** (chunking arbitrario che distrugge le relazioni) | Le note atomiche diventano **nodi espliciti**. Anziché affidarsi esclusivamente alla similarità vettoriale tra frammenti opachi, il sistema stabilisce **archi semantici e wikilink espliciti** tra le note (es. `[[Modello SECI]]` collegato a `[[Esternalizzazione]]`). |
+Come dettagliato nel [[capitoli/01-introduzione|Capitolo 1]], la scomposizione della conoscenza in note atomiche risolve strutturalmente i limiti di effimerità e perdita di contesto del RAG tradizionale. Le note atomiche persistono in modo permanente nel filesystem (`wiki/`) come nodi espliciti interconnessi tramite wikilink e archi semantici, garantendo la conservazione delle relazioni logico-gerarchiche e consentendo l'accumulo progressivo di capitale intellettuale organizzativo.
 
 #### Esempio Pratico nel Contesto della Tesi
 Si consideri il seguente riassunto grezzo generato da NotebookLM a partire da una fonte sulla gestione del know-how:
@@ -129,6 +124,18 @@ L'integrazione tra l'LLM e la piattaforma si basa su tre pilastri tecnologici e 
 
 ### A. Esternalizzazione Affidabile tramite "Trust Tiers" (Tracciabilità delle Fonti)
 Nella fase di Esternalizzazione, la trasformazione del know-how grezzo o degli appunti informali in conoscenza esplicita richiede garanzie di affidabilità. I **Trust Tiers** (livelli di fiducia: `unverified`, `machine-confirmed`, `human-reviewed`) assegnano uno stato di validazione trasparente reso visibile da bollini colorati nell'editor e nella barra laterale. Attraverso il comando `/trace` nella chat o cliccando sui riferimenti, ogni concetto estratto resta collegato alla riga sorgente originale (`#L<start>-L<end>`).
+
+#### Esempio Pratico di Workflow di Validazione dei Trust Tiers
+Per comprendere concretamente la dinamica operativa con cui la tracciabilità viene garantita nell'interfaccia utente, si consideri la seguente sequenza di validazione passo-passo durante l'ingestione di un nuovo documento di policy aziendale sui contratti di lavoro:
+
+1. **Ingestione ed Assegnazione del Livello Iniziale (`unverified` - 🟡)**:
+   L'operatore HR carica un documento PDF contenente il nuovo regolamento interno aziendale tramite l'opzione **📥 1. Carica**. Il sistema archivia il file sorgente nella cartella `raw/` e genera una nota preliminare nel filesystem con frontmatter YAML contenente `verified: []` e la proprietà `trustTier: "unverified"`. Nella barra laterale e nell'editor della Web UI, la nota appare contrassegnata da un **bollino giallo**, ad indicare che il contenuto è stato importato ma non ha ancora subito alcuna verifica strutturale o sintattica.
+
+2. **Compilazione Agentica e Riscontro Sintattico (`machine-confirmed` - 🔵)**:
+   L'operatore attiva la funzione **⚡ 2. Compila**. L'agente LLM estrae le informazioni rilevanti decostruendole in note atomiche e collega ogni affermazione alla riga esatta del file sorgente (es. `raw/regolamento-contratti.md#L45-L52`). Contestualmente, il motore di linting OKF e il parser ontologico eseguono una verifica automatica sulla conformità della sintassi Markdown e dei wikilink. Se i controlli sintattici e i vincoli ontologici SHACL di base sono soddisfatti, il sistema aggiorna automaticamente lo stato a `machine-confirmed` (visualizzato con **bollino blu** nell'interfaccia), attestando che la nota è ben formata e correttamente ancorata alle citazioni di origine.
+
+3. **Revisione Umana via Review Queue e Promozione (`human-reviewed` - 🟢)**:
+   Nonostante la conformità sintattica, la decisione di integrare la norma nel patrimonio ufficiale aziendale richiede una validazione di merito. La nota compilata viene inviata alla finestra **📥 Review Queue** dell'interfaccia utente. L'HR Specialist (o il *Knowledge Curation Officer*) apre la scheda di revisione, analizza il testo estratto a fronte del frammento sorgente evidenziato tramite la funzione di ancoraggio puntuale, ed eventualmente apporta correzioni editoriali. Cliccando sul pulsante visivo **"Approva e Promuovi"** (o eseguendo il comando `/verify`), il sistema aggiorna il frontmatter con l'identificativo del revisore umano (es. `verified: [{by: "human:mario.rossi", at: "2026-10-12T10:30:00Z"}]`) e commuta il Trust Tier a `human-reviewed` (**bollino verde**). Da questo momento, la nota assume la massima priorità di recupero durante le interrogarioni GraphRAG e viene definitivamente incorporata nel Knowledge Graph accreditato.
 
 ### B. Combinazione Rigorosa e Governance Ontologica tramite Vincoli W3C SHACL
 Durante la fase di **Combinazione**, la conoscenza esplicita decostruita e ricompilata dall'agente LLM non deve limitarsi a confluire in un archivio indistinto: deve integrarsi in modo coerente nel Knowledge Graph senza introdurre incoerenze o frammentazioni. Per garantire l'integrità strutturale della Knowledge Base, la piattaforma adotta lo standard **W3C SHACL (Shapes Constraint Language)**.

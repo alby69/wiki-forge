@@ -3,7 +3,7 @@ type: Concept
 title: Documento di Progettazione della Tesi Magistrale
 description: Mappatura e automazione delle funzioni HR: analisi percentuale, modello
 status: draft
-maturita: 49
+maturita: 90
 tags:
   - thesis/chapter
   - topic/hr
@@ -35,13 +35,29 @@ Analisi storica e funzionale dei processi chiave delle Risorse Umane:
 - **HR Operations & Administration**: Gestione contrattuale, presenze, ticket amministrativi.
 
 ## 4.2 Stima Percentuale del Grado di Automazione
-- **Attività ad Alta Automazione (70-90%)**: Task ripetitivi, screening di primo livello, risposte a FAQ amministrative.
-- **Attività a Media Automazione / Trasformazione (40-60%)**: Sintesi delle valutazioni, bozze di piani formativi, analisi predittiva del turnover.
-- **Attività a Bassa Automazione (10-30%)**: Mediazione dei conflitti, negoziazione strategica, sviluppo della cultura organizzativa e giudizio etico finale.
+Il grado di penetrazione dell'automazione nei processi Risorse Umane varia sensibilmente in funzione della natura strutturata o discrezionale dei task. La tabella sottostante sintetizza la ripartizione del grado di automazione potenziale e il relativo impatto sull'efficienza operativa e sul ruolo delle [[competenze-e-hr|competenze umane]]:
+
+| Categoria di Attività | Grado di Automazione | Tipologia di Task HR | Ruolo del Knowledge Curation Officer (KCO) |
+| :--- | :--- | :--- | :--- |
+| **Alta Automazione** | **70% - 90%** | Parsing CV, screening di primo livello, classificazione richieste amministrative, risposte a FAQ contrattuali | Configurazione iniziale dei vincoli di dominio ed audit periodico sui filtri automatici |
+| **Media Automazione / Trasformazione** | **40% - 60%** | Estrazione e sintesi valutazioni periodiche, bozze di piani di onboarding/formazione, skill gap analysis | Valutazione qualitativa delle raccomandazioni dell'AI e contestualizzazione organizzativa |
+| **Bassa Automazione** | **10% - 30%** | Gestione della negoziazione, mediazione dei conflitti, sviluppo della cultura aziendale, decisione finale di assunzione | Presidio etico insostituibile, giudizio discrezionale e relazione interpersonale diretta |
+
+### Mini-Caso di Studio: Screening e Selezione di 500 Candidature
+Per comprendere l'impatto empirico di tale ripartizione, si consideri un processo di selezione aziendale per posizioni tecniche e gestionali con un volume di **500 candidature (CV)** pervenute.
+
+1. **Fase 1 — Screening di Primo Livello (Automazione 80%)**:
+   L'infrastruttura di Knowledge Engineering esegue il parsing automatico dei documenti, estraendo ed indicizzando le competenze esplicite. Il sistema filtra in autonomia circa il **70% dei profili (350 CV)** palesemente privi dei requisiti minimi inderogabili (es. abilitazioni normative o anni di esperienza specifici).
+2. **Fase 2 — Matching Semantico ed Analisi Multi-Prospettiva (Automazione 50%)**:
+   Sui restanti **150 profili qualificati**, l'agente LLM sintetizza le esperienze salienti e propone una prima graduatoria basata sul matching con il framework di competenze aziendale. In questa fase, l'intervento del KCO è fondamentale per analizzare il **30% dei casi ambigui (45 CV)** che presentano percorsi di carriera non lineari, potenziali "soft skill" trasversali o possibili segnali di discriminazione algoritmica indiretta.
+3. **Fase 3 — Valutazione Finale e Colloquio (Automazione 10%)**:
+   I **20 candidati finalisti** vengono sottoposti a colloquio individuale gestito esclusivamente dall'HR Manager.
+
+**Risultato Operativo**: L'integrazione dell'infrastruttura riduce il tempo di lavorazione amministrativa della pratica del **45%**, eliminando il carico di routine igienica, ma garantisce un presidio umano al **100%** sulle decisioni di scarto nei casi dubbi e sulla scelta finale di assunzione.
 
 ## 4.3 Il Modello SECI ed il Competency Framework
 - **Applicazione del Modello SECI**: Come la conoscenza tacita degli HR specialist viene *esternalizzata* ed *ingegnerizzata* nell'infrastruttura.
-- **Analogia Operativa**: Le *Competency Questions* (CQ) dell'ingegneria ontologica rispecchiano la struttura formale dei *Competency Framework* usati dalle HR per mappare le mansioni. Nell'interfaccia grafica di Wiki-Forge, l'operatore non tecnico può verificare la copertura delle competenze inviando il comando `/validate-cq` nella chat **💬 3. Chiedi** oppure aprendo la finestra **🧠 KE Workbench**.
+- **Analogia Operativa**: Le *Competency Questions* (CQ) dell'ingegneria ontologica rispecchiano la struttura formale dei *Competency Framework* usati dalle HR per mappare le mansioni. Nell'interfaccia grafica di Wiki-Forge, l'operatore non tecnico può verificare la copertura delle competenze inviando il comando `/validate-cq` nell'interfaccia di chat o aprendo la finestra **🧠 KE Workbench**, secondo il flusso descritto nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]].
 
 ## 4.4 Rischi d'Integrazione: La Discriminazione Algoritmica (Algorithmic Bias) nei Processi HR
 L'introduzione dell'intelligenza artificiale nei processi Risorse Umane comporta rischi etici e giuridici di primaria grandezza. Tra questi, la **discriminazione algoritmica** (*algorithmic bias*) rappresenta la produzione sistematica ed ingiusta di risultati pregiudizievoli nei confronti di specifici individui o gruppi sensibili, basandosi su caratteristiche protette (genere, età, etnia, disabilità, estrazione socioeconomica).
@@ -65,7 +81,7 @@ In un sistema RAG tradizionale, l'algoritmo recupera chunk di testo estratti da 
 L'architettura **Wiki-Forge + GraphRAG + SHACL** gestita tramite la Web UI fornisce un presidio strutturale contro la discriminazione algoritmica:
 * **Firewall Etico con Vincoli SHACL**: I vincoli W3C escludono o segnalano alla revisione umana obbligatoria (visibile nella finestra **📥 Review Queue**) qualsiasi scheda o decisione di promozione priva di evidenze trasparenti ed adeguate.
 * **Tracciabilità e Ponderazione via Trust Tiers**: I giudizi informali o non verificati ricevono un *Trust Tier* basso (`unverified`), impedendo che opinioni soggettive storiche influenzino le sintesi del sistema.
-* **Ispezionabilità del Grafo (Auditability)**: A differenza delle "black box" dei modelli predittivi chiusi, il Knowledge Graph è pienamente navigabile sia visivamente nella vista **🕸️ Graph** sia tramite la chat **💬 3. Chiedi**, consentendo agli HR Manager di tracciare e neutralizzare nodi o correlazioni discriminatorie.
+* **Ispezionabilità del Grafo (Auditability)**: A differenza delle "black box" dei modelli predittivi chiusi, il Knowledge Graph è pienamente navigabile sia visivamente nella vista **🕸️ Graph** sia tramite i comandi della chat, consentendo agli HR Manager di tracciare e neutralizzare nodi o correlazioni discriminatorie.
 
 ## Collegamenti Correlati
 - [[competenze-e-hr]]

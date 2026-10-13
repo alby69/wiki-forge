@@ -3,7 +3,7 @@ type: Concept
 title: Documento di Progettazione della Tesi Magistrale
 description: Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia
 status: draft
-maturita: 35
+maturita: 90
 tags:
   - thesis/chapter
   - type/bibliography
@@ -29,14 +29,17 @@ stato: draft
 # Bibliografia e Fonti
 
 ## 1. Fonti Primarie e Letteratura Accademica
+- **Ahrens, S.** (2017). *How to Take Smart Notes: One Simple Technique to Boost Your Writing, Learning and Thinking – for Students, Academics and Nonfiction Book Writers*. CreateSpace Independent Publishing Platform.
 - **Cristianini, N.** (2024). *Machina Sapiens: L'algoritmo che ci ha cambiati*. Il Mulino.
+- **Edge, D., Trinh, H., Cheng, X., Bradley, J., Chao, A., Mody, A., Truitt, S., & Larson, J.** (2024). *From Local to Global: A GraphRAG Approach to Query-Focused Summarization*. Microsoft Research, arXiv preprint arXiv:2404.16130.
 - **Graeber, D.** (2018). *Bullshit Jobs: A Theory*. Simon & Schuster.
 - **Karpathy, A.** (2026). *LLM OS and the LLM Wiki Paradigm*. Technical Blog / Talks.
 - **Nonaka, I., & Takeuchi, H.** (1995). *The Knowledge-Creating Company: How Japanese Companies Create the Dynamics of Innovation*. Oxford University Press.
+- **Tambe, P., Cappelli, P., & Yakubovich, V.** (2019). *Artificial Intelligence in Human Resource Management: Challenges and a Path Forward*. California Management Review, 61(4), 15-42.
 
 ## 2. Documentazione Tecnica, Standard e Guide Operative
 - **OKF v0.2 Specification**: Open Knowledge Format standard for LLM Knowledge Bases (`docs/OKF_SPEC.md`).
-- **W3C SHACL Specification**: Shapes Constraint Language for RDF Graph Validation. W3C Recommendation.
+- **W3C SHACL Specification**: *Shapes Constraint Language (SHACL)*. W3C Recommendation 20 July 2017. Available online: https://www.w3.org/TR/shacl/
 - **Wiki-Forge Thesis Guide**: Metodologia per la costruzione di una Tesi Magistrale come Knowledge Base dinamica (`docs/THESIS_GUIDE.md`).
 - **Wiki-Forge Tutorial**: Guida operativa semplice all'uso dell'Interfaccia Grafica Web UI per operatori non tecnici (`docs/TUTORIAL.md`).
 - **Wiki-Forge Workflow Integrato**: Processo di coordinamento tra NotebookLM e Wiki-Forge (`docs/WORKFLOW.md`).
