@@ -1,7 +1,7 @@
 ---
 type: Concept
 title: Sostituzione o Trasformazione del Lavoro
-description: Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del
+description: Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
 status: draft
 tags:
   - topic/ai
@@ -10,15 +10,16 @@ tags:
   - status/draft
   - author/karpathy
   - author/graeber
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: analisi-impatto-ia-lavoro
-resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 29
 copertura_fonti: 1
 domande_risolte: 0

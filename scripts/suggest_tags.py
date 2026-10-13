@@ -36,6 +36,12 @@ from collections import Counter
 from pathlib import Path
 from okf_common import resolve_dir, resolve_path
 
+try:
+    import yaml
+except ImportError:
+    print("Error: PyYAML required. Run `pip install pyyaml`", file=sys.stderr)
+    sys.exit(1)
+
 # ---------------------------------------------------------------------------
 # Configuration (mirrors conv2md.py: tomllib with safe defaults)
 # ---------------------------------------------------------------------------
@@ -164,53 +170,37 @@ def score_allowed_tags(
 # ---------------------------------------------------------------------------
 
 
-def parse_frontmatter(raw: str) -> tuple[dict, str]:
+def parse_frontmatter(raw: str) -> tuple[dict | None, str]:
+    raw = raw.lstrip("\ufeff")
     m = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", raw, re.S)
     if not m:
         return {}, raw
     block, body = m.group(1), m.group(2)
-    fm: dict = {}
-    last_list_key: str | None = None
-    for line in block.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("- "):
-            if last_list_key is not None:
-                fm[last_list_key].append(stripped[2:].strip())
-            continue
-        if ":" in line:
-            key, _, val = line.partition(":")
-            key = key.strip()
-            val = val.strip()
-            if val.startswith("[") and val.endswith("]"):
-                fm[key] = [
-                    v.strip().strip("'\"") for v in val[1:-1].split(",") if v.strip()
-                ]
-                last_list_key = key
-            elif val == "":
-                fm[key] = []
-                last_list_key = key
-            else:
-                fm[key] = val.strip("'\"")
-                last_list_key = None
-        else:
-            last_list_key = None
+    try:
+        fm = yaml.safe_load(block) or {}
+        if not isinstance(fm, dict):
+            fm = {}
+    except Exception as exc:  # noqa: BLE001 — never mangle broken YAML
+        print(f"  #SKIP malformed YAML frontmatter: {exc}", file=sys.stderr)
+        return None, raw
     return fm, body
 
 
+class IndentDumper(yaml.SafeDumper):
+    def increase_indent(self, flow: bool = False, indentless: bool = False):
+        return super(IndentDumper, self).increase_indent(flow, False)
+
+
 def dump_frontmatter(fm: dict) -> str:
-    lines = ["---"]
-    for k, v in fm.items():
-        if isinstance(v, list):
-            if not v:
-                lines.append(f"{k}: []")
-            else:
-                lines.append(f"{k}:")
-                for item in v:
-                    lines.append(f"  - {item}")
-        else:
-            lines.append(f"{k}: {v}")
-    lines.append("---")
-    return "\n".join(lines)
+    yaml_str = yaml.dump(
+        fm,
+        Dumper=IndentDumper,
+        sort_keys=False,
+        allow_unicode=True,
+        default_flow_style=False,
+        width=1000,
+    ).strip()
+    return f"---\n{yaml_str}\n---"
 
 
 def suggest_for_text(text: str, cfg: dict, top: int, keybert_model=None) -> list[str]:
@@ -235,6 +225,8 @@ def process_file(
 ) -> list[str]:
     raw = path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(raw)
+    if fm is None:
+        return []
     existing = list(fm.get("tags", []) or [])
     suggestions = suggest_for_text(body, cfg, top, keybert_model)
 

@@ -1,22 +1,23 @@
 ---
 type: Reference
 title: Stefano Gatti
-description: Head of Data & Analytics: IA ibrida come amplificatore di competenze,
+description: 'Head of Data & Analytics: IA ibrida come amplificatore di competenze, non equalizzatore, nelle organizzazioni.'
 status: draft
 tags:
   - author/gatti
   - topic/ai
   - topic/hr
   - type/essay
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: Gatti_NoteLM
-resource: raw/Gatti_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/Gatti_NoteLM_COMPILED.md
+    title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane nel Pensiero di Stefano Gatti
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 57
 copertura_fonti: 1
 domande_risolte: 0

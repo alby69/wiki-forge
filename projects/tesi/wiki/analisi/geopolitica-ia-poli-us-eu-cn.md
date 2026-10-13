@@ -7,15 +7,16 @@ tags:
   - topic/ai
   - status/draft
   - author/amodei
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: tesi_analisi_fonti_ia_lavoro_NoteLM
-resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
+    title: 'Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR'
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 32
 copertura_fonti: 1
 domande_risolte: 0

@@ -1,22 +1,23 @@
 ---
 type: Reference
 title: Andrej Karpathy
-description: Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro
+description: Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro cognitivo e HR.
 status: draft
 tags:
   - topic/ai
   - topic/hr
   - type/essay
   - author/karpathy
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: Karpathy_NoteLM
-resource: raw/Karpathy_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/Karpathy_NoteLM_COMPILED.md
+    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: L''Analisi del Pensiero di Andrej Karpathy'
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 56
 copertura_fonti: 1
 domande_risolte: 0

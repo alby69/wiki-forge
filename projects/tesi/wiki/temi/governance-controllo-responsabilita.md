@@ -1,22 +1,23 @@
 ---
 type: Concept
 title: Governance, Controllo e Responsabilità
-description: Fiducia e responsabilità nell''EU AI Act: piramide del rischio, obblighi
+description: 'Fiducia e responsabilità nell''EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.'
 status: draft
 tags:
   - topic/ai
   - topic/hr
   - status/draft
   - author/gatti
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: analisi-impatto-ia-lavoro
-resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 29
 copertura_fonti: 1
 domande_risolte: 0

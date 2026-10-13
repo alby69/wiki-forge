@@ -1,9 +1,8 @@
 ---
 type: Concept
-title: "Capitolo 2: Studio degli Attori Principali del Settore AI"
-description: Il dibattito sull''IA: attori tecnici (Karpathy, Hinton, Amodei) e prospettive
+title: 'Capitolo 2: Studio degli Attori Principali del Settore AI'
+description: 'Il dibattito sull''IA: attori tecnici (Karpathy, Hinton, Amodei) e prospettive critico-sociologiche (Cristianini, Graeber)'
 status: draft
-maturita: 90
 tags:
   - thesis/chapter
   - topic/ai
@@ -11,16 +10,17 @@ tags:
   - status/draft
   - topic/hr
   - author/karpathy
-generated: []
-by: process:jules-agent
-at: 2026-10-12T00:00:00Z
+generated:
+  by: process:jules-agent
+  at: '2026-10-12T00:00:00Z'
 verified:
   - by: human:autore
+    at: '2026-10-12T00:00:00Z'
 sources:
   - id: thesis-design-doc
-resource: raw/thesis-design-doc.md
-author: process:conv2md
-last_modified: 2026-10-13T07:59:28Z
+    resource: raw/thesis-design-doc.md
+    title: Documento di Progettazione della Tesi Magistrale
+maturita: 90
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft

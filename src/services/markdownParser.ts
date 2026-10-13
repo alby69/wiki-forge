@@ -29,7 +29,8 @@ export class MarkdownParser {
 
     while ((match = inlineTagRegex.exec(content)) !== null) {
       const tag = match[1].trim();
-      if (tag) {
+      // Ignore GitHub-style line anchors used in citations (e.g. `#L454-L468`).
+      if (tag && !/^[lL]\d+(-[lL]\d+)*$/.test(tag)) {
         tagSet.add(tag);
       }
     }
@@ -51,30 +52,43 @@ export class MarkdownParser {
     const yamlBlock = match[1];
     const content = rawContent.slice(match[0].length);
     const frontmatter: Record<string, unknown> = {};
+    const lines = yamlBlock.split('\n');
 
-    yamlBlock.split('\n').forEach(line => {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       // Only capture top-level mapping keys. Indented lines belong to nested
       // mappings/sequences (e.g. the `sources:` list) and would otherwise
       // clobber their parent's value — notably a source's `title:` overwriting
-      // the note's real title. Blank lines and sequence markers are skipped too.
-      if (/^\s/.test(line) || line.trimStart().startsWith('-')) return;
+      // the note's real title.
+      if (/^\s/.test(line) || line.trimStart().startsWith('-')) continue;
 
       const colonIdx = line.indexOf(':');
-      if (colonIdx !== -1) {
-        const key = line.slice(0, colonIdx).trim();
-        const value = line.slice(colonIdx + 1).trim();
+      if (colonIdx === -1) continue;
 
-        if (value.startsWith('[') && value.endsWith(']')) {
-          frontmatter[key] = value
-            .slice(1, -1)
-            .split(',')
-            .map(item => item.trim().replace(/^['"]|['"]$/g, ''))
-            .filter(Boolean);
-        } else {
-          frontmatter[key] = value.replace(/^['"]|['"]$/g, '');
+      const key = line.slice(0, colonIdx).trim();
+      const value = line.slice(colonIdx + 1).trim();
+
+      if (value.startsWith('[') && value.endsWith(']')) {
+        frontmatter[key] = value
+          .slice(1, -1)
+          .split(',')
+          .map(item => item.trim().replace(/^['"]|['"]$/g, ''))
+          .filter(Boolean);
+      } else if (value === '') {
+        // Block-style list: `key:` followed by `- item` lines (indented by
+        // convention in this repo, but PyYAML may emit them flush-left too).
+        const items: string[] = [];
+        for (let j = i + 1; j < lines.length; j++) {
+          const item = lines[j].trim();
+          if (!item.startsWith('- ')) break;
+          const body = item.slice(2).trim();
+          if (body) items.push(body.replace(/^['"]|['"]$/g, ''));
         }
+        frontmatter[key] = items;
+      } else {
+        frontmatter[key] = value.replace(/^['"]|['"]$/g, '');
       }
-    });
+    }
 
     return { frontmatter, content };
   }

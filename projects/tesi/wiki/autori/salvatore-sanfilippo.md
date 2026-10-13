@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: Salvatore Sanfilippo
-description: Creatore di Redis: programmazione automatica, intenzionalità umana e
+description: 'Creatore di Redis: programmazione automatica, intenzionalità umana e trasformazione del lavoro cognitivo.'
 status: draft
 tags:
   - topic/ai
@@ -9,15 +9,16 @@ tags:
   - topic/economics
   - type/essay
   - status/review
-generated: []
-by: process:wiki-forge-compile
-at: 2026-10-09T00:00:00Z
+generated:
+  by: process:wiki-forge-compile
+  at: '2026-10-09T00:00:00Z'
+verified: []
 sources:
   - id: Sanfilippo_NoteLM
-resource: raw/Sanfilippo_NoteLM_COMPILED.md
-author: process:notebooklm
-last_modified: 2026-10-09
-verified: []
+    resource: raw/Sanfilippo_NoteLM_COMPILED.md
+    title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane — Analisi Sistematica del Pensiero di Salvatore Sanfilippo (antirez)
+    author: process:notebooklm
+    last_modified: '2026-10-09'
 maturita: 59
 copertura_fonti: 1
 domande_risolte: 0
