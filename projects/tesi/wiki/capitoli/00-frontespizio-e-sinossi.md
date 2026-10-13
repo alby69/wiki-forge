@@ -1,20 +1,27 @@
 ---
 type: Concept
-title: "Frontespizio e Sinossi"
-description: "Breve riassunto esecutivo della tesi magistrale: obiettivi di ricerca, metodologia ibrida e quadro teorico SECI"
+title: Documento di Progettazione della Tesi Magistrale
+description: Breve riassunto esecutivo della tesi magistrale: obiettivi di ricerca,
 status: draft
-maturita: 75
-tags: [thesis/chapter, type/frontespizio, status/draft]
-generated:
-  by: process:jules-agent
-  at: "2026-10-12T00:00:00Z"
+maturita: 32
+tags:
+  - thesis/chapter
+  - type/frontespizio
+  - status/draft
+  - topic/hr
+generated: []
+by: process:jules-agent
+at: 2026-10-12T00:00:00Z
 verified:
   - by: human:autore
-    at: "2026-10-12T00:00:00Z"
 sources:
   - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: "Documento di Progettazione della Tesi Magistrale"
+resource: raw/thesis-design-doc.md
+author: process:conv2md
+last_modified: 2026-10-13T07:59:28Z
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Frontespizio e Sinossi

@@ -2,14 +2,23 @@
 type: Concept
 title: Bullshit Jobs E Routine Igienica
 description: La scissione del corpus tra **routine igienica** e **sostanza espressiva**
-  ([linee-guida-tesi-hr](linee-guida-tesi-hr.md), pilastro 2) rical...
 status: stable
-generated:
-  by: process:migrate-script
-  at: '2026-10-10T16:09:07Z'
+generated: []
+by: process:migrate-script
+at: 2026-10-10T16:09:07Z
 verified: []
 sources: []
+maturita: 25
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
+tags:
+  - topic/hr
+  - author/graeber
+  - author/gatti
+  - topic/ai
 ---
+
 ## Relazioni tra *bullshit jobs* (Graeber) e l'automazione della "routine igienica"
 
 ### 1. Mappatura concettuale: due distinzioni che combaciano

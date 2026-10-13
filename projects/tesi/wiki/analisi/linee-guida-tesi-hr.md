@@ -1,18 +1,25 @@
 ---
 type: Concept
-title: Linee guida per la tesi HR sull'impatto dell'IA
+title: Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
 description: Quattro pilastri strategici per la governance HR nell'era dell'IA
 status: draft
-tags: ["topic/ai", "topic/hr", "status/draft"]
-generated:
-  by: process:wiki-forge-compile
-  at: "2026-10-09T00:00:00Z"
+tags:
+  - topic/ai
+  - topic/hr
+  - status/draft
+generated: []
+by: process:wiki-forge-compile
+at: 2026-10-09T00:00:00Z
 sources:
   - id: tesi_analisi_fonti_ia_lavoro_NoteLM
-    resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
-    title: "Analisi Sistemica delle Fonti per Tesi di Laurea: L'Impatto dell'IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR"
-    author: process:notebooklm
-    last_modified: "2026-10-09"
+resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
+author: process:notebooklm
+last_modified: 2026-10-09
+verified: []
+maturita: 31
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Linee guida per la tesi HR sull'impatto dell'IA

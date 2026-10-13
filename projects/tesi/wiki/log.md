@@ -1,3 +1,12 @@
+---
+tags:
+  - topic/hr
+  - author/karpathy
+  - author/graeber
+  - author/cristianini
+  - author/gatti
+---
+
 # Wiki Update Log
 
 ## 2026-10-09

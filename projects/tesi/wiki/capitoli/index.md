@@ -1,14 +1,23 @@
-# Indice dei Capitoli della Tesi
+---
+tags:
+  - status/draft
+  - topic/ai
+  - topic/hr
+  - topic/economics
+  - topic/anthropology
+  - author/karpathy
+---
 
-Benvenuto nella sezione della Knowledge Base dedicata ai capitoli della tesi magistrale.
+# Capitoli — Topic Index
 
-## Capitoli dell'Elaborato
+## Articles
 
-- [[capitoli/00-frontespizio-e-sinossi|00 - Frontespizio e Sinossi]]
-- [[capitoli/01-introduzione|01 - Capitolo 1: Introduzione]]
-- [[capitoli/02-studio-degli-attori-principali|02 - Capitolo 2: Studio degli Attori Principali del Settore AI]]
-- [[capitoli/03-progettazione-della-piattaforma|03 - Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida]]
-- [[capitoli/04-mappatura-e-automazione-hr|04 - Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione]]
-- [[capitoli/05-considerazioni-personali|05 - Capitolo 5: Considerazioni Personali]]
-- [[capitoli/06-conclusioni|06 - Capitolo 6: Conclusioni]]
-- [[capitoli/07-bibliografia-e-fonti|07 - Bibliografia e Fonti]]
+* [Frontespizio e Sinossi](00-frontespizio-e-sinossi.md) `[draft]` — Breve riassunto esecutivo della tesi magistrale: obiettivi di ricerca, metodologia ibrida e quadro teorico SECI
+* [Capitolo 1: Introduzione](01-introduzione.md) `[draft]` — Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale
+* [Capitolo 2: Studio degli Attori Principali del Settore AI](02-studio-degli-attori-principali.md) `[draft]` — Il dibattito sull'IA: attori tecnici (Karpathy, Hinton, Amodei) e prospettive critico-sociologiche (Cristianini, Graeber)
+* [Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida](03-progettazione-della-piattaforma.md) `[draft]` — Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation): modello SECI, note atomiche, LLM come Knowledge Engineer, Trust Tiers, SHACL e GraphRAG
+* [Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione](04-mappatura-e-automazione-hr.md) `[draft]` — Mappatura e automazione delle funzioni HR: analisi percentuale, modello SECI e analogia tra Competency Questions e Competency Framework
+* [Capitolo 5: Considerazioni Personali](05-considerazioni-personali.md) `[draft]` — Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering, data governance ed etica dello human-in-the-loop gestiti via Web UI
+* [Capitolo 6: Conclusioni](06-conclusioni.md) `[draft]` — Sintesi del percorso, prospettive future per le Risorse Umane e direzioni di ricerca
+* [Bibliografia e Fonti](07-bibliografia-e-fonti.md) `[draft]` — Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia della tesi
+

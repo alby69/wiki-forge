@@ -1,18 +1,28 @@
 ---
 type: Concept
-title: Concezioni dell'Intelligenza Artificiale
-description: "L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva."
+title: L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+description: L''IA come strumento probabilistico non antropomorfo: determinismo,
 status: draft
-tags: [topic/ai, topic/anthropology, author/cristianini, status/draft]
-generated:
-  by: process:wiki-forge-compile
-  at: "2026-10-09T00:00:00Z"
+tags:
+  - topic/ai
+  - topic/anthropology
+  - author/cristianini
+  - status/draft
+  - topic/hr
+  - author/graeber
+generated: []
+by: process:wiki-forge-compile
+at: 2026-10-09T00:00:00Z
 sources:
   - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: "L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea"
-    author: process:notebooklm
-    last_modified: "2026-10-09"
+resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+author: process:notebooklm
+last_modified: 2026-10-09
+verified: []
+maturita: 28
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Concezioni dell'Intelligenza Artificiale

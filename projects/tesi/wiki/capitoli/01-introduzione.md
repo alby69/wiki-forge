@@ -1,20 +1,28 @@
 ---
 type: Concept
-title: "Capitolo 1: Introduzione"
-description: "Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale"
+title: Documento di Progettazione della Tesi Magistrale
+description: Panoramica, premesse e ipotesi di ricerca: l''impatto dell''AI sulle
 status: draft
-maturita: 80
-tags: [thesis/chapter, topic/ai, topic/hr, status/draft]
-generated:
-  by: process:jules-agent
-  at: "2026-10-12T00:00:00Z"
+maturita: 53
+tags:
+  - thesis/chapter
+  - topic/ai
+  - topic/hr
+  - status/draft
+  - status/review
+generated: []
+by: process:jules-agent
+at: 2026-10-12T00:00:00Z
 verified:
   - by: human:autore
-    at: "2026-10-12T00:00:00Z"
 sources:
   - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: "Documento di Progettazione della Tesi Magistrale"
+resource: raw/thesis-design-doc.md
+author: process:conv2md
+last_modified: 2026-10-13T07:59:28Z
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca

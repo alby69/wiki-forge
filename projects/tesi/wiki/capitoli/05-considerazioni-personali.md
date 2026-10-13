@@ -1,20 +1,29 @@
 ---
 type: Concept
-title: "Capitolo 5: Considerazioni Personali"
-description: "Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering, data governance ed etica dello human-in-the-loop gestiti via Web UI"
+title: Documento di Progettazione della Tesi Magistrale
+description: Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering,
 status: draft
-maturita: 80
-tags: [thesis/chapter, topic/ethics, topic/hr-manager, status/draft]
-generated:
-  by: process:jules-agent
-  at: "2026-10-12T00:00:00Z"
+maturita: 47
+tags:
+  - thesis/chapter
+  - topic/ethics
+  - topic/hr-manager
+  - status/draft
+  - topic/hr
+  - topic/ai
+generated: []
+by: process:jules-agent
+at: 2026-10-12T00:00:00Z
 verified:
   - by: human:autore
-    at: "2026-10-12T00:00:00Z"
 sources:
   - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: "Documento di Progettazione della Tesi Magistrale"
+resource: raw/thesis-design-doc.md
+author: process:conv2md
+last_modified: 2026-10-13T07:59:28Z
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Capitolo 5: Considerazioni Personali — Riflessioni Critiche: dal Prompt Engineering al Knowledge Engineering

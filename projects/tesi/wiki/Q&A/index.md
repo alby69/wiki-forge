@@ -1,8 +1,16 @@
-# Q&A Index
+---
+tags:
+  - topic/ai
+  - topic/economics
+  - topic/hr
+  - topic/anthropology
+  - status/draft
+---
 
-Thematic index for **Q&A**.
+# Q&A — Topic Index
 
 ## Articles
 
-- [[bullshit-jobs-e-routine-igienica]] â€” Bullshit Jobs E Routine Igienica
-- [[sintesi-previsioni-lavoro-hr]] â€” Previsioni sul futuro del lavoro e dell'HR sotto l'impatto dell'IA
+* [Bullshit Jobs E Routine Igienica](bullshit-jobs-e-routine-igienica.md) — La scissione del corpus tra **routine igienica** e **sostanza espressiva** ([linee-guida-tesi-hr](linee-guida-tesi-hr.md), pilastro 2) rical...
+* [Previsioni sul futuro del lavoro e dell'HR sotto l'impatto dell'IA](sintesi-previsioni-lavoro-hr.md) `[draft]` — Argomentazione sintetica sul futuro del lavoro con confidenze esplicite e ancore ai sorgenti raw del corpus tesi.
+

@@ -1,18 +1,24 @@
 ---
 type: Reference
-title: Wiki-Forge Script Control Panel
+title: Guida Completa agli Script del Wiki-Forge Script Control Panel
 description: Panoramica degli script Python per gestione e compilazione wiki-forge
 status: draft
-tags: ["topic/ai", "status/draft"]
-generated:
-  by: process:wiki-forge-compile
-  at: "2026-10-09T00:00:00Z"
+tags:
+  - topic/ai
+  - status/draft
+generated: []
+by: process:wiki-forge-compile
+at: 2026-10-09T00:00:00Z
 sources:
   - id: wiki_forge_script_panel_guide_NoteLM
-    resource: raw/wiki_forge_script_panel_guide_NoteLM_COMPILED.md
-    title: Guida Completa agli Script del Wiki-Forge Script Control Panel
-    author: process:notebooklm
-    last_modified: "2026-10-09"
+resource: raw/wiki_forge_script_panel_guide_NoteLM_COMPILED.md
+author: process:notebooklm
+last_modified: 2026-10-09
+verified: []
+maturita: 32
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Wiki-Forge Script Control Panel

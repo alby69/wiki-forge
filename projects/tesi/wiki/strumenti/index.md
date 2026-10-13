@@ -1,7 +1,15 @@
-# STRUMENTI Index
+---
+tags:
+  - topic/ai
+  - topic/economics
+  - topic/hr
+  - topic/anthropology
+  - status/draft
+---
 
-Thematic index for **strumenti**.
+# Strumenti — Topic Index
 
 ## Articles
 
-- [[wiki-forge-script-panel]] â€” Wiki-Forge Script Control Panel
+* [Wiki-Forge Script Control Panel](wiki-forge-script-panel.md) `[draft]` — Panoramica degli script Python per gestione e compilazione wiki-forge
+

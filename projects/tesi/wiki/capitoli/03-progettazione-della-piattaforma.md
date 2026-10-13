@@ -1,20 +1,29 @@
 ---
 type: Concept
-title: "Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida"
-description: "Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation): modello SECI, note atomiche, LLM come Knowledge Engineer, Trust Tiers, SHACL e GraphRAG"
+title: Documento di Progettazione della Tesi Magistrale
+description: Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation):
 status: draft
-maturita: 85
-tags: [thesis/chapter, topic/architecture, topic/wiki-forge, topic/seci, topic/atomic-notes, status/draft]
-generated:
-  by: process:jules-agent
-  at: "2026-10-12T00:00:00Z"
+maturita: 68
+tags:
+  - thesis/chapter
+  - topic/architecture
+  - topic/wiki-forge
+  - topic/seci
+  - topic/atomic-notes
+  - status/draft
+generated: []
+by: process:jules-agent
+at: 2026-10-12T00:00:00Z
 verified:
   - by: human:autore
-    at: "2026-10-12T00:00:00Z"
 sources:
   - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: "Documento di Progettazione della Tesi Magistrale"
+resource: raw/thesis-design-doc.md
+author: process:conv2md
+last_modified: 2026-10-13T07:59:28Z
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida

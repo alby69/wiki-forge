@@ -1,11 +1,19 @@
-# TEMI Index
+---
+tags:
+  - topic/hr
+  - topic/ai
+  - status/draft
+  - topic/economics
+  - topic/anthropology
+---
 
-Thematic index for **temi**.
+# Temi — Topic Index
 
 ## Articles
 
-- [[capacita-emergenti-llm]] â€” Capacità Emergenti dei Large Language Models
-- [[competenze-e-hr]] â€” Competenze e Risorse Umane
-- [[concezioni-dell-ia]] â€” Concezioni dell'Intelligenza Artificiale
-- [[governance-controllo-responsabilita]] â€” Governance, Controllo e Responsabilità
-- [[sostituzione-o-trasformazione]] â€” Sostituzione o Trasformazione del Lavoro
+* [Capacità Emergenti dei Large Language Models](capacita-emergenti-llm.md) `[draft]` — Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.
+* [Competenze e Risorse Umane](competenze-e-hr.md) `[draft]` — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
+* [Concezioni dell'Intelligenza Artificiale](concezioni-dell-ia.md) `[draft]` — L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.
+* [Governance, Controllo e Responsabilità](governance-controllo-responsabilita.md) `[draft]` — Fiducia e responsabilità nell'EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.
+* [Sostituzione o Trasformazione del Lavoro](sostituzione-o-trasformazione.md) `[draft]` — Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
+

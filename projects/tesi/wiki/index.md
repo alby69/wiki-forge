@@ -1,44 +1,27 @@
-# Wiki Master Index
+---
+okf_version: 0.2
+tags:
+  - topic/ai
+  - topic/hr
+---
 
-Welcome to the knowledge base.
+# Wiki Index — Knowledge Base
 
-## Thematic Wikis
+## Topics
 
-- [[capitoli/index|capitoli]]
-- [[Q&A/index|Q&A]]
-- [[analisi/index|analisi]]
-- [[temi/index|temi]]
-- [[autori/index|autori]]
-- [[strumenti/index|strumenti]]
-- [[tools/index|tools]]
+* [Q&A](Q&A/index.md) (2 articles)
+* [Analisi](analisi/index.md) (3 articles)
+* [Autori](autori/index.md) (6 articles)
+* [Capitoli](capitoli/index.md) (8 articles)
+* [Strumenti](strumenti/index.md) (1 articles)
+* [Temi](temi/index.md) (5 articles)
+* [Tools](tools/index.md) (1 articles)
 
-## All Notes
+## Recently Updated
 
-- [[capitoli/00-frontespizio-e-sinossi]]
-- [[capitoli/01-introduzione]]
-- [[capitoli/02-studio-degli-attori-principali]]
-- [[capitoli/03-progettazione-della-piattaforma]]
-- [[capitoli/04-mappatura-e-automazione-hr]]
-- [[capitoli/05-considerazioni-personali]]
-- [[capitoli/06-conclusioni]]
-- [[capitoli/07-bibliografia-e-fonti]]
-- [[bullshit-jobs-e-routine-igienica]]
-- [[sintesi-previsioni-lavoro-hr]]
-- [[evidenza-mercato-del-lavoro]]
-- [[geopolitica-ia-poli-us-eu-cn]]
-- [[index]]
-- [[linee-guida-tesi-hr]]
-- [[andrej-karpathy]]
-- [[david-graeber]]
-- [[geoffrey-hinton]]
-- [[nello-cristianini]]
-- [[salvatore-sanfilippo]]
-- [[stefano-gatti]]
-- [[log]]
-- [[wiki-forge-script-panel]]
-- [[capacita-emergenti-llm]]
-- [[competenze-e-hr]]
-- [[concezioni-dell-ia]]
-- [[governance-controllo-responsabilita]]
-- [[sostituzione-o-trasformazione]]
-- [[comandi-uso-wiki]]
+* [Comandi per iniziare a studiare la wiki](tools/comandi-uso-wiki.md) — Percorso guidato dei comandi chat dell'agente per orientarsi, interrogare, studiare e gestire la knowledge base.
+* [Sostituzione o Trasformazione del Lavoro](temi/sostituzione-o-trasformazione.md) — Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
+* [Governance, Controllo e Responsabilità](temi/governance-controllo-responsabilita.md) — Fiducia e responsabilità nell'EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.
+* [Concezioni dell'Intelligenza Artificiale](temi/concezioni-dell-ia.md) — L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.
+* [Competenze e Risorse Umane](temi/competenze-e-hr.md) — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
+

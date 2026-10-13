@@ -1,18 +1,26 @@
 ---
 type: Concept
-title: Evidenza empirica sul mercato del lavoro e l'IA
+title: Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
 description: Analisi empirica di Stanford SIEPR sull'impatto dell'IA sull'occupazione
 status: draft
-tags: ["topic/ai", "topic/economics", "topic/hr", "status/draft"]
-generated:
-  by: process:wiki-forge-compile
-  at: "2026-10-09T00:00:00Z"
+tags:
+  - topic/ai
+  - topic/economics
+  - topic/hr
+  - status/draft
+generated: []
+by: process:wiki-forge-compile
+at: 2026-10-09T00:00:00Z
 sources:
   - id: tesi_analisi_fonti_ia_lavoro_NoteLM
-    resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
-    title: "Analisi Sistemica delle Fonti per Tesi di Laurea: L'Impatto dell'IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR"
-    author: process:notebooklm
-    last_modified: "2026-10-09"
+resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
+author: process:notebooklm
+last_modified: 2026-10-09
+verified: []
+maturita: 27
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 
 # Evidenza empirica sul mercato del lavoro e l'IA
