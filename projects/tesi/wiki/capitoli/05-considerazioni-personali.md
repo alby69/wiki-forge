@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 5: Considerazioni Personali"
 description: "Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering, data governance ed etica dello human-in-the-loop gestiti via Web UI"
 status: draft
-maturita: 80
+maturita: 90
 tags: [thesis/chapter, topic/ethics, topic/hr-manager, status/draft]
 generated:
   by: process:jules-agent
@@ -20,7 +20,26 @@ sources:
 # Capitolo 5: Considerazioni Personali — Riflessioni Critiche: dal Prompt Engineering al Knowledge Engineering
 
 ## 5.1 Metariflessione sull'Esperienza Operativa
-L'utilizzo di Wiki-Forge e NotebookLM nella stesura di questo elaborato ha costituito una validazione diretta sul campo. Sperimentare in prima persona il passaggio da utente di chatbot (prompting effimero) ad architetto di un Knowledge Graph tramite l'interfaccia grafica Web UI ha evidenziato come il reale valore risieda nella modellazione del dominio e nel rigore della formalizzazione. L'interfaccia visiva permette di gestire compiti complessi (come il caricamento via **📥 1. Carica**, la compilazione via **⚡ 2. Compila**, l'interrogazione tramite **💬 3. Chiedi** e la rigenerazione della tesi in PDF) senza richiedere competenze di programmazione o da linea di comando.
+L'utilizzo di Wiki-Forge e NotebookLM nella stesura di questo elaborato ha costituito una validazione diretta sul campo. Sperimentare in prima persona il passaggio da utente di chatbot (prompting effimero) ad architetto di un Knowledge Graph tramite l'interfaccia grafica Web UI ha evidenziato come il reale valore risieda nella modellazione del dominio e nel rigore della formalizzazione. L'interfaccia visiva permette di gestire compiti complessi (tramite il flusso operativo a tre fasi dettagliato nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]) senza richiedere competenze di programmazione o da linea di comando.
+
+### Una Sfida Operativa Reale: Il Derivare delle Note Atomiche e la Soluzione SHACL
+Durante le prime fasi di sperimentazione sulla base di conoscenza della tesi, è emersa una criticità metodologica significativa: la tendenza spontanea dell'agente LLM a generare "note atomiche" eccessivamente estese e discorsive (superiori ai 1000-1500 token), di fatto ricreando il medesimo problema di frammentazione opaca e decontestualizzata tipico del *chunking* RAG tradizionale. L'agente tendeva a riassumere interi sotto-capitoli all'interno di una singola nota, compromettendo la granularità concettuale e la precisione dei collegamenti a grafo.
+
+Un approccio basato sulla sola modifica del prompt (prompt engineering) si è rivelato insufficiente a garantire la costanza dei risultati nel tempo. La svolta metodologica si è avuta vincolando il comportamento dell'agente non solo tramite istruzioni testuali, ma attraverso la formalizzazione di una regola ontologica deterministica in W3C SHACL. In particolare, è stato introdotto nel file di governance ontologica un vincolo formale di lunghezza massima per la proprietà `tesi:contenutoNota`:
+
+```turtle
+# Vincolo SHACL di contenimento della lunghezza del testo per preservare l'atomicità
+tesi:AtomicNoteLengthShape
+    a sh:NodeShape ;
+    sh:targetClass tesi:NotaAtomica ;
+    sh:property [
+        sh:path tesi:contenutoNota ;
+        sh:maxLength 1200 ; # Limite stringente sui caratteri del corpo nota
+        sh:message "La nota supera la soglia massima per essere considerata atomica. Decostruire in più sub-nodi interconnessi." ;
+    ] .
+```
+
+Grazie a questa regola, ogni qual volta la fase di compilazione agentica produce una nota troppo estesa, il motore di validazione SHACL rileva la violazione e blocca la promozione automatica, inoltrando la nota alla **📥 Review Queue**. L'agente viene così costretto a rieseguire una vera decostruzione logica del testo, suddividendo l'argomento in più nodi distinti legati da wikilink. Questa esperienza ha dimostrato concretamente come il Knowledge Engineering basato su vincoli ontologici rappresenti un presidio di governance indispensabile per imbrigliare la variabilità degli LLM.
 
 ## 5.2 Il Ruolo del Futuro HR Manager: La Trasformazione in "Knowledge Curation Officer" (KCO)
 L'evoluzione descritta in questa tesi delinea una trasformazione profonda della figura del professionista delle Risorse Umane. L'HR Manager cessa di essere un mero utente finale di software gestionali o un consumatore passivo di strumenti AI, per evolvere in una figura di sintesi strategica: il **Knowledge Curation Officer (KCO)**.

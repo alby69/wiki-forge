@@ -3,7 +3,7 @@ type: Concept
 title: "Capitolo 1: Introduzione"
 description: "Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale"
 status: draft
-maturita: 80
+maturita: 90
 tags: [thesis/chapter, topic/ai, topic/hr, status/draft]
 generated:
   by: process:jules-agent
@@ -85,7 +85,7 @@ Per superare questa condizione di "ponte incompleto", si rende necessario l'avan
 Il passaggio fondamentale consiste nel passare da un approccio passivo di retrieval a una pratica attiva di **Knowledge Engineering**. In questo modello, l'LLM non è un oracolo usa-e-getta, ma un partner di ricerca che compila e aggiorna una Knowledge Base dinamica interconnessa.
 
 Affinché questo paradigma sia concretamente applicabile nell'ambito delle Risorse Umane — dove gli operatori e i manager possiedono competenze prevalentemente organizzative e giuridico-sociali piuttosto che informatiche —, la piattaforma elimina ogni barriera d'ingresso tecnica. L'infrastruttura di Knowledge Engineering viene messa a disposizione attraverso un'interfaccia visiva (Web UI) suddivisa in due livelli:
-* **Modalità Semplice (Focus Mode 🌱)**: Progetta l'interazione attorno a tre azioni visive immediate (**📥 1. Carica**, **⚡ 2. Compila**, **💬 3. Chiedi**), consentendo all'HR Specialist di alimentare il sistema, avviare l'estrazione dei concetti e consultare il Knowledge Graph senza dover scrivere codice o righe di comando.
+* **Modalità Semplice (Focus Mode 🌱)**: Progetta l'interazione attorno ad un'interfaccia semplificata basata sul flusso operativo a tre fasi dettagliato nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]], consentendo all'HR Specialist di alimentare il sistema, avviare l'estrazione dei concetti e consultare il Knowledge Graph senza dover scrivere codice o righe di comando.
 * **Modalità Sviluppatore / Governance (Developer Mode 👑)**: Offre al Knowledge Engineer o al referente di Data Governance strumenti di audit, gestione delle tassonomie (**🏷️ Tag Manager**), validazione delle domande di competenza (**🧠 KE Workbench**) e revisione della coda di approvazione (**📥 Review Queue**).
 
 In questo modo, la complessità tecnologica del Knowledge Engineering viene totalmente "astratta" e resa usabile, permettendo al professionista HR di concentrarsi sulla qualità dei contenuti e sul valore organizzativo della conoscenza.
