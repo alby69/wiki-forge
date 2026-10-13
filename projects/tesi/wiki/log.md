@@ -9,6 +9,10 @@ tags:
 
 # Wiki Update Log
 
+## 2026-10-13
+
+* **Update**: Aggiunto preambolo definitorio della pipeline nella [Introduzione](capitoli/01-introduzione.md), come ponte tra l'apertura del capitolo e il paragrafo §1.2.1.
+
 ## 2026-10-09
 
 * **Creation**: Compilazione iniziale del progetto tesi da 9 fonti NotebookLM.
