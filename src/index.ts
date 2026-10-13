@@ -63,17 +63,19 @@ export class WikiForgeApp {
     }
   }
 
-  private async loadVault(): Promise<void> {
+  private async loadVault(preserveSelection: boolean = false): Promise<void> {
     const projects = await this.storage.getProjects();
     const activeId = this.storage.getActiveProjectId();
     this.header.setProjects(projects, activeId);
+
+    const currentId = preserveSelection ? this.selectedNote?.id ?? null : null;
 
     let notes = await this.storage.getAllNotes();
     if (notes.length === 0 && activeId === 'default') {
       notes = this.buildSampleVault();
     }
     this.notes = this.parser.computeBacklinks(notes);
-    this.selectedNote = this.notes[0] ?? null;
+    this.selectedNote = this.notes.find(n => n.id === currentId) ?? this.notes[0] ?? null;
     this.refreshAll();
     void this.sidebar.loadScratchpad();
   }
@@ -283,7 +285,7 @@ Backlink to [[01-index]].
       this.storage,
       () => this.notes,
       () => {
-        void this.loadVault();
+        void this.loadVault(true);
       },
       target => this.openWikilink(target)
     );

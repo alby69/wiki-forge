@@ -26,20 +26,20 @@ export class ChatDrawer {
   private isResizingChat: boolean = false;
   private messages: ChatMessage[] = [];
   private notesGetter: () => WikiNote[];
-  private onAttachSuccessCb?: () => void;
+  private onVaultUpdatedCb?: () => void;
   private onOpenLinkCb?: (target: string) => void;
 
   constructor(
     container: HTMLElement,
     apiStorage: ApiStorage,
     notesGetter: () => WikiNote[],
-    onAttachSuccess?: () => void,
+    onVaultUpdated?: () => void,
     onOpenLink?: (target: string) => void
   ) {
     this.container = container;
     this.apiStorage = apiStorage;
     this.notesGetter = notesGetter;
-    this.onAttachSuccessCb = onAttachSuccess;
+    this.onVaultUpdatedCb = onVaultUpdated;
     this.onOpenLinkCb = onOpenLink;
 
     this.loadHistory();
@@ -442,7 +442,7 @@ export class ChatDrawer {
             msg.text,
             (options: AttachOptions) => {
               void this.apiStorage.attachNote(options).then(() => {
-                if (this.onAttachSuccessCb) this.onAttachSuccessCb();
+                if (this.onVaultUpdatedCb) this.onVaultUpdatedCb();
               });
             }
           );
@@ -553,5 +553,9 @@ export class ChatDrawer {
     );
 
     this.saveHistory();
+
+    // The agent may have written wiki files while answering (compile, verify,
+    // reindex, edits to notes): reload the vault so the UI mirrors the disk.
+    if (this.onVaultUpdatedCb) this.onVaultUpdatedCb();
   }
 }
