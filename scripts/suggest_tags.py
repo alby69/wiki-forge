@@ -57,7 +57,7 @@ def load_config() -> dict:
     except ImportError:
         return defaults
 
-    cfg_path = Path("config.toml")
+    cfg_path = resolve_path("config/config.toml")
     if not cfg_path.is_file():
         return defaults
 

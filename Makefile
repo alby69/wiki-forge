@@ -14,7 +14,7 @@
 #   make help             Display available target commands
 
 convert:
-	bash run_convert.sh
+	bash scripts/run_convert.sh
 
 convert-docker:
 	docker compose run --rm wiki convert

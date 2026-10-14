@@ -50,8 +50,10 @@ This is a valid note referencing [[another_concept]].
 @pytest.fixture
 def temp_config_toml(tmp_path):
     """Creates a temporary config.toml file."""
-    config_file = tmp_path / "config.toml"
-    config_file.write_text("""[project]
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "config.toml"
+    content = """[project]
 name = "test-project"
 title = "Test Knowledge Base"
 language = "en"
@@ -62,5 +64,7 @@ raw = "raw"
 wiki = "wiki"
 output = "output"
 notes = "notes"
-""", encoding="utf-8")
+"""
+    config_file.write_text(content, encoding="utf-8")
+    (tmp_path / "config.toml").write_text(content, encoding="utf-8")
     return config_file

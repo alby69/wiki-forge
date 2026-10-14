@@ -1,1 +1,0 @@
-# prova commit da Hermes

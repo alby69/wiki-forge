@@ -44,7 +44,7 @@ git checkout HEAD -- wiki raw output    # ripristina lo stato del commit di back
 
 ## Fase 2 — Configurare il nuovo progetto
 
-Modifica `config.toml`:
+Modifica `config/config.toml`:
 
 ### 2.1 Identità del progetto
 
@@ -139,7 +139,7 @@ git add -A && git commit -m "backup wiki pre-reset"
 rm -rf wiki/* raw/* output/*
 
 # 2. Configurazione
-$EDITOR config.toml          # [project], [paths], [tags]
+$EDITOR config/config.toml    # [project], [paths], [tags]
 # oppure: make wizard
 
 # 3. Importazione

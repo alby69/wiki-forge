@@ -47,7 +47,7 @@ A fundamental principle of `wiki-forge` is the distinction between **Parametric 
 ### 2.1 Decoupled Agent Backend & Multi-Provider LLM Client
 Implemented in `src/server/agentServer.ts` and `src/server/llmClient.ts`:
 - **Provider Support**: OpenCode CLI (`opencode`), Anthropic API (`claude-3-5-sonnet`), OpenAI-compatible endpoints (`gpt-4o`), local Ollama (`llama3`).
-- **Configuration**: Managed via `[agent.llm]` in `config.toml` with safe environment variable handling (`api_key_env`).
+- **Configuration**: Managed via `[agent.llm]` in `config/config.toml` with safe environment variable handling (`api_key_env`).
 - **Real-Time SSE Streaming**: `/api/chat` streams chunk-by-chunk LLM responses directly to the Web UI `ChatDrawer`.
 
 ### 2.2 Security Hardening & Containment
@@ -61,7 +61,7 @@ Implemented in `src/server/agentServer.ts`, `ToolsModal.ts`, and `LogConsole.ts`
 - **Log Streaming**: Real-time Server-Sent Events (SSE) stream `stdout` and `stderr` directly to a terminal-like console in the browser with process cancellation support.
 
 ### 2.4 Open Knowledge Format (OKF v0.2) Compliance
-Implemented in `config.toml` (`[okf]`), `scripts/okf_*.py`, and Makefile:
+Implemented in `config/config.toml` (`[okf]`), `scripts/okf_*.py`, and Makefile:
 - **YAML Frontmatter Schema**: Requires `type` (controlled vocabulary), ISO 8601 timestamps (`generated.at`), actor namespaces (`human:<id>`, `<producer>/<version>`, `process:<id>`), `status`, and provenance (`sources`).
 - **Trust Tiers**: Computed dynamically: `unverified`, `machine-confirmed`, `human-reviewed`.
 - **Validation & Indexing**: `okf_lint.py` validates schema compliance; `okf_reindex.py` auto-generates OKF §8 `index.md`; `okf_log.py` logs chronological changes into `wiki/log.md` (OKF §9); `okf_stats.py` provides bundle analytics.
@@ -94,7 +94,7 @@ Implemented in `src/wikiforge/config/shapes.ttl`, `src/wikiforge/semantics/markd
 
 ### 2.9 Multi-Project Workspace Management
 Implemented in `projects/` and `src/components/ConfigManager.ts`:
-- **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
+- **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config/config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
 - **GUI Config Manager**: Web UI modal allows editing project metadata, folder paths, LLM provider settings, and OKF taxonomy using `smol-toml`.
 
 ### 2.10 HTTP API Server Routing & Operations

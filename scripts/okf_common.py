@@ -55,6 +55,15 @@ def resolve_path(value: str | None, default: str = "") -> Path:
     if p.is_absolute() or not raw:
         return p
 
+    if raw in ("config.toml", "config/config.toml"):
+        for base in _candidates(raw):
+            cand_config = (base / "config" / "config.toml").resolve()
+            if cand_config.exists():
+                return cand_config
+            cand_root = (base / "config.toml").resolve()
+            if cand_root.exists():
+                return cand_root
+
     for base in _candidates(raw):
         cand = (base / raw).resolve()
         if cand.exists():

@@ -15,10 +15,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/.."
 
 # Helpful on Windows: pandoc installed via the installer often lives here.
-export PATH="$LOCALAPPDATA/Pandoc:$PATH"
+export PATH="${LOCALAPPDATA:-}/Pandoc:$PATH"
 
 # Prefer an active virtual environment if present, else system Python.
 if [ -x "./venv/Scripts/python" ]; then

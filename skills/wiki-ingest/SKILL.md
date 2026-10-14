@@ -7,7 +7,7 @@ description: >
 triggers:
   commands: [compile, convert-only, ingest, recompile]
 reads:
-  - config.toml
+  - config/config.toml
   - sources/**/*
   - raw/**/*
 writes:
@@ -22,7 +22,7 @@ confirm_destructive: false
 **Scope:** Full ingestion workflow. Converts new sources, reads raw, builds wiki.
 **Steps:**
 0. **Convert.** Run the converter so any new originals become Markdown in `raw/`:
-   - Preferred: `bash run_convert.sh` (uses `config.toml` and the local venv).
+   - Preferred: `bash scripts/run_convert.sh` (uses `config/config.toml` and the local venv).
    - Docker: `docker compose run --rm wiki convert`.
    - If neither Python nor pandoc is available, ask the user to run conversion first.
 1. **Read** every file in `raw/` whose name does NOT contain `_COMPILED`.
@@ -45,7 +45,7 @@ confirm_destructive: false
 ### `convert-only`
 **Scope:** Conversion sources→raw **without** wiki processing.
 **Use when:** The user wants to preview converted text before compiling.
-**Action:** Run `bash run_convert.sh` or Docker equivalent. Report files converted.
+**Action:** Run `bash scripts/run_convert.sh` or Docker equivalent. Report files converted.
 
 ### `ingest <file-path>`
 **Scope:** Process a **single** raw file into the wiki.

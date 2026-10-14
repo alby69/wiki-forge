@@ -100,8 +100,8 @@ describe('Script Control Panel Test Suite', () => {
     assert.deepEqual(schemaInferArgs, ['--project', 'tesi', '--wiki-dir', 'wiki']);
 
     const schemaLintDef = SCRIPT_REGISTRY['schema_lint'];
-    const schemaLintArgs = buildCliArgs(schemaLintDef, { project: 'tesi', wiki_dir: 'wiki', strict: true, path: 'wiki/analisi', config: 'config.toml' });
-    assert.deepEqual(schemaLintArgs, ['--project', 'tesi', '--wiki-dir', 'wiki', '--strict', '--path', 'wiki/analisi', '--config', 'config.toml']);
+    const schemaLintArgs = buildCliArgs(schemaLintDef, { project: 'tesi', wiki_dir: 'wiki', strict: true, path: 'wiki/analisi', config: 'config/config.toml' });
+    assert.deepEqual(schemaLintArgs, ['--project', 'tesi', '--wiki-dir', 'wiki', '--strict', '--path', 'wiki/analisi', '--config', 'config/config.toml']);
   });
 
   test('POST /api/scripts/execute streams SSE response events for wiki_stats', async () => {

@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from pathlib import Path
-from okf_common import resolve_dir
+from okf_common import resolve_dir, resolve_path
 
 
 def load_config() -> dict:
@@ -34,7 +34,7 @@ def load_config() -> dict:
     except ImportError:
         return defaults
 
-    cfg_path = Path("config.toml")
+    cfg_path = resolve_path("config/config.toml")
     if cfg_path.is_file():
         with cfg_path.open("rb") as fh:
             data = tomllib.load(fh)
