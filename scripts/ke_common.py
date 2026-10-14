@@ -93,10 +93,14 @@ def load_config(project: str | None = None, config_path: Path | str | None = Non
         cfg_path = Path(config_path)
     else:
         proj_root = get_project_root(project)
-        cfg_path = proj_root / "config.toml"
+        cfg_path = proj_root / "config" / "config.toml"
+        if not cfg_path.is_file():
+            cfg_path = proj_root / "config.toml"
         if not cfg_path.is_file() and project:
             # Fallback to repo root config if project config is missing
-            cfg_path = Path(__file__).resolve().parent.parent / "config.toml"
+            cfg_path = Path(__file__).resolve().parent.parent / "config" / "config.toml"
+            if not cfg_path.is_file():
+                cfg_path = Path(__file__).resolve().parent.parent / "config.toml"
 
     if cfg_path.is_file():
         with cfg_path.open("rb") as fh:

@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import * as http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
@@ -851,6 +852,30 @@ export class AgentServer {
     this.llmClient = llmClient;
   }
 
+  public getConfigPath(dir: string): string {
+    const configInSub = path.join(dir, 'config', 'config.toml');
+    if (fsSync.existsSync(configInSub)) {
+      return configInSub;
+    }
+    const configInRoot = path.join(dir, 'config.toml');
+    if (fsSync.existsSync(configInRoot)) {
+      return configInRoot;
+    }
+    return configInSub;
+  }
+
+  public getProjectsJsonPath(): string {
+    const registryInSub = path.join(this.rootDir, 'config', 'projects.json');
+    if (fsSync.existsSync(registryInSub)) {
+      return registryInSub;
+    }
+    const registryInRoot = path.join(this.rootDir, 'projects.json');
+    if (fsSync.existsSync(registryInRoot)) {
+      return registryInRoot;
+    }
+    return registryInSub;
+  }
+
   public async getWikiDir(projectId: string = 'default'): Promise<string> {
     const projRoot = await this.resolveProjectRoot(projectId);
     return path.join(projRoot, 'wiki');
@@ -867,7 +892,7 @@ export class AgentServer {
 
   private async getOrInitLlmClient(): Promise<LlmClient> {
     if (!this.llmClient) {
-      const configPath = path.join(this.rootDir, 'config.toml');
+      const configPath = this.getConfigPath(this.rootDir);
       const { client } = await LlmClientFactory.createFromTomlFile(configPath);
       this.llmClient = client;
     }
@@ -909,7 +934,7 @@ export class AgentServer {
 
     let projectContext = '';
     try {
-      const configPath = path.join(this.rootDir, 'config.toml');
+      const configPath = this.getConfigPath(this.rootDir);
       const { projectContext: ctx, projectTitle } = await LlmClientFactory.createFromTomlFile(configPath);
       if (projectTitle || ctx) {
         projectContext = `Project Title: ${projectTitle}\nProject Context: ${ctx}\n\n`;
@@ -991,7 +1016,7 @@ export class AgentServer {
   }
 
   public async getProjects(): Promise<ProjectEntry[]> {
-    const registryPath = path.join(this.rootDir, 'projects.json');
+    const registryPath = this.getProjectsJsonPath();
     try {
       const data = await fs.readFile(registryPath, 'utf-8');
       const list = JSON.parse(data) as ProjectEntry[];
@@ -1005,7 +1030,8 @@ export class AgentServer {
   }
 
   public async saveProjects(projects: ProjectEntry[]): Promise<void> {
-    const registryPath = path.join(this.rootDir, 'projects.json');
+    const registryPath = this.getProjectsJsonPath();
+    await fs.mkdir(path.dirname(registryPath), { recursive: true });
     await fs.writeFile(registryPath, JSON.stringify(projects, null, 2), 'utf-8');
   }
 
@@ -1051,8 +1077,9 @@ export class AgentServer {
     await fs.mkdir(path.join(projectAbsPath, 'notes'), { recursive: true });
 
     // Copy template or default config.toml
-    const configPath = path.join(projectAbsPath, 'config.toml');
-    const defaultConfigPath = path.join(this.rootDir, 'config.toml');
+    const configPath = this.getConfigPath(projectAbsPath);
+    await fs.mkdir(path.dirname(configPath), { recursive: true });
+    const defaultConfigPath = this.getConfigPath(this.rootDir);
     try {
       const baseConfig = await fs.readFile(defaultConfigPath, 'utf-8');
       const parsed = toml.parse(baseConfig) as Record<string, unknown>;
@@ -1565,7 +1592,7 @@ export class AgentServer {
       if (req.method === 'GET') {
         try {
           const projectRoot = await this.resolveProjectRoot(pId);
-          const configPath = path.join(projectRoot, 'config.toml');
+          const configPath = this.getConfigPath(projectRoot);
           let parsed: unknown = {};
           try {
             const raw = await fs.readFile(configPath, 'utf-8');
@@ -1587,7 +1614,7 @@ export class AgentServer {
         try {
           const body = await this.parseJsonBody<Record<string, unknown>>(req);
           const projectRoot = await this.resolveProjectRoot(pId);
-          const configPath = path.join(projectRoot, 'config.toml');
+          const configPath = this.getConfigPath(projectRoot);
           const tomlContent = toml.stringify(body);
           await fs.writeFile(configPath, tomlContent, 'utf-8');
           res.writeHead(200, { 'Content-Type': 'application/json' });

@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0.."
 title Wiki-Forge Stopper
 echo Arresto di Wiki-Forge in corso...
 docker compose down

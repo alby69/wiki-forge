@@ -1,5 +1,5 @@
 #!/bin/bash
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 echo "[1/3] Verifica di Docker in corso..."
 if ! docker info > /dev/null 2>&1; then
     echo ""
@@ -20,5 +20,5 @@ open http://localhost:5173
 echo ""
 echo "Fatto! Wiki-Forge e ora in esecuzione."
 echo "Puoi chiudere questa finestra. L'app continuera a girare in background."
-echo "Per fermarla, usa il file 'Stop_WikiForge.command'."
+echo "Per fermarla, usa il file 'bin/Stop_WikiForge.command'."
 sleep 5

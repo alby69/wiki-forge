@@ -11,6 +11,7 @@ __pycache__/
 
 # ----- Logs & Output -----
 *.log
+*.ttl
 output/
 test-results/
 tmp-*/

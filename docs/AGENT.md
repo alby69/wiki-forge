@@ -29,7 +29,7 @@ You possess six fundamental capabilities:
 5. **Interactive Collaboration**: Continuous iterative dialogue, proactive suggestions, clear confidence disclosure, and user-guided note promotion.
 6. **Scenario Adaptation**: Dynamic adaptation of tone, taxonomy, and workflows to specific domain presets (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation), supporting dual-mode user workflows (**Simple Operator** in 🌱 Focus Mode vs **Knowledge Engineer** in 👑 Developer Mode / KE Workbench).
 
-Read `config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
+Read `config/config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
 
 ---
 
@@ -57,7 +57,7 @@ The knowledge base has top-level folders with clear, non-overlapping duties.
 - This is the immutable source of truth.
 
 ### `raw/` (your working inbox)
-- Holds documents converted to plain Markdown (produced by `conv2md.py` / `run_convert.sh` or web clippers).
+- Holds documents converted to plain Markdown (produced by `conv2md.py` / `scripts/run_convert.sh` or web clippers).
 - The user does NOT write here. You read from here.
 - Re-naming a file to add `_COMPILED` indicates it has been ingested into `wiki/`.
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from okf_common import resolve_path
 
 # Python 3.11+ tomllib support with fallback
 try:
@@ -45,7 +46,7 @@ def load_config() -> dict:
             "output": "output",
         }
     }
-    cfg = load_toml(Path("config.toml"))
+    cfg = load_toml(resolve_path("config/config.toml"))
     if "paths" in cfg:
         defaults["paths"].update(cfg["paths"])
     return defaults

@@ -21,14 +21,14 @@ Non serve installare Python o Node.js! Segui questi tre semplici passaggi:
 
 1. **Installa Docker Desktop** (se non lo hai già): [Scarica qui](https://www.docker.com/products/docker-desktop)
 2. **Scarica questo repository** come file ZIP ed estrailo.
-3. **Fai doppio click** sul file di avvio corrispondente al tuo sistema operativo nella cartella principale:
-   - 🪟 Windows: `Start_WikiForge.bat`
-   - 🍎 macOS: `Start_WikiForge.command` *(al primo avvio: clic destro → "Apri")*
-   - 🐧 Linux: `Start_WikiForge.sh` *(assicurati che sia eseguibile: `chmod +x Start_WikiForge.sh`)*
+3. **Fai doppio click** sul file di avvio nella cartella `bin/` corrispondente al tuo sistema operativo:
+   - 🪟 Windows: `bin/Start_WikiForge.bat`
+   - 🍎 macOS: `bin/Start_WikiForge.command` *(al primo avvio: clic destro → "Apri")*
+   - 🐧 Linux: `bin/Start_WikiForge.sh` *(assicurati che sia eseguibile: `chmod +x bin/Start_WikiForge.sh`)*
 
 L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http://localhost:5173**.
 
-> 💡 **Per arrestare l'applicazione**, usa semplicemente il file `Stop_WikiForge.*` corrispondente.
+> 💡 **Per arrestare l'applicazione**, usa semplicemente il file `bin/Stop_WikiForge.*` corrispondente.
 
 ---
 
@@ -58,7 +58,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 ```
  ┌─────────────────────────────────────────────────────────────┐
  │ FASE 1: Configurazione & Inizializzazione                   │
- │ Setup config.toml, Scenario Wizard (wizard / /wizard)        │
+ │ Setup config/config.toml, Scenario Wizard (wizard / /wizard)│
  └──────────────────────────────┬──────────────────────────────┘
                                 │
                                 ▼
@@ -88,8 +88,8 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
  └──────────────────────────────┘
 ```
 
-1. **Fase 1: Configurazione**: Imposta `config.toml` o usa la GUI **⚙️ Config** ed avvia il Wizard (`wizard` o `/wizard`).
-2. **Fase 2: Ingestione**: Carica i file sorgente in `sources/` e convertili in Markdown con `bash run_convert.sh` (`convert-only` / `/convert-only`), ritaglia pagine sul web con `clip2md.py` o importa da NotebookLM con `notebooklm_import.py`.
+1. **Fase 1: Configurazione**: Imposta `config/config.toml` o usa la GUI **⚙️ Config** ed avvia il Wizard (`wizard` o `/wizard`).
+2. **Fase 2: Ingestione**: Carica i file sorgente in `sources/` e convertili in Markdown con `bash scripts/run_convert.sh` (`convert-only` / `/convert-only`), ritaglia pagine sul web con `clip2md.py` o importa da NotebookLM con `notebooklm_import.py`.
 3. **Fase 3: Costruzione & Consultazione**: Avvia `/compile` per elaborare i file in `raw/` o `/ingest` per un singolo file, esegui il riesame con `/recompile`, crea nuove schede con `/new-article`, interroga la wiki con `/consult`, cerca con `/search`, esplora i collegamenti con `/backlinks` e `/related`, e traccia le affermazioni alle fonti originali con `/trace`. Gestisci le versioni e ripristina stati precedenti con `/rollback`.
 4. **Fase 4: Sintesi & Maturazione**: Genera materiale didattico ed analisi con `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/deep-research`, prendi appunti veloci con `/note` e promuovili ad articoli con `/promote-note`, suggerisci tag con `/tag-suggest` e calcola l'indice di completamento delle pagine con `/maturity`.
 5. **Fase 5: Compilazione & Stampa PDF**: Aggrega le note mature con `/thesis-chapter` (`generate_thesis.py`), valuta la coerenza con `/adversarial-review`, registra la revisione umana con `/verify` (alias `/human-review`), riassumi i cambiamenti con `/digest`, genera slide reveal.js con `/slides` (`/generate-slides`), ed esporta il PDF finale con `export_thesis_pdf.py` (`make thesis-pdf`). Gestisci la manutenzione della wiki con `/audit`, `/reindex`, `/prune`, `/lint-frontmatter`, `/ontology-check`, `/stats`, `/merge`, `/split`, `/stub`, `/retag`, `/export-semantic`, rigenera la bibliografia con `/sources` (`sources regenerate`), visualizza modelli con `/template` (`template show`), confronta versioni con `/diff`, ed esporta dati con `/export` e `/help`.
@@ -100,8 +100,10 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 
 ```
 .
-├── config.toml          # Configurazione principale (titolo, percorsi, LLM, OKF)
+├── bin/                 # Script di lancio e arresto rapido (Start_*, Stop_*, Update_*)
 ├── config/
+│   ├── config.toml      # Configurazione principale (titolo, percorsi, LLM, OKF)
+│   ├── projects.json    # Registro dei progetti
 │   └── scenarios.toml   # Preset di scenario (Academic, Business, Research, ecc.)
 ├── scripts/
 │   ├── conv2md.py            # Conversione PDF/EPUB/DOCX -> Markdown (raw/)

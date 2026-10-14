@@ -10,6 +10,7 @@ import os
 import re
 from pathlib import Path
 from datetime import datetime, timezone
+from okf_common import resolve_path
 
 try:
     import yaml
@@ -18,7 +19,7 @@ except ImportError:
     sys.exit(1)
 
 def load_config(repo_root: Path) -> dict:
-    config_path = repo_root / "config.toml"
+    config_path = resolve_path("config/config.toml")
     folder_type_map = {
         "intelligenza-artificiale": "Concept",
         "antropologia-economica": "Concept",
