@@ -7,7 +7,8 @@
 Instead of re-answering questions from raw documents every time (classic RAG),
 the LLM acts as an active **Knowledge Engineer** — an intellectual partner that
 **incrementally builds, evaluates, and maintains a persistent, interlinked wiki** of
-Markdown files conforming to Google's **Open Knowledge Format (OKF v0.2)**.
+Markdown files conforming to the **Open Knowledge Format (OKF v0.2)** specification
+([github.com/GoogleCloudPlatform/open-knowledge-format](https://github.com/GoogleCloudPlatform/open-knowledge-format), detailed in [`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)).
 
 This repository supports building **dynamic, incremental knowledge bases** (e.g. for a **Master's Thesis / Tesi Magistrale**, research projects, business wikis, or personal study) with a **dual output**:
 1. **Dynamic Interactive Wiki**: Searchable, interlinked, interrogable via chat, and continually evolving.
@@ -34,22 +35,28 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## 🗺️ Mappa della Documentazione (Documentation Index)
 
-La documentazione è organizzata chiaramente in base al tipo di utente:
+La documentazione è organizzata in modo modulare per guidare sia gli utenti finali che gli sviluppatori.
 
 ### 📖 Per Utenti ed Operatori (Non-Technical & Content Creators)
-- **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida passo-passo che spiega come utilizzare il sistema giorno per giorno, con il prontuario dei comandi e la risoluzione dei problemi.
-- **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico e completo per costruire una tesi di laurea come Knowledge Base dinamica e generarne la versione stampabile in PDF.
-- **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per ingegneri della conoscenza (modellazione ontologica, validazione di vincoli logici ed esportazione semantica RDF/JSON-LD).
-- **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale operativo per la validazione W3C SHACL, la conversione duale RDF/Cypher, il supporto RDF-star, lo Shortcut Engine, la sincronizzazione incrementale Live ed il retrieval ibrido LangGraph GraphRAG.
-- **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Registro bibliografico e guida alla tracciabilità delle fonti.
-- **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — **Roadmap di Sviluppo**: Pianificazione degli obiettivi a breve termine (Q4 2026) e medio/lungo termine (2027).
+- **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida passo-passo all'interfaccia Web UI (Focus Mode), prontuario dei comandi chat e risoluzione dei problemi.
+- **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico completo per costruire una tesi come Knowledge Base dinamica ed esportarla in PDF.
+- **[`docs/SOURCES.md`](docs/SOURCES.md)** — **Registro delle Fonti**: Guida alla tracciabilità delle fonti, gestione della cartella `sources/` e best practice per l'ingestione.
+- **[`docs/WORKFLOW.md`](docs/WORKFLOW.md)** — **Flussi di Lavoro Operativi**: Diagrammi e dettagli sui flussi di lavoro giornalieri per la manutenzione della wiki.
 
-### ⚙️ Per Sviluppatori ed Ingegneri del Software (Technical Architecture)
-- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Architettura Tecnica**: Analisi dettagliata dell'architettura del sistema, server API FastAPI e CLI, client LLM multi-provider, isolamento della memoria non-parametrica, motore di script SSE e confronto con l'addestramento *nanochat*.
-- **[`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)** — **Open Knowledge Format Spec v0.2**: Specifica tecnica standard per il formato delle note, frontmatter YAML, trust tiers ed indici.
-- **[`docs/AGENT.md`](docs/AGENT.md)** — **Operating Manual dell'Agente**: Il manuale operativo che definisce il contratto, i ruoli e le capacità dell'agente LLM.
+### ⚙️ Per Sviluppatori, Data Scientist e Knowledge Engineers
+- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Architettura Tecnica**: Dettagli su FastAPI, client LLM multi-provider, isolamento della memoria non-parametrica, motore di script SSE e confronto con l'addestramento *nanochat*.
+- **[`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md)** — **Enterprise Semantic Knowledge Graph & GraphRAG**: Manuale per validazione W3C SHACL, conversione duale RDF/Cypher, supporto RDF-star, Shortcut Engine, sincronizzazione live (`watchdog`) e pipeline ibrida LangGraph.
+- **[`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md)** — **Guida al Knowledge Engineering**: Manuale operativo per la modellazione ontologica, validazione di vincoli logici, Neuro-Symbolic Check ed esportazione semantica RDF/JSON-LD.
+- **[`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)** — **Open Knowledge Format Spec v0.2**: Specifica tecnica standard per il formato delle note, frontmatter YAML, trust tiers e indici.
+- **[`docs/SCHEMA.md`](docs/SCHEMA.md)** — **Typed Schema & Linting**: Guida all'inferenza e validazione dello schema formale `[schema]` nei frontmatter.
+- **[`docs/AGENT.md`](docs/AGENT.md)** — **Operating Manual dell'Agente**: Contratto, ruoli, capacità e comandi slash (`/`) definiti per l'agente LLM. *(Nota: `AGENT.md` nella root è un symlink a questo file).*
+
+### 📊 Metriche, Storico e Riferimenti
+- **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — **Roadmap di Sviluppo**: Obiettivi a breve termine (Q4 2026, completati) e medio/lungo termine (Q1-Q2 2027: Multi-tenancy, Neo4j bidirezionale, Agenti L4 autonomi).
 - **[`docs/CHANGELOG.md`](docs/CHANGELOG.md)** — **Storico dei Rilasci**: Registro dei cambiamenti e versionamento semantico.
-- **[`docs/KARPATHY_LLM_WIKI.md`](docs/KARPATHY_LLM_WIKI.md)** — **Il Concetto Originario**: Copia offline dell'articolo di Andrej Karpathy sull'LLM Wiki.
+- **[`docs/METRICS.md`](docs/METRICS.md)** — **Metriche di Systema**: Spiegazione delle metriche calcolate da `wiki_stats.py` e `okf_stats.py`.
+- **[`docs/KARPATHY_LLM_WIKI.md`](docs/KARPATHY_LLM_WIKI.md)** — **Il Concetto Originario**: Copia offline dell'articolo di Andrej Karpathy sull'LLM Wiki pattern.
+- **[`docs/STARTUP.md`](docs/STARTUP.md)** — **Guida all'Avvio e Troubleshooting**: Risoluzione dei problemi comuni di avvio, permessi e configurazione Docker.
 
 ---
 
@@ -124,6 +131,12 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 │   ├── export_thesis_pdf.py # Esportazione della tesi in PDF tramite Pandoc
 │   ├── export_semantic.py   # Esportazione semantica RDF (JSON-LD / Turtle)
 │   ├── ontology_rules.py    # Motore di validazione regole ontologiche
+│   ├── cq_validator.py      # CLI wrapper per la validazione delle Competency Questions
+│   ├── odp_suggester.py     # CLI wrapper per i suggerimenti Ontology Design Pattern
+│   ├── neuro_symbolic_check.py # CLI wrapper per verifiche di coerenza neuro-simbolica
+│   ├── ke_maturity.py       # CLI wrapper per la valutazione maturità KE
+│   ├── schema_lint.py       # Linter per schemi formali [schema]
+│   ├── schema_infer.py      # Inferenziatore di schemi formali candidate
 │   └── wizard.py            # CLI guidata per scenari operativi
 ├── AGENT.md             # Manuale operativo dell'Agente LLM (symlink a docs/AGENT.md)
 ├── skills/              # Pacchetti di Skill modulari per l'agente
@@ -142,6 +155,7 @@ La documentazione è organizzata chiaramente in base al tipo di utente:
 │           ├── markdown_to_cypher.py    # Esportatore Zettelkasten -> Script Neo4j Cypher
 │           ├── shortcut_engine.py       # Engine di materializzazione scorciatoie (SPARQL & Cypher)
 │           ├── cq_runner.py             # Test runner per Competency Questions (YAML -> SPARQL)
+│           ├── cq_engine.py             # Motore di valutazione SPARQL/Graph per Competency Questions
 │           ├── shacl_validator.py       # Motore di validazione SHACL ed inferenza OWL
 │           └── graph_rag_pipeline.py    # Pipeline Retrieval Ibrida (Vector + Subgraph Traversal)
 ├── sources/             # Cartella file sorgenti ORIGINALI (backup/ - mai modificati)
