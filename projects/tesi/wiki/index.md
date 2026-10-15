@@ -15,9 +15,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Comandi per iniziare a studiare la wiki](strumenti/comandi-uso-wiki.md) — Percorso guidato dei comandi chat dell'agente per orientarsi, interrogare, studiare e gestire la knowledge base.
-* [Wiki-Forge Script Control Panel](strumenti/wiki-forge-script-panel.md) — Panoramica degli script Python per gestione e compilazione wiki-forge
-* [Architetture Multi-Agente ed AI Workflows](temi/architetture-multi-agente.md) — Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi coordinati per il dominio HR e il Knowledge Engineering
-* [Capacità Emergenti dei Large Language Models](temi/capacita-emergenti-llm.md) — Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.
 * [Competenze e Risorse Umane](temi/competenze-e-hr.md) — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
+* [Concezioni dell'Intelligenza Artificiale](temi/concezioni-dell-ia.md) — L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.
+* [Governance, Controllo e Responsabilità](temi/governance-controllo-responsabilita.md) — Fiducia e responsabilità nell'EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.
+* [Sostituzione o Trasformazione del Lavoro](temi/sostituzione-o-trasformazione.md) — Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
+* [Capitolo 3: Progettazione della Piattaforma di Gestione della Conoscenza Ibrida](capitoli/03-progettazione-della-piattaforma.md) — Architettura ibrida tra NotebookLM (Discovery) e Wiki-Forge Web UI (Consolidation): modello SECI, note atomiche, LLM come Knowledge Engineer, Trust Tiers, SHACL e GraphRAG
 
