@@ -6,14 +6,14 @@ on:
     paths:
       - 'wiki/**'
       - 'notes/**'
-      - 'src/wikiforge/config/shapes.ttl'
+      - 'src/backend/wikiforge/config/shapes.ttl'
       - 'src/**'
   pull_request:
     branches: [ "main", "master" ]
     paths:
       - 'wiki/**'
       - 'notes/**'
-      - 'src/wikiforge/config/shapes.ttl'
+      - 'src/backend/wikiforge/config/shapes.ttl'
 
 jobs:
   shacl-validation:
@@ -37,7 +37,7 @@ jobs:
 
       - name: Convert Markdown Zettelkasten to RDF Turtle
         run: |
-          python src/wikiforge/semantics/markdown_to_rdf.py --input ./wiki --output ./knowledge_graph.ttl
+          python src/backend/wikiforge/semantics/markdown_to_rdf.py --input ./wiki --output ./knowledge_graph.ttl
 
       - name: Run PySHACL Constraint Validation
         run: |
@@ -50,7 +50,7 @@ jobs:
           data_g = Graph().parse('knowledge_graph.ttl', format='turtle')
 
           print('📋 Loading SHACL Shape Constraints...')
-          shapes_g = Graph().parse('src/wikiforge/config/shapes.ttl', format='turtle')
+          shapes_g = Graph().parse('src/backend/wikiforge/config/shapes.ttl', format='turtle')
 
           print('⚙️ Executing SHACL Validation Engine...')
           conforms, results_graph, results_text = validate(
@@ -72,7 +72,7 @@ jobs:
       - name: Export Cypher Script Artifact for Neo4j
         if: success()
         run: |
-          python src/wikiforge/semantics/markdown_to_cypher.py --input ./wiki --output ./knowledge_graph.cypher
+          python src/backend/wikiforge/semantics/markdown_to_cypher.py --input ./wiki --output ./knowledge_graph.cypher
 
       - name: Upload Graph Artifacts
         if: success()

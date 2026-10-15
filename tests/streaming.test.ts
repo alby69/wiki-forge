@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { AgentServer } from '../src/server/agentServer';
-import { LlmClient, LlmCompletionParams } from '../src/server/llmClient';
-import { ApiStorage } from '../src/storage/ApiStorage';
+import { AgentServer } from '@backend/server/agentServer';
+import { LlmClient, LlmCompletionParams } from '@backend/server/llmClient';
+import { ApiStorage } from '@frontend/storage/ApiStorage';
 
 test('LLM Response Streaming Test Suite', async t => {
   const tmpDir = path.join(process.cwd(), 'tests', 'tmp-vault-stream-' + Date.now());

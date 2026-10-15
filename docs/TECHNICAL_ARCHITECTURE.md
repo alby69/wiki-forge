@@ -45,17 +45,17 @@ A fundamental principle of `wiki-forge` is the distinction between **Parametric 
 ## 2. Implemented Subsystems & Technical Details
 
 ### 2.1 Decoupled Agent Backend & Multi-Provider LLM Client
-Implemented in `src/server/agentServer.ts` and `src/server/llmClient.ts`:
+Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/llmClient.ts`:
 - **Provider Support**: OpenCode CLI (`opencode`), Anthropic API (`claude-3-5-sonnet`), OpenAI-compatible endpoints (`gpt-4o`), local Ollama (`llama3`).
 - **Configuration**: Managed via `[agent.llm]` in `config/config.toml` with safe environment variable handling (`api_key_env`).
 - **Real-Time SSE Streaming**: `/api/chat` streams chunk-by-chunk LLM responses directly to the Web UI `ChatDrawer`.
 
 ### 2.2 Security Hardening & Containment
 - **Path Traversal Containment**: All filesystem REST endpoints (`save`, `attach`, `create`, `rename`, `move`, `delete`, `upload`) execute `validateSafePath()`, enforcing strict containment inside `wiki/` or `raw/` and returning HTTP 400 Bad Request on path traversal attempts (`..`).
-- **HTML & Markdown Sanitization**: `renderMarkdown` applies XSS sanitization (`src/core/utils/html.ts`), neutralizing dangerous scripts, iframes, and inline event handlers.
+- **HTML & Markdown Sanitization**: `renderMarkdown` applies XSS sanitization (`src/frontend/core/utils/html.ts`), neutralizing dangerous scripts, iframes, and inline event handlers.
 
 ### 2.3 Python Script Execution Engine
-Implemented in `src/server/agentServer.ts`, `ToolsModal.ts`, and `LogConsole.ts`:
+Implemented in `src/backend/server/agentServer.ts`, `ToolsModal.ts`, and `LogConsole.ts`:
 - **API Endpoints**: `GET /api/scripts/list`, `POST /api/scripts/execute`, `GET /api/files/download`.
 - **Execution**: Spawns Python CLI child processes securely via `child_process.spawn('python3', ...)` with strict argument sanitization.
 - **Log Streaming**: Real-time Server-Sent Events (SSE) stream `stdout` and `stderr` directly to a terminal-like console in the browser with process cancellation support.
@@ -67,13 +67,13 @@ Implemented in `config/config.toml` (`[okf]`), `scripts/okf_*.py`, and Makefile:
 - **Validation & Indexing**: `okf_lint.py` validates schema compliance; `okf_reindex.py` auto-generates OKF §8 `index.md`; `okf_log.py` logs chronological changes into `wiki/log.md` (OKF §9); `okf_stats.py` provides bundle analytics.
 
 ### 2.5 Incremental Versioning & Snapshot Rollback Engine
-Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/components/versioning/`, and `AGENT.md` (`/rollback`, `/history`, `/diff` commands):
+Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/components/advanced-mode/`, and `AGENT.md` (`/rollback`, `/history`, `/diff` commands):
 - **Source/Synthesis Isolation**: Original sources remain untouched in `sources/` (`backup/`) and `raw/`.
 - **Version Snapshots**: Every `/compile` or major update creates a version snapshot (`wiki/versions/<note>.v1.md`, `.v2.md`).
 - **Agent Commands & Web UI**: `/rollback note=<note> [to=version]` restores previous state with safety net backup, `/history` lists snapshots, and `/diff` renders unified diffs. The Web UI includes `VersionHistoryPanel.ts` and `DiffViewer.ts` for timeline view and 1-click restore.
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
-Implemented in `src/server/mcp_server.py` and `docker-compose.yml`:
+Implemented in `src/backend/server/mcp_server.py` and `docker-compose.yml`:
 - **Tools Exposed**: `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, and `get_version_history`.
 - **Multi-Agent Ecosystem Support**: Enables external LLM agents (Claude, GPT) to query and cite the OKF knowledge base over standard MCP JSON-RPC protocol.
 
@@ -86,22 +86,22 @@ Implemented in `scripts/export_semantic.py` and `scripts/ontology_rules.py`:
   - Rule 3: Enforces that notes with `status: stable` contain human verification (`human:*` actor in `verified`).
 
 ### 2.8 Enterprise Semantic Knowledge Graph & Stateful GraphRAG System
-Implemented in `src/wikiforge/config/shapes.ttl`, `src/wikiforge/semantics/markdown_to_rdf.py`, `markdown_to_cypher.py`, `graph_rag_pipeline.py`, and `.github/workflows/shacl_validation.yml`:
+Implemented in `src/backend/wikiforge/config/shapes.ttl`, `src/backend/wikiforge/semantics/markdown_to_rdf.py`, `markdown_to_cypher.py`, `graph_rag_pipeline.py`, and `.github/workflows/shacl_validation.yml`:
 - **W3C SHACL Validation Schema (`shapes.ttl`)**: Formally validates extracted RDF graphs against SHACL shape constraints enforcing unique slug IDs, ISO creation dates, non-empty markdown bodies, author agent IRIs, and typed relation targets (`wf:supports`, `wf:contradicts`, `wf:refersTo`).
 - **Dual-Graph Conversion**: Converts Zettelkasten Markdown notes into W3C Turtle RDF graphs and Neo4j Cypher property graph scripts.
 - **Stateful GraphRAG Pipeline (`WikiForgeGraphRAG`)**: Agentic workflow built with LangGraph implementing Entity Extraction, Text-to-Cypher translation, Neo4j/Mock execution, automated self-correction error recovery, and grounded synthesis with PROV-O provenance citations.
 - **CI/CD Automation**: GitHub Actions workflow automatically verifies SHACL shape conformance and builds graph artifacts on push/PR.
 
 ### 2.9 Multi-Project Workspace Management
-Implemented in `projects/` and `src/components/ConfigManager.ts`:
+Implemented in `projects/` and `src/frontend/components/ConfigManager.ts`:
 - **Workspace Isolation**: Projects are stored under `projects/<id>/` with independent `config/config.toml`, `sources/`, `raw/`, `wiki/`, `output/`, and `notes/`.
 - **GUI Config Manager**: Web UI modal allows editing project metadata, folder paths, LLM provider settings, and OKF taxonomy using `smol-toml`.
 
 ### 2.10 HTTP API Server Routing & Operations
-Implemented in `src/server/agentServer.ts` and `src/server/httpServer.ts`:
+Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpServer.ts`:
 - **Route Dispatch**: `AgentServer.handleRequest()` dispatches every request and returns `true` once it has written a response, or `false` when no route matches. `httpServer.ts` inspects this value and answers `404` (JSON) for unmatched paths and `500` for uncaught handler errors when headers have not yet been sent. Previously the return value was ignored, leaving unknown paths (including routes missing from a stale process) unanswered and hanging the client.
 - **Dual Base URL Resolution**: The browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service.
-- **Hot Reload Support**: The `api` service runs `npx tsx watch src/server/httpServer.ts`, which automatically watches `src/server/**` for changes and restarts the HTTP server during development without requiring container restarts.
+- **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts.
 
 ---
 

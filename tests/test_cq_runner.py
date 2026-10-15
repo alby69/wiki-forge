@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from rdflib import Graph, URIRef, Literal, RDF, Namespace
 
-from src.wikiforge.semantics.cq_runner import CQRunner
-from src.wikiforge.semantics.cq_engine import CQEngine, CQTestCase
+from src.backend.wikiforge.semantics.cq_runner import CQRunner
+from src.backend.wikiforge.semantics.cq_engine import CQEngine, CQTestCase
 
 
 class TestCQRunner(unittest.TestCase):

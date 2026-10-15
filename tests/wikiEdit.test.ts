@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseWikiEdits, stripWikiEdits, isAffirmative } from '../src/core/utils/wikiEdit';
+import { parseWikiEdits, stripWikiEdits, isAffirmative } from '@frontend/core/utils/wikiEdit';
 
 test('parseWikiEdits extracts a single well-formed proposal', () => {
   const message = [

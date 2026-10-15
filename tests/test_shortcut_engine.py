@@ -1,13 +1,13 @@
 """
 tests/test_shortcut_engine.py
 
-Unit tests for ShortcutEngine in src/wikiforge/semantics/shortcut_engine.py
+Unit tests for ShortcutEngine in src/backend/wikiforge/semantics/shortcut_engine.py
 """
 
 import unittest
 from rdflib import Graph, URIRef, Literal, RDF, Namespace
 
-from src.wikiforge.semantics.shortcut_engine import ShortcutEngine
+from src.backend.wikiforge.semantics.shortcut_engine import ShortcutEngine
 
 
 class TestShortcutEngine(unittest.TestCase):

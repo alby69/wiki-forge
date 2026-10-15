@@ -7,19 +7,19 @@ This guide describes the **Enterprise Semantic Knowledge Graph & Stateful GraphR
 ## 1. Architecture Overview
 
 `wiki-forge` transforms Markdown-based Zettelkasten notes into a dual-representation Knowledge Graph:
-1. **W3C Semantic Web Graph (RDF/Turtle + RDF-star):** Formally validated using W3C SHACL shapes (`src/wikiforge/config/shapes.ttl`) for interoperability, reasoning, RDF-star edge metadata (`<< s p o >>`), and data quality enforcement.
+1. **W3C Semantic Web Graph (RDF/Turtle + RDF-star):** Formally validated using W3C SHACL shapes (`src/backend/wikiforge/config/shapes.ttl`) for interoperability, reasoning, RDF-star edge metadata (`<< s p o >>`), and data quality enforcement.
 2. **Labeled Property Graph (Neo4j Cypher):** Idempotent Cypher scripts (`CREATE CONSTRAINT`, `MERGE`) for fast graph traversal and pathfinding.
 3. **Multi-Layered View & Shortcut Engine:** SPARQL CONSTRUCT rules & Cypher queries to materialize simplified direct relations (`wf:directCoAuthor`, `wf:agent`, `wf:role`).
 4. **Incremental Event-Driven File Watcher:** Live filesystem watcher (`watchdog`) for instant synchronization of created, modified, or deleted notes into Neo4j/RDF graphs.
 5. **Hybrid GraphRAG Pipeline (LangGraph):** Agentic Retrieval-Augmented Generation featuring Vector Search + k-hop Ego-Graph Traversal, Text-to-Cypher translation, conditional self-correction error recovery, and grounded synthesis with PROV-O provenance citations.
-6. **FastAPI REST API & Unified CLI:** Programmatic REST endpoints (`/api/v1/graph/sync`, `/api/v1/graph/validate`, `/api/v1/graph/rag`) and CLI commands (`python3 -m src.wikiforge.cli`).
+6. **FastAPI REST API & Unified CLI:** Programmatic REST endpoints (`/api/v1/graph/sync`, `/api/v1/graph/validate`, `/api/v1/graph/rag`) and CLI commands (`python3 -m src.backend.wikiforge.cli`).
 
 ---
 
 ## 2. Directory & Module Structure
 
 ```
-src/wikiforge/
+src/backend/wikiforge/
 ├── api/
 │   └── api_server.py            # FastAPI REST API Server
 ├── cli.py                       # Unified CLI Interface
@@ -41,7 +41,7 @@ src/wikiforge/
 
 ## 3. W3C SHACL Validation Schema (`shapes.ttl`)
 
-Located at `src/wikiforge/config/shapes.ttl`, this schema enforces mandatory structural and semantic rules on all Permanent Notes (`wf:PermanentNote`) and Author Agents (`prov:Agent` / `foaf:Agent`):
+Located at `src/backend/wikiforge/config/shapes.ttl`, this schema enforces mandatory structural and semantic rules on all Permanent Notes (`wf:PermanentNote`) and Author Agents (`prov:Agent` / `foaf:Agent`):
 - **`dcterms:identifier`**: Required unique slug identifier matching `^[a-z0-9-]+$`.
 - **`dcterms:title`**: Required title literal of at least 3 characters.
 - **`dcterms:created`**: Required ISO date formatted `YYYY-MM-DD`.
@@ -57,22 +57,22 @@ Located at `src/wikiforge/config/shapes.ttl`, this schema enforces mandatory str
 Execute system capabilities directly from terminal:
 ```bash
 # Validate RDF graph against SHACL shapes
-python3 -m src.wikiforge.cli validate-shacl --graph knowledge_graph.ttl --shapes src/wikiforge/config/shapes.ttl
+python3 -m src.backend.wikiforge.cli validate-shacl --graph knowledge_graph.ttl --shapes src/backend/wikiforge/config/shapes.ttl
 
 # Query Knowledge Graph via Hybrid GraphRAG
-python3 -m src.wikiforge.cli query-rag "Quali note trattano di SHACL?"
+python3 -m src.backend.wikiforge.cli query-rag "Quali note trattano di SHACL?"
 
 # Synchronize Markdown notes to RDF Turtle and Cypher
-python3 -m src.wikiforge.cli sync-graph --input wiki --output knowledge_graph.ttl
+python3 -m src.backend.wikiforge.cli sync-graph --input wiki --output knowledge_graph.ttl
 
 # Run Competency Questions (CQ) test suite
-python3 -m src.wikiforge.cli run-cq --suite tests/competency_questions/cqs.yml
+python3 -m src.backend.wikiforge.cli run-cq --suite tests/competency_questions/cqs.yml
 ```
 
 ### FastAPI REST Server
 Launch the REST server on port 8000:
 ```bash
-python3 src/wikiforge/api/api_server.py
+python3 src/backend/wikiforge/api/api_server.py
 ```
 Available endpoints:
 - `POST /api/v1/graph/sync`: Syncs Markdown folder to RDF graph.
@@ -102,13 +102,13 @@ The GraphRAG engine uses **LangGraph** to process user queries through a multi-s
 ### Competency Questions (CQ) Suite
 Declarative CQs in YAML (`tests/competency_questions/cqs.yml`) verify graph domain coverage:
 ```bash
-python3 src/wikiforge/semantics/cq_runner.py --suite tests/competency_questions/cqs.yml --graph knowledge_graph.ttl
+python3 src/backend/wikiforge/semantics/cq_runner.py --suite tests/competency_questions/cqs.yml --graph knowledge_graph.ttl
 ```
 
 ### Live File Watcher
 Monitors `wiki/` directory changes in real time:
 ```bash
-python3 src/wikiforge/watcher/graph_watcher.py wiki
+python3 src/backend/wikiforge/watcher/graph_watcher.py wiki
 ```
 
 ---
@@ -117,6 +117,6 @@ python3 src/wikiforge/watcher/graph_watcher.py wiki
 
 The repository includes an automated CI/CD pipeline that:
 1. Converts Markdown notes in `wiki/` to `knowledge_graph.ttl`.
-2. Validates the graph against `src/wikiforge/config/shapes.ttl` using `pyshacl`.
+2. Validates the graph against `src/backend/wikiforge/config/shapes.ttl` using `pyshacl`.
 3. Exports `knowledge_graph.cypher`.
 4. Runs unit tests and uploads graph build artifacts.

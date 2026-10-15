@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { MarkdownParser } from '../src/services/markdownParser';
-import { GraphService } from '../src/services/graphService';
+import { MarkdownParser } from '@frontend/services/markdownParser';
+import { GraphService } from '@frontend/services/graphService';
 
 describe('Wiki-Forge Graph & Link Extractor Test Suite', () => {
   const parser = new MarkdownParser();

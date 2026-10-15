@@ -1,5 +1,6 @@
 import { defineConfig, Plugin } from 'vite';
-import { AgentServer } from './src/server/agentServer';
+import path from 'path';
+import { AgentServer } from './src/backend/server/agentServer';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 // Browser-facing API origin, baked into the client bundle. From the user's
@@ -146,6 +147,13 @@ function agentApiPlugin(): Plugin {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@frontend': path.resolve(__dirname, './src/frontend'),
+      '@backend': path.resolve(__dirname, './src/backend'),
+    },
+  },
   server: { host: true, port: 5173, open: false },
   build: { outDir: 'dist', emptyOutDir: true },
   plugins: [agentApiPlugin()],

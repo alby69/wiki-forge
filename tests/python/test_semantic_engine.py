@@ -2,9 +2,9 @@ import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, URIRef, Literal
 
-from src.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter, escape_ttl_string, slugify
-from src.wikiforge.semantics.cq_runner import CQRunner
-from src.wikiforge.semantics.cq_engine import CQEngine, CQTestCase
+from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter, escape_ttl_string, slugify
+from src.backend.wikiforge.semantics.cq_runner import CQRunner
+from src.backend.wikiforge.semantics.cq_engine import CQEngine, CQTestCase
 
 def test_slugify_and_escape():
     assert slugify("C64 Development / Assembly") == "c64-development-assembly"
@@ -71,7 +71,7 @@ def test_cq_runner_malformed_yaml_handling(tmp_path):
 
 def test_mcp_execute_ke_use_case(temp_wiki_dir):
     repo_root = temp_wiki_dir.parent
-    from src.server.mcp_server import execute_tool, TOOLS
+    from src.backend.server.mcp_server import execute_tool, TOOLS
 
     tool_names = [t["name"] for t in TOOLS]
     assert "execute_ke_use_case" in tool_names

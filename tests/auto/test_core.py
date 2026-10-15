@@ -1,5 +1,5 @@
 import unittest
-from src.api.core import load_config, SUPPORTED_EXTS
+from src.backend.core import load_config, SUPPORTED_EXTS
 
 class TestCoreAPI(unittest.TestCase):
     def test_supported_exts(self):

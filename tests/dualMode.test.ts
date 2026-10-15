@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { appStore } from '../src/store/appStore';
-import { SCRIPT_REGISTRY, buildCliArgs } from '../src/server/agentServer';
+import { appStore } from '@frontend/store/appStore';
+import { SCRIPT_REGISTRY, buildCliArgs } from '@backend/server/agentServer';
 
 describe('Dual-Mode Shell & Application Store Test Suite', () => {
   it('should initialize with default Simple Focus Mode state', () => {

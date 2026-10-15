@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { AgentServer, KE_USE_CASES } from '../src/server/agentServer';
+import { AgentServer, KE_USE_CASES } from '@backend/server/agentServer';
 
 describe('Knowledge Engineer Use Cases Test Suite', () => {
   let server: http.Server;

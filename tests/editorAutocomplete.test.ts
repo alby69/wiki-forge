@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matchWikilinkQuery, filterWikilinkCompletions } from '../src/components/editor/wikilinkAutocomplete';
-import { WikiNote } from '../src/core/types/wiki';
+import { matchWikilinkQuery, filterWikilinkCompletions } from '@frontend/components/editor/wikilinkAutocomplete';
+import { WikiNote } from '@frontend/core/types/wiki';
 
 test('Wikilink Autocomplete Test Suite', async t => {
   const sampleNotes: WikiNote[] = [

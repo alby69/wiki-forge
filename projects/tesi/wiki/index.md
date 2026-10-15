@@ -15,9 +15,9 @@ okf_version: "0.2"
 
 ## Recently Updated
 
-* [Sostituzione o Trasformazione del Lavoro](temi/sostituzione-o-trasformazione.md) — Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
-* [Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione](capitoli/04-mappatura-e-automazione-hr.md) — Mappatura e automazione delle funzioni HR: analisi percentuale, modello SECI e analogia tra Competency Questions e Competency Framework
-* [Capitolo 5: Considerazioni Personali](capitoli/05-considerazioni-personali.md) — Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering, data governance ed etica dello human-in-the-loop gestiti via Web UI
-* [Capitolo 6: Conclusioni](capitoli/06-conclusioni.md) — Sintesi del percorso, prospettive future per le Risorse Umane e direzioni di ricerca
-* [Bibliografia e Fonti](capitoli/07-bibliografia-e-fonti.md) — Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia della tesi
+* [Comandi per iniziare a studiare la wiki](strumenti/comandi-uso-wiki.md) — Percorso guidato dei comandi chat dell'agente per orientarsi, interrogare, studiare e gestire la knowledge base.
+* [Wiki-Forge Script Control Panel](strumenti/wiki-forge-script-panel.md) — Panoramica degli script Python per gestione e compilazione wiki-forge
+* [Architetture Multi-Agente ed AI Workflows](temi/architetture-multi-agente.md) — Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi coordinati per il dominio HR e il Knowledge Engineering
+* [Capacità Emergenti dei Large Language Models](temi/capacita-emergenti-llm.md) — Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.
+* [Competenze e Risorse Umane](temi/competenze-e-hr.md) — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
 
