@@ -1,3 +1,29 @@
+---
+type: Concept
+title: 'Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione'
+description: 'Analisi dei processi HR tradizionali, stima del grado di automazione, modello SECI e prevenzione della discriminazione algoritmica'
+status: draft
+tags:
+  - thesis/chapter
+  - topic/hr
+  - topic/automation
+  - topic/ethics
+  - status/draft
+generated:
+  by: process:jules-agent
+  at: '2026-10-12T00:00:00Z'
+verified:
+  - by: human:autore
+    at: '2026-10-12T00:00:00Z'
+sources:
+  - id: thesis-design-doc
+    resource: raw/thesis-design-doc.md
+    title: Documento di Progettazione della Tesi Magistrale
+maturita: 90
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
+---
 
 # Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione
 

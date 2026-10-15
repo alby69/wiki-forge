@@ -1,3 +1,31 @@
+---
+type: Concept
+title: 'Capitolo 2: Studio degli Attori Principali del Settore AI'
+description: 'Analisi degli attori tecnici dell''AI (Karpathy, Hinton, Anthropic) e prospettive critiche e sociologiche (Cristianini, Graeber)'
+status: draft
+tags:
+  - thesis/chapter
+  - topic/ai
+  - topic/actors
+  - status/draft
+  - author/karpathy
+  - author/cristianini
+  - author/graeber
+generated:
+  by: process:jules-agent
+  at: '2026-10-12T00:00:00Z'
+verified:
+  - by: human:autore
+    at: '2026-10-12T00:00:00Z'
+sources:
+  - id: thesis-design-doc
+    resource: raw/thesis-design-doc.md
+    title: Documento di Progettazione della Tesi Magistrale
+maturita: 90
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
+---
 
 # Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche
 
