@@ -71,6 +71,10 @@
 | 56 | Topological Graph Insights & Louvain Communities (Modulo E) | ✅ Done | Louvain community detection in `graph_analytics.py`, surprising connection & knowledge gap detection, REST API endpoints, and community color legends in `ForceGraphViewer.ts`. |
 | 57 | Asynchronous Human-in-the-Loop Review Queue (Modulo F) | ✅ Done | Persistent review queue (`.llm-wiki/reviews.json`), LLM note flagging (`Create Page`, `Deep Research`, `Skip`), and dedicated `ReviewQueueModal.ts` UI panel. |
 | 58 | Agent Skills Security & Interactive Skill Scanner (Modulo G) | ✅ Done | Dynamic skill scanner (`skills/*/SKILL.md`), `/skill` slash command, and explicit user safety approval modal for shell execution & filesystem access. |
+| 59 | Strict KISS Decoupling: Conversion vs LLM Enrichment | ✅ Done | Rimozione logica CoT da `conv2md.py`, spostamento in `enrich_cot.py`. |
+| 60 | DRY Graph Semantics: Base Parser Abstraction | ✅ Done | Creazione di `BaseGraphExporter` per unificare il parsing Markdown tra RDF e Cypher. |
+| 61 | Standardized Error Handling Hierarchy | ✅ Done | Introduzione di `WikiForgeError` e sottoclassi specifiche in `core/exceptions.py`. |
+| 62 | Frontend-Backend DRY Contract for Script UI | ✅ Done | Endpoint `/api/scripts/registry` e generazione dinamica dei form UI da schema condiviso. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 

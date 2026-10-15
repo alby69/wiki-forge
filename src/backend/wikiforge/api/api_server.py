@@ -79,7 +79,7 @@ def sync_graph(req: SyncRequest):
             processed_notes=len(notes),
             output_path=str(out_p)
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"Sync error: {str(e)}")
 
 
@@ -104,7 +104,7 @@ def validate_shacl_endpoint(req: ValidationRequest):
             "report": res["results_text"],
             "violations": res["violations"]
         }
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"SHACL validation error: {str(e)}")
 
 
@@ -135,7 +135,7 @@ def query_rag(req: RAGQueryRequest):
             cypher_query=st4["cypher_query"],
             final_answer=st4["final_answer"]
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"GraphRAG error: {str(e)}")
 
 

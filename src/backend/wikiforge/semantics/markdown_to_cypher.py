@@ -1,8 +1,8 @@
-import os
 import re
 import argparse
 from pathlib import Path
-import yaml
+from src.backend.wikiforge.semantics.base_parser import BaseGraphExporter, slugify
+
 
 def escape_cypher_string(val: str) -> str:
     """Escapa le virgolette e i caratteri speciali per Cypher."""
@@ -10,90 +10,8 @@ def escape_cypher_string(val: str) -> str:
         return ""
     return val.replace('\\', '\\\\').replace("'", "\\'").replace('\n', ' ')
 
-def slugify(text: str) -> str:
-    """Genera uno slug valido per gli ID dei nodi."""
-    text = text.lower().strip()
-    text = text.replace('_', '-').replace('/', '-').replace('\\', '-')
-    text = re.sub(r'[^\w\s-]', '', text)
-    res = re.sub(r'[\s_-]+', '-', text).strip('-')
-    return res or "note"
 
-class ZettelToCypherConverter:
-    def __init__(self):
-        pass
-
-    def parse_markdown_file(self, filepath: Path, input_dir: Path = Path(".")) -> dict:
-        """Estrae metadati, testo e wikilinks semantici."""
-        content = filepath.read_text(encoding="utf-8")
-        metadata = {}
-        body = content
-
-        frontmatter_match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', content, re.DOTALL)
-        if frontmatter_match:
-            yaml_text, body = frontmatter_match.groups()
-            try:
-                metadata = yaml.safe_load(yaml_text) or {}
-            except yaml.YAMLError as e:
-                print(f"⚠️ Errore YAML in {filepath.name}: {e}")
-
-        try:
-            rel_path = filepath.relative_to(input_dir)
-        except ValueError:
-            rel_path = filepath
-
-        if metadata.get("id") or metadata.get("identifier"):
-            raw_id = metadata.get("id") or metadata.get("identifier")
-            note_slug = slugify(str(raw_id))
-        elif rel_path.parent != Path("."):
-            note_slug = slugify(f"{rel_path.parent.as_posix()}-{rel_path.stem}")
-        else:
-            note_slug = slugify(filepath.stem)
-
-        title = metadata.get("title")
-        if not title:
-            h1_match = re.search(r'^#\s+(.+)$', body, re.MULTILINE)
-            title = h1_match.group(1).strip() if h1_match else filepath.stem
-
-        created_date = metadata.get("created") or metadata.get("date") or "2026-01-01"
-        author = metadata.get("author") or "Anonymus"
-        tags = metadata.get("tags") or []
-        if isinstance(tags, str):
-            tags = [t.strip() for t in tags.split(",")]
-
-        semantic_links = []
-        wikilink_pattern = re.compile(r'\[\[(?:([^\]:]+)::)?([^\]]+)\]\]')
-
-        for match in wikilink_pattern.finditer(body):
-            pred, target = match.groups()
-            target_str = target.strip()
-            target_p = Path(target_str)
-
-            if target_p.parent != Path("."):
-                target_slug = slugify(f"{target_p.parent.as_posix()}-{target_p.stem}")
-            else:
-                target_slug = slugify(target_p.stem)
-
-            if pred:
-                predicate_name = pred.strip()
-            else:
-                predicate_name = "refersTo"
-
-            semantic_links.append({
-                "predicate": predicate_name,
-                "target_slug": target_slug
-            })
-
-        return {
-            "id": note_slug,
-            "slug": note_slug,
-            "title": title,
-            "created": str(created_date),
-            "author": author,
-            "tags": tags,
-            "body": body,
-            "links": semantic_links
-        }
-
+class ZettelToCypherConverter(BaseGraphExporter):
     def convert_notes_to_cypher(self, notes_data: list) -> str:
         """Genera lo script Cypher con vincoli e costrutti MERGE."""
         cypher_lines = [
@@ -145,17 +63,13 @@ class ZettelToCypherConverter:
 
     def process_directory(self, input_dir: Path, output_file: Path):
         """Processa la cartella ed esporta lo script .cypher."""
-        notes = []
-        md_files = list(input_dir.glob("**/*.md"))
-        print(f"📁 Trovate {len(md_files)} note Markdown in {input_dir}")
-
-        for md_file in md_files:
-            note_data = self.parse_markdown_file(md_file, input_dir=input_dir)
-            notes.append(note_data)
+        notes = self.parse_directory(input_dir)
+        print(f"📁 Trovate {len(notes)} note Markdown in {input_dir}")
 
         cypher_content = self.convert_notes_to_cypher(notes)
         output_file.write_text(cypher_content, encoding="utf-8")
         print(f"✅ Script Cypher esportato con successo in: {output_file}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Automazione conversione Markdown Zettelkasten in Cypher Neo4j per wiki-forge")

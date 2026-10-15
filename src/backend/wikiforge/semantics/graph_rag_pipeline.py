@@ -155,7 +155,7 @@ class WikiForgeGraphRAG:
                 "error_message": None
             }
 
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             return {
                 **state,
                 "error_message": str(e),

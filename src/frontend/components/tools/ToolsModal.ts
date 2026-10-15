@@ -88,15 +88,19 @@ export class ToolsModal {
   }
 
   private async fetchScriptRegistry(): Promise<void> {
-    const url = `${this.apiBaseUrl}/api/scripts/list`;
+    const url = `${this.apiBaseUrl}/api/scripts/registry`;
     try {
       const res = await fetch(url);
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
       const data = await res.json();
-      if (data.success && Array.isArray(data.scripts)) {
-        this.scripts = data.scripts;
+      if (data.success) {
+        if (data.registry && typeof data.registry === 'object') {
+          this.scripts = Object.values(data.registry as Record<string, ScriptDef>);
+        } else if (Array.isArray(data.scripts)) {
+          this.scripts = data.scripts;
+        }
       }
     } catch (err) {
       // Surface the failure instead of silently rendering an empty menu.

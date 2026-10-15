@@ -63,6 +63,12 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
       if (ocr) args.push('--ocr');
       break;
     }
+    case 'enrich_cot': {
+      const input = String(getVal('input', 'raw'));
+      const output = String(getVal('output', 'wiki'));
+      args.push('--input', input, '--output', output);
+      break;
+    }
     case 'clip2md': {
       const url = String(getVal('url', '')).trim();
       const output = String(getVal('output', 'sources/web-clips'));
@@ -252,6 +258,17 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       { name: 'input', label: 'Input Directory', type: 'text', default: 'backup', description: 'Source directory containing documents.' },
       { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for Markdown notes.' },
       { name: 'ocr', label: 'Use OCR Flag', type: 'boolean', default: false, description: 'Note scanned PDFs for OCR extraction.' },
+    ],
+  },
+  enrich_cot: {
+    id: 'enrich_cot',
+    path: 'scripts/enrich_cot.py',
+    displayName: 'Two-Step CoT Enrichment',
+    category: 'Ingestion',
+    description: 'Applies Two-Step Chain-of-Thought (Analysis -> Generation) enrichment on Markdown notes.',
+    parameters: [
+      { name: 'input', label: 'Input Directory', type: 'text', default: 'raw', description: 'Source directory containing Markdown notes.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'wiki', description: 'Destination directory for enriched notes.' },
     ],
   },
   clip2md: {
@@ -1461,9 +1478,9 @@ export class AgentServer {
     }
 
     // Script Control Panel Endpoints
-    if (pathname === '/api/scripts/list' && req.method === 'GET') {
+    if ((pathname === '/api/scripts/list' || pathname === '/api/scripts/registry') && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, scripts: Object.values(SCRIPT_REGISTRY) }));
+      res.end(JSON.stringify({ success: true, registry: SCRIPT_REGISTRY, scripts: Object.values(SCRIPT_REGISTRY) }));
       return true;
     }
 
