@@ -1,35 +1,12 @@
----
-type: Concept
-title: 'Capitolo 2: Studio degli Attori Principali del Settore AI'
-description: 'Il dibattito sull''IA: attori tecnici (Karpathy, Hinton, Amodei) e prospettive critico-sociologiche (Cristianini, Graeber)'
-status: draft
-tags:
-  - thesis/chapter
-  - topic/ai
-  - topic/authors
-  - status/draft
-  - topic/hr
-  - author/karpathy
-generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-  - by: human:autore
-    at: '2026-10-12T00:00:00Z'
-sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: Documento di Progettazione della Tesi Magistrale
-maturita: 90
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
----
 
 # Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche
 
 ## 2.1 Attori Tecnici e Visioni dell'Infrastruttura Cognitiva
-- **Andrej Karpathy**: Il paradigma "LLM Wiki" e l'AI concepita come nuovo sistema operativo per la gestione della conoscenza personalizzata e organizzativa (`[[autori/andrej-karpathy]]`). Karpathy teorizza il passaggio dai chatbot usa-e-getta ad agenti che mantengono e fanno evolvere una wiki persistente in Markdown. In questo lavoro di tesi, tale principio viene concretizzato attraverso la Web UI di Wiki-Forge: l'operatore HR non interagisce tramite righe di comando complesse, ma guida l'agente visivamente per trasformare il materiale di ricerca in un capitale di conoscenza strutturato e navigabile.
+Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione con un LLM "alla chatbot" è, per sua natura, un'esperienza effimera: ogni conversazione parte dal nulla, le risposte svaniscono alla chiusura della finestra e nulla di quanto prodotto viene conservato, collegato o reso interrogabile in modo cumulativo. È proprio da questo scenario — che nella prima parte della tesi abbiamo descritto come fragile e destinato a ripetere sempre gli stessi cicli domanda-risposta senza mai costruire capitale — che prende forma la riflessione di **Andrej Karpathy** (`[[autori/andrej-karpathy]]`), uno dei ricercatori più influenti del panorama AI contemporaneo.
+
+Karpathy parte da un'osservazione tanto semplice quanto radicale: se l'LLM è destinato a diventare il nuovo *sistema operativo* con cui le persone e le organizzazioni gestiscono la conoscenza, allora non può rimanere confinato dentro una finestra di chat stazionaria. Il modello del "chatbot usa-e-getta" — per cui si pone una domanda, si riceve una risposta plausibile e poi si chiude tutto — è, in questa prospettiva, una fase transitoria, paragonabile ai primi anni del personal computer in cui si digitavano comandi senza ancora immaginare file, cartelle e documenti persistenti. L'alternativa che Karpathy teorizza è un vero e proprio salto di paradigma: l'agente LLM non fornisce solo delle risposte, ma **mantiene e fa evolvere nel tempo una wiki persistente in Markdown**, cioè un archivio vivo di note strutturate, interlinkate e leggibili dall'uomo, che cresce a ogni interazione anziché azzerarsi. La conoscenza smette di essere un prodotto effimero per diventare un bene permanente e accumulabile: ogni nuova fonte, ogni nuova domanda e ogni nuova sintesi arricchiscono un patrimonio che resta consultabile, revisionabile e condiviso.
+
+In questo lavoro di tesi, tale principio viene tradotto in pratica attraverso la **Web UI di Wiki-Forge** descritta nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]. Il punto cruciale è che la visione di Karpathy non resta un esercizio teorico riservato a ingegneri e sviluppatori: l'operatore HR — tipicamente non tecnico, abituato a interfacce visive e non a righe di comando — guida l'agente in prima persona attraverso pulsanti e finestre (📥 Carica, ⚡ Compila, 💬 Chiedi), trasformando materiale di ricerca grezzo e frammentario in un capitale di conoscenza strutturato, navigabile e durable. È così che l'AI smette di essere un interlocutore temporaneo per diventare l'infrastruttura cognitiva su cui l'organizzazione costruisce, giorno dopo giorno, la propria memoria collettiva.
 - **Geoffrey Hinton**: I rischi esistenziali, la convergenza tra reti neurali ed intelligenza biologica, l'insorgenza di sottobiettivi strumentali (`[[autori/geoffrey-hinton]]`).
 - **Laboratori e Sviluppi Recenti (Anthropic, OpenAI, Dario Amodei)**: Le architetture agentiche, i modelli di ragionamento sequenziale e i workflow autonomi coordinati (`[[architetture-multi-agente]]`). Nei laboratori di frontiera, la ricerca si è progressivamente spostata dal semplice incremento di parametri dei singoli modelli verso l'orchestratore di *agentic workflows* e meccanismi di *multi-agent debate*, in cui più istanze agentiche collaborano o si verificano a vicenda per eseguire task ad alta complessità concettuale.
 

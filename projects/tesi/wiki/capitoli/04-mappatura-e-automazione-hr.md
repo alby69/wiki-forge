@@ -1,29 +1,3 @@
----
-type: Concept
-title: 'Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione'
-description: 'Mappatura e automazione delle funzioni HR: analisi percentuale, modello SECI e analogia tra Competency Questions e Competency Framework'
-status: draft
-tags:
-  - thesis/chapter
-  - topic/hr
-  - topic/automation
-  - status/draft
-  - status/review
-generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-  - by: human:autore
-    at: '2026-10-12T00:00:00Z'
-sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: Documento di Progettazione della Tesi Magistrale
-maturita: 90
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
----
 
 # Capitolo 4: Studio delle Attività HR Storiche e Analisi del Grado di Automazione
 
@@ -47,13 +21,16 @@ Il grado di penetrazione dell'automazione nei processi Risorse Umane varia sensi
 Per comprendere l'impatto empirico di tale ripartizione, si consideri un processo di selezione aziendale per posizioni tecniche e gestionali con un volume di **500 candidature (CV)** pervenute.
 
 1. **Fase 1 — Screening di Primo Livello (Automazione 80%)**:
-   L'infrastruttura di Knowledge Engineering esegue il parsing automatico dei documenti, estraendo ed indicizzando le competenze esplicite. Il sistema filtra in autonomia circa il **70% dei profili (350 CV)** palesemente privi dei requisiti minimi inderogabili (es. abilitazioni normative o anni di esperienza specifici).
+   L'infrastruttura di Knowledge Engineering esegue il parsing automatico dei documenti (un processo volto a scomporre un testo non strutturato in elementi strutturati e leggibili dalla macchina), di circa il **70% dei profili (350 CV)** palesemente privi dei requisiti minimi inderogabili (es. abilitazioni normative o anni di esperienza specifici).
 2. **Fase 2 — Matching Semantico ed Analisi Multi-Prospettiva (Automazione 50%)**:
-   Sui restanti **150 profili qualificati**, l'agente LLM sintetizza le esperienze salienti e propone una prima graduatoria basata sul matching con il framework di competenze aziendale. In questa fase, l'intervento del KCO è fondamentale per analizzare il **30% dei casi ambigui (45 CV)** che presentano percorsi di carriera non lineari, potenziali "soft skill" trasversali o possibili segnali di discriminazione algoritmica indiretta.
+   Sui restanti **150 profili qualificati**, l'agente LLM sintetizza le esperienze salienti e propone una prima graduatoria basata sul matching con il framework di competenze aziendale. In questa fase, l'intervento del KCO (Knowledge Curation Officer) è fondamentale per analizzare il **30% dei casi ambigui (45 CV)** che presentano percorsi di carriera non lineari, potenziali "soft skill" trasversali o possibili segnali di discriminazione algoritmica indiretta.
 3. **Fase 3 — Valutazione Finale e Colloquio (Automazione 10%)**:
-   I **20 candidati finalisti** vengono sottoposti a colloquio individuale gestito esclusivamente dall'HR Manager.
-
-**Risultato Operativo**: L'integrazione dell'infrastruttura riduce il tempo di lavorazione amministrativa della pratica del **45%**, eliminando il carico di routine igienica, ma garantisce un presidio umano al **100%** sulle decisioni di scarto nei casi dubbi e sulla scelta finale di assunzione.
+   I **20 candidati finalisti** vengono sottoposti a colloquio individuale gestito esclusivamente dall'HR Manager. Il residuo margine di automazione (≈10%) non attiene alla valutazione sostanziale, ma unicamente ai compiti amministrativi di contorno (logistica, agenda dei colloqui, redazione di bozze di sintesi). La titolarità umana della decisione finale non è una limitazione tecnica contingente, ma il riflesso di una precisa scelta metodologica ed etica, riconducibile a quattro ordini di ragioni:
+   - **Natura tacita e discrezionale del giudizio (SECI)**: La valutazione finale mobilita conoscenza prevalentemente *tacita* — intuizione pratica, lettura del contesto, decodifica del linguaggio non verbale, della motivazione autentica e della coerenza valoriale del candidato. Questa forma di conoscenza, per definizione, sfugge alla codificazione in regole esplicite e mal si presta alla formalizzazione ontologica richiesta da una pipeline automatizzata. L'LLM eccelle nella *Combinazione* di dati espliciti, ma non dispone della comprensione situata necessaria a sostenere un colloquio umano.
+   - **Presidio etico e tutela della dignità del lavoro**: Come argomentato nel [[capitoli/05-considerazioni-personali|Capitolo 5]], la transizione dal livello `machine-confirmed` a `human-reviewed` dei Trust Tiers esprime la scelta per cui le decisioni che incidono sulle persone restano saldamente in capo all'uomo (*human-in-the-loop*). L'assunzione configura una decisione ad alta densità etica e giuridica: mantenerne la titolarità umana sottrae la scelta finale all'opacità algoritmica e alla cristallizzazione dei bias storici (variabili proxy e feedback loop) di cui alla sezione 4.4. Dunque, è per questo che il presidio umano si posiziona un gradino sopra le decisioni algoritmiche secondo il principio che l'IA propone e l'uomo valida.
+   - **L'intreccio tra verifica e "momenti che contano"**: Il colloquio non è una mera verifica di competenze già estratte dal grafo, ma un *momento che conta* in cui empatia, negoziazione, fiducia e relazione interpersonale diretta sono determinanti. Coerentemente con la concezione dell'IA come "specchio cognitivo" ([[temi/concezioni-dell-ia|Concezioni dell'IA]]) e con la critica di Graeber alla *routine igienica*, l'infrastruttura è legittimata ad automatizzare il carico igienico (screening, parsing, prima catalogazione) liberando così tempo per il lavoro di cura delle relazioni umane.
+   - **Accountability e responsabilità legale**: La decisione finale di assunzione comporta responsabilità contrattuali e di compliance (pari opportunità, GDPR, tutela antidiscriminatoria) che esigono un soggetto giuridicamente responsabile. L'HR Manager, in veste di KCO [[capitoli/05-considerazioni-personali|Knowledge Curation Officer (KCO)]], assume su di sé la validazione di merito, mentre l'agente resta confinato al ruolo secondario di supporto informato.
+   -  L'integrazione dell'infrastruttura riduce il tempo di lavorazione amministrativa della pratica del **45%**, eliminando il carico di routine igienica, ma garantisce un presidio umano al **100%** sulle decisioni di scarto nei casi dubbi e sulla scelta finale di assunzione.
 
 ## 4.3 Il Modello SECI ed il Competency Framework
 - **Applicazione del Modello SECI**: Come la conoscenza tacita degli HR specialist viene *esternalizzata* ed *ingegnerizzata* nell'infrastruttura.
