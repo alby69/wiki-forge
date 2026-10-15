@@ -1,8 +1,8 @@
 import unittest
 import tempfile
 from pathlib import Path
-from src.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter, escape_ttl_string, slugify as slugify_ttl
-from src.wikiforge.semantics.markdown_to_cypher import ZettelToCypherConverter, escape_cypher_string, slugify as slugify_cypher
+from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter, escape_ttl_string, slugify as slugify_ttl
+from src.backend.wikiforge.semantics.markdown_to_cypher import ZettelToCypherConverter, escape_cypher_string, slugify as slugify_cypher
 
 class TestConverters(unittest.TestCase):
     def setUp(self):

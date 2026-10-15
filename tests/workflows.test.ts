@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { AgentServer } from '../src/server/agentServer';
-import { LlmClient, LlmCompletionParams } from '../src/server/llmClient';
+import { AgentServer } from '@backend/server/agentServer';
+import { LlmClient, LlmCompletionParams } from '@backend/server/llmClient';
 
 class MockWorkflowLlmClient implements LlmClient {
   public async complete(params: LlmCompletionParams): Promise<string> {

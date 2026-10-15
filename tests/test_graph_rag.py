@@ -1,5 +1,5 @@
 import unittest
-from src.wikiforge.semantics.graph_rag_pipeline import (
+from src.backend.wikiforge.semantics.graph_rag_pipeline import (
     WikiForgeGraphRAG,
     GraphRAGState,
     build_graph_rag_app,

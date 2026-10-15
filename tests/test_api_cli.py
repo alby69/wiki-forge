@@ -7,7 +7,7 @@ Integration tests for REST API endpoints (FastAPI TestClient) and CLI commands.
 import unittest
 from fastapi.testclient import TestClient
 
-from src.wikiforge.api.api_server import app
+from src.backend.wikiforge.api.api_server import app
 
 
 class TestAPIAndCLI(unittest.TestCase):

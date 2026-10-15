@@ -51,7 +51,7 @@ La documentazione è organizzata in modo modulare per guidare sia gli utenti fin
 - **[`docs/SCHEMA.md`](docs/SCHEMA.md)** — **Typed Schema & Linting**: Guida all'inferenza e validazione dello schema formale `[schema]` nei frontmatter.
 - **[`docs/AGENT.md`](docs/AGENT.md)** — **Operating Manual dell'Agente**: Contratto, ruoli, capacità e comandi slash (`/`) definiti per l'agente LLM. *(Nota: `AGENT.md` nella root è un symlink a questo file).*
 
-### 📊 Metriche, Storico e Riferimenti
+### 📊 Metrike, Storico e Riferimenti
 - **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — **Roadmap di Sviluppo**: Obiettivi a breve termine (Q4 2026, completati) e medio/lungo termine (Q1-Q2 2027: Multi-tenancy, Neo4j bidirezionale, Agenti L4 autonomi).
 - **[`docs/CHANGELOG.md`](docs/CHANGELOG.md)** — **Storico dei Rilasci**: Registro dei cambiamenti e versionamento semantico.
 - **[`docs/METRICS.md`](docs/METRICS.md)** — **Metriche di Systema**: Spiegazione delle metriche calcolate da `wiki_stats.py` e `okf_stats.py`.
@@ -95,7 +95,7 @@ La documentazione è organizzata in modo modulare per guidare sia gli utenti fin
  └──────────────────────────────┘
 ```
 
-1. **Fase 1: Configurazione**: Imposta `config/config.toml` o usa la GUI **⚙️ Config** ed avvia il Wizard (`wizard` o `/wizard`).
+1. **Fase 1: Configurazione**: Imposta `config/config.toml` o usa la GUI **⚙️ Config** ed avvia il Wizard (`wizard` or `/wizard`).
 2. **Fase 2: Ingestione**: Carica i file sorgente in `sources/` e convertili in Markdown con `bash scripts/run_convert.sh` (`convert-only` / `/convert-only`), ritaglia pagine sul web con `clip2md.py` o importa da NotebookLM con `notebooklm_import.py`.
 3. **Fase 3: Costruzione & Consultazione**: Avvia `/compile` per elaborare i file in `raw/` o `/ingest` per un singolo file, esegui il riesame con `/recompile`, crea nuove schede con `/new-article`, interroga la wiki con `/consult`, cerca con `/search`, esplora i collegamenti con `/backlinks` e `/related`, e traccia le affermazioni alle fonti originali con `/trace`. Gestisci le versioni e ripristina stati precedenti con `/rollback`.
 4. **Fase 4: Sintesi & Maturazione**: Genera materiale didattico ed analisi con `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/deep-research`, prendi appunti veloci con `/note` e promuovili ad articoli con `/promote-note`, suggerisci tag con `/tag-suggest` e calcola l'indice di completamento delle pagine con `/maturity`.
@@ -142,22 +142,31 @@ La documentazione è organizzata in modo modulare per guidare sia gli utenti fin
 ├── skills/              # Pacchetti di Skill modulari per l'agente
 ├── docs/                # Documentazione centralizzata (TUTORIAL, THESIS_GUIDE, GRAPH_RAG, ecc.)
 ├── src/
-│   └── wikiforge/
-│       ├── api/
-│       │   └── api_server.py            # Server REST API FastAPI per servizi Knowledge Graph
-│       ├── cli.py                       # CLI unificata (`python3 -m src.wikiforge.cli`)
-│       ├── watcher/
-│       │   └── graph_watcher.py         # File watcher live event-driven (watchdog)
-│       ├── config/
-│       │   └── shapes.ttl               # Vincoli W3C SHACL per la validazione delle forme
-│       └── semantics/
-│           ├── markdown_to_rdf.py       # Convertitore Zettelkasten -> Grafo RDF Turtle + RDF-star
-│           ├── markdown_to_cypher.py    # Esportatore Zettelkasten -> Script Neo4j Cypher
-│           ├── shortcut_engine.py       # Engine di materializzazione scorciatoie (SPARQL & Cypher)
-│           ├── cq_runner.py             # Test runner per Competency Questions (YAML -> SPARQL)
-│           ├── cq_engine.py             # Motore di valutazione SPARQL/Graph per Competency Questions
-│           ├── shacl_validator.py       # Motore di validazione SHACL ed inferenza OWL
-│           └── graph_rag_pipeline.py    # Pipeline Retrieval Ibrida (Vector + Subgraph Traversal)
+│   ├── frontend/        # Web UI Client (TypeScript, Vite, CodeMirror, ForceGraph)
+│   └── backend/         # Python Domain & Server Engine
+│       ├── core.py      # Utility core condivise backend
+│       ├── cache.py     # Gestione cache
+│       ├── server/
+│       │   ├── agentServer.ts           # Agent REST & SSE Server
+│       │   ├── httpServer.ts            # Entry point HTTP
+│       │   ├── llmClient.ts             # Client LLM Multi-provider
+│       │   └── mcp_server.py            # Model Context Protocol (MCP) Server
+│       └── wikiforge/
+│           ├── api/
+│           │   └── api_server.py        # Server REST API FastAPI per servizi Knowledge Graph
+│           ├── cli.py                   # CLI unificata (`python3 -m src.backend.wikiforge.cli`)
+│           ├── watcher/
+│           │   └── graph_watcher.py     # File watcher live event-driven (watchdog)
+│           ├── config/
+│           │   └── shapes.ttl           # Vincoli W3C SHACL per la validazione delle forme
+│           └── semantics/
+│               ├── markdown_to_rdf.py   # Convertitore Zettelkasten -> Grafo RDF Turtle + RDF-star
+│               ├── markdown_to_cypher.py# Esportatore Zettelkasten -> Script Neo4j Cypher
+│               ├── shortcut_engine.py   # Engine di materializzazione scorciatoie (SPARQL & Cypher)
+│               ├── cq_runner.py         # Test runner per Competency Questions (YAML -> SPARQL)
+│               ├── cq_engine.py         # Motore di valutazione SPARQL/Graph per Competency Questions
+│               ├── shacl_validator.py   # Motore di validazione SHACL ed inferenza OWL
+│               └── graph_rag_pipeline.py# Pipeline Retrieval Ibrida (Vector + Subgraph Traversal)
 ├── sources/             # Cartella file sorgenti ORIGINALI (backup/ - mai modificati)
 ├── raw/                 # Testo grezzo convertito (inbox dell'agente)
 ├── wiki/                # La Knowledge Base viva ed interconnessa
@@ -185,7 +194,7 @@ Oltre alla gestione base della conoscenza, `wiki-forge` include strumenti da **K
 - **Typed Schema Lint & Inference (`/schema-lint`, `/schema-infer`)**: Validazione rigorosa e proposizione automatica dello schema formale [schema] via `python3 scripts/schema_lint.py` e `python3 scripts/schema_infer.py` (`make schema-lint`, `make schema-infer`).
 - **Validazione Ontologica Leggera (`/ontology-check`)**: Controlli di coerenza logica, rilevamento di dipendenze circolari dirette (A -> B -> A) e verifica della revisione umana per le note con stato `stable` via `python3 scripts/ontology_rules.py` (`make ontology-check`).
 - **Esportazione Semantica W3C (`/export-semantic`)**: Conversione automatica della Knowledge Base in formati RDF standard (`output/wiki_export.jsonld` e `output/wiki_export.ttl`) per l'interoperabilità con GraphDB e Protégé via `python3 scripts/export_semantic.py` (`make export-semantic`).
-- **Model Context Protocol (MCP Server)**: Server nativo (`src/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `validate_competency_question`, e `get_ontology_gaps`.
+- **Model Context Protocol (MCP Server)**: Server nativo (`src/backend/server/mcp_server.py`, `make mcp-serve`) per permettere ad agenti AI esterni di interrogare e navigare la tua wiki in modo strutturato tramite i tool `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `validate_competency_question`, e `get_ontology_gaps`.
 - **Manuali di riferimento**: Guida all'interoperabilità semantica in [`docs/KNOWLEDGE_ENGINEERING.md`](docs/KNOWLEDGE_ENGINEERING.md) ed alla pipeline GraphRAG in [`docs/GRAPH_RAG.md`](docs/GRAPH_RAG.md).
 
 ---

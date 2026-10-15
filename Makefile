@@ -137,7 +137,7 @@ thesis-pdf:
 	python3 scripts/export_thesis_pdf.py --input output/thesis_compiled.md --output output/thesis_final.pdf
 
 mcp-serve:
-	python3 src/server/mcp_server.py --http --port 8080
+	python3 src/backend/server/mcp_server.py --http --port 8080
 
 help:
 	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, help"

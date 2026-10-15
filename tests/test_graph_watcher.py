@@ -7,7 +7,7 @@ Unit tests for LiveGraphWatcher and GraphSyncHandler.
 import unittest
 import tempfile
 from pathlib import Path
-from src.wikiforge.watcher.graph_watcher import GraphSyncHandler, LiveGraphWatcher
+from src.backend.wikiforge.watcher.graph_watcher import GraphSyncHandler, LiveGraphWatcher
 
 
 class TestGraphWatcher(unittest.TestCase):

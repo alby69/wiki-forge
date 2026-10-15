@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { AgentServer } from '../src/server/agentServer';
+import { AgentServer } from '@backend/server/agentServer';
 import {
   LlmClient,
   LlmCompletionParams,
@@ -11,7 +11,7 @@ import {
   extractResponseText,
   parseConfigToml,
   resolveOpenCodeCommand,
-} from '../src/server/llmClient';
+} from '@backend/server/llmClient';
 
 class MockLlmClient implements LlmClient {
   public lastParams?: LlmCompletionParams;

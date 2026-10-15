@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { AgentServer } from '../src/server/agentServer';
-import { renderMarkdown } from '../src/core/utils/markdown';
+import { AgentServer } from '@backend/server/agentServer';
+import { renderMarkdown } from '@frontend/core/utils/markdown';
 
 test('NotebookLM-Inspired Knowledge & Study Features Test Suite', async t => {
   const tmpDir = path.join(process.cwd(), 'tests', 'tmp-notebooklm-' + Date.now());

@@ -1,7 +1,7 @@
 """
 tests/test_wikiforge_semantics.py
 
-Unit and Integration Tests for Wiki-Forge Semantic Knowledge Base Extension (src/wikiforge/semantics/).
+Unit and Integration Tests for Wiki-Forge Semantic Knowledge Base Extension (src/backend/wikiforge/semantics/).
 Tests Module 1 (Markdown Parser & RDF/Cypher Exporter), Module 2 (SHACL & CQ Engine),
 Module 3 (Shortcut View Engine), and Module 4 (PROV-O & GraphRAG Pipeline).
 """
@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from rdflib import Graph, URIRef, RDF, RDFS, OWL
 
-from src.wikiforge.semantics import (
+from src.backend.wikiforge.semantics import (
     ParsedNote,
     SemanticLink,
     mint_uri,

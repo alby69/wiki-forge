@@ -4,14 +4,14 @@ from pathlib import Path
 from rdflib import Graph
 from pyshacl import validate
 
-from src.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
+from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
 
 class TestSHACLValidation(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.input_dir = Path(self.temp_dir.name) / "notes"
         self.input_dir.mkdir(parents=True, exist_ok=True)
-        self.shapes_path = Path("src/wikiforge/config/shapes.ttl")
+        self.shapes_path = Path("src/backend/wikiforge/config/shapes.ttl")
 
         # Create valid note
         self.valid_note = self.input_dir / "valid-note-001.md"

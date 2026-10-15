@@ -8,6 +8,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@frontend/*": ["src/frontend/*"],
+      "@backend/*": ["src/backend/*"]
+    },
     "types": ["vite/client", "node"]
   },
   "ts-node": {

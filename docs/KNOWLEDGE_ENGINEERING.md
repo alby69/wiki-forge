@@ -51,7 +51,7 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
-> **Nota operativa**: gli endpoint `/api/ke/*` sono serviti dal container `api`, che gira con `npx tsx` **senza hot-reload**. Dopo ogni modifica sotto `src/server/**` esegui `docker compose restart api`, altrimenti la Web UI interroga un processo obsoleto e il pannello resta vuoto. Se l'API non risponde, il modal mostra un box di errore con messaggio ed endpoint in `#ke-usecase-list`.
+> **Nota operativa**: gli endpoint `/api/ke/*` sono serviti dal container `api`, che gira con `npx tsx` **senza hot-reload**. Dopo ogni modifica sotto `src/backend/server/**` esegui `docker compose restart api`, altrimenti la Web UI interroga un processo obsoleto e il pannello resta vuoto. Se l'API non risponde, il modal mostra un box di errore con messaggio ed endpoint in `#ke-usecase-list`.
 
 ---
 
@@ -152,7 +152,7 @@ make neuro-check
 ## 7. Semantic Interoperability & External Ecosystems
 
 ### A. Model Context Protocol (MCP Server)
-The MCP server (`src/server/mcp_server.py`) exposes tools to external AI clients:
+The MCP server (`src/backend/server/mcp_server.py`) exposes tools to external AI clients:
 - `search_wiki(query)`: Search notes.
 - `get_concept_metadata(note_id)`: Retrieve metadata and trust tier.
 - `get_line_anchored_citation(note_id, start_line, end_line)`: Grounded passage retrieval.

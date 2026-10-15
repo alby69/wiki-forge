@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { computeNoteTrustTier, isNoteStale, renderTrustBadgeHTML, renderTrustTierDot } from '../src/components/ui/TrustBadge';
+import { computeNoteTrustTier, isNoteStale, renderTrustBadgeHTML, renderTrustTierDot } from '@frontend/components/ui/TrustBadge';
 
 describe('OKF Trust Badge & Lifecycle Filter Test Suite', () => {
   test('computeNoteTrustTier correctly identifies human-reviewed notes', () => {

@@ -1,0 +1,104 @@
+import { WikiNote } from '@frontend/core/types/wiki';
+import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
+import { MarkdownParser } from '@frontend/services/markdownParser';
+
+/**
+ * File-based vault adapter (read-only viewer).
+ *
+ * Loads every Markdown file under `wiki/` and `raw/` at build/dev time using
+ * Vite's `import.meta.glob`. This keeps the UI fully decoupled from any
+ * backend: the agent edits the Markdown on disk, and the UI simply renders it.
+ *
+ * Note: this adapter is intentionally read/explore only. Persistence (saving
+ * edits back to disk) is the job of the coding agent, which owns the files.
+ */
+export class FileStorage implements IStorage {
+  private parser = new MarkdownParser();
+
+  public async getAllNotes(): Promise<WikiNote[]> {
+    // NOTE: `import.meta.glob` requires LITERAL patterns and resolves them
+    // relative to THIS file (src/storage/). The UI presents the *knowledge base*
+    // only (see AGENT.md §2): `wiki/` is the curated, interlinked KB, whereas
+    // `raw/` is the agent's working inbox and is intentionally excluded from the
+    // graph/viewer. To point the UI at a different vault, edit this string and
+    // rebuild (`npm run build`). Patterns must stay literals — Vite rejects variables.
+    const modules = import.meta.glob(['../../wiki/**/*.md'], {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+
+      const notes: WikiNote[] = [];
+
+      for (const [path, content] of Object.entries(modules)) {
+        const relative = path.replace(/^\.\.\//, ''); // e.g. "wiki/ai/foo.md"
+        const segments = relative.split('/');
+        const fileName = segments[segments.length - 1] ?? relative;
+        const stem = fileName.replace(/\.md$/i, '');
+        // Folder label without the redundant leading "wiki/" root, so the graph
+        // groups by thematic wiki, e.g. "intelligenza-artificiale".
+        const folder =
+          segments.length > 1 ? segments.slice(1, -1).join('/') || 'wiki' : 'wiki';
+        const titleFromName = stem.replace(/[-_]/g, ' ');
+
+        notes.push(this.parser.parseNote(stem, titleFromName, content, folder, relative));
+      }
+
+    return this.parser.computeBacklinks(notes);
+  }
+
+  public async getNote(id: string): Promise<WikiNote | null> {
+    const notes = await this.getAllNotes();
+    return (
+      notes.find(n => n.id === id || n.title.toLowerCase() === id.toLowerCase()) ?? null
+    );
+  }
+
+  public async saveNote(note: Partial<WikiNote> & { id: string }): Promise<WikiNote> {
+    // Read/explore viewer: reflect the change in the returned object only.
+    // The agent remains the source of truth for on-disk files.
+    const current = await this.getNote(note.id);
+    return { ...(current as WikiNote), ...note } as WikiNote;
+  }
+
+  public async deleteNote(_id: string): Promise<boolean> {
+    return false;
+  }
+
+  public async searchNotes(query: string): Promise<WikiNote[]> {
+    const notes = await this.getAllNotes();
+    const q = query.toLowerCase();
+    return notes.filter(
+      n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+    );
+  }
+
+  public async createFolder(_folderPath: string): Promise<boolean> {
+    return true;
+  }
+
+  public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
+    const id = fileName.replace(/\.md$/i, '');
+    const title = id.replace(/[-_]/g, ' ');
+    const noteContent = content || `# ${title}\n\nNew wiki note.`;
+    const folder = folderPath.replace(/^wiki\/?/, '') || 'wiki';
+    const filePath = `wiki/${folder}/${fileName.endsWith('.md') ? fileName : `${fileName}.md`}`;
+    return this.parser.parseNote(id, title, noteContent, folder, filePath);
+  }
+
+  public async renameItem(_oldPath: string, _newName: string): Promise<boolean> {
+    return true;
+  }
+
+  public async moveItem(_sourcePath: string, _targetFolder: string): Promise<boolean> {
+    return true;
+  }
+
+  public async uploadFile(_folderPath: string, _fileName: string, _content: string | ArrayBuffer): Promise<boolean> {
+    return true;
+  }
+
+  public async ingestMarkdownFile(_fileName: string, _content: string, _targetFolder: string): Promise<IngestResult> {
+    return { success: false, error: 'Import requires the backend API (offline viewer is read-only).' };
+  }
+}

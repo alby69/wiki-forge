@@ -17,7 +17,7 @@ from scripts.cq_validator import extract_competency_questions, evaluate_cq, load
 from scripts.odp_suggester import load_odp_catalog, analyze_note_for_odp
 from scripts.neuro_symbolic_check import check_neuro_symbolic_consistency
 from scripts.ke_maturity import assess_ke_maturity
-from src.server.mcp_server import execute_tool
+from src.backend.server.mcp_server import execute_tool
 
 
 class TestKnowledgeEngineering(unittest.TestCase):

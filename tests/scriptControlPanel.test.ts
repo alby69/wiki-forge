@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as http from 'node:http';
-import { AgentServer, SCRIPT_REGISTRY, buildCliArgs } from '../src/server/agentServer';
+import { AgentServer, SCRIPT_REGISTRY, buildCliArgs } from '@backend/server/agentServer';
 
 describe('Script Control Panel Test Suite', () => {
   let tmpDir: string;

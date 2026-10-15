@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as http from 'node:http';
-import { AgentServer } from '../src/server/agentServer';
-import { ApiStorage } from '../src/storage/ApiStorage';
+import { AgentServer } from '@backend/server/agentServer';
+import { ApiStorage } from '@frontend/storage/ApiStorage';
 
 describe('Filesystem Operations Test Suite', () => {
   const tmpDir = path.join(process.cwd(), 'tests', 'tmp_fs_test');
