@@ -12,6 +12,15 @@ Provides command-line commands:
 import sys
 import argparse
 from pathlib import Path
+
+# Ensure project root is in sys.path for direct script execution
+_file_path = Path(__file__).resolve()
+for _parent in _file_path.parents:
+    if (_parent / "src").is_dir() and (_parent / "config").is_dir():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+
 from rdflib import Graph
 
 from src.backend.wikiforge.semantics.shacl_validator import validate_shacl
