@@ -11,6 +11,14 @@ import sys
 from typing import TypedDict, List, Dict, Any, Optional
 from pathlib import Path
 
+# Ensure project root is in sys.path for direct script execution
+_file_path = Path(__file__).resolve()
+for _parent in _file_path.parents:
+    if (_parent / "src").is_dir() and (_parent / "config").is_dir():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+
 # Try importing LangGraph / LangChain components
 try:
     from langgraph.graph import StateGraph, END
