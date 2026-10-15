@@ -44,17 +44,18 @@ def is_valid_actor(val: str) -> bool:
     return bool(ACTOR_REGEX.match(val.strip()))
 
 def parse_frontmatter(content: str):
-    if not content.startswith("---"):
-        return None, content
-    parts = re.split(r"^---\s*$", content, maxsplit=2, flags=re.MULTILINE)
+    clean_content = content.lstrip("\ufeff\r\n\t ")
+    if not clean_content.startswith("---"):
+        return None, clean_content
+    parts = re.split(r"^---\s*$", clean_content, maxsplit=2, flags=re.MULTILINE)
     if len(parts) >= 3:
         try:
             fm = yaml.safe_load(parts[1])
             body = parts[2]
             return (fm if isinstance(fm, dict) else {}), body
         except Exception as e:
-            return e, content
-    return None, content
+            return e, clean_content
+    return None, clean_content
 
 def lint_file(file_path: Path, wiki_root: Path) -> list[str]:
     errors = []
