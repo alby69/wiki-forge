@@ -119,7 +119,18 @@ Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpS
 
 ---
 
-## 4. Final Recommendation
+## 4. Linee Guida per lo Sviluppo (KISS/DRY)
+
+Per mantenere il codice pulito e manutenibile, tutti i contributori (umani e AI) devono rispettare queste regole:
+
+1. **Singola Responsabilità (KISS)**: Uno script Python in `scripts/` non deve mai mischiare la conversione di formato con la generazione/arricchimento LLM. La conversione di formato (`conv2md.py`) è separata dall'arricchimento semantico (`enrich_cot.py`).
+2. **Niente `except Exception:` generici**: Utilizzare sempre eccezioni specifiche oppure la gerarchia di eccezioni definita in `src/backend/wikiforge/core/exceptions.py` (`WikiForgeError`, `ConfigError`, `ConversionError`, `GraphValidationError`).
+3. **DRY nei Form UI**: Non hardcodedare mai i parametri di uno script nel frontend. La UI deve generare i form dinamicamente consumando `GET /api/scripts/registry`.
+4. **Ereditarietà per i Grafi**: Qualsiasi nuovo esportatore di grafi (es. Gremlin, SQL, Cypher, RDF) deve ereditare da `BaseGraphExporter` in `src/backend/wikiforge/semantics/base_parser.py` per riutilizzare la logica di parsing del frontmatter OKF e dei wikilink.
+
+---
+
+## 5. Final Recommendation
 
 1. **For Production Knowledge Base Management**:
    Use `wiki-forge` with your preferred LLM provider (`ollama`, `anthropic`, `openai_compatible`, or `opencode`). Run `make ui-docker` or `npm run dev` to interact via the Web UI or CLI.

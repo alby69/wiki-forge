@@ -5,7 +5,15 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.5.0] - 2026-10-15
+
+### Refactoring Architetturale (KISS/DRY)
+- **Decoupling**: Rimossa la logica LLM CoT da `conv2md.py` per rispettare il principio di singola responsabilità (KISS); creata `scripts/enrich_cot.py`.
+- **DRY**: Introdotto `BaseGraphExporter` in `src/backend/wikiforge/semantics/base_parser.py` per unificare il parsing Markdown tra gli exporter RDF e Cypher.
+- **DX**: Aggiunta gerarchia di eccezioni personalizzate (`WikiForgeError`, `ConfigError`, `ConversionError`, `GraphValidationError`) in `src/backend/wikiforge/core/exceptions.py`.
+- **UI**: Esposto endpoint `GET /api/scripts/registry` ed aggiornato `ToolsModal.ts` nel frontend per generare dinamicamente i form UI dallo schema backend (DRY).
+
+## [3.4.1] - 2026-10-10
 
 ### Added
 - **Agent chat window enlarging (`src/components/chat/ChatDrawer.ts`)**: a `⛶` header button (or double-click on the title bar, or `Esc` to restore) maximizes the chat drawer into a full-screen overlay; a drag handle on the drawer's left edge lets the user resize the docked width (320px–~viewport), with the chosen width persisted in `localStorage`. Sticky sizing: opening the chat keeps the last maximized/resized state.

@@ -103,6 +103,14 @@ La documentazione è organizzata in modo modulare per guidare sia gli utenti fin
 
 ---
 
+### 🏛️ Principi Architetturali (KISS & DRY)
+Il progetto aderisce rigorosamente alla filosofia Unix:
+- **KISS (Keep It Simple, Stupid)**: Ogni script fa una sola cosa (es. `conv2md.py` converte solo formati, non genera testo LLM; la logica CoT è isolata in `enrich_cot.py`). La complessità dell'agente è isolata nei moduli `skills/` e nel motore di orchestrazione.
+- **DRY (Don't Repeat Yourself)**: La configurazione è centralizzata (`config.toml`). Le definizioni degli script risiedono in un unico `SCRIPT_REGISTRY` che alimenta sia la CLI che la UI dinamica. I symlink garantiscono una singola fonte di verità per `AGENT.md` e `skills/`, e la classe base `BaseGraphExporter` unifica il parsing dei grafi.
+- **Disaccoppiamento**: Frontend (Vite/TS) e Backend (Node/Python) comunicano esclusivamente tramite contratti API REST/SSE ben definiti, senza logica di business condivisa.
+
+---
+
 ## 🛠️ Cosa C'è nel Repository
 
 ```

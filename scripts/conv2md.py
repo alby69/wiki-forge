@@ -170,7 +170,7 @@ def load_hash_cache() -> dict[str, str]:
     if HASH_CACHE_PATH.exists():
         try:
             return json.loads(HASH_CACHE_PATH.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError):
             return {}
     return {}
 
@@ -202,50 +202,6 @@ def already_converted(output_dir: Path, stem: str, source_path: Path | None = No
     return True
 
 
-def two_step_cot_analysis(stem: str, content: str) -> dict:
-    """Phase 1 CoT: Analyze content for entities, concepts, gaps, and recommendations."""
-    lines = [line.strip() for line in content.split("\n") if line.strip()]
-    entities = list(set([word.strip(".,()") for word in content.split() if len(word) > 4 and word[0].isupper()]))[:10]
-    concepts = [line.lstrip("#").strip() for line in lines if line.startswith("#")][:5]
-
-    return {
-        "stem": stem,
-        "summary": lines[0] if lines else stem,
-        "entities": entities,
-        "concepts": concepts if concepts else [stem],
-        "recommendations": ["Create page", "Interlink concepts"],
-    }
-
-
-def two_step_cot_generation(analysis: dict, raw_content: str) -> str:
-    """Phase 2 CoT: Generate clean Markdown note with frontmatter."""
-    title = analysis["stem"].replace("-", " ").replace("_", " ").title()
-    entities_str = ", ".join(analysis["entities"]) if analysis["entities"] else "General"
-    concepts_str = ", ".join(f"[[{c}]]" for c in analysis["concepts"])
-
-    return f"""---
-title: "{title}"
-type: concept
-status: draft
-verified: false
-generated: true
-tags: [{', '.join(analysis['concepts'])}]
----
-
-# {title}
-
-## Executive Summary
-{analysis['summary']}
-
-## CoT Analysis Insights
-- **Key Entities**: {entities_str}
-- **Recommended Links**: {concepts_str}
-
-## Body
-{raw_content.strip()}
-"""
-
-
 # ---------------------------------------------------------------------------
 # Main processing loop
 # ---------------------------------------------------------------------------
@@ -255,8 +211,6 @@ def process_folder(
     input_dir: Path,
     output_dir: Path,
     use_ocr: bool,
-    use_cot: bool = False,
-    use_vision: bool = False,
     quiet: bool = False,
 ) -> tuple[int, int, int]:
     """Walk `input_dir`, convert every supported file into `output_dir`."""
@@ -288,9 +242,6 @@ def process_folder(
         try:
             if ext in PDF_EXTS:
                 convert_pdf(f, out_path, use_ocr=use_ocr)
-                if use_vision:
-                    text = out_path.read_text(encoding="utf-8")
-                    out_path.write_text(f"{text}\n\n<!-- Vision Captioning Applied -->\n", encoding="utf-8")
             elif ext in PANDOC_EXTS:
                 if not pandoc_ok:
                     raise RuntimeError(
@@ -299,12 +250,6 @@ def process_folder(
                 convert_with_pandoc(f, out_path, from_format=ext.lstrip("."))
             elif ext in PASSTHROUGH_EXTS:
                 copy_passthrough(f, out_path)
-
-            if use_cot:
-                raw_text = out_path.read_text(encoding="utf-8")
-                analysis = two_step_cot_analysis(f.stem, raw_text)
-                final_md = two_step_cot_generation(analysis, raw_text)
-                out_path.write_text(final_md, encoding="utf-8")
 
             # Update fast hash cache
             cache = load_hash_cache()
@@ -315,7 +260,7 @@ def process_folder(
         except subprocess.CalledProcessError as exc:
             print(f"  ERROR (pandoc) on {f.name}: {exc.stderr}", file=sys.stderr)
             failed += 1
-        except Exception as exc:  # noqa: BLE001 — surface any failure, keep going
+        except (RuntimeError, OSError, ValueError) as exc:
             print(f"  ERROR on {f.name}: {exc}", file=sys.stderr)
             failed += 1
 
@@ -354,16 +299,6 @@ def main() -> None:
         help="Note scanned PDFs (real OCR needs a separate step, see README).",
     )
     parser.add_argument(
-        "--cot",
-        action="store_true",
-        help="Enable Two-Step Chain-of-Thought (Analysis -> Generation) processing.",
-    )
-    parser.add_argument(
-        "--vision",
-        action="store_true",
-        help="Enable Vision model captioning for PDF embedded images.",
-    )
-    parser.add_argument(
         "--json",
         action="store_true",
         help="Output result as JSON object on stdout.",
@@ -385,8 +320,6 @@ def main() -> None:
         input_dir,
         output_dir,
         args.ocr,
-        use_cot=args.cot,
-        use_vision=args.vision,
         quiet=args.json,
     )
     if args.json:
