@@ -1,0 +1,25 @@
+id = "user.add-sources"
+title = "Add Sources & Compile Wizard"
+role = "user"
+description = "Drop files -> Preview Markdown -> Approve Compile."
+requires = []
+
+[[steps]]
+id = "convert"
+kind = "auto"
+script = "conv2md.py"
+title = "Convert New Documents"
+description = "Converts newly uploaded documents to raw/ Markdown files."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Converted Markdown"
+description = "Review converted Markdown before compiling into wiki."
+
+[[steps]]
+id = "compile"
+kind = "auto"
+script = "enrich_cot.py"
+title = "Compile Notes into Wiki"
+description = "Compiles raw Markdown files into wiki notes."

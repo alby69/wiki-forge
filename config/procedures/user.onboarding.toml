@@ -1,0 +1,25 @@
+id = "user.onboarding"
+title = "User Onboarding Wizard"
+role = "user"
+description = "Guided onboarding: Pick domain scenario -> Ingest first source -> Compile."
+requires = []
+
+[[steps]]
+id = "scenario"
+kind = "review"
+title = "Select Domain Preset Scenario"
+description = "Choose an academic, business, research, or thesis scenario."
+
+[[steps]]
+id = "intake"
+kind = "auto"
+script = "conv2md.py"
+title = "Convert First Source Document"
+description = "Converts initial sources into Markdown notes in raw/."
+
+[[steps]]
+id = "compile"
+kind = "auto"
+script = "enrich_cot.py"
+title = "Compile First Wiki Note"
+description = "Compiles raw Markdown notes into structured wiki notes."

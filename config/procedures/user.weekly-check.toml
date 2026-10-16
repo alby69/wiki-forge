@@ -1,0 +1,25 @@
+id = "user.weekly-check"
+title = "Weekly Check & Link Resolution"
+role = "user"
+description = "Audit pending sources, broken links, and orphan notes."
+requires = []
+
+[[steps]]
+id = "lint"
+kind = "auto"
+script = "okf_lint.py"
+title = "Lint OKF Notes & Links"
+description = "Validates links, frontmatter, and directory indexes."
+
+[[steps]]
+id = "reindex"
+kind = "auto"
+script = "okf_reindex.py"
+title = "Regenerate Indexes"
+description = "Updates master index and folder indexes."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Maintenance Report"
+description = "Confirm weekly check results."

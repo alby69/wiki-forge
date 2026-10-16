@@ -1,0 +1,25 @@
+id = "ke.compile"
+title = "LLM Note Compilation & Reindexing"
+role = "ke"
+description = "Ingests raw/ sources into wiki/ with OKF v0.2 frontmatter and updates master indexes."
+requires = ["ke.intake"]
+
+[[steps]]
+id = "compile"
+kind = "auto"
+script = "enrich_cot.py"
+title = "Enrich Notes via Two-Step CoT"
+description = "Applies Chain-of-Thought enrichment to notes in raw/."
+
+[[steps]]
+id = "reindex"
+kind = "auto"
+script = "okf_reindex.py"
+title = "Regenerate Master & Thematic Indexes"
+description = "Rebuilds wiki/index.md and thematic folder indexes."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Changeset Proposals"
+description = "Approve compiled notes before finalizing."

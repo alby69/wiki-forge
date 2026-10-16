@@ -1,0 +1,30 @@
+id = "ke.ontological-integrity"
+title = "Validate and Fix Ontological Integrity"
+role = "ke"
+description = "Scans knowledge graph for SHACL shape violations and checks ontology rules."
+requires = ["ke.compile"]
+
+[exit_criteria]
+metric = "shacl_violations"
+op = "=="
+value = 0
+
+[[steps]]
+id = "ontology_check"
+kind = "auto"
+script = "ontology_rules.py"
+title = "Check Logical Ontology Rules"
+description = "Validates circular dependency and human review rules."
+
+[[steps]]
+id = "shacl_scan"
+kind = "auto"
+script = "shacl_validator.py"
+title = "Scan for SHACL Violations"
+description = "Validates knowledge graph against W3C SHACL shape constraints."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Proposed Fixes"
+description = "Confirm resolved SHACL and ontology warnings."
