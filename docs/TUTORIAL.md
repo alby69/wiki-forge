@@ -200,7 +200,7 @@ Questa è la fase centrale in cui la conoscenza prende vita nell'interfaccia UI.
 
 2. **Esplorazione e Modifica nell'Interfaccia Grafica**:
    - **Vault Explorer (Barra Laterale)**: Naviga tra le cartelle della tesi, crea nuove cartelle (`📁+`) o nuove pagine (`📄+`), rinomina (`✏️`), sposta o elimina (`🗑️`).
-   - **Editor CodeMirror 6**: Formatta il testo in Markdown, usa l'autocompletamento automatico dei `[[wikilink]]` digitando `[[`, e salva cliccando il pulsante **💾 Salva** o con la scorciatoia `Ctrl+S`.
+   - **Editor CodeMirror 6 e Toolbar di Formattazione**: Formatta il testo in Markdown, gestisci la cronologia delle modifiche con i pulsanti **↩️ Undo** (Annulla) e **↪️ Redo** (Ripristina) o scorciatoie `Ctrl+Z` / `Ctrl+Y`, applica lo stile al testo (**B** Grassetto, *I* Corsivo, ~~S~~ Barrato, `</>` Codice inline), imposta Intestazioni (H1, H2, H3), Elenchi puntati o numerati, Citazioni, e seleziona Colore del testo e Allineamento (Sinistra, Centro, Destra, Giustificato). Usa l'autocompletamento dei `[[wikilink]]` digitando `[[`, e salva con il pulsante **💾 Save** / **💾 Save & Close** o con `Ctrl+S`.
    - **Graph View**: Visualizza la mappa interattiva dei concetti e clicca su un nodo per aprire e leggere la nota corrispondente.
 
 3. **Interrogazione Dinamica & Tracciabilità (`consult`, `search`, `backlinks`, `related`, `trace`)**:
