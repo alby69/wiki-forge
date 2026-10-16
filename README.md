@@ -177,7 +177,7 @@ Il progetto aderisce rigorosamente alla filosofia Unix:
 │               ├── cq_engine.py         # Motore di valutazione SPARQL/Graph per Competency Questions
 │               ├── shacl_validator.py   # Motore di validazione SHACL ed inferenza OWL
 │               └── graph_rag_pipeline.py# Pipeline Retrieval Ibrida (Vector + Subgraph Traversal)
-├── sources/             # Cartella file sorgenti ORIGINALI (backup/ - mai modificati)
+├── backup/              # Cartella file sorgenti ORIGINALI immutabili (configurata via paths.sources in config.toml)
 ├── raw/                 # Testo grezzo convertito (inbox dell'agente)
 ├── wiki/                # La Knowledge Base viva ed interconnessa
 ├── output/              # Risultati temporanei, report e PDF finali
