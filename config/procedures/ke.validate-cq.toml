@@ -1,0 +1,30 @@
+id = "ke.validate-cq"
+title = "Competency Questions Coverage & Gap Analysis"
+role = "ke"
+description = "Validates knowledge base coverage against natural language Competency Questions."
+requires = ["ke.ontological-integrity"]
+
+[exit_criteria]
+metric = "cq_gaps"
+op = "=="
+value = 0
+
+[[steps]]
+id = "cq_scan"
+kind = "auto"
+script = "cq_validator.py"
+title = "Validate Competency Questions"
+description = "Evaluates competency question coverage against wiki notes."
+
+[[steps]]
+id = "stats"
+kind = "auto"
+script = "wiki_stats.py"
+title = "Update Global Metrics Report"
+description = "Calculates global wiki statistics and updates METRICS.md."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Competency Coverage Report"
+description = "Verify competency questions coverage and address open knowledge gaps."

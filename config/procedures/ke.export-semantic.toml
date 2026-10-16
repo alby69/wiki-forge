@@ -1,0 +1,18 @@
+id = "ke.export-semantic"
+title = "Export W3C Semantic Knowledge Graph"
+role = "ke"
+description = "Exports OKF knowledge base into W3C standard RDF formats (JSON-LD and Turtle TTL)."
+requires = ["ke.validate-cq"]
+
+[[steps]]
+id = "export"
+kind = "auto"
+script = "export_semantic.py"
+title = "Export RDF Turtle and JSON-LD"
+description = "Generates output/wiki_export.ttl and output/wiki_export.jsonld."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Exported Graphs"
+description = "Confirm exported Turtle and JSON-LD graphs for external consumption."

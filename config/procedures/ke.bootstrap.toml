@@ -1,0 +1,18 @@
+id = "ke.bootstrap"
+title = "Bootstrap Knowledge Base Infrastructure"
+role = "ke"
+description = "Initializes .wikiforge directory, checks configuration, and verifies directory structure."
+requires = []
+
+[[steps]]
+id = "scan"
+kind = "auto"
+script = "okf_lint.py"
+title = "Lint OKF Frontmatter & Directory Structure"
+description = "Checks frontmatter compliance and required directory paths."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Infrastructure Setup"
+description = "Confirm environment and project configuration."

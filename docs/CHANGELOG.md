@@ -5,6 +5,34 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-10-22
+
+### Knowledge Engineer Cockpit, Stateful Procedure Engine & Plan-Review-Apply Vault
+- **Unified Health & Metrics Engine (`health.py`)**:
+  - Aggregates SHACL violations, Competency Question gaps, KE maturity score, raw pending items, orphan ratio, and broken links into a single 0-100 Health Score and L1-L4 Maturity Level.
+  - Automatically generates `.wikiforge/STATUS.md` and logs historical snapshots to `.wikiforge/metrics/history.jsonl`.
+  - Exposes REST endpoint `/api/v1/health` in FastAPI and AgentServer.
+- **Safe Vault & Changeset Manager (`vault.py`)**:
+  - Implemented atomic file writes using temporary files and `os.replace`.
+  - Soft-delete moving removed files to `.wikiforge/trash/` with timestamping.
+  - Staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety model.
+- **Stateful Procedure Engine (`procedures.py`)**:
+  - Declarative TOML procedure workflows in `config/procedures/*.toml` (including predefined KE procedures `ke.bootstrap`, `ke.intake`, `ke.compile`, `ke.ontological-integrity`, `ke.validate-cq`, `ke.export-semantic`).
+  - DAG requirement validation, automated script execution, human review pauses, exit criteria validation, and run state persistence in `.wikiforge/state/<run_id>.json`.
+  - Procedure execution REST endpoints (`GET /api/v1/procedures`, `POST /api/v1/procedures/run`, `POST /api/v1/procedures/runs/:id/approve`).
+- **Resumable User Wizards**:
+  - Added user wizard TOMLs (`user.onboarding`, `user.add-sources`, `user.weekly-check`) saved to `.wikiforge/wizard_state.json`.
+  - Added **🔄 Riprendi Wizard** button in Focus Mode (`SimpleModeDashboard.ts`) for one-click session resumption.
+- **Live Sync & ETag Conflict Prevention**:
+  - Live Server-Sent Events endpoint `/api/v1/sync/events`.
+  - SHA256 ETag `If-Match` validation on `saveWikiNote` returning HTTP 412 (Precondition Failed) on concurrent write collisions.
+- **Frontend KE Cockpit & Command Palette (`Ctrl+K`)**:
+  - Built `KECockpitModal.ts` displaying top health metrics card, Next Best Action recommendations, and procedure execution stepper.
+  - Built `CommandPalette.ts` (`Ctrl+K`) for global note search and procedure actions.
+  - Built `ChangesetReviewModal.ts` for unified diff review, accept/apply, and rejection of staged changesets.
+- **Documentation Overhaul**:
+  - Updated `README.md`, `AGENT.md` (adding Session Startup Directive), and created `docs/ARCHITECTURE.md`, `docs/KE_PLAYBOOK.md`, `docs/USER_GUIDE.md`, `docs/PROCEDURES.md`, and `docs/MIGRATION.md`.
+
 ## [4.0.0] - 2026-10-20
 
 ### Decoupled 5 Macro-Components Architectural Refactoring (KISS & DRY)

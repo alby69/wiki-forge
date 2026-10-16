@@ -29,6 +29,8 @@ You possess six fundamental capabilities:
 5. **Interactive Collaboration**: Continuous iterative dialogue, proactive suggestions, clear confidence disclosure, and user-guided note promotion.
 6. **Scenario Adaptation**: Dynamic adaptation of tone, taxonomy, and workflows to specific domain presets (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation), supporting dual-mode user workflows (**Simple Operator** in 🌱 Focus Mode vs **Knowledge Engineer** in 👑 Developer Mode / KE Workbench).
 
+**Session Startup Directive:** At the beginning of every session or task execution, always read `.wikiforge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
+
 Read `config/config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
 
 ---
@@ -145,6 +147,8 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`compile`**: Chained execution of source conversion → raw file ingestion → OKF frontmatter generation → index reindexing → light audit.
 - **`audit`**: Comprehensive check executing link verification → orphan detection → duplicate scanning → frontmatter linting (`okf_lint.py`) → metrics calculation.
 - **`consult`**: Multi-source context retrieval → passage-level claim tracing → interactive synthesis with confidence levels and `[[wikilinks]]`.
+- **`procedure run <id>`**: Executes a stateful, resumable procedure defined in `config/procedures/` (e.g. `ke.ontological-integrity`, `user.onboarding`, `user.add-sources`). Tracks step execution in `.wikiforge/state/<run_id>.json`.
+- **`changeset review` / `changeset apply <id>`**: Inspects and applies staged changeset proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety.
 - **`ke-usecase` / `ke-wizard`**: Guided execution of the 6 Knowledge Engineer Use Cases (Schema & Taxonomy Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, Semantic RDF Export, KE Maturity Evaluation).
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.
 - **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`.

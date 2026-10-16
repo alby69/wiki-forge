@@ -1,0 +1,18 @@
+id = "ke.intake"
+title = "Source Document Ingestion & Intake"
+role = "ke"
+description = "Converts PDF, EPUB, DOCX sources into Markdown files staged in raw/."
+requires = ["ke.bootstrap"]
+
+[[steps]]
+id = "convert"
+kind = "auto"
+script = "conv2md.py"
+title = "Convert Sources to Markdown"
+description = "Converts documents in sources/ to raw/ Markdown files."
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Staged Raw Files"
+description = "Verify converted Markdown files in raw/ before compilation."

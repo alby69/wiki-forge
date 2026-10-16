@@ -1,0 +1,21 @@
+# Schema definition for Wiki-Forge TOML procedures
+# Procedures are defined in config/procedures/*.toml
+
+[schema]
+id = "string (unique identifier, e.g. ke.ontological-integrity)"
+title = "string (human-readable title)"
+role = "ke | user"
+description = "string"
+requires = ["list of prerequisite procedure IDs"]
+
+[schema.exit_criteria]
+metric = "string (e.g. shacl_violations, cq_gaps, ke_maturity_score)"
+op = "== | <= | >="
+value = "number"
+
+[[schema.steps]]
+id = "string"
+kind = "auto | review"
+script = "string (optional Python script in scripts/ or src/)"
+title = "string"
+description = "string"
