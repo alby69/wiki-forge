@@ -38,6 +38,12 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Registrazione del tool `execute_ke_use_case(use_case_id)` nel server MCP (`src/server/mcp_server.py`).
   - Mappatura completa dei 6 Use Case di Knowledge Engineering (Schema Modeling, SHACL Validation, CQ Assessment, Neuro-Symbolic, Semantic Export, Platform Maturity Evaluation).
 
+- [x] **Task 6: Master Implementation Brief v2.0 (KE Cockpit & Procedure Engine Core)**
+  - Implementazione dell'Health & Metrics Engine unificato (`src/backend/wikiforge/api/health.py`) con calcolo dei livelli L1-L4, punteggio di salute 0-100 e raccomandazioni "Next Best Actions".
+  - Implementazione del Safe Vault & Changeset Manager (`src/backend/wikiforge/vault.py`) per modifiche atomiche, cestino soft-delete `.wikiforge/trash/` e review queue di modifiche staged in `.wikiforge/changesets/`.
+  - Motore di Procedure TOML dichiarative e resummabili (`src/backend/wikiforge/procedures.py`) con supporto per grafi di dipendenze DAG, esecuzione automatica di script, pause per revisione umana e stato persistente in `.wikiforge/state/<run_id>.json`.
+  - Integrazione completa nella Web UI: cruscotto KE Cockpit (`KECockpitModal.ts`), Command Palette (`Ctrl+K`), Changeset Review Queue (`ChangesetReviewModal.ts`), Live Sync SSE ed ETag SHA256 per la prevenzione delle collisioni in scrittura.
+
 ---
 
 ## 🔮 Medio / Lungo Termine (Q1-Q2 2027)
