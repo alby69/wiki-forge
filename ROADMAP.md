@@ -75,6 +75,7 @@
 | 60 | DRY Graph Semantics: Base Parser Abstraction | ✅ Done | Creazione di `BaseGraphExporter` per unificare il parsing Markdown tra RDF e Cypher. |
 | 61 | Standardized Error Handling Hierarchy | ✅ Done | Introduzione di `WikiForgeError` e sottoclassi specifiche in `core/exceptions.py`. |
 | 62 | Frontend-Backend DRY Contract for Script UI | ✅ Done | Endpoint `/api/scripts/registry` e generazione dinamica dei form UI da schema condiviso. |
+| 63 | Robustness, KE Cockpit & Guided Procedures (Master Brief) | ✅ Done | Unified Health Engine (`health.py`), Procedure Engine (`procedures.py`), Safe Vault (`vault.py`), Resumable Wizards, Live SSE Sync, and KE Cockpit UI (`KECockpitModal.ts`). |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -217,3 +218,16 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - Dynamic `SkillScanner` service in `AgentServer` scanning `skills/*/SKILL.md`.
 - Chat slash command `/skill`.
 - Explicit user approval modal prompt for shell command execution and workspace boundaries.
+
+---
+
+## Phase 63 — Robustness, KE Cockpit & Guided Procedures (Master Brief) ✅ Done
+
+**Goal:** Deliver complete robustness, stateful procedure execution, safe vault changeset management, and a unified Knowledge Engineer Cockpit UI in alignment with the Jules Master Implementation Brief v2.0.
+
+**Deliverables:**
+- **Unified Health & Metrics Engine (`src/backend/wikiforge/api/health.py`)**: Aggregates SHACL violations, CQ gaps, KE maturity score (L1-L4), orphan ratio, broken links, and raw pending items into a single 0-100 Health Score. Generates `.wikiforge/STATUS.md`, logs history to `.wikiforge/metrics/history.jsonl`, and exposes `/api/v1/health`.
+- **Safe Vault & Changeset Manager (`src/backend/wikiforge/vault.py`)**: Implements atomic file writes (`os.replace`), soft-delete backups in `.wikiforge/trash/`, and staged JSON changesets in `.wikiforge/changesets/` for Plan-Review-Apply safety.
+- **Stateful Procedure Engine (`src/backend/wikiforge/procedures.py`)**: Executes TOML-defined procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria evaluation, and persistent state in `.wikiforge/state/<run_id>.json`.
+- **Knowledge Engineer Cockpit & UI Upgrades**: Built `KECockpitModal.ts` dashboard, `CommandPalette.ts` (`Ctrl+K`), `ChangesetReviewModal.ts`, and `SimpleModeDashboard.ts` resumable user wizard launcher (`.wikiforge/wizard_state.json`).
+- **Live Sync & ETag Collision Prevention**: Server-Sent Events stream (`/api/v1/sync/events`) and HTTP 412 (Precondition Failed) ETag checks on note save.
