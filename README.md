@@ -152,14 +152,16 @@ Il progetto aderisce rigorosamente alla filosofia Unix:
 ├── src/
 │   ├── frontend/        # Web UI Client (TypeScript, Vite, CodeMirror, ForceGraph)
 │   └── backend/         # Python Domain & Server Engine
-│       ├── core.py      # Utility core condivise backend
-│       ├── cache.py     # Gestione cache
 │       ├── server/
 │       │   ├── agentServer.ts           # Agent REST & SSE Server
 │       │   ├── httpServer.ts            # Entry point HTTP
 │       │   ├── llmClient.ts             # Client LLM Multi-provider
 │       │   └── mcp_server.py            # Model Context Protocol (MCP) Server
 │       └── wikiforge/
+│           ├── core/                    # Core condiviso (wikiforge-core)
+│           │   ├── config.py            # Caricamento centralizzato get_project_config()
+│           │   ├── exceptions.py        # Gerarchia eccezioni WikiForgeError
+│           │   └── script_schema.py     # Registro e contratto --json-schema
 │           ├── api/
 │           │   └── api_server.py        # Server REST API FastAPI per servizi Knowledge Graph
 │           ├── cli.py                   # CLI unificata (`python3 -m src.backend.wikiforge.cli`)

@@ -5,6 +5,26 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-10-20
+
+### Decoupled 5 Macro-Components Architectural Refactoring (KISS & DRY)
+- **Centralized Core Library (`wikiforge-core`)**:
+  - Implemented `get_project_config()` in `src/backend/wikiforge/core/config.py` as Single Source of Truth for loading `config.toml` with absolute path resolution and fallback defaults across all services and scripts.
+  - Expanded domain-specific exception hierarchy in `src/backend/wikiforge/core/exceptions.py` with `IngestionError` alongside `WikiForgeError`, `ConfigError`, and `ConversionError`.
+  - Defined dynamic script schema registry contract in `src/backend/wikiforge/core/script_schema.py`.
+- **Dynamic CLI Schema Contract & Argument Mapper**:
+  - Implemented `--json-schema` CLI flag across Python scripts in `scripts/`.
+  - Replaced hardcoded `switch` statement in `agentServer.ts` with a generic `buildCliArgsFromSchema` argument mapper.
+  - Updated `GET /api/scripts/registry` to query script schemas dynamically.
+- **Unified SQLite Ingestion Queue Engine (`wikiforge-ingest`)**:
+  - Refactored `scripts/conv2md.py` to use `scripts/ingest_queue.py` persistent SQLite database (`.wiki-forge/ingest_queue.db`) for file state lifecycle tracking (`pending`, `processing`, `completed`, `failed`) and SHA256 idempotency checking.
+  - Removed duplicate `.wiki-forge/file_hashes.json` file cache logic.
+- **API Gateway Consolidation (`wikiforge-api-gateway`)**:
+  - Implemented HTTP reverse proxy in `AgentServer` (`agentServer.ts`) for `/api/v1/graph/*` endpoints (`sync`, `validate`, `rag`) to proxy requests to FastAPI Knowledge Graph backend service (`FASTAPI_SERVER_URL`), exposing a single unified API URL base (`http://localhost:3001/api/...`) to the Web UI.
+- **Documentation Overhaul**:
+  - Updated `docs/TECHNICAL_ARCHITECTURE.md` with Mermaid topology diagram for the 5 macro-components architecture.
+  - Updated `README.md` directory layout to reflect `src/backend/wikiforge/core/`.
+
 ## [3.5.0] - 2026-10-15
 
 ### Refactoring Architetturale (KISS/DRY)

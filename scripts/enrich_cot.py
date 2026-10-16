@@ -21,7 +21,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parent.parent
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
 from okf_common import resolve_dir
+from src.backend.wikiforge.core.script_schema import check_and_handle_json_schema
 
 
 def two_step_cot_analysis(stem: str, content: str) -> dict:
@@ -105,6 +111,7 @@ def process_directory(input_dir: Path, output_dir: Path, quiet: bool = False) ->
 
 
 def main() -> None:
+    check_and_handle_json_schema("enrich_cot")
     parser = argparse.ArgumentParser(
         description="Apply Two-Step Chain-of-Thought enrichment to Markdown notes."
     )

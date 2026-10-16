@@ -17,7 +17,23 @@ cwd candidate is used, preserving legacy behaviour.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
+
+
+def check_json_schema(script_id: str) -> None:
+    """Check if --json-schema flag is present in sys.argv and print schema."""
+    if "--json-schema" in sys.argv:
+        repo = repo_root()
+        if str(repo) not in sys.path:
+            sys.path.insert(0, str(repo))
+        try:
+            from src.backend.wikiforge.core.script_schema import check_and_handle_json_schema
+            check_and_handle_json_schema(script_id)
+        except Exception as e:
+            import json
+            print(json.dumps({"id": script_id, "error": str(e)}))
+            sys.exit(0)
 
 
 def repo_root() -> Path:

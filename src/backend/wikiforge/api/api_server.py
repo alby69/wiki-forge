@@ -10,18 +10,12 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-# Ensure project root is in sys.path for direct script execution
-_file_path = Path(__file__).resolve()
-for _parent in _file_path.parents:
-    if (_parent / "src").is_dir() and (_parent / "config").is_dir():
-        if str(_parent) not in sys.path:
-            sys.path.insert(0, str(_parent))
-        break
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from rdflib import Graph
 
+from src.backend.wikiforge.core.config import get_project_config
+from src.backend.wikiforge.core.exceptions import WikiForgeError, GraphValidationError, QueryExecutionError
 from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
 from src.backend.wikiforge.semantics.shacl_validator import validate_shacl
 from src.backend.wikiforge.semantics.graph_rag_pipeline import WikiForgeGraphRAG, GraphRAGState
@@ -89,7 +83,7 @@ def sync_graph(req: SyncRequest):
             processed_notes=len(notes),
             output_path=str(out_p)
         )
-    except (OSError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError, WikiForgeError) as e:
         raise HTTPException(status_code=500, detail=f"Sync error: {str(e)}")
 
 
@@ -114,7 +108,7 @@ def validate_shacl_endpoint(req: ValidationRequest):
             "report": res["results_text"],
             "violations": res["violations"]
         }
-    except (OSError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError, WikiForgeError) as e:
         raise HTTPException(status_code=500, detail=f"SHACL validation error: {str(e)}")
 
 
@@ -145,7 +139,7 @@ def query_rag(req: RAGQueryRequest):
             cypher_query=st4["cypher_query"],
             final_answer=st4["final_answer"]
         )
-    except (OSError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError, WikiForgeError) as e:
         raise HTTPException(status_code=500, detail=f"GraphRAG error: {str(e)}")
 
 

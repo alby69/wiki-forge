@@ -14,7 +14,7 @@ import sys
 import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
-from okf_common import resolve_dir, resolve_path
+from okf_common import resolve_dir, resolve_path, check_json_schema
 
 
 def load_config() -> dict:
@@ -109,6 +109,7 @@ def clip_url(url: str, output_folder: Path) -> Path:
 
 
 def main() -> None:
+    check_json_schema("clip2md")
     cfg = load_config()
     clip_cfg = cfg.get("webclip", {})
 

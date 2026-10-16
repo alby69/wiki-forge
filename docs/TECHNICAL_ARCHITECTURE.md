@@ -16,33 +16,41 @@ A fundamental principle of `wiki-forge` is the distinction between **Parametric 
 - **Non-Parametric Memory (LLM-Wiki & RAG)**:
   Knowledge resides in interlinked Markdown documents (`wiki/`). The LLM operates as an **active Knowledge Engineer** (synthesis, extraction, interlinking, auditing) through in-context learning, reading clean structured articles during inference.
 
-### 1.2 System Component Topology
+### 1.2 System Component Topology (5 Macro-Components Architecture)
 
-```
-+-----------------------------------------------------------------------------------+
-|                                 WEB UI / BROWSER                                  |
-| (Vite + TypeScript SPA, Vault Explorer, CodeMirror 6, Force Graph, Chat Drawer)   |
-+-----------------------------------------------------------------------------------+
-                                   │ REST + SSE (HTTP)
-                                   ▼
-+-----------------------------------------------------------------------------------+
-|                        DECOUPLED AGENT SERVER (agentServer.ts)                   |
-| ┌─────────────────────────┐ ┌──────────────────────────┐ ┌──────────────────────┐ |
-| │ Vault Filesystem API    │ │ Multi-Provider LLM Client│ │ Python Script Engine │ |
-| │ (/api/wiki/*, security) │ │ (OpenCode/Anthropic/...) │ │ (/api/scripts/*)     │ |
-| └─────────────────────────┘ └──────────────────────────┘ └──────────────────────┘ |
-+-----------------------------------------------------------------------------------+
-       │                             │                              │
-       ▼                             ▼                              ▼
-+──────────────+              +──────────────+              +──────────────────────+
-|  `wiki/` KB  |              |  Local/Cloud |              | 16 Python CLI        |
-|  (OKF v0.2)  |              |  LLM Engine  |              | Scripts & Tooling    |
-+──────────────+              +──────────────+              +──────────────────────+
+```mermaid
+graph TD
+    UI[wikiforge-ui: Frontend SPA] -->|REST / SSE / Dynamic Forms| GW[wikiforge-api-gateway: AgentServer Node.js]
+    GW -->|Reverse Proxy /api/v1/graph/*| KG[wikiforge-kg: FastAPI Graph & GraphRAG]
+    GW -->|Executes scripts with --json-schema| INGEST[wikiforge-ingest: Ingestion & Queue Engine]
+
+    INGEST -->|State & SHA256 Tracking| DB[(SQLite Ingest Queue .wiki-forge/ingest_queue.db)]
+
+    subgraph Core[wikiforge-core: Shared Core Library]
+        CFG[config.py: get_project_config]
+        EXC[exceptions.py: WikiForgeError Hierarchy]
+        SCHEMA[script_schema.py: Script Schema Registry]
+    end
+
+    INGEST --> Core
+    KG --> Core
+    GW --> Core
 ```
 
 ---
 
 ## 2. Implemented Subsystems & Technical Details
+
+### 2.0 Centralized Core & Exceptions (`wikiforge-core`)
+Implemented in `src/backend/wikiforge/core/config.py`, `exceptions.py`, and `script_schema.py`:
+- **Centralized Config (`config.py`)**: `get_project_config()` serves as the Single Source of Truth for loading `config.toml` with absolute path resolution relative to project or repository roots, eliminating path manipulation hacks.
+- **Standardized Exception Hierarchy (`exceptions.py`)**: Base `WikiForgeError` with specialized domain exceptions (`ConfigError`, `ConversionError`, `IngestionError`, `GraphValidationError`, `QueryExecutionError`) enforcing clean error propagation.
+- **Dynamic Script Schema Contract (`script_schema.py`)**: Defines `--json-schema` CLI flag contract across Python tools. Calling `python3 script.py --json-schema` outputs JSON parameter metadata (labels, types, defaults, positional flags, descriptions) used by `AgentServer` to dynamically construct `SCRIPT_REGISTRY` and render UI forms without hardcoded switch blocks.
+
+### 2.0.1 Unified Ingestion Engine (`wikiforge-ingest`)
+Implemented in `scripts/conv2md.py` and `scripts/ingest_queue.py`:
+- **Single SQLite Ingestion Queue**: Unifies document staging and conversion caching using a persistent SQLite database (`.wiki-forge/ingest_queue.db`), replacing legacy JSON hash caches.
+- **State Lifecycle**: Automatically tracks file status (`pending`, `processing`, `completed`, `failed`), retry attempts, and SHA256 hashes to guarantee idempotency and fast cache hits (<10ms).
 
 ### 2.1 Decoupled Agent Backend & Multi-Provider LLM Client
 Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/llmClient.ts`:
