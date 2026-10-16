@@ -17,6 +17,8 @@ export interface ScriptParamDef {
   options?: string[];
   placeholder?: string;
   description?: string;
+  positional?: boolean;
+  cliFlag?: string;
 }
 
 export interface ScriptDef {
@@ -50,201 +52,39 @@ export function resolvePythonCommand(): string {
 
 export const PYTHON_CMD: string = resolvePythonCommand();
 
-export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>): string[] {
+export function buildCliArgsFromSchema(scriptDef: ScriptDef, userArgs: Record<string, any>): string[] {
   const args: string[] = [];
   const getVal = (name: string, def?: any) => (userArgs && userArgs[name] !== undefined ? userArgs[name] : def);
 
-  switch (scriptDef.id) {
-    case 'conv2md': {
-      const input = String(getVal('input', 'backup'));
-      const output = String(getVal('output', 'raw'));
-      const ocr = Boolean(getVal('ocr', false));
-      args.push('--input', input, '--output', output);
-      if (ocr) args.push('--ocr');
-      break;
-    }
-    case 'enrich_cot': {
-      const input = String(getVal('input', 'raw'));
-      const output = String(getVal('output', 'wiki'));
-      args.push('--input', input, '--output', output);
-      break;
-    }
-    case 'clip2md': {
-      const url = String(getVal('url', '')).trim();
-      const output = String(getVal('output', 'sources/web-clips'));
-      if (url) args.push(url);
-      args.push('--output', output);
-      break;
-    }
-    case 'notebooklm_import': {
-      const inputFile = String(getVal('input_file', '')).trim();
-      const source = String(getVal('source', 'NotebookLM Session'));
-      const outputDir = String(getVal('output_dir', 'raw'));
-      if (inputFile) args.push(inputFile);
-      args.push('--source', source, '--output-dir', outputDir);
-      break;
-    }
-    case 'migrate_to_okf': {
-      const wikiDir = String(getVal('wiki_dir', '')).trim();
-      if (wikiDir) args.push('--wiki-dir', wikiDir);
-      const confirm = Boolean(getVal('confirm', false));
-      if (confirm) args.push('--confirm');
-      break;
-    }
-    case 'okf_lint': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      args.push(wikiDir);
-      break;
-    }
-    case 'okf_log': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const message = String(getVal('message', '')).trim();
-      const type = String(getVal('type', 'Update'));
-      const date = String(getVal('date', '')).trim();
-      args.push(wikiDir, message, '--type', type);
-      if (date) args.push('--date', date);
-      break;
-    }
-    case 'okf_reindex': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      args.push(wikiDir);
-      break;
-    }
-    case 'okf_stats': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      args.push(wikiDir);
-      break;
-    }
-    case 'wiki_stats': {
-      break;
-    }
-    case 'maturity_calculator': {
-      const targetPath = String(getVal('path', 'wiki'));
-      const write = Boolean(getVal('write', false));
-      const dryRun = Boolean(getVal('dry_run', false));
-      const minScore = Number(getVal('min_score', 0));
-      args.push(targetPath, '--min-score', String(minScore));
-      if (write) args.push('--write');
-      if (dryRun) args.push('--dry-run');
-      break;
-    }
-    case 'check_docs_sync': {
-      break;
-    }
-    case 'suggest_tags': {
-      const processAll = Boolean(getVal('all', true));
-      const file = String(getVal('file', '')).trim();
-      const wiki = String(getVal('wiki', 'wiki'));
-      const write = Boolean(getVal('write', false));
-      const top = Number(getVal('top', 6));
-      const semantic = Boolean(getVal('semantic', false));
+  for (const param of scriptDef.parameters) {
+    const rawVal = getVal(param.name, param.default);
+    if (rawVal === undefined || rawVal === null) continue;
 
-      if (processAll) {
-        args.push('--all', '--wiki', wiki);
-      } else if (file) {
-        args.push(file);
-      } else {
-        args.push('--all', '--wiki', wiki);
+    if (param.type === 'boolean') {
+      const boolVal = Boolean(rawVal);
+      if (boolVal) {
+        const flag = param.cliFlag || `--${param.name.replace(/_/g, '-')}`;
+        args.push(flag);
       }
-      if (write) args.push('--write');
-      args.push('--top', String(top));
-      if (semantic) args.push('--semantic');
-      break;
+    } else if (param.positional) {
+      const strVal = String(rawVal).trim();
+      if (strVal) {
+        args.push(strVal);
+      }
+    } else {
+      const strVal = String(rawVal).trim();
+      if (strVal || param.required) {
+        const flag = param.cliFlag || `--${param.name.replace(/_/g, '-')}`;
+        args.push(flag, strVal);
+      }
     }
-    case 'schema_infer': {
-      const project = String(getVal('project', '')).trim();
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      if (project) args.push('--project', project);
-      args.push('--wiki-dir', wikiDir);
-      break;
-    }
-    case 'schema_lint': {
-      const project = String(getVal('project', '')).trim();
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const strict = Boolean(getVal('strict', false));
-      const pagePath = String(getVal('path', '')).trim();
-      const config = String(getVal('config', '')).trim();
-      if (project) args.push('--project', project);
-      args.push('--wiki-dir', wikiDir);
-      if (strict) args.push('--strict');
-      if (pagePath) args.push('--path', pagePath);
-      if (config) args.push('--config', config);
-      break;
-    }
-    case 'generate_thesis': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const output = String(getVal('output', 'output/thesis_compiled.md'));
-      const minMaturity = Number(getVal('min_maturity', 0));
-      const title = String(getVal('title', 'Thesis Draft'));
-      args.push('--wiki-dir', wikiDir, '--output', output, '--min-maturity', String(minMaturity), '--title', title);
-      break;
-    }
-    case 'export_thesis_pdf': {
-      const input = String(getVal('input', 'output/thesis_compiled.md'));
-      const output = String(getVal('output', 'output/thesis_final.pdf'));
-      const engine = String(getVal('engine', 'xelatex'));
-      const noToc = Boolean(getVal('no_toc', false));
-      args.push('--input', input, '--output', output, '--engine', engine);
-      if (noToc) args.push('--no-toc');
-      break;
-    }
-    case 'wizard': {
-      const preset = String(getVal('preset', 'academic'));
-      args.push('--preset', preset);
-      break;
-    }
-    case 'voice_ingest': {
-      const file = String(getVal('file', '')).trim();
-      const output = String(getVal('output', 'raw'));
-      const title = String(getVal('title', '')).trim();
-      if (file) args.push(file);
-      args.push('--output', output);
-      if (title) args.push('--title', title);
-      break;
-    }
-    case 'export_semantic': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const outputDir = String(getVal('output_dir', 'output'));
-      args.push('--wiki-dir', wikiDir, '--output-dir', outputDir);
-      break;
-    }
-    case 'ontology_rules': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const strict = Boolean(getVal('strict', false));
-      args.push(wikiDir);
-      if (strict) args.push('--strict');
-      break;
-    }
-    case 'cq_validator': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const cqFile = String(getVal('cq_file', 'wiki/competency_questions.md'));
-      const output = String(getVal('output', 'output/cq_validation_report.md'));
-      args.push('--wiki-dir', wikiDir, '--cq-file', cqFile, '--output', output);
-      break;
-    }
-    case 'odp_suggester': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const catalog = String(getVal('catalog', 'config/odp_catalog.json'));
-      args.push('--wiki-dir', wikiDir, '--catalog', catalog);
-      break;
-    }
-    case 'neuro_symbolic_check': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const output = String(getVal('output', 'output/neuro_symbolic_report.md'));
-      args.push('--wiki-dir', wikiDir, '--output', output);
-      break;
-    }
-    case 'ke_maturity': {
-      const wikiDir = String(getVal('wiki_dir', 'wiki'));
-      const output = String(getVal('output', 'output/ke_maturity_report.md'));
-      args.push('--wiki-dir', wikiDir, '--output', output);
-      break;
-    }
-    default:
-      break;
   }
 
   return args;
+}
+
+export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>): string[] {
+  return buildCliArgsFromSchema(scriptDef, userArgs);
 }
 
 export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
@@ -255,9 +95,9 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Ingestion',
     description: 'Converts PDF, EPUB, DOCX, MD, and TXT sources from input directory into raw/ Markdown notes.',
     parameters: [
-      { name: 'input', label: 'Input Directory', type: 'text', default: 'backup', description: 'Source directory containing documents.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for Markdown notes.' },
-      { name: 'ocr', label: 'Use OCR Flag', type: 'boolean', default: false, description: 'Note scanned PDFs for OCR extraction.' },
+      { name: 'input', label: 'Input Directory', type: 'text', default: 'backup', cliFlag: '--input', description: 'Source directory containing documents.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output', description: 'Destination directory for Markdown notes.' },
+      { name: 'ocr', label: 'Use OCR Flag', type: 'boolean', default: false, cliFlag: '--ocr', description: 'Note scanned PDFs for OCR extraction.' },
     ],
   },
   enrich_cot: {
@@ -267,8 +107,8 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Ingestion',
     description: 'Applies Two-Step Chain-of-Thought (Analysis -> Generation) enrichment on Markdown notes.',
     parameters: [
-      { name: 'input', label: 'Input Directory', type: 'text', default: 'raw', description: 'Source directory containing Markdown notes.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'wiki', description: 'Destination directory for enriched notes.' },
+      { name: 'input', label: 'Input Directory', type: 'text', default: 'raw', cliFlag: '--input', description: 'Source directory containing Markdown notes.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'wiki', cliFlag: '--output', description: 'Destination directory for enriched notes.' },
     ],
   },
   clip2md: {
@@ -278,8 +118,8 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Ingestion',
     description: 'Fetches HTML from a target web URL and saves clean Markdown to sources/web-clips/.',
     parameters: [
-      { name: 'url', label: 'URL to Clip', type: 'text', required: true, placeholder: 'https://example.com/article', description: 'Target webpage URL.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'sources/web-clips', description: 'Destination folder for web clips.' },
+      { name: 'url', label: 'URL to Clip', type: 'text', required: true, positional: true, placeholder: 'https://example.com/article', description: 'Target webpage URL.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'sources/web-clips', cliFlag: '--output', description: 'Destination folder for web clips.' },
     ],
   },
   notebooklm_import: {
@@ -289,9 +129,9 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Ingestion',
     description: 'Imports NotebookLM Markdown export files with OKF v0.2 frontmatter metadata.',
     parameters: [
-      { name: 'input_file', label: 'Export File Path', type: 'text', required: true, placeholder: 'sources/notebooklm-export.md', description: 'Path to exported .md file.' },
-      { name: 'source', label: 'Source Name', type: 'text', default: 'NotebookLM Session', description: 'Descriptive title for the source.' },
-      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination folder for imported note.' },
+      { name: 'input_file', label: 'Export File Path', type: 'text', required: true, positional: true, placeholder: 'sources/notebooklm-export.md', description: 'Path to exported .md file.' },
+      { name: 'source', label: 'Source Name', type: 'text', default: 'NotebookLM Session', cliFlag: '--source', description: 'Descriptive title for the source.' },
+      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output-dir', description: 'Destination folder for imported note.' },
     ],
   },
   migrate_to_okf: {
@@ -299,10 +139,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/migrate_to_okf.py',
     displayName: 'Migrate to OKF v0.2',
     category: 'OKF Maintenance',
-    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter. Hint: as of the multi-project layout the default wiki is auto-detected, e.g. projects/tesi/wiki or a subfolder such as projects/tesi/wiki/Q&A.',
+    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter.',
     parameters: [
-      { name: 'confirm', label: 'Confirm Migration (Danger / Backup first)', type: 'boolean', default: false, required: true, description: 'Check to acknowledge irreversible frontmatter migration.' },
-      { name: 'wiki_dir', label: 'Wiki Directory (optional)', type: 'text', default: '', placeholder: 'auto → projects/tesi/wiki (o Q&A)', description: 'Target wiki dir (relative to project): leave empty for auto, or set e.g. wiki/Q&A.' },
+      { name: 'confirm', label: 'Confirm Migration (Danger / Backup first)', type: 'boolean', default: false, required: true, cliFlag: '--confirm', description: 'Check to acknowledge irreversible frontmatter migration.' },
+      { name: 'wiki_dir', label: 'Wiki Directory (optional)', type: 'text', default: '', cliFlag: '--wiki-dir', placeholder: 'auto → projects/tesi/wiki', description: 'Target wiki dir.' },
     ],
   },
   okf_lint: {
@@ -312,7 +152,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'OKF Maintenance',
     description: 'Validates frontmatter structure, required fields, and index compliance across all notes.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
     ],
   },
   okf_log: {
@@ -322,10 +162,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'OKF Maintenance',
     description: 'Appends a new entry to the OKF wiki update log (wiki/log.md).',
     parameters: [
-      { name: 'message', label: 'Log Message', type: 'text', required: true, placeholder: 'Descriptive summary of changes', description: 'Details of the update.' },
-      { name: 'type', label: 'Log Type', type: 'select', default: 'Update', options: ['Update', 'Creation', 'Deprecation', 'Initialization'], description: 'Category keyword for the log entry.' },
-      { name: 'date', label: 'Date (YYYY-MM-DD)', type: 'text', placeholder: 'Today (UTC)', description: 'Optional override date.' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
+      { name: 'message', label: 'Log Message', type: 'text', required: true, positional: true, placeholder: 'Descriptive summary of changes', description: 'Details of the update.' },
+      { name: 'type', label: 'Log Type', type: 'select', default: 'Update', cliFlag: '--type', options: ['Update', 'Creation', 'Deprecation', 'Initialization'], description: 'Category keyword for the log entry.' },
+      { name: 'date', label: 'Date (YYYY-MM-DD)', type: 'text', cliFlag: '--date', placeholder: 'Today (UTC)', description: 'Optional override date.' },
     ],
   },
   okf_reindex: {
@@ -333,9 +173,9 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/okf_reindex.py',
     displayName: 'Regenerate OKF Indexes',
     category: 'OKF Maintenance',
-    description: 'Regenerates master index.md and thematic folder indexes according to OKF Â§8.',
+    description: 'Regenerates master index.md and thematic folder indexes according to OKF §8.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
     ],
   },
   okf_stats: {
@@ -345,7 +185,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'OKF Maintenance',
     description: 'Generates OKF bundle analytics report covering note types, statuses, and trust tiers.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
     ],
   },
   wiki_stats: {
@@ -363,10 +203,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Analysis & Metrics',
     description: 'Calculates and updates Maturity Index scores (0-100) for wiki notes.',
     parameters: [
-      { name: 'path', label: 'Target Path', type: 'text', default: 'wiki', description: 'Path to note file or wiki directory.' },
-      { name: 'write', label: 'Write to Frontmatter', type: 'boolean', default: false, description: 'Persist maturity scores directly into Markdown YAML.' },
-      { name: 'dry_run', label: 'Dry Run Mode', type: 'boolean', default: false, description: 'Display calculation preview without writing.' },
-      { name: 'min_score', label: 'Min Score Filter', type: 'number', default: 0, description: 'Filter output by minimum maturity score.' },
+      { name: 'path', label: 'Target Path', type: 'text', default: 'wiki', positional: true, description: 'Path to note file or wiki directory.' },
+      { name: 'write', label: 'Write to Frontmatter', type: 'boolean', default: false, cliFlag: '--write', description: 'Persist maturity scores directly into Markdown YAML.' },
+      { name: 'dry_run', label: 'Dry Run Mode', type: 'boolean', default: false, cliFlag: '--dry-run', description: 'Display calculation preview without writing.' },
+      { name: 'min_score', label: 'Min Score Filter', type: 'number', default: 0, cliFlag: '--min-score', description: 'Filter output by minimum maturity score.' },
     ],
   },
   check_docs_sync: {
@@ -384,12 +224,12 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Taxonomy',
     description: 'Suggests taxonomy tags for notes using controlled vocabulary (RAKE / KeyBERT).',
     parameters: [
-      { name: 'all', label: 'Process Entire Wiki', type: 'boolean', default: true, description: 'Batch process all notes in wiki directory.' },
-      { name: 'file', label: 'Single Note Path', type: 'text', placeholder: 'wiki/concept.md', description: 'Single note file path (when Process Entire Wiki is false).' },
-      { name: 'wiki', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to wiki folder.' },
-      { name: 'write', label: 'Write Frontmatter', type: 'boolean', default: false, description: 'Write suggested tags into Markdown frontmatter.' },
-      { name: 'top', label: 'Max Tags', type: 'number', default: 6, description: 'Maximum number of tags to retain.' },
-      { name: 'semantic', label: 'Semantic Mode (KeyBERT)', type: 'boolean', default: false, description: 'Use KeyBERT semantic embeddings if installed.' },
+      { name: 'all', label: 'Process Entire Wiki', type: 'boolean', default: true, cliFlag: '--all', description: 'Batch process all notes in wiki directory.' },
+      { name: 'file', label: 'Single Note Path', type: 'text', positional: true, placeholder: 'wiki/concept.md', description: 'Single note file path.' },
+      { name: 'wiki', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki', description: 'Path to wiki folder.' },
+      { name: 'write', label: 'Write Frontmatter', type: 'boolean', default: false, cliFlag: '--write', description: 'Write suggested tags into Markdown frontmatter.' },
+      { name: 'top', label: 'Max Tags', type: 'number', default: 6, cliFlag: '--top', description: 'Maximum number of tags to retain.' },
+      { name: 'semantic', label: 'Semantic Mode (KeyBERT)', type: 'boolean', default: false, cliFlag: '--semantic', description: 'Use KeyBERT semantic embeddings if installed.' },
     ],
   },
   schema_infer: {
@@ -397,10 +237,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/schema_infer.py',
     displayName: 'Infer Domain Schema',
     category: 'Knowledge Engineering',
-    description: 'Scans wiki pages and proposes a [schema] TOML block of types, fields, and relations (stdout only).',
+    description: 'Scans wiki pages and proposes a [schema] TOML block of types, fields, and relations.',
     parameters: [
-      { name: 'project', label: 'Project ID', type: 'text', description: 'Project ID (config.toml project).' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Override wiki directory path.' },
+      { name: 'project', label: 'Project ID', type: 'text', cliFlag: '--project', description: 'Project ID.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Override wiki directory path.' },
     ],
   },
   schema_lint: {
@@ -408,13 +248,13 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/schema_lint.py',
     displayName: 'Lint Schema Constraints',
     category: 'Knowledge Engineering',
-    description: 'Validates wiki pages against the [schema] defined in config.toml (types, fields, relations, cycles).',
+    description: 'Validates wiki pages against the [schema] defined in config.toml.',
     parameters: [
-      { name: 'project', label: 'Project ID', type: 'text', description: 'Project ID (config.toml project).' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Override wiki directory path.' },
-      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, description: 'Treat violations as errors.' },
-      { name: 'path', label: 'Path Pattern Filter', type: 'text', description: 'Filter pages by path pattern.' },
-      { name: 'config', label: 'Config Path', type: 'text', description: 'Override config.toml path.' },
+      { name: 'project', label: 'Project ID', type: 'text', cliFlag: '--project', description: 'Project ID.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Override wiki directory path.' },
+      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, cliFlag: '--strict', description: 'Treat violations as errors.' },
+      { name: 'path', label: 'Path Pattern Filter', type: 'text', cliFlag: '--path', description: 'Filter pages by path pattern.' },
+      { name: 'config', label: 'Config Path', type: 'text', cliFlag: '--config', description: 'Override config.toml path.' },
     ],
   },
   generate_thesis: {
@@ -424,10 +264,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Thesis & Study',
     description: 'Aggregates wiki notes and chapter syntheses into a single compiled thesis draft.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
-      { name: 'output', label: 'Output Path', type: 'text', default: 'output/thesis_compiled.md', description: 'Destination path for compiled Markdown.' },
-      { name: 'min_maturity', label: 'Min Maturity Score', type: 'number', default: 0, description: 'Filter included notes by minimum maturity.' },
-      { name: 'title', label: 'Thesis Title', type: 'text', default: 'Thesis Draft', description: 'Title header for the compiled document.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki directory.' },
+      { name: 'output', label: 'Output Path', type: 'text', default: 'output/thesis_compiled.md', cliFlag: '--output', description: 'Destination path for compiled Markdown.' },
+      { name: 'min_maturity', label: 'Min Maturity Score', type: 'number', default: 0, cliFlag: '--min-maturity', description: 'Filter included notes by minimum maturity.' },
+      { name: 'title', label: 'Thesis Title', type: 'text', default: 'Thesis Draft', cliFlag: '--title', description: 'Title header for the compiled document.' },
     ],
   },
   export_thesis_pdf: {
@@ -437,10 +277,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Thesis & Study',
     description: 'Exports compiled thesis Markdown to PDF format via Pandoc.',
     parameters: [
-      { name: 'input', label: 'Input Markdown Path', type: 'text', default: 'output/thesis_compiled.md', description: 'Source compiled thesis Markdown file.' },
-      { name: 'output', label: 'Output PDF Path', type: 'text', default: 'output/thesis_final.pdf', description: 'Destination PDF file path.' },
-      { name: 'engine', label: 'PDF Engine', type: 'select', default: 'xelatex', options: ['xelatex', 'pdflatex', 'wkhtmltopdf', 'weasyprint'], description: 'Pandoc PDF rendering engine.' },
-      { name: 'no_toc', label: 'Disable TOC', type: 'boolean', default: false, description: 'Disable automatic Table of Contents generation.' },
+      { name: 'input', label: 'Input Markdown Path', type: 'text', default: 'output/thesis_compiled.md', cliFlag: '--input', description: 'Source compiled thesis Markdown file.' },
+      { name: 'output', label: 'Output PDF Path', type: 'text', default: 'output/thesis_final.pdf', cliFlag: '--output', description: 'Destination PDF file path.' },
+      { name: 'engine', label: 'PDF Engine', type: 'select', default: 'xelatex', cliFlag: '--engine', options: ['xelatex', 'pdflatex', 'wkhtmltopdf', 'weasyprint'], description: 'Pandoc PDF rendering engine.' },
+      { name: 'no_toc', label: 'Disable TOC', type: 'boolean', default: false, cliFlag: '--no-toc', description: 'Disable automatic Table of Contents generation.' },
     ],
   },
   wizard: {
@@ -450,7 +290,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Wizard',
     description: 'Interactive domain setup wizard for academic, business, research, creative, or thesis workflows.',
     parameters: [
-      { name: 'preset', label: 'Domain Preset', type: 'select', default: 'academic', options: ['academic', 'business', 'research', 'creative', 'existing', 'thesis'], description: 'Scenario preset configuration.' },
+      { name: 'preset', label: 'Domain Preset', type: 'select', default: 'academic', cliFlag: '--preset', options: ['academic', 'business', 'research', 'creative', 'existing', 'thesis'], description: 'Scenario preset configuration.' },
     ],
   },
   voice_ingest: {
@@ -460,9 +300,9 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Ingestion',
     description: 'Converts audio dictations or text transcriptions into structured OKF v0.2 notes.',
     parameters: [
-      { name: 'file', label: 'Audio / Transcript File Path', type: 'text', required: true, placeholder: 'sources/dictation.mp3', description: 'Path to audio or transcript file.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', description: 'Destination directory for generated Markdown note.' },
-      { name: 'title', label: 'Note Title', type: 'text', placeholder: 'Voice Note Title', description: 'Optional custom title.' },
+      { name: 'file', label: 'Audio / Transcript File Path', type: 'text', required: true, positional: true, placeholder: 'sources/dictation.mp3', description: 'Path to audio or transcript file.' },
+      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output', description: 'Destination directory for generated Markdown note.' },
+      { name: 'title', label: 'Note Title', type: 'text', cliFlag: '--title', placeholder: 'Voice Note Title', description: 'Optional custom title.' },
     ],
   },
   export_semantic: {
@@ -472,8 +312,8 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Knowledge Engineering',
     description: 'Exports OKF v0.2 knowledge base notes into W3C standard RDF formats (JSON-LD and Turtle).',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
-      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'output', description: 'Destination folder for JSON-LD and TTL files.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
+      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'output', cliFlag: '--output-dir', description: 'Destination folder for JSON-LD and TTL files.' },
     ],
   },
   ontology_rules: {
@@ -481,10 +321,10 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     path: 'scripts/ontology_rules.py',
     displayName: 'Ontology Rule Engine',
     category: 'Knowledge Engineering',
-    description: 'Validates logical ontology constraints (unlinked concepts, circular links, stable note human verification).',
+    description: 'Validates logical ontology constraints.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
-      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, description: 'Return error code if rule violations are found.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki folder.' },
+      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, cliFlag: '--strict', description: 'Return error code if rule violations are found.' },
     ],
   },
   cq_validator: {
@@ -494,9 +334,9 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Knowledge Engineering',
     description: 'Validates knowledge base coverage against natural language Competency Questions (CQ).',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
-      { name: 'cq_file', label: 'CQ File Path', type: 'text', default: 'wiki/competency_questions.md', description: 'Path to Markdown competency questions file.' },
-      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/cq_validation_report.md', description: 'Destination path for markdown report.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
+      { name: 'cq_file', label: 'CQ File Path', type: 'text', default: 'wiki/competency_questions.md', cliFlag: '--cq-file', description: 'Path to Markdown competency questions file.' },
+      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/cq_validation_report.md', cliFlag: '--output', description: 'Destination path for markdown report.' },
     ],
   },
   odp_suggester: {
@@ -506,8 +346,8 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Knowledge Engineering',
     description: 'Scans informal note properties and suggests formal Ontology Design Patterns (ODP).',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
-      { name: 'catalog', label: 'ODP Catalog Path', type: 'text', default: 'config/odp_catalog.json', description: 'Path to JSON ODP catalog.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
+      { name: 'catalog', label: 'ODP Catalog Path', type: 'text', default: 'config/odp_catalog.json', cliFlag: '--catalog', description: 'Path to JSON ODP catalog.' },
     ],
   },
   neuro_symbolic_check: {
@@ -517,8 +357,8 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Knowledge Engineering',
     description: 'Checks logical contradictions and infers missing semantic links across the knowledge graph.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
-      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/neuro_symbolic_report.md', description: 'Destination path for markdown report.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
+      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/neuro_symbolic_report.md', cliFlag: '--output', description: 'Destination path for markdown report.' },
     ],
   },
   ke_maturity: {
@@ -528,7 +368,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Knowledge Engineering',
     description: 'Assesses knowledge base platform maturity across 6 dimensions (L1-L4).',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki folder.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
       { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/ke_maturity_report.md', description: 'Destination path for markdown report.' },
     ],
   },
@@ -539,7 +379,7 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     category: 'Analysis & Metrics',
     description: 'Performs Louvain community detection, surfaces surprising cross-community links, and identifies knowledge gaps.',
     parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', description: 'Path to target wiki directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki directory.' },
     ],
   },
 };
@@ -903,6 +743,35 @@ export class AgentServer {
     return path.join(projRoot, 'raw');
   }
 
+  private dynamicRegistryCache?: Record<string, ScriptDef>;
+
+  public async fetchDynamicScriptRegistry(): Promise<Record<string, ScriptDef>> {
+    if (this.dynamicRegistryCache) {
+      return this.dynamicRegistryCache;
+    }
+    const updatedRegistry: Record<string, ScriptDef> = { ...SCRIPT_REGISTRY };
+    for (const [id, scriptDef] of Object.entries(updatedRegistry)) {
+      try {
+        const absPath = path.resolve(this.rootDir, scriptDef.path);
+        const res = spawnSync(PYTHON_CMD, [absPath, '--json-schema'], {
+          cwd: this.rootDir,
+          encoding: 'utf-8',
+          timeout: 1000,
+        });
+        if (res.status === 0 && res.stdout && res.stdout.trim()) {
+          const parsed = JSON.parse(res.stdout.trim()) as ScriptDef;
+          if (parsed && parsed.id && Array.isArray(parsed.parameters)) {
+            updatedRegistry[id] = parsed;
+          }
+        }
+      } catch (_e) {
+        // Fall back to built-in SCRIPT_REGISTRY entry
+      }
+    }
+    this.dynamicRegistryCache = updatedRegistry;
+    return updatedRegistry;
+  }
+
   public setLlmClient(client: LlmClient): void {
     this.llmClient = client;
   }
@@ -1139,6 +1008,40 @@ export class AgentServer {
     }
   }
 
+  private proxyToFastApi(req: http.IncomingMessage, res: http.ServerResponse, targetPath: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const fastApiUrl = process.env.FASTAPI_SERVER_URL || 'http://127.0.0.1:8000';
+      const parsedUrl = new URL(targetPath, fastApiUrl);
+
+      const options: http.RequestOptions = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: req.method,
+        headers: {
+          ...req.headers,
+          host: `${parsedUrl.hostname}:${parsedUrl.port}`,
+        },
+      };
+
+      const proxyReq = http.request(options, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+        proxyRes.pipe(res);
+        proxyRes.on('end', () => resolve(true));
+      });
+
+      proxyReq.on('error', (err) => {
+        if (!res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `FastAPI Knowledge Graph Service unavailable: ${err.message}` }));
+        }
+        resolve(true);
+      });
+
+      req.pipe(proxyReq);
+    });
+  }
+
   public async handleRequest(
     req: http.IncomingMessage,
     res: http.ServerResponse
@@ -1146,6 +1049,14 @@ export class AgentServer {
     const url = new URL(req.url ?? '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
     const projectId = this.getProjectIdFromRequest(req, url);
+
+    // Reverse Proxy for Knowledge Graph & GraphRAG API endpoints
+    if (
+      (pathname === '/api/v1/graph/sync' || pathname === '/api/v1/graph/validate' || pathname === '/api/v1/graph/rag') &&
+      (req.method === 'POST' || req.method === 'GET')
+    ) {
+      return this.proxyToFastApi(req, res, url.pathname + url.search);
+    }
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -1479,8 +1390,9 @@ export class AgentServer {
 
     // Script Control Panel Endpoints
     if ((pathname === '/api/scripts/list' || pathname === '/api/scripts/registry') && req.method === 'GET') {
+      const registry = await this.fetchDynamicScriptRegistry();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, registry: SCRIPT_REGISTRY, scripts: Object.values(SCRIPT_REGISTRY) }));
+      res.end(JSON.stringify({ success: true, registry, scripts: Object.values(registry) }));
       return true;
     }
 

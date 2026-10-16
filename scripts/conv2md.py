@@ -43,7 +43,16 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parent.parent
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
 from okf_common import resolve_dir, resolve_path
+from ingest_queue import init_db, enqueue_file, update_status
+from src.backend.wikiforge.core.config import get_project_config
+from src.backend.wikiforge.core.exceptions import WikiForgeError, ConfigError, ConversionError, IngestionError
+from src.backend.wikiforge.core.script_schema import check_and_handle_json_schema
 
 # --- Supported formats ------------------------------------------------------
 
@@ -62,39 +71,12 @@ SUPPORTED_EXTS = PANDOC_EXTS | PDF_EXTS | PASSTHROUGH_EXTS
 
 def load_config() -> dict:
     """
-    Load `config.toml` if available.
+    Load `config.toml` using centralized `get_project_config()`.
 
     Returns a dict with a `paths` key holding source/raw/wiki/output folder
-    names. If the file or the `tomllib` module is missing (Python < 3.11),
-    built-in defaults are returned so the script still works everywhere.
+    names and conversion settings.
     """
-    defaults = {
-        "project": {"name": "llm-wiki", "language": "en"},
-        "paths": {
-            "sources": "backup",
-            "raw": "raw",
-            "wiki": "wiki",
-            "output": "output",
-        },
-        "conversion": {"ocr": False},
-    }
-    try:
-        import tomllib  # Python 3.11+
-    except ImportError:
-        return defaults
-
-    cfg_path = resolve_path("config/config.toml")
-    if not cfg_path.is_file():
-        return defaults
-
-    with cfg_path.open("rb") as fh:
-        data = tomllib.load(fh)
-    # Shallow-merge so a partial config still inherits defaults.
-    merged = defaults.copy()
-    for section, values in data.items():
-        if isinstance(values, dict):
-            merged.setdefault(section, {}).update(values)
-    return merged
+    return get_project_config()
 
 
 # ---------------------------------------------------------------------------
@@ -149,57 +131,15 @@ def copy_passthrough(path: Path, out_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Idempotency helpers
+# Idempotency & Queue Helpers
 # ---------------------------------------------------------------------------
 
 
 def target_path(output_dir: Path, stem: str) -> Path:
     """
     Return the destination path for a converted file.
-
-    If `<stem>.md` already exists, the source was already converted, so the
-    caller should skip it instead of overwriting or duplicating.
     """
     return output_dir / f"{stem}.md"
-
-
-HASH_CACHE_PATH = Path(".wiki-forge/file_hashes.json")
-
-
-def load_hash_cache() -> dict[str, str]:
-    if HASH_CACHE_PATH.exists():
-        try:
-            return json.loads(HASH_CACHE_PATH.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {}
-    return {}
-
-
-def save_hash_cache(cache: dict[str, str]) -> None:
-    HASH_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    HASH_CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
-
-
-def compute_sha256(path: Path) -> str:
-    hasher = hashlib.sha256()
-    with path.open("rb") as f:
-        while chunk := f.read(65536):
-            hasher.update(chunk)
-    return hasher.hexdigest()
-
-
-def already_converted(output_dir: Path, stem: str, source_path: Path | None = None) -> bool:
-    """True when a converted file for this stem already exists in `raw/` and hash matches."""
-    out_file = target_path(output_dir, stem)
-    if not out_file.exists():
-        return False
-    if source_path and source_path.exists():
-        cache = load_hash_cache()
-        curr_hash = compute_sha256(source_path)
-        cached_hash = cache.get(str(source_path.resolve()))
-        if cached_hash and cached_hash == curr_hash:
-            return True
-    return True
 
 
 # ---------------------------------------------------------------------------
@@ -213,9 +153,10 @@ def process_folder(
     use_ocr: bool,
     quiet: bool = False,
 ) -> tuple[int, int, int]:
-    """Walk `input_dir`, convert every supported file into `output_dir`."""
+    """Walk `input_dir`, convert every supported file into `output_dir` using unified SQLite queue."""
     output_dir.mkdir(parents=True, exist_ok=True)
     pandoc_ok = check_pandoc()
+    db_conn = init_db()
 
     files = sorted(
         p for p in input_dir.rglob("*") if p.suffix.lower() in SUPPORTED_EXTS
@@ -230,12 +171,16 @@ def process_folder(
         ext = f.suffix.lower()
         out_path = target_path(output_dir, f.stem)
 
-        # Idempotency: fast hash cache skip check (<10ms)
-        if already_converted(output_dir, f.stem, source_path=f):
+        # Enqueue item in SQLite queue and check status
+        queue_item = enqueue_file(f, conn=db_conn)
+        if queue_item["status"] == "completed" and out_path.exists():
             if not quiet:
-                print(f"Skip (already converted/cached): {f.name}", file=sys.stderr)
+                print(f"Skip (already converted/cached in queue): {f.name}", file=sys.stderr)
             skipped += 1
             continue
+
+        file_key = str(f.resolve())
+        update_status(file_key, "processing", conn=db_conn)
 
         if not quiet:
             print(f"Convert: {f.name} -> {out_path.name}", file=sys.stderr)
@@ -244,23 +189,22 @@ def process_folder(
                 convert_pdf(f, out_path, use_ocr=use_ocr)
             elif ext in PANDOC_EXTS:
                 if not pandoc_ok:
-                    raise RuntimeError(
+                    raise ConversionError(
                         "pandoc is required for .docx/.epub but is not installed"
                     )
                 convert_with_pandoc(f, out_path, from_format=ext.lstrip("."))
             elif ext in PASSTHROUGH_EXTS:
                 copy_passthrough(f, out_path)
 
-            # Update fast hash cache
-            cache = load_hash_cache()
-            cache[str(f.resolve())] = compute_sha256(f)
-            save_hash_cache(cache)
-
+            update_status(file_key, "completed", conn=db_conn)
             ok += 1
         except subprocess.CalledProcessError as exc:
-            print(f"  ERROR (pandoc) on {f.name}: {exc.stderr}", file=sys.stderr)
+            err_msg = exc.stderr or str(exc)
+            update_status(file_key, "failed", error=err_msg, conn=db_conn)
+            print(f"  ERROR (pandoc) on {f.name}: {err_msg}", file=sys.stderr)
             failed += 1
-        except (RuntimeError, OSError, ValueError) as exc:
+        except (RuntimeError, OSError, ValueError, WikiForgeError) as exc:
+            update_status(file_key, "failed", error=str(exc), conn=db_conn)
             print(f"  ERROR on {f.name}: {exc}", file=sys.stderr)
             failed += 1
 
@@ -275,6 +219,7 @@ def process_folder(
 
 def main() -> None:
     """Parse CLI arguments (falling back to config.toml) and run the conversion."""
+    check_and_handle_json_schema("conv2md")
     cfg = load_config()
     paths = cfg.get("paths", {})
     conv = cfg.get("conversion", {})

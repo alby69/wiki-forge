@@ -7,6 +7,7 @@ Defines domain-specific exception types to replace bare `except Exception:` catc
 enabling robust, readable, and actionable error handling across Wiki-Forge.
 """
 
+
 class WikiForgeError(Exception):
     """Base exception class for all Wiki-Forge errors."""
     pass
@@ -19,6 +20,11 @@ class ConfigError(WikiForgeError):
 
 class ConversionError(WikiForgeError):
     """Raised when source conversion (PDF, EPUB, DOCX, Markdown CoT) fails."""
+    pass
+
+
+class IngestionError(WikiForgeError):
+    """Raised when ingestion queue or document staging operations fail."""
     pass
 
 
