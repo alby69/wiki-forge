@@ -1,22 +1,28 @@
 ---
 type: Concept
-title: "Architetture Multi-Agente ed AI Workflows"
-description: "Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi coordinati per il dominio HR e il Knowledge Engineering"
+title: Architetture Multi-Agente ed AI Workflows
+description: Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi
+  coordinati per il dominio HR e il Knowledge Engineering
 status: draft
 maturita: 90
-tags: [topic/ai, topic/agents, topic/hr, status/draft]
+tags:
+- topic/ai
+- topic/agents
+- topic/hr
+- status/draft
 generated:
   by: process:jules-agent
-  at: "2026-10-12T00:00:00Z"
+  at: '2026-10-12T00:00:00Z'
 verified:
-  - by: human:autore
-    at: "2026-10-12T00:00:00Z"
+- by: human:autore
+  at: '2026-10-12T00:00:00Z'
 sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: "Documento di Progettazione della Tesi Magistrale"
+- id: thesis-design-doc
+  resource: raw/thesis-design-doc.md
+  title: Documento di Progettazione della Tesi Magistrale
+  author: process:conv2md
+  last_modified: '2026-10-20T06:04:34Z'
 ---
-
 # Architetture Multi-Agente ed AI Workflows
 
 ## Definizione e Concetto

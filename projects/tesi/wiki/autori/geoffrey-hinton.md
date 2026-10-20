@@ -1,29 +1,30 @@
 ---
 type: Reference
 title: Geoffrey Hinton
-description: 'Padrino dell''IA: connessionismo, job shock 2026, allineamento e ridefinizione delle competenze.'
+description: 'Padrino dell''IA: connessionismo, job shock 2026, allineamento e ridefinizione
+  delle competenze.'
 status: draft
 tags:
-  - topic/ai
-  - topic/hr
-  - topic/economics
-  - type/essay
+- topic/ai
+- topic/hr
+- topic/economics
+- type/essay
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: Hinton_NoteLM
-    resource: raw/Hinton_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale su Lavoro e Risorse Umane nel Pensiero di Geoffrey Hinton: Quadro Sintetico per una Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: Hinton_NoteLM
+  resource: raw/Hinton_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale su Lavoro e Risorse Umane nel
+    Pensiero di Geoffrey Hinton: Quadro Sintetico per una Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 58
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Geoffrey Hinton
 
 Premio Nobel per la Fisica 2024 e Turing Award, riconosciuto come il "Padrino dell'Intelligenza Artificiale". Dopo aver guidato la rivoluzione connessionista, ha assunto una posizione di allarme sui rischi esistenziali, sull'impatto occupazionale e sulla governance dell'IA. La sua analisi offre un quadro radicale per una tesi su lavoro e HR.

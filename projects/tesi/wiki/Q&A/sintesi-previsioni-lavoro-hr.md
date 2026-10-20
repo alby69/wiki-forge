@@ -4,15 +4,17 @@ title: Previsioni sul futuro del lavoro e dell'HR sotto l'impatto dell'IA
 description: Argomentazione sintetica sul futuro del lavoro con confidenze esplicite
 status: draft
 tags:
-  - topic/hr
-  - topic/ai
-  - status/draft
-  - author/gatti
-  - author/karpathy
-  - author/graeber
-generated: []
+- topic/hr
+- topic/ai
+- status/draft
+- author/gatti
+- author/karpathy
+- author/graeber
+generated:
+  by: process:migrate-script
+  at: '2026-10-20T06:04:34Z'
 by: process:wiki-forge
-at: 2026-10-10T00:00:00Z
+at: 2026-10-10 00:00:00+00:00
 verified: []
 sources: []
 maturita: 19
@@ -20,7 +22,6 @@ copertura_fonti: 0
 domande_risolte: 0
 stato: draft
 ---
-
 # Previsioni sul futuro del lavoro (e dell'HR) sotto l'impatto dell'IA — argomentazione
 
 ## 0. La tesi-guida: prevedere le scelte, non la tecnologia

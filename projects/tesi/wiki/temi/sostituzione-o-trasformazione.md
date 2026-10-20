@@ -1,31 +1,32 @@
 ---
 type: Concept
 title: Sostituzione o Trasformazione del Lavoro
-description: Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
+description: Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del
+  lavoro nell'adozione dell'IA.
 status: draft
 tags:
-  - topic/ai
-  - topic/economics
-  - topic/hr
-  - status/draft
-  - author/karpathy
-  - author/graeber
+- topic/ai
+- topic/economics
+- topic/hr
+- status/draft
+- author/karpathy
+- author/graeber
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: analisi-impatto-ia-lavoro
+  resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    Analisi Sistemica e Comparativa per Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 29
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Sostituzione o Trasformazione del Lavoro
 
 L'impatto dell'IA sul mercato del lavoro non produce un annientamento quantitativo dei posti, ma una **ricomposizione qualitativa dei compiti (*task transformation*)**. Le sezioni di riferimento distinguono nettamente tra automazione di singoli task ed esecuzione autonoma di intere professioni, e collocano il principio **Human-in-the-Loop (HITL)** al centro dell'architettura organizzativa e giuslavoristica.

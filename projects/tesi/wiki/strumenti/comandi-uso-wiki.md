@@ -1,16 +1,18 @@
 ---
 type: Reference
 title: Comandi per iniziare a studiare la wiki
-description: Percorso guidato dei comandi chat dell'agente per orientarsi, interrogare, studiare e gestire la knowledge base.
+description: Percorso guidato dei comandi chat dell'agente per orientarsi, interrogare,
+  studiare e gestire la knowledge base.
 status: draft
 tags:
-  - topic/ai
-  - status/draft
+- topic/ai
+- status/draft
 generated:
   by: process:wiki-forge
   at: '2026-10-10T00:00:00Z'
+verified: []
+sources: []
 ---
-
 # Comandi per iniziare a studiare la wiki
 
 I comandi si danno in chat all'agente (prefisso `/`). Percorso consigliato:

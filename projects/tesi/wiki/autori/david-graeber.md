@@ -1,31 +1,32 @@
 ---
 type: Reference
 title: David Graeber
-description: Critica antropologica di bullshit jobs, automazione e feudalesimo manageriale applicata all'IA e alle HR.
+description: Critica antropologica di bullshit jobs, automazione e feudalesimo manageriale
+  applicata all'IA e alle HR.
 status: draft
 tags:
-  - author/graeber
-  - topic/anthropology
-  - topic/economics
-  - topic/hr
-  - type/book
-  - status/draft
+- author/graeber
+- topic/anthropology
+- topic/economics
+- topic/hr
+- type/book
+- status/draft
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: Graeber_NoteLM
-    resource: raw/Graeber_NoteLM_COMPILED.md
-    title: Analisi del Pensiero di David Graeber applicato all'Intelligenza Artificiale, al Lavoro e alle Risorse Umane
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: Graeber_NoteLM
+  resource: raw/Graeber_NoteLM_COMPILED.md
+  title: Analisi del Pensiero di David Graeber applicato all'Intelligenza Artificiale,
+    al Lavoro e alle Risorse Umane
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 56
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # David Graeber
 
 Antropologo e teorico del lavoro, autore di *Bullshit Jobs*, *Debito* e *L'alba di tutto*. La sua opera offre una chiave critica per leggere l'impatto dell'IA e dell'automazione come strumenti politici, non neutrali, dentro il cosiddetto feudalesimo manageriale. Il suo contributo per una tesi HR sta nel rovesciare l'equazione tra automazione e liberazione dal lavoro.

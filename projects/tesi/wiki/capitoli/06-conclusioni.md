@@ -1,29 +1,31 @@
 ---
 type: Concept
 title: 'Capitolo 6: Conclusioni'
-description: Sintesi del percorso, prospettive future per le Risorse Umane e direzioni di ricerca
+description: Sintesi del percorso, prospettive future per le Risorse Umane e direzioni
+  di ricerca
 status: draft
 tags:
-  - thesis/chapter
-  - topic/conclusions
-  - status/draft
-  - topic/hr
+- thesis/chapter
+- topic/conclusions
+- status/draft
+- topic/hr
 generated:
   by: process:jules-agent
   at: '2026-10-12T00:00:00Z'
 verified:
-  - by: human:autore
-    at: '2026-10-12T00:00:00Z'
+- by: human:autore
+  at: '2026-10-12T00:00:00Z'
 sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: Documento di Progettazione della Tesi Magistrale
+- id: thesis-design-doc
+  resource: raw/thesis-design-doc.md
+  title: Documento di Progettazione della Tesi Magistrale
+  author: process:conv2md
+  last_modified: '2026-10-20T06:04:34Z'
 maturita: 90
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Capitolo 6: Conclusioni — Sintesi del Percorso e Prospettive Future per le Risorse Umane
 
 ## 6.1 Sintesi dei Risultati

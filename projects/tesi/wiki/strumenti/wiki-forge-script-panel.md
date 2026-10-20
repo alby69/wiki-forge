@@ -4,24 +4,23 @@ title: Wiki-Forge Script Control Panel
 description: Panoramica degli script Python per gestione e compilazione wiki-forge
 status: draft
 tags:
-  - topic/ai
-  - status/draft
+- topic/ai
+- status/draft
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: wiki_forge_script_panel_guide_NoteLM
-    resource: raw/wiki_forge_script_panel_guide_NoteLM_COMPILED.md
-    title: Guida Completa agli Script del Wiki-Forge Script Control Panel
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: wiki_forge_script_panel_guide_NoteLM
+  resource: raw/wiki_forge_script_panel_guide_NoteLM_COMPILED.md
+  title: Guida Completa agli Script del Wiki-Forge Script Control Panel
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 32
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Wiki-Forge Script Control Panel
 
 Il **Wiki-Forge Script Control Panel** è l'interfaccia del pannello strumenti (Tools) che permette di eseguire da browser oltre 15 script Python per la manutenzione, conversione, validazione semantica e compilazione della knowledge base conforme a OKF v0.2.

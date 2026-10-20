@@ -1,31 +1,32 @@
 ---
 type: Concept
 title: Competenze e Risorse Umane
-description: Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
+description: Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore
+  e nuovi ruoli HR.
 status: draft
 tags:
-  - topic/hr
-  - topic/economics
-  - status/draft
-  - topic/ai
-  - status/review
-  - author/graeber
+- topic/hr
+- topic/economics
+- status/draft
+- topic/ai
+- status/review
+- author/graeber
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: analisi-impatto-ia-lavoro
+  resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    Analisi Sistemica e Comparativa per Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 29
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Competenze e Risorse Umane
 
 L'IA ridefinisce la mappa delle competenze aziendali, spostando il baricentro dalle abilità esecutive a quelle critiche, relazionali e di governo, e riorganizza i processi interni lungo l'intero ciclo di vita del collaboratore. Le sezioni 7 e 8 coprono rispettivamente le competenze che acquistano o perdono valore e le conseguenze per le organizzazioni e la funzione HR.

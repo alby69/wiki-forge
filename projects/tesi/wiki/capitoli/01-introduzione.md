@@ -1,30 +1,32 @@
 ---
 type: Concept
 title: 'Capitolo 1: Introduzione'
-description: 'Panoramica, premesse e ipotesi di ricerca: l''impatto dell''AI sulle Risorse Umane e il limite del RAG tradizionale'
+description: 'Panoramica, premesse e ipotesi di ricerca: l''impatto dell''AI sulle
+  Risorse Umane e il limite del RAG tradizionale'
 status: draft
 tags:
-  - thesis/chapter
-  - topic/ai
-  - topic/hr
-  - status/draft
-  - status/review
+- thesis/chapter
+- topic/ai
+- topic/hr
+- status/draft
+- status/review
 generated:
   by: process:jules-agent
   at: '2026-10-12T00:00:00Z'
 verified:
-  - by: human:autore
-    at: '2026-10-12T00:00:00Z'
+- by: human:autore
+  at: '2026-10-12T00:00:00Z'
 sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: Documento di Progettazione della Tesi Magistrale
+- id: thesis-design-doc
+  resource: raw/thesis-design-doc.md
+  title: Documento di Progettazione della Tesi Magistrale
+  author: process:conv2md
+  last_modified: '2026-10-20T06:04:34Z'
 maturita: 90
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca
 
 Negli ultimi anni l'intelligenza artificiale ha smesso di essere una promessa di laboratorio per diventare una presenza concreta nelle nostre giornate e nelle nostre organizzazioni. Il punto di svolta è arrivato con i modelli linguistici di grande scala (LLM): sistemi capaci di leggere, riassumere, tradurre e generare testo con una naturalezza che fino a poco prima sembrava appannaggio esclusivo dell'essere umano. Da quella soglia la corsa non si è più fermata: modelli sempre più grandi, poi sempre più capaci di ragionare in passaggi sequenziali, poi in grado di usare strumenti e di agire con una certa autonomia come agenti. È un percorso che affascina e insieme inquieta, perché tocca molto più del software — tocca il modo in cui lavoriamo, decidiamo, impariamo e, in definitiva, attribuiamo valore a ciò che facciamo.

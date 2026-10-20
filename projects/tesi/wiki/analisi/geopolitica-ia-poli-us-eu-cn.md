@@ -4,25 +4,25 @@ title: Geopolitica dell'IA - I Poli Statunitense, Europeo e Cinese
 description: Confronto tra Stati Uniti, Europa e Cina nello sviluppo dell'IA
 status: draft
 tags:
-  - topic/ai
-  - status/draft
-  - author/amodei
+- topic/ai
+- status/draft
+- author/amodei
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: tesi_analisi_fonti_ia_lavoro_NoteLM
-    resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
-    title: 'Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: tesi_analisi_fonti_ia_lavoro_NoteLM
+  resource: raw/tesi_analisi_fonti_ia_lavoro_NoteLM_COMPILED.md
+  title: 'Analisi Sistemica delle Fonti per Tesi di Laurea: L''Impatto dell''IA, degli
+    LLM e degli Agenti Autonomi sul Lavoro e sulla Governance HR'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 32
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Geopolitica dell'IA - I Poli Statunitense, Europeo e Cinese
 
 Il confronto tra i tre poli geopolitici dominanti (Stati Uniti, Europa e Cina) rivela visioni strategiche divergenti sull'evoluzione dell'IA, sulle sue implicazioni per il lavoro e sul ruolo dello Stato e del mercato.

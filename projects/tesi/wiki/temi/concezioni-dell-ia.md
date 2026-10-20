@@ -1,31 +1,32 @@
 ---
 type: Concept
 title: Concezioni dell'Intelligenza Artificiale
-description: 'L''IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.'
+description: 'L''IA come strumento probabilistico non antropomorfo: determinismo,
+  co-intelligenza e atrofia cognitiva.'
 status: draft
 tags:
-  - topic/ai
-  - topic/anthropology
-  - author/cristianini
-  - status/draft
-  - topic/hr
-  - author/graeber
+- topic/ai
+- topic/anthropology
+- author/cristianini
+- status/draft
+- topic/hr
+- author/graeber
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: analisi-impatto-ia-lavoro
+  resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    Analisi Sistemica e Comparativa per Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 28
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Concezioni dell'Intelligenza Artificiale
 
 Nelle fonti del corpus l'IA non è un soggetto antropomorfo dotato di intenzione, ma uno strumento avanzato di natura probabilistica e statistica. Il suo impatto è determinato dalle scelte organizzative, politiche e umane che ne guidano progettazione e adozione, non dalla tecnologia in sé. Questa impostazione anti-determinista attraversa le due sezioni di riferimento: la mappa degli orientamenti degli autori e il rapporto tra intelligenza umana e artificiale.

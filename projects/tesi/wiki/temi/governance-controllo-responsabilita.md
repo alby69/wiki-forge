@@ -1,29 +1,30 @@
 ---
 type: Concept
 title: Governance, Controllo e Responsabilità
-description: 'Fiducia e responsabilità nell''EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.'
+description: 'Fiducia e responsabilità nell''EU AI Act: piramide del rischio, obblighi
+  dei deployer e co-determinazione.'
 status: draft
 tags:
-  - topic/ai
-  - topic/hr
-  - status/draft
-  - author/gatti
+- topic/ai
+- topic/hr
+- status/draft
+- author/gatti
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: analisi-impatto-ia-lavoro
+  resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    Analisi Sistemica e Comparativa per Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 29
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Governance, Controllo e Responsabilità
 
 Il perimetro della governance etica e legale dell'IA sul lavoro è definito dall'**EU AI Act (Regolamento UE 2024/1689)**, in vigore dal 1° agosto 2024, e dai successivi sviluppi (incluso l'AI Omnibus del 2026). La sezione di riferimento ricostruisce la piramide del rischio e gli obblighi che ricadono sui datori di lavoro in qualità di *deployer*.

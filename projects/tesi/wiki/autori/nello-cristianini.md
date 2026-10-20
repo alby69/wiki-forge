@@ -1,30 +1,31 @@
 ---
 type: Reference
 title: Nello Cristianini
-description: 'Scienziato dei dati: IA comportamentale e teleologica, scorciatoia statistica e dignità umana nel lavoro.'
+description: 'Scienziato dei dati: IA comportamentale e teleologica, scorciatoia statistica
+  e dignità umana nel lavoro.'
 status: draft
 tags:
-  - author/cristianini
-  - topic/ai
-  - topic/hr
-  - type/book
-  - author/amodei
+- author/cristianini
+- topic/ai
+- topic/hr
+- type/book
+- author/amodei
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: Cristianini_NoteLM
-    resource: raw/Cristianini_NoteLM_COMPILED.md
-    title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane nell'Inquadramento Teorico di Nello Cristianini
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: Cristianini_NoteLM
+  resource: raw/Cristianini_NoteLM_COMPILED.md
+  title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane
+    nell'Inquadramento Teorico di Nello Cristianini
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 60
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Nello Cristianini
 
 Informatico e scienziato dei dati, autore di *La scorciatoia*, *Machina sapiens*, *Sovrumano* e *Forma mentis*. Offre un inquadramento rigoroso dell'IA come agente teleologico e della "scorciatoia statistica" come svolta epistemologica, per poi derivarne rischi e opportunità per lavoro, organizzazioni e HR. Il suo baricentro etico è la dignità della persona umana.

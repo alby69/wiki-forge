@@ -1,31 +1,32 @@
 ---
 type: Concept
 title: Capacità Emergenti dei Large Language Models
-description: 'Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.'
+description: 'Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità
+  e bias impliciti nei processi HR.'
 status: draft
 tags:
-  - topic/ai
-  - author/karpathy
-  - status/draft
-  - topic/hr
-  - author/cristianini
-  - status/review
+- topic/ai
+- author/karpathy
+- status/draft
+- topic/hr
+- author/cristianini
+- status/review
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: analisi-impatto-ia-lavoro
-    resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Sistemica e Comparativa per Tesi di Laurea'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: analisi-impatto-ia-lavoro
+  resource: raw/analisi-impatto-ia-lavoro_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    Analisi Sistemica e Comparativa per Tesi di Laurea'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 27
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Capacità Emergenti dei Large Language Models
 
 Gli LLM e l'IA generativa rappresentano la discontinuità tecnologica del periodo recente, per la capacità di interagire in linguaggio naturale e di elaborare contenuti complessi. La sezione di riferimento ne traccia però anche i limiti strutturali, documentati attraverso esercizi pratici pensati per i team HR.

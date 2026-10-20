@@ -1,30 +1,31 @@
 ---
 type: Reference
 title: Salvatore Sanfilippo
-description: 'Creatore di Redis: programmazione automatica, intenzionalità umana e trasformazione del lavoro cognitivo.'
+description: 'Creatore di Redis: programmazione automatica, intenzionalità umana e
+  trasformazione del lavoro cognitivo.'
 status: draft
 tags:
-  - topic/ai
-  - topic/hr
-  - topic/economics
-  - type/essay
-  - status/review
+- topic/ai
+- topic/hr
+- topic/economics
+- type/essay
+- status/review
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: Sanfilippo_NoteLM
-    resource: raw/Sanfilippo_NoteLM_COMPILED.md
-    title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane — Analisi Sistematica del Pensiero di Salvatore Sanfilippo (antirez)
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: Sanfilippo_NoteLM
+  resource: raw/Sanfilippo_NoteLM_COMPILED.md
+  title: L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane
+    — Analisi Sistematica del Pensiero di Salvatore Sanfilippo (antirez)
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 59
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Salvatore Sanfilippo
 
 Ingegnere del software, creatore del database *Redis* e autore del romanzo *Wohpe*, noto come "antirez". Unisce riflessione filosofica ed esperienza diretta di uso massivo degli LLM nello sviluppo di sistemi ad alte prestazioni, delineando il paradigma della *programmazione automatica*.

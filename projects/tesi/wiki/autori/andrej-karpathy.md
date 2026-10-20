@@ -1,29 +1,30 @@
 ---
 type: Reference
 title: Andrej Karpathy
-description: Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro cognitivo e HR.
+description: Software 2.0/3.0, agentic engineering e LLM Wiki per trasformare lavoro
+  cognitivo e HR.
 status: draft
 tags:
-  - topic/ai
-  - topic/hr
-  - type/essay
-  - author/karpathy
+- topic/ai
+- topic/hr
+- type/essay
+- author/karpathy
 generated:
   by: process:wiki-forge-compile
   at: '2026-10-09T00:00:00Z'
 verified: []
 sources:
-  - id: Karpathy_NoteLM
-    resource: raw/Karpathy_NoteLM_COMPILED.md
-    title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: L''Analisi del Pensiero di Andrej Karpathy'
-    author: process:notebooklm
-    last_modified: '2026-10-09'
+- id: Karpathy_NoteLM
+  resource: raw/Karpathy_NoteLM_COMPILED.md
+  title: 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+    L''Analisi del Pensiero di Andrej Karpathy'
+  author: process:notebooklm
+  last_modified: '2026-10-09'
 maturita: 56
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft
 ---
-
 # Andrej Karpathy
 
 Ingegnere e ricercatore, già co-fondatore di OpenAI e direttore AI di Tesla, fondatore di Eureka Labs. Interpreta l'IA come un nuovo paradigma informatico (Software 2.0 e 3.0) e delinea una trasformazione del lavoro cognitivo attorno ad agenti, verificabilità e orchestrazione umana.

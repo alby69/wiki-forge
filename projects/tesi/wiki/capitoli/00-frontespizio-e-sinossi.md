@@ -1,33 +1,25 @@
 ---
 type: Concept
 title: Frontespizio e Sinossi
-description: 'Breve riassunto esecutivo della tesi magistrale: obiettivi di ricerca, metodologia ibrida e quadro teorico SECI'
-status: draft
-tags:
-  - thesis/chapter
-  - type/frontespizio
-  - status/draft
-  - topic/hr
+description: '**HR Knowledge Management nell''era dell''Intelligenza Artificiale:
+  dal Retrieval all''Engineering della Conoscenza**'
+status: stable
 generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-  - by: human:autore
-    at: '2026-10-12T00:00:00Z'
-sources:
-  - id: thesis-design-doc
-    resource: raw/thesis-design-doc.md
-    title: Documento di Progettazione della Tesi Magistrale
-maturita: 32
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
+  by: process:migrate-script
+  at: '2026-10-20T06:04:34Z'
+verified: []
+sources: []
 ---
-
 # Frontespizio e Sinossi
 
-## Titolo Provvisorio
+## Titoli Provvisori
 **HR Knowledge Management nell'era dell'Intelligenza Artificiale: dal Retrieval all'Engineering della Conoscenza**
+
+Dall'Information Retrieval alla Governance della Conoscenza: Intelligenza Artificiale e Trasformazione delle Risorse Umane
+
+Sottotitolo: Il Knowledge Curation Officer tra note atomiche, validazione ontologica e presidio etico del capitale intellettuale
+
+L'Intelligenza Artificiale come Infrastruttura Cognitiva: progettazione, governo ed etica della conoscenza nelle Risorse Umane
 
 ## Sinossi Esecutiva
 Questo lavoro di tesi magistrale esplora la trasformazione della funzione di gestione delle Risorse Umane (HR) nell'era dell'Intelligenza Artificiale generativa, proponendo un passaggio metodologico fondamentale: dall'**Information Retrieval** (RAG effimero e passeggero) al **Knowledge Engineering** (costruzione di Knowledge Base dinamiche, persistenti e strutturate).
