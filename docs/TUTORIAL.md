@@ -24,19 +24,19 @@ Wiki-Forge risolve questo problema mettendo a disposizione un'interfaccia grafic
 
 In **Modalità Semplice**, utilizzare Wiki-Forge richiede solo 3 semplici passaggi dall'interfaccia grafica, senza bisogno di comandi da terminale.
 
-I tre pulsanti principali sono **nella barra in alto, al centro** (Modalità Semplice), sempre visibili:
+I pulsanti principali sono **a destra nella barra in alto** (Modalità Semplice), subito dopo i selettori di vista:
 
 ```
-  ┌──────────────────────────────────────────────────────────────────┐
-  │ ⚒️ Wiki-Forge   🌱 Focus Mode   [Project: …]                     │
-  │              📥 1. Carica   ⚡ 2. Compila   💬 3. Chiedi          │
-  │                              Documenti  Converti&Link  Alla Wiki  │
-  └──────────────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────────────────────────┐
+  │ Wiki-Forge 🌱 Focus Mode  [Project: …]    📝Editor 📒Scratchpad 🕸️Graph ◧Split   │
+  │                    📥 1. Carica  📝 Importa  ⚡ 2. Compila  💬 3. Chiedi  💬 Agent Chat │
+  └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 | # | Pulsante | Cosa fa nell'Interfaccia Grafica UI |
 |---|----------|-------------------------------------|
 | 1 | **📥 1. Carica** | Apre la finestra di caricamento: trascina i file PDF, EPUB, DOCX, TXT o appunti. |
+| — | **📝 Importa** | Passaggio opzionale: importa un singolo file `.md` già pronto direttamente nella wiki. |
 | 2 | **⚡ 2. Compila** | Converte i documenti, estrae i concetti chiave e crea i collegamenti `[[wikilink]]` tra le note. Mostra una barra di avanzamento in tempo reale. |
 | 3 | **💬 3. Chiedi** | Apre il pannello di chat con l'assistente per interrogare la wiki (sintesi, mappe concettuali, citazioni, stesura capitoli). |
 
@@ -44,13 +44,16 @@ I tre pulsanti principali sono **nella barra in alto, al centro** (Modalità Sem
 2. **Elabora**: Clicca **⚡ 2. Compila**. Il sistema converte automaticamente i file, estrae i concetti principali e crea i collegamenti tra le note.
 3. **Esplora**: Clicca **💬 3. Chiedi** e fai le tue domande alla chat, oppure esplora il grafo interattivo della conoscenza.
 
-> I pulsanti 1–3 sono visibili solo in **Focus Mode** (Modalità Semplice). In **Developer Mode** spariscono e accedi agli strumenti avanzati. Il toggle **Dev Mode** è in alto a destra; scorciatoia da tastiera: `Ctrl+Shift+D`.
+> I pulsanti 1–3 sono visibili solo in **Focus Mode** (Modalità Semplice). In **Developer Mode** spariscono e compaiono gli strumenti avanzati (Onboarding Wizard, KE Workbench, Tools, Config). Il passaggio da una modalità all'altra si fa cliccando il badge **🌱 Focus Mode / 👑 Developer Mode** accanto al nome Wiki-Forge, in alto a sinistra; scorciatoia da tastiera: `Ctrl+Shift+D`.
+
+> **Guida in-app**: in qualsiasi momento premi **F1** (oppure clicca il pulsante **?** nella barra in alto) per aprire il pannello di **Guida** contestuale; nella chat puoi scrivere `/help` (o `/help <argomento>`) per lo stesso contenuto.
 
 ### 🖥️ Viste dell'area di lavoro nell'Interfaccia Grafica
 
-I tre pulsanti in alto a destra (**📝 Editor**, **🕸️ Graph**, **◧ Split**) scelgono come disporre l'area di lavoro:
+I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Scratchpad**, **🕸️ Graph**, **◧ Split**) scelgono come disporre l'area di lavoro:
 
 - **📝 Editor** — solo editor di testo a tutto schermo.
+- **📒 Scratchpad** — foglio di appunti libero per appunti veloci e bozze, affiancato o al posto dell'editor.
 - **🕸️ Graph** — solo grafo della conoscenza interattivo (i controlli del grafo compaiono in alto).
 - **◧ Split** — editor e grafo affiancati, separati da un trascinatore. È la vista predefinita.
 
@@ -66,7 +69,7 @@ La scelta viene ricordata automaticamente. Passando alla sola vista **Graph**, i
   1. Carica i PDF dei paper cliccando **📥 1. Carica**.
   2. Clicca sul pulsante **⚡ 2. Compila**.
   3. Fai domande alla chat cliccando **💬 3. Chiedi**: *"Crea una mappa concettuale che colleghi le teorie di Graeber e Cristianini presenti nei paper"*.
-  4. Per generare la tesi finale, scrivi il comando `/thesis-chapter` nella chat per unire le note e poi usa il pulsante **Esporta PDF Tesi** nel menu **🛠️ Strumenti** per scaricare il PDF pronto per la stampa.
+  4. Per generare la tesi finale, scrivi il comando `/thesis-chapter` nella chat per unire le note e poi apri **🛠️ Strumenti**, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool** per scaricare il PDF pronto per la stampa.
 
 #### Scenario B: Il Professionista HR (Gestione Riunioni e Progetti)
 - **Obiettivo**: Non perdere le decisioni prese durante le riunioni ed organizzare le competenze aziendali.
@@ -102,7 +105,7 @@ Per la figura professionale del **Knowledge Engineer** o per chi desidera gestir
 ```
 
 1. **Use Case 1: Schema & Taxonomy Modeling (`ke_schema_modeling`)**:
-   Inferenzia ed estrae i predicati dal vault tramite il pulsante nel KE Workbench o comando `/schema-infer`, ne valida i vincoli sintattici (`/schema-lint`) e normalizza i tag della tassonomia tramite la finestra **🏷️ Tag Manager**.
+   Inferenzia ed estrae i predicati dal vault tramite il pulsante nel KE Workbench o comando `/schema-infer`, ne valida i vincoli sintattici (`/schema-lint`) e normalizza i tag della tassonomia con `/retag` o con lo script **Suggest Taxonomy Tags** (menu **🛠️ Strumenti**).
 2. **Use Case 2: Ontological Integrity & Validation (`ke_ontological_validation`)**:
    Rileva dipendenze circolari dirette (`/ontology-check`), verifica la revisione umana per le note `stable` ed esegue la validazione dei metadati OKF v0.2 (`/lint-frontmatter`).
 3. **Use Case 3: Competency Questions (CQ) & Coverage (`ke_cq_assessment`)**:
@@ -137,7 +140,7 @@ Per chi desidera il controllo totale sui processi di caricamento, metadati OKF v
  ┌─────────────────────────────────────────────────────────────┐
  │ FASE 3: Costruzione Incrementale & Consultazione KB        │
  │ Pulsante ⚡ 2. Compila, /ingest, CodeMirror 6, Graph View,   │
- │ /consult, /recompile, OKF v0.2, versioning e /rollback      │
+ │ /consult, /recompile, OKF v0.2, versioning e 🕐 Cronologia   │
  └──────────────────────────────┬──────────────────────────────┘
                                 │
                                 ▼
@@ -150,7 +153,7 @@ Per chi desidera il controllo totale sui processi di caricamento, metadati OKF v
                                 ▼
  ┌─────────────────────────────────────────────────────────────┐
  │ FASE 5: Proiezione Statica & Compilazione PDF               │
- │ /thesis-chapter, Pannello 🛠️ Strumenti -> "Esporta PDF Tesi" │
+ │ /thesis-chapter, 🛠️ Strumenti -> "Export Thesis to PDF"     │
  └──────────────────────────────┘
 ```
 
@@ -211,11 +214,8 @@ Questa è la fase centrale in cui la conoscenza prende vita nell'interfaccia UI.
    - `/related concetti/lavoro`: Identifica gli articoli correlati.
    - `/trace "claim di ricerca"`: Verifica e traccia le affermazioni fino alle righe esatte del sorgente originale (`#L10-L25`).
 
-4. **Creazione Articoli & Gestione Versioni (`new-article`, `rollback`)**:
-   Crea un nuovo articolo da modello con `/new-article <nome>`. Ogni modifica sostanziale viene salvata nello storico delle versioni. Se desideri ripristinare uno stato precedente, seleziona la versione nel pannello **Cronologia Versioni** oppure invia:
-   ```text
-   /rollback note=nome-nota to=v1
-   ```
+4. **Creazione Articoli & Gestione Versioni (`new-article`, Cronologia)**:
+   Crea un nuovo articolo da modello con `/new-article <nome>`. Ogni modifica sostanziale viene salvata nello storico delle versioni. Per visualizzare gli snapshot e ripristinarne uno, clicca il pulsante **🕐 Cronologia** nell'header dell'editor: si apre la finestra **Version History & Rollback**, dove il pulsante **🔄 Rollback to vN** riporta la nota alla versione selezionata.
 
 ---
 
@@ -233,7 +233,7 @@ Mentre la wiki cresce, puoi utilizzare la Suite di Studio e Sintesi accessibile 
 2. **Appunti Veloci & Suggerimento Tag (`note`, `promote-note`, `tag-suggest`)**:
    - `/note "idea per il Capitolo 2 sulla dequalificazione del lavoro"`: Salva un appunto rapido.
    - `/promote-note <id> <categoria>` o pulsante **📌 Salva nella Wiki**: Trasforma gli appunti della chat in un articolo ufficiale.
-   - `/tag-suggest nome-nota.md` o finestra **🏷️ Tag Manager**: Suggerisce e organizza i tag.
+   - `/tag-suggest nome-nota.md`, comando `/retag` o script **Suggest Taxonomy Tags** (🛠️ Strumenti): Suggerisce e organizza i tag.
 
 3. **Calcolo dell'Indice di Maturità (`maturity` / `/maturity`)**:
    Valuta lo stato di avanzamento delle note (punteggio da 0 a 100 basato su fonti, link e completezza) inviando il comando `/maturity` nella chat o cliccando su "Calcola Maturità" nel menu strumenti.
@@ -250,15 +250,15 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
    /thesis-chapter
    ```
 
-2. **Esportazione PDF dall'Interfaccia Grafica (`export_thesis_pdf.py` / `make thesis-pdf` via UI)**:
-   Per generare il PDF finale formattato per la tesi di laurea, apri il menu **🛠️ Strumenti** nella barra in alto e clicca sul pulsante **Esporta PDF Tesi**. Il sistema elaborerà il documento e renderà disponibile il file `thesis_final.pdf` pronto per il download e la stampa.
+2. **Esportazione PDF dall'Interfaccia Grafica (`export_thesis_pdf.py` via UI)**:
+   Per generare il PDF finale formattato per la tesi di laurea, apri il menu **🛠️ Strumenti** nella barra in alto, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema elaborerà il documento e renderà disponibile il file `thesis_final.pdf` pronto per il download e la stampa.
 
 3. **Utility di Manutenzione & Esportazione Struttura (`export`, `diff`, `template`, `sources`, `help`)**:
    - `/export` (o `export json`): Esporta la struttura della wiki.
    - `/diff <articolo>`: Mostra le differenze tra le versioni di un articolo.
    - `/template show`: Visualizza il modello standard delle note.
    - `/sources` (o `sources regenerate`): Rigenera il registro bibliografico.
-   - `/help`: Apre la guida rapida di riferimento nell'interfaccia.
+   - `/help [argomento]`: Apre la guida in-app (stesso contenuto del pannello **?** / tasto **F1**): indice completo o un argomento specifico.
 
 ---
 
@@ -268,6 +268,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 
 | Comando Chat | Scopo / Azione nell'Interfaccia Grafica UI |
 |--------------|--------------------------------------------|
+| `help [argomento]` / `/help` | Guida in-app: indice completo o un argomento specifico (pannello **?** / tasto **F1**) |
 | `adversarial-review` / `/adversarial-review` | Stress-test e revisione avversaria della tesi per identificare contraddizioni e citazioni mancanti |
 | `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki |
 | `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 |
@@ -289,6 +290,60 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 | `stub <concetto>` / `/stub` | Creazione di una nota segnaposto per approfondimenti futuri |
 | `retag <art> [+tag]` / `/retag` | Aggiornamento o aggiunta di tag a una scheda |
 | `export-semantic` / `/export-semantic` | Esportazione dei dati nei formati standard W3C (JSON-LD e Turtle) via UI |
+
+---
+
+### 5.1 🏷️ Stati OKF dei Documenti: Come Leggerli e Modificarli
+
+Ogni nota della wiki espone tre informazioni di stato definite dal formato **Open Knowledge Format (OKF v0.2)**, descritto in `docs/OKF_SPEC.md` (§3 Frontmatter, §6 Trust Tiers). Sono tre livelli distinti che spesso vengono confusi:
+
+#### a) Trust Tier (livello di fiducia) — derivato automaticamente
+
+Il tier **non è un campo che si scrive a mano**: viene calcolato in modo automatico dal campo `verified` della frontmatter, che è il registro degli eventi di verifica della nota.
+
+| Tier | Significato | Come si cambia |
+|------|-------------|----------------|
+| ⚪ `unverified` | Nessuna verifica registrata: è lo stato iniziale di ogni nota nuova o appena compilata | Stato predefinito; per uscirne esegui `/verify` |
+| 🟡 `machine-confirmed` | Il `verified` contiene voci di attori macchina (es. `wiki-forge-agent/v2.7`) ma nessun umano | Solo modificando a mano la frontmatter dall'editor, aggiungendo una voce con attore macchina (vedi esempio sotto) |
+| 🟢 `human-reviewed` | Almeno una voce `by: human:<id>` in `verified`: livello massimo di fiducia | Comando chat `/verify` — **unica via supportata** |
+
+**Il comando `/verify`** (alias `/human-review`) è l'unico meccanismo che fa passare una nota a `human-reviewed`:
+
+```text
+/verify capitoli/01-introduzione reviewer=alby69 stable comment="Revisionato dall'autore"
+```
+
+- Registra l'evento di verifica nella frontmatter della nota nel formato OKF:
+  ```yaml
+  verified:
+    - by: human:alby69
+      at: 2026-10-20T10:00:00Z
+  ```
+- Con il flag **`stable`** promuove anche `status: stable`. Attenzione alla **Regola 3 dell'ontologia** (`/ontology-check`): uno `status: stable` è ammesso **solo** su note con verifica umana.
+- È **idempotente per revisore**: ripetere lo stesso `/verify` con lo stesso revisore non crea voci duplicate.
+- Ogni verifica viene tracciata in `wiki/log.md` con la data.
+- Il risultato è immediato: il badge passa a 🟢 nel pannello **Node Metadata**, nel filtro della barra laterale e sul colore del nodo nel **Graph**.
+
+Per registrare una verifica di tipo macchina (tier 🟡 `machine-confirmed`) bisogna inserire a mano la voce in frontmatter dall'editor:
+
+```yaml
+verified:
+  - by: wiki-forge-agent/v2.7
+    at: 2026-10-20T12:00:00Z
+```
+
+#### b) Status (ciclo di vita) — `draft` | `stable` | `deprecated`
+
+- Si modifica **a mano nella frontmatter** dall'editor (es. `status: draft`), oppure portandolo a `stable` con il flag di `/verify` (consigliato, perché soddisfa la Regola 3).
+- `deprecated` segna la nota come superata: usa quando una fonte viene ritirata o sostituita da una versione più recente.
+
+#### c) Scadenza di verifica — `stale_after`
+
+- Timestamp ISO 8601 (`stale_after: 2027-12-31T00:00:00Z`) oltre il quale il contenuto va riverificato. Si imposta **a mano nella frontmatter**.
+- Quando la data passa, compare il badge **⏰ Stale** accanto al tier e `/audit` segnala la nota tra quelle scadute.
+- La scadenza **non modifica il trust tier**: una nota resta `human-reviewed` ma viene marcata come da rivedere.
+
+> **Dove si visualizzano gli stati**: pannello **Node Metadata** sotto l'editor (tier, status, scadenza ed elenco delle verifiche), filtri per tier e "stale" nella **barra laterale**, colori dei nodi nel **Graph** (🟢/🟡/⚪), e i report di `/stats`, `/audit` e dello script **`okf_stats.py`** (eseguibile dal pannello **🛠️ Strumenti**).
 
 ---
 
@@ -343,4 +398,4 @@ Copia e incolla queste richieste nella chat dell'interfaccia grafica (**💬 3. 
 - Invia il comando `/audit` nella chat per rilevare eventuali link rotti e poi `/reindex` per aggiornare gli indici.
 
 ### "Voglio scaricare la tesi completa in PDF ma non voglio usare il terminale"
-- Apri il menu **🛠️ Strumenti** nella barra in alto e clicca sul pulsante **Esporta PDF Tesi**. Troverai il file pronto nella cartella `output/`.
+- Apri il menu **🛠️ Strumenti** nella barra in alto, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Troverai il file pronto nella cartella `output/`.

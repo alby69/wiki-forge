@@ -10,12 +10,12 @@ Wiki-Forge classifies knowledge base maturity across four progressive levels:
 | **L3** | **Connected** | `orphan_ratio < 0.05`, `ke_maturity_score >= 60` |
 | **L4** | **Trusted** | `cq_gaps == 0`, all `stable` notes human-verified (`human:` in `verified`) |
 
-## Using the KE Cockpit
-Open the Knowledge Engineer Cockpit via the UI or `Ctrl+K` -> **Knowledge Engineer Cockpit**.
+## Using the KE Workbench
+Open the **🧠 KE Workbench** panel from the toolbar in Developer Mode.
 
-- **Health Summary**: Real-time score (0-100) and maturity badge.
-- **Next Best Actions**: Prioritized procedure recommendations ordered by severity x impact / effort.
-- **Procedure Execution**: Click **[Run Procedure]** to launch step-by-step execution.
+- **Six guided use cases**: Schema & Taxonomy Modeling, Ontological Integrity, Competency Questions, Neuro-Symbolic & ODP, Semantic Export, Maturity Evaluation — each with step-by-step workflows you can run individually or with **▶ Run All Steps**.
+- **Health metrics**: run `/ke-maturity` in chat for the L1-L4 maturity evaluation, or call the backend endpoint `/api/v1/health` for a 0-100 Health Score and prioritized Next Best Actions.
+- **Procedure definitions** live in `config/procedures/<id>.toml` and are executed by the backend Procedure Engine (see [`docs/PROCEDURES.md`](PROCEDURES.md)).
 
 ## Writing Custom Procedures
 Custom TOML procedures reside in `config/procedures/<id>.toml`:

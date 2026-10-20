@@ -75,10 +75,11 @@ Implemented in `config/config.toml` (`[okf]`), `scripts/okf_*.py`, and Makefile:
 - **Validation & Indexing**: `okf_lint.py` validates schema compliance; `okf_reindex.py` auto-generates OKF §8 `index.md`; `okf_log.py` logs chronological changes into `wiki/log.md` (OKF §9); `okf_stats.py` provides bundle analytics.
 
 ### 2.5 Incremental Versioning & Snapshot Rollback Engine
-Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/components/advanced-mode/`, and `AGENT.md` (`/rollback`, `/history`, `/diff` commands):
+Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/components/advanced-mode/VersionTimeline.ts`, and the editor's **🕐 Cronologia** button:
 - **Source/Synthesis Isolation**: Original sources remain untouched in `sources/` (`backup/`) and `raw/`.
-- **Version Snapshots**: Every `/compile` or major update creates a version snapshot (`wiki/versions/<note>.v1.md`, `.v2.md`).
-- **Agent Commands & Web UI**: `/rollback note=<note> [to=version]` restores previous state with safety net backup, `/history` lists snapshots, and `/diff` renders unified diffs. The Web UI includes `VersionHistoryPanel.ts` and `DiffViewer.ts` for timeline view and 1-click restore.
+- **Git Auto-Commits**: `scripts/versioning.py` creates an incremental git commit for a note (`version: auto-commit <note> ...`), keeping a repository-level history of changes.
+- **Version Snapshots**: the scan scripts skip a reserved `wiki/versions/` folder (`<note>.vN.md`) when present; the frontend timeline itself is built from the note's `version` frontmatter field.
+- **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Chat commands `/rollback` and `/history` are **not implemented** (docs only); `/diff` exists in the chat catalog but is answered by the LLM on a best-effort basis.
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
 Implemented in `src/backend/server/mcp_server.py` and `docker-compose.yml`:

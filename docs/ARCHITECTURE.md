@@ -7,7 +7,7 @@ Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Web UI (TypeScript / Vite)                      │
-│  [Focus Mode: 3-Step Wizard]  [KE Cockpit & Stateful Procedure Runner]  │
+│  [Focus Mode: Guided Pills]  [KE Workbench & Chat Commands]             │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ HTTP / SSE (Server-Sent Events)
 ┌───────────────────────────────▼─────────────────────────────────────────┐

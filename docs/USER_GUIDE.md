@@ -7,10 +7,10 @@ Focus Mode provides a clean, 3-step interface for operators:
 2. **2. Compila Wiki**: Converts raw sources into interlinked OKF v0.2 Markdown notes.
 3. **3. Chiedi alla Wiki**: Ask questions, request syntheses, or generate study materials.
 
-## Resumable User Wizards
-When you run a guided wizard (e.g. `user.onboarding`, `user.add-sources`, `user.weekly-check`), progress is saved to disk in `.wikiforge/wizard_state.json`.
+## Guided Wizards
+Focus Mode includes a guided **Onboarding Wizard** (also available in chat as `/wizard [scenario]`) that walks you through setting up a new project step by step, and scenario presets can be selected in the wizard itself.
 
-If you close your browser or navigate away, returning to Focus Mode presents a **🔄 Riprendi Wizard** button that restores your exact step and context.
+Backend progress for guided procedures is recorded in `.wikiforge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
 
 ## Markdown Editor & Toolbar
 When editing notes, the editor view includes a built-in formatting toolbar:

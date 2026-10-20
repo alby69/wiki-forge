@@ -33,25 +33,27 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## ✨ System Architecture & Key Enhancements (v4.1)
 
-- **🚀 Knowledge Engineer Cockpit**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl`.
+- **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl`.
 - **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wikiforge/state/<run_id>.json`.
-- **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety.
-- **🔄 Resumable User Wizards & Focus Mode**: Guided onboarding, add-sources, and weekly-check wizards saved to `.wikiforge/wizard_state.json`, allowing operators to close their browser and resume mid-wizard with one click.
+- **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
+- **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
-- **🔍 Command Palette (`Ctrl+K`)**: Unified fuzzy search for wiki notes, procedures, and global actions filtered by role.
+- **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
 
 ---
 
 ## 🗺️ Mappa della Documentazione (Documentation Index)
 
+> Full index of all guides: **[`docs/README.md`](docs/README.md)**.
+
 ### 📖 Per Utenti ed Operatori
-- **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — **Guida Operativa Focus Mode**: Guida passo-passo ai wizard guidati e ripresa sessione.
+- **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — **Guida Operativa Focus Mode**: Guida passo-passo ai wizard guidati.
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida all'interfaccia Web UI, comandi chat e troubleshooting.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico per la tesi in Markdown.
 
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager e Health Engine.
-- **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del Cockpit e procedure TOML.
+- **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
 - **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.
 - **[`docs/MIGRATION.md`](docs/MIGRATION.md)** — **Guida alla Migrazione Changeset Review**: Sistema Plan-Review-Apply per modifiche AI.
 - **[`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)** — **Open Knowledge Format Spec v0.2**: Specifica tecnica standard per le note OKF.
@@ -68,8 +70,10 @@ The LLM Knowledge Engineer agent supports the following slash commands:
 - Audit & Maintenance: `/audit`, `/reindex`, `/prune`, `/lint-frontmatter`, `/ontology-check`, `/stats`, `/schema-lint`, `/schema-infer`
 - Query & Research: `/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`
 - Study & Synthesis: `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`, `/adversarial-review`, `/digest`, `/slides` (alias `/generate-slides`)
-- Knowledge Engineering: `/export-semantic`, `/suggest-odp`, `/neuro-check`, `/ke-maturity`, `/validate-cq`, `/tag-suggest`
-- Utilities & Setup: `/wizard`, `/sources` (`sources regenerate`), `/template` (`template show`), `/export`, `/help`
+- Knowledge Engineering: `/export-semantic`, `/suggest-odp`, `/neuro-check`, `/ke-maturity`, `/validate-cq`, `/tag-suggest`, `/maturity`
+- Utilities & Setup: `/wizard`, `/sources` (`sources regenerate`), `/template` (`template show`), `/export`, `/help [topic]`, `/skill`, `/apply` (alias `/applica`)
+
+> In the app, press **F1** (or the **?** button) for the context-sensitive in-app guide; `/help [topic]` in chat returns the same content.
 
 ---
 
@@ -89,7 +93,7 @@ The LLM Knowledge Engineer agent supports the following slash commands:
 │   ├── trash/                # Cestino soft-delete con timestamp
 │   └── metrics/              # Storico metriche di salute (history.jsonl)
 ├── src/
-│   ├── frontend/             # Web UI Client (TypeScript, Vite, CodeMirror 6, KECockpitModal)
+│   ├── frontend/             # Web UI Client (TypeScript, Vite, CodeMirror 6)
 │   └── backend/              # Python Domain & Server Engine
 │       ├── server/
 │       │   ├── agentServer.ts # REST & SSE API Gateway

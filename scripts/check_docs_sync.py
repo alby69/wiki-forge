@@ -7,6 +7,8 @@ Checks:
 1. Parses `skills/*/SKILL.md` frontmatter `triggers.commands` lists to build canonical command set.
 2. Verifies that every trigger command is mentioned at least once in `README.md` and `docs/TUTORIAL.md`.
 3. Verifies version parity between `package.json` ("version") and top-most version in `docs/CHANGELOG.md`.
+4. Validates `docs/help/*.md` in-app guide topics: mandatory frontmatter, `id == filename`,
+   slugged id, numeric order, non-empty body, and coverage in `docs/README.md`.
 """
 
 import os
@@ -102,8 +104,74 @@ def check_version_sync(repo_root: Path) -> list[str]:
 
     return errors
 
+HELP_REQUIRED_KEYS = ("id", "title", "icon", "order", "group", "mode", "keywords", "context")
+
+def check_help_topics(repo_root: Path) -> list[str]:
+    errors = []
+    help_dir = repo_root / "docs" / "help"
+    if not help_dir.exists():
+        errors.append("docs/help/ directory does not exist.")
+        return errors
+
+    topic_files = sorted(help_dir.glob("*.md"))
+    if not topic_files:
+        errors.append("docs/help/ contains no .md topics.")
+        return errors
+
+    docs_index = repo_root / "docs" / "README.md"
+    index_content = docs_index.read_text(encoding="utf-8") if docs_index.exists() else ""
+
+    ids = []
+    for topic_file in topic_files:
+        content = topic_file.read_text(encoding="utf-8")
+        fm_match = re.search(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
+        if not fm_match:
+            errors.append(f"docs/help/{topic_file.name}: missing YAML frontmatter.")
+            continue
+        frontmatter = fm_match.group(1)
+        body = content[fm_match.end():]
+
+        fm_keys = dict(
+            (m.group(1), m.group(2).strip())
+            for m in re.finditer(r"^([a-z_]+):\s*(.*)$", frontmatter, re.MULTILINE)
+        )
+        for key in HELP_REQUIRED_KEYS:
+            if key not in fm_keys or not fm_keys[key]:
+                errors.append(f"docs/help/{topic_file.name}: missing frontmatter key '{key}'.")
+
+        topic_id = fm_keys.get("id", "")
+        if topic_id:
+            ids.append(topic_id)
+            if topic_id != topic_file.stem:
+                errors.append(
+                    f"docs/help/{topic_file.name}: id '{topic_id}' does not match filename stem '{topic_file.stem}'."
+                )
+            if not re.fullmatch(r"[a-z0-9-]+", topic_id):
+                errors.append(f"docs/help/{topic_file.name}: id '{topic_id}' must match ^[a-z0-9-]+$.")
+
+        order = fm_keys.get("order", "")
+        if order and not re.fullmatch(r"\d+", order):
+            errors.append(f"docs/help/{topic_file.name}: order '{order}' must be an integer.")
+
+        if not body.strip():
+            errors.append(f"docs/help/{topic_file.name}: body is empty.")
+
+        if index_content and topic_id and topic_id not in index_content:
+            errors.append(f"docs/help/{topic_file.name}: topic id '{topic_id}' not listed in docs/README.md.")
+
+    duplicates = sorted({i for i in ids if ids.count(i) > 1})
+    for dup in duplicates:
+        errors.append(f"docs/help: duplicate topic id '{dup}'.")
+
+    return errors
+
 def main():
     import argparse
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     parser = argparse.ArgumentParser(description="Check documentation and skills synchronization")
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
 
@@ -133,6 +201,10 @@ def main():
     version_errors = check_version_sync(repo_root)
     all_errors.extend(version_errors)
 
+    # Check in-app help topics (docs/help/*.md)
+    help_errors = check_help_topics(repo_root)
+    all_errors.extend(help_errors)
+
     if args.json:
         import json
         print(json.dumps({
@@ -148,7 +220,7 @@ def main():
             print(f"  - {err}", file=sys.stderr)
         sys.exit(1)
     else:
-        print(f"✅ Doc & Skill Sync Verification Passed ({len(commands)} commands checked across skills, README.md, TUTORIAL.md, and CHANGELOG.md).")
+        print(f"✅ Doc & Skill Sync Verification Passed ({len(commands)} commands checked across skills, README.md, TUTORIAL.md, CHANGELOG.md, and docs/help/ topics).")
         sys.exit(0)
 
 if __name__ == "__main__":

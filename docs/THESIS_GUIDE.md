@@ -36,7 +36,7 @@ Anziché limitarsi a interrogare i documenti originali tramite RAG passeggero (r
                            ▼ (Comando /thesis-chapter nella Chat)
     [ 📜 Bozza Unificata Tesi in output/thesis_compiled.md ]
                            │
-                           ▼ (Pulsante "Esporta PDF Tesi" nel menu 🛠️ Strumenti)
+                           ▼ (Script "Export Thesis to PDF" + ▶ Run Tool in 🛠️ Strumenti)
     [ 🎓 PDF Finale Stampabile in output/thesis_final.pdf ]
 ```
 
@@ -155,7 +155,7 @@ Quando la Knowledge Base ha raggiunto una soglia adeguata di maturità:
    ```
 
 2. **Generazione del PDF Finale dall'Interfaccia**:
-   Apri il menu **🛠️ Strumenti** nella barra superiore e clicca sul pulsante **Esporta PDF Tesi**. Il sistema genererà automaticamente il documento `thesis_final.pdf` formattato per la tesi di laurea, pronto per il download e la stampa.
+   Apri il menu **🛠️ Strumenti** nella barra superiore, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema genererà automaticamente il documento `thesis_final.pdf` formattato per la tesi di laurea, pronto per il download e la stampa.
 
 ---
 
@@ -211,7 +211,7 @@ In sede di laurea occorre elevare la discussione tecnica a riflessione strategic
 2. **Importazione**: Copia i riassunti da NotebookLM ed importali tramite il pulsante **📥 1. Carica** o il menu **🛠️ Strumenti**.
 3. **Compilazione**: Clicca il pulsante **⚡ 2. Compila** per elaborare i testi e collegarli nel grafo della conoscenza.
 4. **Validazione HR**: Invia `/validate-cq` nella chat per assicurarti che la wiki risponda alle domande fondamentali della tesi (es. *"Quali autori supportano lo smart working come leva di retention?"*).
-5. **Export**: Invia `/thesis-chapter` nella chat per assemblare i capitoli e clicca **Esporta PDF Tesi** nel menu **🛠️ Strumenti** per ottenere il documento finale da portare in commissione.
+5. **Export**: Invia `/thesis-chapter` nella chat per assemblare i capitoli, poi apri **🛠️ Strumenti**, scegli **Export Thesis to PDF** e clicca **▶ Run Tool** per ottenere il documento finale da portare in commissione.
 
 ---
 

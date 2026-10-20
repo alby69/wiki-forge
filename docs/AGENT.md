@@ -115,7 +115,7 @@ Mandatory structure:
 
 ## 5. Skill Router Index
 
-The command surface is modularized into six Skills under `skills/`. Load the required skill package on demand:
+The command surface is modularized into ten Skills under `skills/`. Load the required skill package on demand:
 
 | Skill | Load when the user wants to… | File |
 |---|---|---|
@@ -128,6 +128,7 @@ The command surface is modularized into six Skills under `skills/`. Load the req
 | Adversarial Review | stress-test notes/thesis for contradictions or missing citations | `skills/wiki-adversarial-review/SKILL.md` |
 | Digest | natural language summary of recent log updates & health | `skills/wiki-digest/SKILL.md` |
 | Presentation Slides | generate reveal.js slide deck from mature notes/chapters | `skills/wiki-slides/SKILL.md` |
+| KE Ontology Suite | schema lint/infer, CQ validation, ODP suggestions, neuro checks, KE maturity | `skills/wiki-ke-ontology/SKILL.md` |
 
 ---
 
@@ -190,5 +191,5 @@ Track and maintain wiki quality against key health metrics:
   - **v2.0**: Command Reference system, 15+ atomic commands, modular skill routing.
   - **v1.0**: Initial LLM Wiki Schema (Karpathy pattern).
 
-## /rollback
-Sintassi: `/rollback note=<nota> [to=<version>] [reason=...]`. Copia `wiki/versions/<nota>.vN.md` in `wiki/<nota>.md`, aggiorna `log.md`.
+## /rollback (not implemented)
+> **Status: documented but not implemented.** There is no `/rollback` (or `/history`) chat command in the server. Version history and restore are available from the **Web UI only**: the **🕐 Cronologia** button in the editor header opens the *Version History & Rollback* modal (`src/frontend/components/advanced-mode/VersionTimeline.ts`), whose **🔄 Rollback to vN** action restores the selected snapshot.

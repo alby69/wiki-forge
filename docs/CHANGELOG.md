@@ -5,6 +5,16 @@ All notable changes to the `wiki-forge` template will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Context-Sensitive In-App Help & UI Polish
+- **Help panel (F1 / `?` button)**: new `HelpPanel` component with live search, topic grouping, context-aware suggestions (⭐), and a "💬 Chiedi all'agente" hand-off that prefills the chat drawer.
+- **`/help [topic]` chat command**: deterministic index/topic rendering served from `docs/help/*.md` (14 topics), plus new backend routes `GET /api/help` and `GET /api/help/<id>` (no LLM required, works offline).
+- **Help context registry**: Config, Tools, Import, Wizard, KE Workbench, Version Timeline, upload and compile flows register their context so the panel suggests the relevant topic; fallbacks derive from mode/view.
+- **Sidebar collapse**: toggle on the left sidebar (file manager + tag cloud), persisted in `localStorage` (`wiki-forge:sidebar-collapsed`).
+- **Editor Cronologia**: new **🕐 Cronologia** button in the editor header opens the existing *Version History & Rollback* modal (`VersionTimeline.ts`), previously unreachable.
+- **Docs realignment**: drift fixes across TUTORIAL, USER_GUIDE, WORKFLOW, README, KE_PLAYBOOK, MIGRATION, AGENT, ARCHITECTURE, TECHNICAL_ARCHITECTURE and THESIS_GUIDE; new `docs/README.md` documentation index; `scripts/check_docs_sync.py` now validates `docs/help/*.md` frontmatter (id, keys, `id == filename`, docs/README coverage).
+
 ## [4.1.0] - 2026-10-22
 
 ### Knowledge Engineer Cockpit, Stateful Procedure Engine & Plan-Review-Apply Vault

@@ -1,44 +1,23 @@
-# Wiki Master Index
+---
+okf_version: "0.2"
+---
 
-Welcome to the knowledge base.
+# Wiki Index — Knowledge Base
 
-## Thematic Wikis
+## Topics
 
-- [[Q&A/index|Q&A]]
-- [[temi/index|temi]]
-- [[analisi/index|analisi]]
-- [[autori/index|autori]]
-- [[capitoli/index|capitoli]]
-- [[strumenti/index|strumenti]]
+* [Analisi](analisi/index.md) (3 articles)
+* [Autori](autori/index.md) (6 articles)
+* [Capitoli](capitoli/index.md) (8 articles)
+* [Q&A](Q&A/index.md) (2 articles)
+* [Strumenti](strumenti/index.md) (2 articles)
+* [Temi](temi/index.md) (6 articles)
 
-## All Notes
+## Recently Updated
 
-- [[bullshit-jobs-e-routine-igienica]]
-- [[index]]
-- [[sintesi-previsioni-lavoro-hr]]
-- [[evidenza-mercato-del-lavoro]]
-- [[geopolitica-ia-poli-us-eu-cn]]
-- [[linee-guida-tesi-hr]]
-- [[andrej-karpathy]]
-- [[david-graeber]]
-- [[geoffrey-hinton]]
-- [[nello-cristianini]]
-- [[salvatore-sanfilippo]]
-- [[stefano-gatti]]
-- [[00-frontespizio-e-sinossi]]
-- [[01-introduzione]]
-- [[02-studio-degli-attori-principali]]
-- [[03-progettazione-della-piattaforma]]
-- [[04-mappatura-e-automazione-hr]]
-- [[05-considerazioni-personali]]
-- [[06-conclusioni]]
-- [[07-bibliografia-e-fonti]]
-- [[log]]
-- [[comandi-uso-wiki]]
-- [[wiki-forge-script-panel]]
-- [[architetture-multi-agente]]
-- [[capacita-emergenti-llm]]
-- [[competenze-e-hr]]
-- [[concezioni-dell-ia]]
-- [[governance-controllo-responsabilita]]
-- [[sostituzione-o-trasformazione]]
+* [Sostituzione o Trasformazione del Lavoro](temi/sostituzione-o-trasformazione.md) — Task vs professioni, Human-in-the-Loop e ricomposizione qualitativa del lavoro nell'adozione dell'IA.
+* [Governance, Controllo e Responsabilità](temi/governance-controllo-responsabilita.md) — Fiducia e responsabilità nell'EU AI Act: piramide del rischio, obblighi dei deployer e co-determinazione.
+* [Concezioni dell'Intelligenza Artificiale](temi/concezioni-dell-ia.md) — L'IA come strumento probabilistico non antropomorfo: determinismo, co-intelligenza e atrofia cognitiva.
+* [Competenze e Risorse Umane](temi/competenze-e-hr.md) — Competenze in ascesa e in declino, ridisegno del ciclo di vita del collaboratore e nuovi ruoli HR.
+* [Capacità Emergenti dei Large Language Models](temi/capacita-emergenti-llm.md) — Capacità e limiti degli LLM: generalisti vs RAG, allucinazioni, a-specificità e bias impliciti nei processi HR.
+

@@ -14,7 +14,7 @@ Il progetto adotta un'architettura a due livelli per massimizzare sia la **profo
    - **Vantaggio**: Eccelle nel comprendere il contesto specifico di un singolo corpus documentale e nel fornire citazioni puntuali ed ancorate alla fonte.
    - **Limite**: Non esegue retrieval simultaneo tra notebook indipendenti e non mantiene una memoria persistente a lungo termine.
 
-2. **⚒️ Wiki-Forge Web UI (La Memoria Permanente e il "Meta-Cervello")**:
+2. **🌐 Wiki-Forge Web UI (La Memoria Permanente e il "Meta-Cervello")**:
    - **Ruolo**: Knowledge Base dinamica consultabile visivamente, grafo della conoscenza interlinkato, motore di validazione e sistema di compilazione della tesi.
    - **Vantaggio**: Trasforma le sintesi in "unità cognitive" (note atomiche) collegabili, versionabili e interrogabili trasversalmente tramite GraphRAG e Competency Questions.
    - **Output**: Wiki interattiva interrogabile + Documento PDF finale della tesi pronto per la stampa.
@@ -80,7 +80,7 @@ Quando le note raggiungono uno stato `stable` o `mature`:
 
 1. **Aggregazione**: Nella chat **💬 3. Chiedi** invia il comando `/thesis-chapter` per aggregare tutte le note relative a un macro-tema (es. "Capitolo 2: L'Impatto degli LLM sul Lavoro Cognitivo") in un unico documento coerente e ben strutturato.
 2. **Revisione Avversaria**: Invia `/adversarial-review` per far sì che l'agente identifichi punti deboli, contraddizioni logiche o mancanze di citazioni nel capitolo generato.
-3. **Esportazione PDF in un clic**: Apri il menu **🛠️ Strumenti** nella barra superiore e clicca sul pulsante **Esporta PDF Tesi**. Il sistema genererà il documento PDF finale pronto per la stampa, con bibliografia e citazioni tracciate.
+3. **Esportazione PDF in un clic**: Apri il menu **🛠️ Strumenti** nella barra superiore, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema genererà il documento PDF finale pronto per la stampa, con bibliografia e citazioni tracciate.
 
 ---
 
