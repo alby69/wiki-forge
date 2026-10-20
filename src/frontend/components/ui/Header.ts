@@ -1,6 +1,7 @@
 import { ProjectInfo } from '@frontend/storage/ApiStorage';
 import { WikiNote } from '@frontend/core/types/wiki';
 import { appStore, ViewMode } from '@frontend/store/appStore';
+import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
 
 const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[] = [
   { id: 'editor', label: 'Editor', title: 'Solo Editor (riclicca per chiudere)', icon: '📝' },
@@ -18,6 +19,7 @@ export class Header {
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenWizardCb?: () => void;
   private onOpenKEWorkbenchCb?: () => void;
+  private simpleDashboard?: SimpleModeDashboard;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
   private activeNote: WikiNote | null = null;
@@ -72,6 +74,11 @@ export class Header {
     this.render();
   }
 
+  public setSimpleDashboard(dashboard: SimpleModeDashboard): void {
+    this.simpleDashboard = dashboard;
+    this.render();
+  }
+
   private renderNoteBadge(): string {
     if (!this.activeNote) return '';
 
@@ -93,17 +100,14 @@ export class Header {
       : `<option value="default" selected>Default Wiki</option>`;
 
     const modeBadge = isAdvancedMode
-      ? `<span class="mode-badge-advanced">👑 Developer Mode</span>`
-      : `<span class="mode-badge-simple">🌱 Focus Mode</span>`;
+      ? `<button id="mode-toggle-btn" class="mode-badge-advanced mode-badge-btn" title="Passa a Focus Mode (Ctrl+Shift+D)">👑 Developer Mode</button>`
+      : `<button id="mode-toggle-btn" class="mode-badge-simple mode-badge-btn" title="Passa a Developer Mode (Ctrl+Shift+D)">🌱 Focus Mode</button>`;
 
     this.container.innerHTML = `
       <header style="height: 52px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: #f8fafc;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="font-weight: 700; font-size: 16px; color: #60a5fa; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;" id="header-brand">
-            <span style="font-size: 18px;">⚒️</span> Wiki-Forge
-          </div>
+          <a href="https://github.com/alby69/wiki-forge" target="_blank" rel="noopener noreferrer" style="font-weight: 700; font-size: 16px; color: #60a5fa; letter-spacing: 0.5px; white-space: nowrap; text-decoration: none;" id="header-brand">Wiki-Forge</a>
           ${modeBadge}
-          <span style="font-size: 11px; background: #1e293b; color: #94a3b8; padding: 2px 6px; border-radius: 4px;">OKF v0.2</span>
           ${this.renderNoteBadge()}
 
           <div style="margin-left: 6px; display: flex; align-items: center; gap: 6px;">
@@ -134,27 +138,20 @@ export class Header {
 
           <div style="width: 1px; height: 20px; background: #334155; margin: 0 2px;"></div>
 
-          <!-- Wizard Quick Access Button in Simple Mode -->
-          <button id="header-wizard-btn" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-            <span>🪄</span> Onboarding Wizard
-          </button>
-
-          <!-- Developer Tools in Advanced Mode -->
           ${
             isAdvancedMode
-              ? `<button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
+              ? `<!-- Onboarding + Developer Tools in Dev Mode -->
+                 <button id="header-wizard-btn" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                   <span>🪄</span> Onboarding Wizard
+                 </button>
+                 <button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
                  <button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
                  <button id="header-config-btn" style="background: #334155; color: #ffffff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">⚙️ Config</button>`
-              : ''
+              : `<!-- Simple-mode action pills in Focus Mode -->
+                 <div id="simple-mode-pills-slot" style="display: flex; align-items: center; gap: 6px;"></div>`
           }
 
           <button id="chat-toggle-header-btn" style="background: #4338ca; color: #ffffff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">💬 Agent Chat</button>
-
-          <!-- Developer Mode Toggle Switch -->
-          <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 8px; border-left: 1px solid #334155;">
-            <label for="developer-mode-toggle" style="font-size: 11px; color: #94a3b8; font-weight: 600; cursor: pointer; user-select: none;">Dev Mode</label>
-            <input type="checkbox" id="developer-mode-toggle" ${isAdvancedMode ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px; accent-color: #6366f1;" title="Toggle Developer Mode (Ctrl+Shift+D)" />
-          </div>
         </div>
       </header>
     `;
@@ -164,7 +161,8 @@ export class Header {
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
     const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
-    const devToggle = this.container.querySelector('#developer-mode-toggle') as HTMLInputElement;
+    const modeToggleBtn = this.container.querySelector('#mode-toggle-btn');
+    const pillsSlot = this.container.querySelector('#simple-mode-pills-slot') as HTMLElement | null;
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement;
 
     VIEW_MODES.forEach(m => {
@@ -178,10 +176,14 @@ export class Header {
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());
     if (chatBtn) chatBtn.addEventListener('click', () => this.onToggleChatCb?.());
 
-    if (devToggle) {
-      devToggle.addEventListener('change', () => {
-        appStore.setAdvancedMode(devToggle.checked);
+    if (modeToggleBtn) {
+      modeToggleBtn.addEventListener('click', () => {
+        appStore.toggleAdvancedMode();
       });
+    }
+
+    if (pillsSlot && this.simpleDashboard) {
+      this.simpleDashboard.mountIn(pillsSlot);
     }
 
     if (projectSelect) {

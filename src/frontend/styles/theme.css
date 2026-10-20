@@ -80,6 +80,23 @@ body {
   font-weight: 600;
 }
 
+/* Mode badge doubles as the Focus / Dev toggle button */
+.mode-badge-btn {
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), filter var(--transition-fast);
+}
+
+.mode-badge-btn:hover {
+  filter: brightness(1.3);
+  border-color: currentColor;
+}
+
+.mode-badge-btn:focus-visible {
+  outline: 2px solid var(--indigo-500);
+  outline-offset: 1px;
+}
+
 /* Action Chips */
 .action-chips-container {
   display: flex;

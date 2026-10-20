@@ -290,17 +290,16 @@ Backlink to [[01-index]].
       deleteScratchpad: noteId => this.storage.deleteScratchpad(noteId),
     });
 
-    this.simpleDashboard = new SimpleModeDashboard(this.layout.simpleModeSlot, {
+    this.simpleDashboard = new SimpleModeDashboard({
       storage: this.storage,
       onOpenChat: () => this.chatDrawer.open(),
       onVaultUpdated: () => void this.loadVault(),
     });
+    this.header.setSimpleDashboard(this.simpleDashboard);
 
     appStore.subscribe(state => {
-      this.simpleDashboard.setVisible(!state.isAdvancedMode);
       this.layout.setViewMode(state.viewMode);
     });
-    this.simpleDashboard.setVisible(!appStore.getState().isAdvancedMode);
 
     this.layout.setViewMode(appStore.getState().viewMode);
   }

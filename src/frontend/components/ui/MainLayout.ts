@@ -7,7 +7,6 @@ export class MainLayout {
   public graphContainer!: HTMLElement;
   public contextContainer!: HTMLElement;
   public headerContainer!: HTMLElement;
-  public simpleModeSlot!: HTMLElement;
   public graphControlsContainer!: HTMLElement;
   public chatContainer!: HTMLElement;
   public mainContentArea!: HTMLElement;
@@ -28,7 +27,6 @@ export class MainLayout {
       <div id="wiki-forge-app" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; background: #121316; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; overflow: hidden;">
         <div id="header-root" style="position: relative; flex-shrink: 0;">
           <div id="header-bar-root"></div>
-          <div id="simple-mode-slot" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 52px; display: flex; align-items: center; pointer-events: none; z-index: 30;"></div>
         </div>
         <div style="flex: 1; display: flex; overflow: hidden; position: relative;">
           <div id="sidebar-root" style="width: ${this.sidebarWidth}px; min-width: 200px; max-width: 500px; flex-shrink: 0;"></div>
@@ -55,7 +53,6 @@ export class MainLayout {
     `;
 
     this.headerContainer = this.container.querySelector('#header-bar-root')!;
-    this.simpleModeSlot = this.container.querySelector('#simple-mode-slot')!;
     this.sidebarContainer = this.container.querySelector('#sidebar-root')!;
     this.editorContainer = this.container.querySelector('#editor-root')!;
     this.scratchContainer = this.container.querySelector('#scratch-root')!;

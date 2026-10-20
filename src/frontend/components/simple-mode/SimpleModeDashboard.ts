@@ -9,7 +9,7 @@ export interface SimpleModeDashboardOptions {
 }
 
 export class SimpleModeDashboard {
-  private container: HTMLElement;
+  private container: HTMLElement | null = null;
   private storage: ApiStorage;
   private onOpenChat: () => void;
   private onVaultUpdated: () => void;
@@ -19,25 +19,21 @@ export class SimpleModeDashboard {
   private compileProgress: number = 0;
   private compileStatusMsg: string = '';
 
-  constructor(parent: HTMLElement, options: SimpleModeDashboardOptions) {
+  constructor(options: SimpleModeDashboardOptions) {
     this.storage = options.storage;
     this.onOpenChat = options.onOpenChat;
     this.onVaultUpdated = options.onVaultUpdated;
+  }
 
-    this.container = document.createElement('div');
-    this.container.id = 'simple-mode-dashboard';
-    this.container.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      pointer-events: auto;
-    `;
-    parent.appendChild(this.container);
-
+  /** Render the pill group inside the given element (the header slot). */
+  public mountIn(parent: HTMLElement): void {
+    this.container = parent;
     this.render();
   }
 
   public render(): void {
+    if (!this.container) return;
+
     const pill = `
       border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;
       display: flex; align-items: center; gap: 7px;
@@ -116,6 +112,8 @@ export class SimpleModeDashboard {
   }
 
   private attachEventListeners(): void {
+    if (!this.container) return;
+
     const uploadBtn = this.container.querySelector('#simple-upload-btn');
     const importMdBtn = this.container.querySelector('#simple-import-md-btn');
     const compileBtn = this.container.querySelector('#simple-compile-btn');
@@ -233,9 +231,5 @@ export class SimpleModeDashboard {
       this.compileStatusMsg = 'Errore';
       this.render();
     }
-  }
-
-  public setVisible(visible: boolean): void {
-    this.container.style.display = visible ? 'flex' : 'none';
   }
 }
