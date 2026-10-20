@@ -99,6 +99,8 @@ Trust levels are derived automatically from the `verified` array:
 2. **machine-confirmed**: `verified` array contains entries, but none from a `human:*` actor.
 3. **human-reviewed**: `verified` array contains at least one entry from a `human:<id>` actor.
 
+> **In Wiki-Forge**: practical guide on how to view and change a document's state (trust tier, `status`, `stale_after`, `/verify` command): see `docs/TUTORIAL.md` §5.1.
+
 ---
 
 ## 7. Index Format (`index.md`)

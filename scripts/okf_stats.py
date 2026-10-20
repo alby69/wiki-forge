@@ -59,7 +59,8 @@ def compute_okf_stats(wiki_dir: Path) -> dict:
                             trust_tiers["unverified"] += 1
                         else:
                             has_human = any(
-                                isinstance(v, dict) and str(v.get("by", "")).startswith("human:")
+                                (isinstance(v, dict) and str(v.get("by", "")).startswith("human:"))
+                                or (isinstance(v, str) and v.startswith("human:"))
                                 for v in verified
                             )
                             if has_human:

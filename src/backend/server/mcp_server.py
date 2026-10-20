@@ -145,6 +145,65 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
                         frontmatter[key] = val
     return frontmatter, body
 
+def extract_verified_actors(content: str) -> list:
+    """Port of the frontend MarkdownParser.extractVerifiedActors.
+
+    The flat frontmatter parser only keeps top-level keys, so the nested OKF
+    block form (`- by: human:<id>`) must be scanned from the raw text.
+    """
+    fm_match = re.match(r"^---\r?\n([\s\S]*?)\r?\n---", content)
+    if not fm_match:
+        return []
+    actors = []
+    in_verified = False
+    verified_indent = 0
+    for line in fm_match.group(1).split("\n"):
+        indent = len(line) - len(line.lstrip())
+        trimmed = line.strip()
+
+        if not in_verified and indent == 0 and re.match(r"^verified\s*:", trimmed):
+            in_verified = True
+            verified_indent = indent
+            inline = trimmed.split(":", 1)[1].strip()
+            if inline.startswith("[") and inline.endswith("]"):
+                for item in inline[1:-1].split(","):
+                    actor = item.strip().strip("'\"")
+                    if actor:
+                        actors.append(actor)
+            elif inline:
+                actors.append(inline.strip("'\""))
+            continue
+
+        if not in_verified:
+            continue
+
+        # A new top-level key ends the verified block.
+        if trimmed and indent <= verified_indent:
+            in_verified = False
+            continue
+        if not trimmed:
+            continue
+
+        # Nested form: `- by: human:alby69` or `- human:alby69`, plus the
+        # continuation line `by: human:alby69` without a leading dash.
+        item = re.sub(r"^-\s*", "", trimmed)
+        by_match = re.match(r"^by\s*:\s*(.+)$", item)
+        actor = (by_match.group(1) if by_match else item).strip().strip("'\"")
+        if actor and not re.match(r"^at\s*:", actor, re.IGNORECASE):
+            actors.append(actor)
+    return actors
+
+def compute_trust_tier(actors: list) -> str:
+    """OKF v0.2 Trust Tiers (spec section 6), derived only from `verified`:
+    human: prefix -> human-reviewed; any other entry -> machine-confirmed;
+    no entries -> unverified. `status` does not influence the tier.
+    """
+    if any(a.startswith("human:") for a in actors):
+        return "human-reviewed"
+    if actors:
+        return "machine-confirmed"
+    return "unverified"
+
 def find_note_file(repo_root: Path, note_id: str) -> Path | None:
     clean_id = note_id.strip()
     candidates = [
@@ -195,11 +254,9 @@ def tool_get_concept_metadata(repo_root: Path, note_id: str) -> dict:
         return {"error": f"Note '{note_id}' not found."}
     content = file_path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(content)
-    verified = fm.get("verified", [])
-    if isinstance(verified, str):
-        verified = [verified] if verified else []
+    verified = extract_verified_actors(content)
     status = fm.get("status", "draft")
-    trust_tier = "human-reviewed" if verified else ("machine-confirmed" if status == "stable" else "unverified")
+    trust_tier = compute_trust_tier(verified)
     return {
         "note_id": file_path.stem,
         "path": file_path.relative_to(repo_root).as_posix(),
@@ -249,16 +306,10 @@ def tool_list_trust_tiers(repo_root: Path) -> dict:
             try:
                 content = file_path.read_text(encoding="utf-8")
                 fm, _ = parse_frontmatter(content)
-                verified = fm.get("verified", [])
-                status = fm.get("status", "draft")
+                actors = extract_verified_actors(content)
                 rel_path = file_path.relative_to(repo_root).as_posix()
                 item = {"note_id": file_path.stem, "path": rel_path, "title": fm.get("title", file_path.stem)}
-                if verified:
-                    tiers["human-reviewed"].append(item)
-                elif status == "stable":
-                    tiers["machine-confirmed"].append(item)
-                else:
-                    tiers["unverified"].append(item)
+                tiers[compute_trust_tier(actors)].append(item)
             except Exception:
                 continue
     return {

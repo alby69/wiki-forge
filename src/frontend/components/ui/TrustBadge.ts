@@ -8,11 +8,12 @@ export function computeNoteTrustTier(note: Partial<WikiNote>): TrustTier {
     return note.trustTier;
   }
   const verified = note.verified || (note.frontmatter?.verified as string[] | undefined) || [];
-  if (Array.isArray(verified) && verified.length > 0) {
+  const actors = Array.isArray(verified) ? verified.map(v => String(v).trim()).filter(Boolean) : [];
+  // OKF v0.2 §6: the tier derives only from `verified`, never from `status`.
+  if (actors.some(v => v.startsWith('human:'))) {
     return 'human-reviewed';
   }
-  const status = note.status || (note.frontmatter?.status as string | undefined);
-  if (status === 'stable') {
+  if (actors.length > 0) {
     return 'machine-confirmed';
   }
   return 'unverified';

@@ -5,7 +5,7 @@ import { computeNoteTrustTier, isNoteStale, renderTrustBadgeHTML, renderTrustTie
 describe('OKF Trust Badge & Lifecycle Filter Test Suite', () => {
   test('computeNoteTrustTier correctly identifies human-reviewed notes', () => {
     const note = {
-      verified: ['alby69'],
+      verified: ['human:alby69'],
       status: 'stable',
     };
     assert.strictEqual(computeNoteTrustTier(note), 'human-reviewed');
@@ -13,8 +13,8 @@ describe('OKF Trust Badge & Lifecycle Filter Test Suite', () => {
 
   test('computeNoteTrustTier identifies machine-confirmed notes', () => {
     const note = {
-      verified: [],
-      status: 'stable',
+      verified: ['process:compile'],
+      status: 'draft',
     };
     assert.strictEqual(computeNoteTrustTier(note), 'machine-confirmed');
   });
@@ -22,7 +22,7 @@ describe('OKF Trust Badge & Lifecycle Filter Test Suite', () => {
   test('computeNoteTrustTier defaults to unverified', () => {
     const note = {
       verified: [],
-      status: 'draft',
+      status: 'stable',
     };
     assert.strictEqual(computeNoteTrustTier(note), 'unverified');
   });
@@ -35,15 +35,15 @@ describe('OKF Trust Badge & Lifecycle Filter Test Suite', () => {
   });
 
   test('renderTrustBadgeHTML generates valid HTML strings', () => {
-    const note = { verified: ['reviewer'], status: 'stable', staleAfter: '2020-01-01' };
+    const note = { verified: ['human:reviewer'], status: 'stable', staleAfter: '2020-01-01' };
     const html = renderTrustBadgeHTML(note);
     assert.ok(html.includes('Human-Reviewed'));
     assert.ok(html.includes('Stale'));
   });
 
   test('renderTrustTierDot renders dot symbols', () => {
-    const humanNote = { verified: ['user'] };
-    const machineNote = { status: 'stable' };
+    const humanNote = { verified: ['human:user'] };
+    const machineNote = { verified: ['process:compile'] };
     const unverifiedNote = { status: 'draft' };
 
     assert.ok(renderTrustTierDot(humanNote).includes('🟢'));
