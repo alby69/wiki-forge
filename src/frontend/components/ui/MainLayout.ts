@@ -192,6 +192,8 @@ export class MainLayout {
       this.sidebarToggleBtn.style.borderRadius = '0 6px 6px 0';
       this.sidebarToggleBtn.textContent = '▶';
       this.sidebarToggleBtn.title = 'Mostra barra laterale (file manager e tag cloud)';
+      // Keep the collapsed toggle (20px wide) from overlapping the editor title.
+      this.mainContentArea.style.marginLeft = '20px';
     } else {
       this.sidebarContainer.style.width = `${this.sidebarWidth}px`;
       this.sidebarContainer.style.minWidth = '200px';
@@ -201,6 +203,7 @@ export class MainLayout {
       this.sidebarToggleBtn.style.borderRadius = '0 6px 6px 0';
       this.sidebarToggleBtn.textContent = '◀';
       this.sidebarToggleBtn.title = 'Nascondi barra laterale (file manager e tag cloud)';
+      this.mainContentArea.style.marginLeft = '';
     }
   }
 
