@@ -1,5 +1,6 @@
 import { ScriptDef, ScriptParamDef } from '@backend/server/agentServer';
 import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { LogConsole } from './LogConsole';
 
 export class ToolsModal {
@@ -76,6 +77,7 @@ export class ToolsModal {
 
   public async open(): Promise<void> {
     this.overlay.style.display = 'flex';
+    setHelpContext('tools');
     await this.fetchScriptRegistry();
     this.renderCategoriesList();
     if (this.scripts.length > 0 && !this.selectedScript) {
@@ -85,6 +87,7 @@ export class ToolsModal {
 
   public close(): void {
     this.overlay.style.display = 'none';
+    clearHelpContext('tools');
   }
 
   private async fetchScriptRegistry(): Promise<void> {

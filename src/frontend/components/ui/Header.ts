@@ -10,6 +10,18 @@ const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[]
   { id: 'split', label: 'Split', title: 'Editor e Graph affiancati', icon: '◧' },
 ];
 
+export interface HeaderOptions {
+  container: HTMLElement;
+  onViewModeChange?: (mode: ViewMode) => void;
+  onToggleChat?: () => void;
+  onOpenConfig?: () => void;
+  onProjectSelect?: (projectId: string) => void;
+  onOpenTools?: () => void;
+  onOpenWizard?: () => void;
+  onOpenKEWorkbench?: () => void;
+  onOpenHelp?: () => void;
+}
+
 export class Header {
   private container: HTMLElement;
   private onViewModeChangeCb?: (mode: ViewMode) => void;
@@ -19,30 +31,23 @@ export class Header {
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenWizardCb?: () => void;
   private onOpenKEWorkbenchCb?: () => void;
+  private onOpenHelpCb?: () => void;
   private simpleDashboard?: SimpleModeDashboard;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
   private activeNote: WikiNote | null = null;
   private unsubscribeStore?: () => void;
 
-  constructor(
-    container: HTMLElement,
-    onViewModeChange?: (mode: ViewMode) => void,
-    onToggleChat?: () => void,
-    onOpenConfig?: () => void,
-    onProjectSelect?: (projectId: string) => void,
-    onOpenTools?: () => void,
-    onOpenWizard?: () => void,
-    onOpenKEWorkbench?: () => void
-  ) {
-    this.container = container;
-    this.onViewModeChangeCb = onViewModeChange;
-    this.onToggleChatCb = onToggleChat;
-    this.onOpenConfigCb = onOpenConfig;
-    this.onProjectSelectCb = onProjectSelect;
-    this.onOpenToolsCb = onOpenTools;
-    this.onOpenWizardCb = onOpenWizard;
-    this.onOpenKEWorkbenchCb = onOpenKEWorkbench;
+  constructor(options: HeaderOptions) {
+    this.container = options.container;
+    this.onViewModeChangeCb = options.onViewModeChange;
+    this.onToggleChatCb = options.onToggleChat;
+    this.onOpenConfigCb = options.onOpenConfig;
+    this.onProjectSelectCb = options.onProjectSelect;
+    this.onOpenToolsCb = options.onOpenTools;
+    this.onOpenWizardCb = options.onOpenWizard;
+    this.onOpenKEWorkbenchCb = options.onOpenKEWorkbench;
+    this.onOpenHelpCb = options.onOpenHelp;
 
     this.unsubscribeStore = appStore.subscribe(() => {
       this.render();
@@ -151,6 +156,8 @@ export class Header {
                  <div id="simple-mode-pills-slot" style="display: flex; align-items: center; gap: 6px;"></div>`
           }
 
+          <button id="header-help-btn" title="Guida Wiki-Forge (F1)" style="background: #1e293b; color: #94a3b8; border: 1px solid #334155; width: 26px; height: 26px; border-radius: 50%; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">?</button>
+
           <button id="chat-toggle-header-btn" style="background: #4338ca; color: #ffffff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">💬 Agent Chat</button>
         </div>
       </header>
@@ -161,6 +168,7 @@ export class Header {
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
     const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
+    const helpBtn = this.container.querySelector('#header-help-btn');
     const modeToggleBtn = this.container.querySelector('#mode-toggle-btn');
     const pillsSlot = this.container.querySelector('#simple-mode-pills-slot') as HTMLElement | null;
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement;
@@ -175,6 +183,7 @@ export class Header {
     if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());
     if (chatBtn) chatBtn.addEventListener('click', () => this.onToggleChatCb?.());
+    if (helpBtn) helpBtn.addEventListener('click', () => this.onOpenHelpCb?.());
 
     if (modeToggleBtn) {
       modeToggleBtn.addEventListener('click', () => {

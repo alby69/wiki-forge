@@ -1,4 +1,5 @@
 import { ApiStorage } from '@frontend/storage/ApiStorage';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 
 export interface MarkdownImportModalOptions {
   storage: ApiStorage;
@@ -28,6 +29,7 @@ export class MarkdownImportModal {
   }
 
   public async open(): Promise<void> {
+    setHelpContext('import-md');
     if (this.overlay) {
       this.overlay.style.display = 'flex';
       return;
@@ -38,6 +40,7 @@ export class MarkdownImportModal {
 
   public close(): void {
     if (this.overlay) this.overlay.style.display = 'none';
+    clearHelpContext('import-md');
   }
 
   private async loadFolders(): Promise<void> {

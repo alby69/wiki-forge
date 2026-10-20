@@ -1,5 +1,6 @@
 import { WikiNote } from '@frontend/core/types/wiki';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 
 export interface NoteVersion {
   version: number;
@@ -31,11 +32,13 @@ export class VersionTimeline {
   public open(note: WikiNote): void {
     this.activeNote = note;
     this.container.style.display = 'flex';
+    setHelpContext('versioni');
     this.loadVersionHistory(note);
   }
 
   public close(): void {
     this.container.style.display = 'none';
+    clearHelpContext('versioni');
   }
 
   private loadVersionHistory(note: WikiNote): void {

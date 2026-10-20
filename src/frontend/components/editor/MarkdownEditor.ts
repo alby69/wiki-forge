@@ -18,6 +18,7 @@ export class MarkdownEditor {
   private onOpenLinkCb?: (target: string) => void;
   private getNotesCb?: () => WikiNote[];
   private onToggleContextCb?: () => void;
+  private onOpenHistoryCb?: () => void;
   private contextVisible = true;
   private editorView: EditorView | null = null;
 
@@ -26,13 +27,15 @@ export class MarkdownEditor {
     onSave?: (noteId: string, content: string) => void,
     onOpenLink?: (target: string) => void,
     getNotes?: () => WikiNote[],
-    onToggleContext?: () => void
+    onToggleContext?: () => void,
+    onOpenHistory?: () => void
   ) {
     this.container = container;
     this.onSaveCb = onSave;
     this.onOpenLinkCb = onOpenLink;
     this.getNotesCb = getNotes;
     this.onToggleContextCb = onToggleContext;
+    this.onOpenHistoryCb = onOpenHistory;
     this.render();
   }
 
@@ -117,6 +120,7 @@ export class MarkdownEditor {
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
+            <button id="editor-history-btn" title="Cronologia delle versioni della nota" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🕐 Cronologia</button>
             ${
               isPreview
                 ? `<button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save</button>
@@ -191,6 +195,11 @@ export class MarkdownEditor {
     const contextToggle = this.container.querySelector('#editor-context-toggle');
     contextToggle?.addEventListener('click', () => {
       this.onToggleContextCb?.();
+    });
+
+    const historyBtn = this.container.querySelector('#editor-history-btn');
+    historyBtn?.addEventListener('click', () => {
+      this.onOpenHistoryCb?.();
     });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');

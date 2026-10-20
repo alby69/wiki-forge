@@ -29,6 +29,21 @@ export interface ScratchpadEntry {
   text: string;
 }
 
+export interface HelpTopicMeta {
+  id: string;
+  title: string;
+  icon: string;
+  order: number;
+  group: string;
+  mode: 'focus' | 'dev' | 'both';
+  keywords: string[];
+  context: string[];
+}
+
+export interface HelpTopic extends HelpTopicMeta {
+  markdown: string;
+}
+
 /** Resolve the API origin in the browser.
  *
  *  Components must call this instead of using bare `/api/...` paths: in the
@@ -541,5 +556,37 @@ export class ApiStorage implements IStorage {
 
     const fallbackResponse = await this.sendChat(message, command, contextNoteId);
     onChunk(fallbackResponse);
+  }
+
+  public async getHelpTopics(): Promise<HelpTopicMeta[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/help`, { headers: this.getHeaders() });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; topics?: HelpTopicMeta[] };
+        if (json.success && Array.isArray(json.topics)) {
+          return json.topics;
+        }
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return [];
+  }
+
+  public async getHelpTopic(id: string): Promise<HelpTopic | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/help/${encodeURIComponent(id)}`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; topic?: HelpTopic };
+        if (json.success && json.topic) {
+          return json.topic;
+        }
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return null;
   }
 }

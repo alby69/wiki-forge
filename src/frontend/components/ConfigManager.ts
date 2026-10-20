@@ -1,4 +1,5 @@
 import { ApiStorage, ProjectInfo } from '@frontend/storage/ApiStorage';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 
 /**
  * ConfigManager
@@ -30,6 +31,7 @@ export class ConfigManager {
 
   public async open(): Promise<void> {
     this.container.style.display = 'flex';
+    setHelpContext('config');
     this.projects = await this.storage.getProjects();
     const config = await this.storage.getProjectConfig();
     this.currentConfig = config || this.getDefaultConfig();
@@ -38,6 +40,7 @@ export class ConfigManager {
 
   public close(): void {
     this.container.style.display = 'none';
+    clearHelpContext('config');
   }
 
   private getDefaultConfig(): Record<string, any> {

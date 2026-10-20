@@ -16,9 +16,16 @@ export class MainLayout {
   private graphFlex = 1;
   private isResizingSidebar = false;
   private isResizingContext = false;
+  private sidebarCollapsed = false;
+  private sidebarToggleBtn!: HTMLElement;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    try {
+      this.sidebarCollapsed = localStorage.getItem('wiki-forge:sidebar-collapsed') === 'true';
+    } catch {
+      this.sidebarCollapsed = false;
+    }
     this.render();
   }
 
@@ -31,6 +38,7 @@ export class MainLayout {
         <div style="flex: 1; display: flex; overflow: hidden; position: relative;">
           <div id="sidebar-root" style="width: ${this.sidebarWidth}px; min-width: 200px; max-width: 500px; flex-shrink: 0;"></div>
           <div id="sidebar-resizer" class="resizer" data-resizer="sidebar" style="width: 4px; cursor: col-resize; background: transparent; position: relative; z-index: 10; touch-action: none;"></div>
+          <button id="sidebar-toggle-btn" title="Nascondi barra laterale (file manager e tag cloud)" style="position: absolute; top: 14px; left: ${this.sidebarCollapsed ? 0 : this.sidebarWidth - 10}px; width: 20px; height: 28px; z-index: 20; border-radius: 0 6px 6px 0; background: #1e293b; border: 1px solid #334155; border-left: none; color: #94a3b8; cursor: pointer; font-size: 11px; line-height: 1; padding: 0; transition: color 0.15s, background 0.15s;">${this.sidebarCollapsed ? '▶' : '◀'}</button>
           <div id="main-content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #18191c; min-width: 0;">
             <div id="graph-controls-root"></div>
             <div style="flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0;">
@@ -62,6 +70,18 @@ export class MainLayout {
     this.graphControlsContainer = this.container.querySelector('#graph-controls-root')!;
     this.chatContainer = this.container.querySelector('#chat-root')!;
     this.mainContentArea = this.container.querySelector('#main-content-area')!;
+    this.sidebarToggleBtn = this.container.querySelector('#sidebar-toggle-btn')!;
+
+    this.sidebarToggleBtn.addEventListener('click', () => this.toggleSidebar());
+    this.sidebarToggleBtn.addEventListener('mouseenter', () => {
+      this.sidebarToggleBtn.style.color = '#60a5fa';
+      this.sidebarToggleBtn.style.background = '#243450';
+    });
+    this.sidebarToggleBtn.addEventListener('mouseleave', () => {
+      this.sidebarToggleBtn.style.color = '#94a3b8';
+      this.sidebarToggleBtn.style.background = '#1e293b';
+    });
+    this.applySidebarState();
 
     this.emptyContainer.innerHTML = `
       <div style="text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
@@ -98,6 +118,8 @@ export class MainLayout {
         const newWidth = Math.max(200, Math.min(500, e.clientX));
         this.sidebarWidth = newWidth;
         this.sidebarContainer.style.width = `${newWidth}px`;
+        const toggle = this.container.querySelector('#sidebar-toggle-btn') as HTMLElement;
+        if (toggle) toggle.style.left = `${newWidth - 10}px`;
       } else if (this.isResizingGraph) {
         const mainArea = this.container.querySelector('#main-content-area') as HTMLElement;
         const editorRect = this.editorContainer.getBoundingClientRect();
@@ -148,6 +170,39 @@ export class MainLayout {
   }
 
   private isResizingGraph = false;
+
+  public toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    try {
+      localStorage.setItem('wiki-forge:sidebar-collapsed', String(this.sidebarCollapsed));
+    } catch {
+      /* storage unavailable */
+    }
+    this.applySidebarState();
+  }
+
+  private applySidebarState(): void {
+    const resizer = this.container.querySelector('#sidebar-resizer') as HTMLElement;
+    if (this.sidebarCollapsed) {
+      this.sidebarContainer.style.width = '0px';
+      this.sidebarContainer.style.minWidth = '0px';
+      this.sidebarContainer.style.overflow = 'hidden';
+      if (resizer) resizer.style.display = 'none';
+      this.sidebarToggleBtn.style.left = '0px';
+      this.sidebarToggleBtn.style.borderRadius = '0 6px 6px 0';
+      this.sidebarToggleBtn.textContent = '▶';
+      this.sidebarToggleBtn.title = 'Mostra barra laterale (file manager e tag cloud)';
+    } else {
+      this.sidebarContainer.style.width = `${this.sidebarWidth}px`;
+      this.sidebarContainer.style.minWidth = '200px';
+      this.sidebarContainer.style.overflow = '';
+      if (resizer) resizer.style.display = '';
+      this.sidebarToggleBtn.style.left = `${this.sidebarWidth - 10}px`;
+      this.sidebarToggleBtn.style.borderRadius = '0 6px 6px 0';
+      this.sidebarToggleBtn.textContent = '◀';
+      this.sidebarToggleBtn.title = 'Nascondi barra laterale (file manager e tag cloud)';
+    }
+  }
 
   public setViewMode(mode: 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed'): void {
     const showEditor = mode === 'editor' || mode === 'split';

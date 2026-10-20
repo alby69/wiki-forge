@@ -1,6 +1,7 @@
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { DropZoneIngest } from './DropZoneIngest';
 import { MarkdownImportModal } from './MarkdownImportModal';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 
 export interface SimpleModeDashboardOptions {
   storage: ApiStorage;
@@ -147,6 +148,7 @@ export class SimpleModeDashboard {
   }
 
   private openUploadModal(): void {
+    setHelpContext('upload');
     if (this.dropZoneModal) {
       this.dropZoneModal.style.display = 'flex';
       return;
@@ -180,6 +182,7 @@ export class SimpleModeDashboard {
     const closeBtn = modalCard.querySelector('#dropzone-close-btn');
     closeBtn?.addEventListener('click', () => {
       if (this.dropZoneModal) this.dropZoneModal.style.display = 'none';
+      clearHelpContext('upload');
     });
 
     const root = modalCard.querySelector('#dropzone-container-root') as HTMLElement;
@@ -198,6 +201,7 @@ export class SimpleModeDashboard {
     if (this.isCompiling) return;
 
     this.isCompiling = true;
+    setHelpContext('compile');
     this.compileProgress = 15;
     this.compileStatusMsg = 'Inizio conversione...';
     this.render();
@@ -217,6 +221,7 @@ export class SimpleModeDashboard {
       this.compileProgress = 100;
       this.compileStatusMsg = 'Completato';
       this.isCompiling = false;
+      clearHelpContext('compile');
       this.render();
 
       this.onVaultUpdated();
@@ -228,6 +233,7 @@ export class SimpleModeDashboard {
       }, 4000);
     } catch (err) {
       this.isCompiling = false;
+      clearHelpContext('compile');
       this.compileStatusMsg = 'Errore';
       this.render();
     }

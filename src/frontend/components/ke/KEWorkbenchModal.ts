@@ -1,5 +1,6 @@
 import { KEUseCaseDef, KEUseCaseStep } from '@backend/server/agentServer';
 import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { LogConsole } from '../tools/LogConsole';
 
 export class KEWorkbenchModal {
@@ -79,6 +80,7 @@ export class KEWorkbenchModal {
 
   public async open(): Promise<void> {
     this.overlay.style.display = 'flex';
+    setHelpContext('ke-workbench');
     await this.fetchUseCases();
     this.renderUseCaseList();
     if (this.useCases.length > 0 && !this.selectedUseCase) {
@@ -88,6 +90,7 @@ export class KEWorkbenchModal {
 
   public close(): void {
     this.overlay.style.display = 'none';
+    clearHelpContext('ke-workbench');
   }
 
   private async fetchUseCases(): Promise<void> {

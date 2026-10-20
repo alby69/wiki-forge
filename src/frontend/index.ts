@@ -24,6 +24,7 @@ import { KEWorkbenchModal } from '@frontend/components/ke/KEWorkbenchModal';
 import { OnboardingWizard } from '@frontend/components/simple-mode/OnboardingWizard';
 import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from '@frontend/components/advanced-mode/VersionTimeline';
+import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -50,6 +51,7 @@ export class WikiForgeApp {
   private onboardingWizard!: OnboardingWizard;
   private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
+  private helpPanel!: HelpPanel;
 
   constructor(rootContainer: HTMLElement) {
     this.layout = new MainLayout(rootContainer);
@@ -164,29 +166,32 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
-    this.header = new Header(
-      this.layout.headerContainer,
-      mode => this.handleViewModeToggle(mode),
-      () => {
+    this.header = new Header({
+      container: this.layout.headerContainer,
+      onViewModeChange: mode => this.handleViewModeToggle(mode),
+      onToggleChat: () => {
         this.chatDrawer.toggle();
       },
-      () => {
+      onOpenConfig: () => {
         void this.configManager.open();
       },
-      projectId => {
+      onProjectSelect: projectId => {
         this.storage.setActiveProjectId(projectId);
         void this.loadVault();
       },
-      () => {
+      onOpenTools: () => {
         void this.toolsModal.open();
       },
-      () => {
+      onOpenWizard: () => {
         this.onboardingWizard.open();
       },
-      () => {
+      onOpenKEWorkbench: () => {
         void this.keWorkbenchModal.open();
-      }
-    );
+      },
+      onOpenHelp: () => {
+        void this.helpPanel.open();
+      },
+    });
 
     this.sidebar = new Sidebar(
       this.layout.sidebarContainer,
@@ -240,7 +245,8 @@ Backlink to [[01-index]].
       },
       target => this.openWikilink(target),
       () => this.notes,
-      () => this.toggleContext()
+      () => this.toggleContext(),
+      () => this.openVersionTimeline()
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
@@ -280,6 +286,11 @@ Backlink to [[01-index]].
       },
       target => this.openWikilink(target)
     );
+
+    this.helpPanel = new HelpPanel({
+      storage: this.storage,
+      onAskAgent: question => this.chatDrawer.prefill(question),
+    });
 
     this.scratchpadPanel = new ScratchpadPanel(this.layout.scratchContainer, {
       getScratchpad: () => this.storage.getScratchpad(),

@@ -25,6 +25,11 @@ This is a test note linking to [[other-note]].
     'utf-8'
   );
 
+  // In-app guide topics are served from <rootDir>/docs/help (see GET /api/help).
+  await fs.cp(path.join(process.cwd(), 'docs', 'help'), path.join(tmpDir, 'docs', 'help'), {
+    recursive: true,
+  });
+
   // Deterministic mock so /consult does not spawn the real opencode CLI.
   const mockClient: LlmClient = {
     complete: async () => '### 🔍 Consult Synthesis (Mock)\n\nBased on [[sample-note]].',
@@ -201,6 +206,50 @@ Body of the target note.
     await fs.rm(path.join(tmpDir, 'notes', 'quick-notes.md'), { force: true });
     const entries = await apiStorage.getScratchpad();
     assert.deepEqual(entries, []);
+  });
+
+  await t.test('GET /api/help returns the in-app help topic index', async () => {
+    const topics = await apiStorage.getHelpTopics();
+    assert.ok(topics.length >= 10, `expected >= 10 topics, got ${topics.length}`);
+
+    const ids = topics.map(t => t.id);
+    assert.equal(new Set(ids).size, ids.length, 'topic ids must be unique');
+    assert.ok(ids.includes('inizio'));
+
+    const inizio = topics.find(t => t.id === 'inizio');
+    assert.ok(inizio);
+    assert.ok(inizio.title.length > 0);
+    assert.ok(inizio.icon.length > 0);
+    assert.ok(inizio.order > 0);
+    assert.ok(inizio.group.length > 0);
+    assert.ok(Array.isArray(inizio.keywords) && inizio.keywords.length > 0);
+    assert.ok(Array.isArray(inizio.context));
+  });
+
+  await t.test('GET /api/help/<id> returns content; unknown or invalid ids return 404', async () => {
+    const topic = await apiStorage.getHelpTopic('inizio');
+    assert.ok(topic);
+    assert.equal(topic.id, 'inizio');
+    assert.ok(topic.markdown.trim().length > 0);
+
+    const unknown = await apiStorage.getHelpTopic('does-not-exist');
+    assert.equal(unknown, null);
+
+    const invalid = await apiStorage.getHelpTopic('../evil');
+    assert.equal(invalid, null);
+  });
+
+  await t.test('POST /api/chat /help answers deterministically without the LLM', async () => {
+    const indexReply = await apiStorage.sendChat('/help');
+    assert.ok(indexReply.includes('Guida Wiki-Forge'));
+    assert.ok(indexReply.includes('`inizio`'));
+    assert.ok(indexReply.includes('F1'));
+
+    const topicReply = await apiStorage.sendChat('/help caricare');
+    assert.ok(topicReply.includes('caricare-documenti'));
+
+    const noMatchReply = await apiStorage.sendChat('/help xyzzy-nope');
+    assert.ok(noMatchReply.includes('Nessun argomento'));
   });
 
   await t.test('system prompt advertises the wiki-edit proposal protocol', async () => {

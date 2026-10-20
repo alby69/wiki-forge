@@ -397,6 +397,17 @@ export interface ChatRequest {
   stream?: boolean;
 }
 
+export interface HelpTopicMeta {
+  id: string;
+  title: string;
+  icon: string;
+  order: number;
+  group: string;
+  mode: 'focus' | 'dev' | 'both';
+  keywords: string[];
+  context: string[];
+}
+
 export interface SaveNoteRequest {
   id: string;
   content: string;
@@ -1106,6 +1117,32 @@ export class AgentServer {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
+      return true;
+    }
+
+    // Help System Endpoints (deterministic, content from docs/help/*.md — no LLM)
+    if (pathname === '/api/help' && req.method === 'GET') {
+      try {
+        const topics = await this.loadHelpTopics();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, topics }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname.startsWith('/api/help/') && req.method === 'GET') {
+      const topicId = decodeURIComponent(pathname.slice('/api/help/'.length));
+      const topic = await this.loadHelpTopic(topicId);
+      if (!topic) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: `Help topic not found: ${topicId}` }));
+        return true;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, topic: { ...topic.meta, markdown: topic.body } }));
       return true;
     }
 
@@ -2384,6 +2421,127 @@ export class AgentServer {
     }, projectId);
   }
 
+  private parseHelpTopicFile(raw: string, fileName: string): { meta: HelpTopicMeta; body: string } | null {
+    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    const frontmatter = match ? match[1] : '';
+    const body = match ? match[2] : raw;
+    const get = (key: string): string => {
+      const m = frontmatter.match(new RegExp(`^${key}:[ \t]*(.*)$`, 'm'));
+      return m ? m[1].trim() : '';
+    };
+    const getList = (key: string): string[] => {
+      const value = get(key);
+      if (!value) return [];
+      return value
+        .replace(/^\[/, '')
+        .replace(/\]$/, '')
+        .split(',')
+        .map(s => s.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean);
+    };
+    const id = get('id') || fileName.replace(/\.md$/, '');
+    const mode = get('mode');
+    return {
+      meta: {
+        id,
+        title: get('title') || id,
+        icon: get('icon') || '📖',
+        order: Number(get('order')) || 999,
+        group: get('group') || 'Guida',
+        mode: mode === 'focus' || mode === 'dev' ? mode : 'both',
+        keywords: getList('keywords'),
+        context: getList('context'),
+      },
+      body,
+    };
+  }
+
+  private async loadHelpTopics(): Promise<HelpTopicMeta[]> {
+    const helpDir = path.resolve(this.rootDir, 'docs', 'help');
+    let fileNames: string[];
+    try {
+      fileNames = await fs.readdir(helpDir);
+    } catch {
+      return [];
+    }
+    const topics: HelpTopicMeta[] = [];
+    for (const fileName of fileNames) {
+      if (!/^[a-z0-9-]+\.md$/.test(fileName)) continue;
+      try {
+        const raw = await fs.readFile(path.join(helpDir, fileName), 'utf-8');
+        const parsed = this.parseHelpTopicFile(raw, fileName);
+        if (parsed && parsed.meta.id === fileName.replace(/\.md$/, '')) {
+          topics.push(parsed.meta);
+        }
+      } catch {
+        // Unreadable topic file: skip.
+      }
+    }
+    topics.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+    return topics;
+  }
+
+  private async loadHelpTopic(topicId: string): Promise<{ meta: HelpTopicMeta; body: string } | null> {
+    if (!/^[a-z0-9-]+$/.test(topicId)) return null;
+    const helpDir = path.resolve(this.rootDir, 'docs', 'help');
+    try {
+      const raw = await fs.readFile(path.join(helpDir, `${topicId}.md`), 'utf-8');
+      const parsed = this.parseHelpTopicFile(raw, `${topicId}.md`);
+      if (!parsed || parsed.meta.id !== topicId) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  private async renderHelpCommand(query: string): Promise<string> {
+    const topics = await this.loadHelpTopics();
+    if (topics.length === 0) {
+      return '### ❓ Guida\n\nContenuti della guida non trovati: manca la cartella `docs/help/`.';
+    }
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      const list = topics.map(t => `- ${t.icon} \`${t.id}\` — **${t.title}**`).join('\n');
+      return (
+        '### ❓ Guida Wiki-Forge\n\n' +
+        'Apri la guida completa in-app con il pulsante **?** in alto o il tasto **F1**.\n\n' +
+        `Argomenti disponibili:\n\n${list}\n\n` +
+        '*Esempio: `/help caricare-documenti`*'
+      );
+    }
+    const qCompact = q.replace(/\s+/g, '-');
+    const exact =
+      topics.find(t => t.id === qCompact) ||
+      topics.find(t => t.title.toLowerCase() === q) ||
+      topics.find(t => t.keywords.some(k => k.toLowerCase() === q));
+    const fuzzy =
+      topics.find(t => t.id.includes(qCompact)) ||
+      topics.find(t => t.title.toLowerCase().includes(q)) ||
+      topics.find(t => t.keywords.some(k => k.toLowerCase().includes(q)));
+    const target = exact || fuzzy;
+    if (!target) {
+      const suggestions = topics
+        .filter(
+          t =>
+            t.id.includes(qCompact) ||
+            t.keywords.some(k => q.split(/\s+/).some(w => w.length > 3 && k.includes(w)))
+        )
+        .slice(0, 5);
+      const sugList = (suggestions.length ? suggestions : topics.slice(0, 5))
+        .map(t => `- \`${t.id}\` — ${t.title}`)
+        .join('\n');
+      return `### ❓ Nessun argomento per "${query}"\n\nProva uno di questi:\n\n${sugList}\n\n*Elenco completo: \`/help\`*`;
+    }
+    const topic = await this.loadHelpTopic(target.id);
+    if (!topic) {
+      return `### ❓ Guida\n\nArgomento "${target.id}" non leggibile.`;
+    }
+    return (
+      `### ${target.icon} ${target.title}\n\n${topic.body.trim()}\n\n` +
+      `---\n*Guida in-app: pulsante **?** o tasto **F1** — argomento \`${target.id}\`.*`
+    );
+  }
+
   public async processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void, projectId: string = 'default'): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
     if (rawInput.length > 50000) {
@@ -2401,7 +2559,7 @@ export class AgentServer {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
-    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'verify' || command === 'human-review' || command === 'apply' || command === 'applica') {
+    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'verify' || command === 'human-review' || command === 'apply' || command === 'applica' || command === 'help') {
       const result = await this.processChatCommand(req, projectId);
       onChunk(result);
       return result;
@@ -2623,9 +2781,13 @@ export class AgentServer {
         return '### ✅ Applica modifica\n\nNessuna proposta pendente da applicare. Chiedi prima una modifica all\'agente: se la sua risposta include un blocco `wiki-edit`, questa la applicherà (usando il pulsante **Applica modifica** o rispondendo "sì, procedi").';
       }
 
+      case 'help': {
+        return await this.renderHelpCommand(args);
+      }
+
       default: {
         if (!rawInput) {
-          return `### ðŸ¤– Agent Assistant\n\nAsk any question or use slash shortcuts:\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\`\n- \`/verify <note> [reviewer=<id>] [stable]\` â€” mark a note human-reviewed (ðŸŸ¢)\n- \`/wizard [scenario]\``;
+          return `### 🤖 Agent Assistant\n\nAsk any question or use slash shortcuts:\n- \`/help [argomento]\` — guida in-app (anche con il tasto F1)\n- \`/consult <topic>\`\n- \`/compile\`\n- \`/audit\`\n- \`/trace <topic>\`\n- \`/reindex\`\n- \`/verify <note> [reviewer=<id>] [stable]\` — mark a note human-reviewed (🟢)\n- \`/wizard [scenario]\``;
         }
 
         const systemPrompt = await this.getSystemPrompt();

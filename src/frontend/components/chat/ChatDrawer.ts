@@ -158,6 +158,17 @@ export class ChatDrawer {
     this.container.style.display = 'flex';
   }
 
+  /** Open the drawer and pre-fill the input without sending anything. */
+  public prefill(text: string): void {
+    this.open();
+    const input = this.container.querySelector('#chat-input') as HTMLTextAreaElement | null;
+    if (input) {
+      input.value = text;
+      input.focus();
+      input.setSelectionRange(text.length, text.length);
+    }
+  }
+
   public close(): void {
     this.isOpen = false;
     this.container.style.display = 'none';

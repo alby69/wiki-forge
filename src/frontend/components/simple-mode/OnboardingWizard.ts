@@ -1,5 +1,6 @@
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { appStore } from '@frontend/store/appStore';
+import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { DropZoneIngest } from './DropZoneIngest';
 
 export interface OnboardingWizardOptions {
@@ -31,11 +32,13 @@ export class OnboardingWizard {
   public open(): void {
     this.currentStep = 1;
     this.container.style.display = 'flex';
+    setHelpContext('wizard');
     this.render();
   }
 
   public close(): void {
     this.container.style.display = 'none';
+    clearHelpContext('wizard');
   }
 
   public render(): void {
