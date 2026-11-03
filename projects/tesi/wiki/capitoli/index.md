@@ -1,14 +1,15 @@
-# Capitoli — Topic Index
+# CAPITOLI Index
+
+Thematic index for **capitoli**.
 
 ## Articles
 
-* [Frontespizio e Sinossi](00-frontespizio-e-sinossi.md) — **HR Knowledge Management nell'era dell'Intelligenza Artificiale: dal Retrieval all'Engineering della Conoscenza**
-* [Capitolo 1: Introduzione](01-introduzione.md) `[draft]` — Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale
-* [Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche](02-studio-degli-attori-principali.md) — Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione con un LLM tramite chatbot è, per sua natura, un'esperienza...
-* [Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering per la Ricerca Accademica](03-progettazione-della-piattaforma.md) — La stesura di una tesi magistrale rappresenta tradizionalmente un processo lineare e spesso frammentato: raccolta di PDF, appunti sparsi su ...
-* [Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi legati all'Innovazione](04-mappatura-e-automazione-hr.md) — Per comprendere appieno la portata trasformativa delle nuove tecnologie e dei sistemi di Knowledge Management (KM) all'interno del dipartime...
-* [Capitolo 5: Considerazioni Personali — Riflessioni Critiche: dal Prompt Engineering al Knowledge Engineering](05-considerazioni-personali.md) — L'utilizzo di Wiki-Forge e NotebookLM nella stesura di questo elaborato ha costituito una validazione diretta sul campo. Sperimentare in pri...
-* [Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni — Sintesi del Percorso e Prospettive Future per le Risorse Umane](06-conclusioni.md) — La ricerca condotta in questo lavoro di tesi magistrale ha dimostrato la fattibilità e l'efficacia strategica di un modello ibrido di Knowle...
-* [Bibliografia e Fonti](07-bibliografia-e-fonti.md) `[draft]` — Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia della tesi
-* [L'Impatto dell'Intelligenza Artificiale sul Lavoro e sulle Risorse Umane: Analisi Normativa, Oneri Operativi e Dimensione Etica](AI_ACT_e_questione_etica_Note.md) — La rapida diffusione dei sistemi di intelligenza artificiale nei contesti occupazionali rappresenta una delle trasformazioni più profonde e ...
-
+- [[00-frontespizio-e-sinossi]] â€” Frontespizio e Sinossi
+- [[01-introduzione]] â€” Capitolo 1: Introduzione
+- [[02-studio-degli-attori-principali]] â€” Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici
+- [[03-progettazione-della-piattaforma]] â€” Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering
+- [[04-mappatura-e-automazione-hr]] â€” Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi
+- [[06-conclusioni]] â€” Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni
+- [[07-bibliografia-e-fonti]] â€” Bibliografia e Fonti
+- [[AI_ACT_e_questione_etica_Note]] â€” L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:
+- [[Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica]] â€” Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica

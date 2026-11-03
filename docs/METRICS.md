@@ -1,15 +1,15 @@
 ---
-generated: 2026-10-20
+generated: 2026-11-03
 ---
 
 # Wiki Metrics
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 35 |
-| Total wikilinks | 135 |
-| Broken links | 6 |
-| Orphan articles | 1 |
+| Total articles | 36 |
+| Total wikilinks | 180 |
+| Broken links | 4 |
+| Orphan articles | 0 |
 | Thematic wikis | 6 |
 | Sources ingested | 0 |
 
@@ -17,13 +17,13 @@ generated: 2026-10-20
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[03-progettazione-della-piattaforma]] | 15 |
-| [[competenze-e-hr]] | 14 |
-| [[linee-guida-tesi-hr]] | 11 |
-| [[governance-controllo-responsabilita]] | 9 |
-| [[concezioni-dell-ia]] | 8 |
-| [[sostituzione-o-trasformazione]] | 8 |
-| [[capacita-emergenti-llm]] | 7 |
-| [[andrej-karpathy]] | 6 |
-| [[nello-cristianini]] | 6 |
-| [[05-considerazioni-personali]] | 6 |
+| [[competenze-e-hr]] | 15 |
+| [[03-progettazione-della-piattaforma]] | 14 |
+| [[linee-guida-tesi-hr]] | 12 |
+| [[concezioni-dell-ia]] | 10 |
+| [[governance-controllo-responsabilita]] | 10 |
+| [[sostituzione-o-trasformazione]] | 10 |
+| [[capacita-emergenti-llm]] | 9 |
+| [[andrej-karpathy]] | 8 |
+| [[nello-cristianini]] | 8 |
+| [[index]] | 7 |

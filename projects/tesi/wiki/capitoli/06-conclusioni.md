@@ -33,4 +33,4 @@ La funzione Risorse Umane si posiziona al centro della trasformazione digitale a
 - [[capitoli/00-frontespizio-e-sinossi|Frontespizio e Sinossi]]
 - [[capitoli/01-introduzione|Capitolo 1: Introduzione]]
 - [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
-- [[capitoli/05-considerazioni-personali|Capitolo 5: Considerazioni Personali]]
+- [[capitoli/05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica|Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica]]

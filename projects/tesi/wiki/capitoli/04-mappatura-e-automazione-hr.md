@@ -157,4 +157,4 @@ In sintesi, le potenzialità di Wiki-Forge risiedono nella sua capacità di colm
 - [[evidenza-mercato-del-lavoro]]
 - [[sostituzione-o-trasformazione]]
 - [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
-- [[capitoli/05-considerazioni-personali|Capitolo 5: Considerazioni Personali]]
+- [[capitoli/05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica|Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica]]
