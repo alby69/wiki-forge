@@ -68,7 +68,7 @@ Il primo grande limite risiede nella natura **effimera** di ogni sessione di int
 - Riconnettere l'informazione generata con i concetti preesistenti nella base di conoscenza.
 - Arricchire l'infrastruttura informativa organizzativa in modo progressivo.
 
-Rileggendo questo limite alla luce del modello SECI di Nonaka & Takeuchi (approfondito nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]), il RAG tradizionale mostra un chiaro fallimento nelle fasi cruciali della spirale della conoscenza:
+Rileggendo questo limite alla luce del modello SECI di Nonaka & Takeuchi (approfondito nel [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3]]), il RAG tradizionale mostra un chiaro fallimento nelle fasi cruciali della spirale della conoscenza:
 - **Assenza di Combinazione**: Le sintesi e le soluzioni elaborate dall'LLM non vengono integrate né formalizzate in nuova conoscenza esplicita strutturata.
 - **Assenza di Internalizzazione Organizzativa**: L'apprendimento maturato dall'utente durante l'interazione rimane una conquista individuale e non si trasforma in patrimonio condiviso per l'organizzazione.
 
@@ -105,13 +105,13 @@ I limiti descritti mostrano come il RAG classico rappresenti un ottimo strumento
 | **Recupero** | Similarità semantica vettoriale "piatta" | Fallimento su confronti complessi e query multi-hop |
 | **Validazione** | Assenza di vincoli e verifiche ontologiche | Rischio di allucinazioni relazionali non rilevate |
 
-Per superare questa condizione di "ponte incompleto", si rende necessario l'avanzamento verso un'architettura **GraphRAG**, supportata da meccanismi di tracciabilità (*Trust Tiers*) e validazione ontologica (*SHACL*), in grado di preservare la rete relazionale della conoscenza e di trasformare ogni interazione in un tassello di arricchimento permanente della Knowledge Base aziendale (tematiche sviluppate nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]).
+Per superare questa condizione di "ponte incompleto", si rende necessario l'avanzamento verso un'architettura **GraphRAG**, supportata da meccanismi di tracciabilità (*Trust Tiers*) e validazione ontologica (*SHACL*), in grado di preservare la rete relazionale della conoscenza e di trasformare ogni interazione in un tassello di arricchimento permanente della Knowledge Base aziendale (tematiche sviluppate nel [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3]]).
 
 ## 1.3 Il Paradigma del Knowledge Engineering e la Democratizzazione dell'Interfaccia
 Il passaggio fondamentale consiste nel passare da un approccio passivo di retrieval a una pratica attiva di **Knowledge Engineering**. In questo modello, l'LLM non è un oracolo usa-e-getta, ma un partner di ricerca che compila e aggiorna una Knowledge Base dinamica interconnessa.
 
 Affinché questo paradigma sia concretamente applicabile nell'ambito delle Risorse Umane — dove gli operatori e i manager possiedono competenze prevalentemente organizzative e giuridico-sociali piuttosto che informatiche —, la piattaforma elimina ogni barriera d'ingresso tecnica. L'infrastruttura di Knowledge Engineering viene messa a disposizione attraverso un'interfaccia visiva (Web UI) suddivisa in due livelli:
-* **Modalità Semplice (Focus Mode 🌱)**: Progetta l'interazione attorno ad un'interfaccia semplificata basata sul flusso operativo a tre fasi dettagliato nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]], consentendo all'HR Specialist di alimentare il sistema, avviare l'estrazione dei concetti e consultare il Knowledge Graph senza dover scrivere codice o righe di comando.
+* **Modalità Semplice (Focus Mode 🌱)**: Progetta l'interazione attorno ad un'interfaccia semplificata basata sul flusso operativo a tre fasi dettagliato nel [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3]], consentendo all'HR Specialist di alimentare il sistema, avviare l'estrazione dei concetti e consultare il Knowledge Graph senza dover scrivere codice o righe di comando.
 * **Modalità Sviluppatore / Governance (Developer Mode 👑)**: Offre al Knowledge Engineer o al referente di Data Governance strumenti di audit, gestione delle tassonomie (**🏷️ Tag Manager**), validazione delle domande di competenza (**🧠 KE Workbench**) e revisione della coda di approvazione (**📥 Review Queue**).
 
 In questo modo, la complessità tecnologica del Knowledge Engineering viene totalmente "astratta" e resa usabile, permettendo al professionista HR di concentrarsi sulla qualità dei contenuti e sul valore organizzativo della conoscenza.
@@ -122,8 +122,8 @@ In questo modo, la complessità tecnologica del Knowledge Engineering viene tota
 
 ## Collegamenti Correlati
 - [[capitoli/00-frontespizio-e-sinossi|Frontespizio e Sinossi]]
-- [[capitoli/02-studio-degli-attori-principali|Capitolo 2: Studio degli Attori Principali]]
-- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/02-studio-degli-attori-principali-del-settore-ai-attori-tecnici|Capitolo 2: Studio degli Attori Principali]]
+- [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
 - [[sostituzione-o-trasformazione]]
 - [[concezioni-dell-ia]]
 - [[competenze-e-hr]]

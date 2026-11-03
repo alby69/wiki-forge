@@ -1,7 +1,6 @@
 ---
 type: Concept
-title: 'Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi
-  legati all''Innovazione'
+title: 'Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi'
 description: Per comprendere appieno la portata trasformativa delle nuove tecnologie
   e dei sistemi di Knowledge Management (KM) all'interno del dipartime...
 status: stable
@@ -156,5 +155,5 @@ In sintesi, le potenzialità di Wiki-Forge risiedono nella sua capacità di colm
 - [[sintesi-previsioni-lavoro-hr]]
 - [[evidenza-mercato-del-lavoro]]
 - [[sostituzione-o-trasformazione]]
-- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
 - [[capitoli/05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica|Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica]]

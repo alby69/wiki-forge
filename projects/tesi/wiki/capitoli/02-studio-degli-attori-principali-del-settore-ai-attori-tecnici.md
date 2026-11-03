@@ -1,7 +1,6 @@
 ---
 type: Concept
-title: 'Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici
-  e Prospettive Critiche'
+title: 'Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici'
 description: Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione
   con un LLM tramite chatbot è, per sua natura, un'esperienza...
 status: stable
@@ -18,7 +17,7 @@ Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione
 
 Karpathy parte da un'osservazione tanto semplice quanto radicale: se l'LLM è destinato a diventare il nuovo *sistema operativo* con cui le persone e le organizzazioni gestiscono la conoscenza, allora non può rimanere confinato dentro una finestra di chat stazionaria. Il modello del "chatbot usa-e-getta" — per cui si pone una domanda, si riceve una risposta plausibile e poi si chiude tutto — è, in questa prospettiva, una fase transitoria, paragonabile ai primi anni del personal computer in cui si digitavano comandi senza ancora immaginare file, cartelle e documenti persistenti. L'alternativa che Karpathy teorizza è un vero e proprio salto di paradigma: l'agente LLM non fornisce solo delle risposte, ma **mantiene e fa evolvere nel tempo una wiki persistente in Markdown**, cioè un archivio vivo di note strutturate, interlinkate e leggibili dall'uomo, che cresce a ogni interazione anziché azzerarsi. La conoscenza smette di essere un prodotto effimero per diventare un bene permanente e accumulabile: ogni nuova fonte, ogni nuova domanda e ogni nuova sintesi arricchiscono un patrimonio che resta consultabile, revisionabile e condiviso.
 
-In questo lavoro di tesi, tale principio viene tradotto in pratica attraverso la **Web UI di Wiki-Forge** descritta nel [[capitoli/03-progettazione-della-piattaforma|Capitolo 3]]. Il punto cruciale è che la visione di Karpathy non resta un esercizio teorico riservato a ingegneri e sviluppatori: l'operatore HR — tipicamente non tecnico, abituato a interfacce visive e non a righe di comando — guida l'agente in prima persona attraverso pulsanti e finestre (📥 Carica, ⚡ Compila, 💬 Chiedi), trasformando materiale di ricerca grezzo e frammentario in un capitale di conoscenza strutturato, navigabile e durevole. È così che l'AI smette di essere un interlocutore temporaneo per diventare l'infrastruttura cognitiva su cui l'organizzazione costruisce, giorno dopo giorno, la propria memoria collettiva.
+In questo lavoro di tesi, tale principio viene tradotto in pratica attraverso la **Web UI di Wiki-Forge** descritta nel [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3]]. Il punto cruciale è che la visione di Karpathy non resta un esercizio teorico riservato a ingegneri e sviluppatori: l'operatore HR — tipicamente non tecnico, abituato a interfacce visive e non a righe di comando — guida l'agente in prima persona attraverso pulsanti e finestre (📥 Carica, ⚡ Compila, 💬 Chiedi), trasformando materiale di ricerca grezzo e frammentario in un capitale di conoscenza strutturato, navigabile e durevole. È così che l'AI smette di essere un interlocutore temporaneo per diventare l'infrastruttura cognitiva su cui l'organizzazione costruisce, giorno dopo giorno, la propria memoria collettiva.
 
 L'evoluzione recente dell'Intelligenza Artificiale, trainata dai principali laboratori di frontiera come OpenAI e Anthropic (sotto la guida di figure come Dario Amodei), ha determinato un significativo cambio di paradigma. La ricerca si è progressivamente allontanata dalla mera ossessione per lo scaling (l'incremento indiscriminato dei parametri dei singoli modelli) per concentrarsi sull'orchestrazione dell'intelligenza. Il passaggio dai Large Language Model (LLM) isolati alle architetture multi-agente e ai workflow autonomi rappresenta il tentativo di replicare la complessità e la specializzazione dei team umani: invece di affidare un compito a un'unica "mente" artificiale, si crea un ecosistema in cui più agenti, dotati di ruoli e obiettivi specifici, interagiscono, si confrontano e si verificano a vicenda. Meccanismi come il multi-agent debate o il ragionamento sequenziale introducono una forma di "revisione tra pari" automatica, riducendo le allucinazioni e migliorando la qualità del ragionamento logico su task ad alta complessità.
 
@@ -56,4 +55,4 @@ La mappatura delle posizioni esaminate nel presente capitolo restituisce un quad
 - [[autori/nello-cristianini|Nello Cristianini]]
 - [[bullshit-jobs-e-routine-igienica]]
 - [[capacita-emergenti-llm]]
-- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]

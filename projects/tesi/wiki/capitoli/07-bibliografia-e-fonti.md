@@ -56,5 +56,5 @@ stato: draft
 - [[autori/nello-cristianini|Nello Cristianini]]
 - [[autori/david-graeber|David Graeber]]
 - [[autori/andrej-karpathy|Andrej Karpathy]]
-- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
-- [[capitoli/06-conclusioni|Capitolo 6: Conclusioni]]
+- [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/06-considerazioni-personali-riflessioni-critiche-e-conclusioni|Capitolo 6: Conclusioni]]

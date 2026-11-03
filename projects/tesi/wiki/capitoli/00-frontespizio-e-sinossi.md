@@ -32,6 +32,6 @@ Inquadrato nel modello di creazione della conoscenza di Nonaka & Takeuchi (**SEC
 
 ## Collegamenti Correlati
 - [[capitoli/01-introduzione|Capitolo 1: Introduzione]]
-- [[capitoli/03-progettazione-della-piattaforma|Capitolo 3: Progettazione della Piattaforma]]
+- [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
 - [[capitoli/05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica|Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica]]
 - [[linee-guida-tesi-hr]]

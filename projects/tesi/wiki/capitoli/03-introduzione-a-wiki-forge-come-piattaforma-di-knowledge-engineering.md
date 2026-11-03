@@ -1,7 +1,6 @@
 ---
 type: Concept
-title: 'Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering
-  per la Ricerca Accademica'
+title: 'Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering'
 description: 'La stesura di una tesi magistrale rappresenta tradizionalmente un processo
   lineare e spesso frammentato: raccolta di PDF, appunti sparsi su ...'
 status: stable
