@@ -9,6 +9,7 @@ import { GraphService } from '@frontend/services/graphService';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { appStore } from '@frontend/store/appStore';
 import type { ViewMode } from '@frontend/store/appStore';
+import { isSingleView, nextViewMode, SingleViewMode } from '@frontend/core/utils/viewMode';
 import { MainLayout } from '@frontend/components/ui/MainLayout';
 import { Header } from '@frontend/components/ui/Header';
 import { Sidebar } from '@frontend/components/ui/Sidebar';
@@ -35,6 +36,8 @@ export class WikiForgeApp {
   private filterTags: string[] = [];
   private excludedFolders: string[] = [];
   private contextVisible = true;
+  /** Last single pane shown, restored when Split is clicked again. */
+  private lastSingleView: SingleViewMode = 'editor';
 
   private layout!: MainLayout;
   private header!: Header;
@@ -294,8 +297,8 @@ Backlink to [[01-index]].
     this.graphViewer = new ForceGraphViewer();
     this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });
     this.graphViewer.onNodeClick(nodeId => {
+      // selectNote() reveals the editor without forcing a split view.
       this.selectNote(nodeId);
-      appStore.setViewMode('split');
     });
 
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
@@ -388,25 +391,26 @@ Backlink to [[01-index]].
       this.contextPanel.setSelectedNote(found);
       this.graphViewer.highlightNode(found.id);
 
-      // In Graph-only mode the editor is hidden, so selecting a note
-      // would look like a no-op: reveal it by falling back to Split.
+      // In Graph-only mode the editor is hidden, so selecting a note would look
+      // like a no-op: reveal it by switching to the full-width editor. Split is
+      // only entered when the user explicitly clicks the Split toggle.
       const mode = appStore.getState().viewMode;
       if (mode === 'graph') {
-        appStore.setViewMode('split');
+        this.lastSingleView = 'editor';
+        appStore.setViewMode('editor');
       } else if (mode === 'scratchpad' || mode === 'closed') {
         appStore.setViewMode('editor');
       }
     }
   }
 
-  /** Editor / Scratchpad / Graph / Split act as toggles: re-clicking the active
-   *  pane closes it ('closed'), Split shows both at half width. */
+  /** Editor / Scratchpad / Graph / Split act as toggles. Split is explicit:
+   *  re-clicking it restores the last single pane full width (instead of
+   *  leaving the central area empty). */
   private handleViewModeToggle(mode: ViewMode): void {
-    if (appStore.getState().viewMode === mode) {
-      appStore.setViewMode('closed');
-    } else {
-      appStore.setViewMode(mode);
-    }
+    const current = appStore.getState().viewMode;
+    if (isSingleView(mode)) this.lastSingleView = mode;
+    appStore.setViewMode(nextViewMode(current, mode, this.lastSingleView));
   }
 
   private toggleContext(): void {

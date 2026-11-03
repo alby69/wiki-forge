@@ -20,11 +20,11 @@ In alto a destra trovi il selettore a 4 bottoni:
 | **🕸️ Graph** | Solo il Knowledge Graph: tutti i collegamenti tra le note |
 | **◧ Split** | Editor e Graph affiancati — la vista migliore per navigare mentre scrivi |
 
-Cliccando due volte su un bottone si chiude la vista (compare la schermata *Vista chiusa*).
+Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermata *Vista chiusa*). **Split** fa eccezione: al secondo click torna all'ultima vista singola (Editor, Scratchpad o Graph) a tutto spazio. Dalla vista Split, un click su Editor, Scratchpad o Graph mostra subito quel pannello a larghezza intera.
 
 ## Il Knowledge Graph
 
-- **Click su un nodo** → la nota si apre e la vista passa a *Split*.
+- **Click su un nodo** → la nota si apre nella vista **Editor** (se eri in Graph) oppure resta nella vista corrente; lo Split si attiva solo dal pulsante **◧ Split**.
 - I **controlli in alto** (sopra il grafo) permettono di:
   - **filtrare per cartella** e per **tag** (note mostrate/nascoste);
   - **ingrandire/rimpicciolire** (🔍 +/−) e **riportare a schermo intero** (⌖).

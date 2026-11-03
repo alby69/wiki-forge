@@ -31,7 +31,9 @@ class AppStore {
     let onboardingCompleted = false;
     let activeProjectId = 'default';
     let theme: 'dark' | 'light' = 'dark';
-    let viewMode: ViewMode = 'split';
+    // Open on the editor: the editor/graph split is an explicit user choice
+    // (Split toggle) rather than the default layout.
+    let viewMode: ViewMode = 'editor';
 
     if (typeof localStorage !== 'undefined') {
       try {

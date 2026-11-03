@@ -7,7 +7,7 @@ const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[]
   { id: 'editor', label: 'Editor', title: 'Solo Editor (riclicca per chiudere)', icon: '📝' },
   { id: 'scratchpad', label: 'Scratchpad', title: 'Note veloci nello spazio editor (riclicca per chiudere)', icon: '📒' },
   { id: 'graph', label: 'Graph', title: 'Solo Knowledge Graph (riclicca per chiudere)', icon: '🕸️' },
-  { id: 'split', label: 'Split', title: 'Editor e Graph affiancati', icon: '◧' },
+  { id: 'split', label: 'Split', title: 'Editor e Graph affiancati (riclicca per tornare alla vista singola)', icon: '◧' },
 ];
 
 export interface HeaderOptions {
@@ -128,8 +128,7 @@ export class Header {
           <div class="seg-control" role="tablist" aria-label="Vista">
             ${VIEW_MODES.map(
               m => {
-                const isActive =
-                  m.id === viewMode || (m.id !== 'split' && viewMode === 'split');
+                const isActive = m.id === viewMode;
                 return `<button
                 id="view-mode-${m.id}"
                 class="seg-btn ${isActive ? 'active' : ''}"
