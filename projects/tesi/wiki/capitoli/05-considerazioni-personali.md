@@ -1,32 +1,15 @@
 ---
 type: Concept
-title: 'Capitolo 5: Considerazioni Personali'
-description: 'Riflessioni critiche: dal Prompt Engineering al Knowledge Engineering,
-  data governance ed etica dello human-in-the-loop gestiti via Web UI'
-status: draft
-tags:
-- thesis/chapter
-- topic/ethics
-- topic/hr-manager
-- status/draft
-- topic/hr
-- topic/ai
+title: 'Capitolo 5: Considerazioni Personali — Riflessioni Critiche: dal Prompt Engineering
+  al Knowledge Engineering'
+description: L'utilizzo di Wiki-Forge e NotebookLM nella stesura di questo elaborato
+  ha costituito una validazione diretta sul campo. Sperimentare in pri...
+status: stable
 generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-- by: human:autore
-  at: '2026-10-12T00:00:00Z'
-sources:
-- id: thesis-design-doc
-  resource: raw/thesis-design-doc.md
-  title: Documento di Progettazione della Tesi Magistrale
-  author: process:conv2md
-  last_modified: '2026-10-20T06:04:34Z'
-maturita: 90
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
+  by: process:migrate-script
+  at: '2026-11-03T09:12:06Z'
+verified: []
+sources: []
 ---
 # Capitolo 5: Considerazioni Personali — Riflessioni Critiche: dal Prompt Engineering al Knowledge Engineering
 
@@ -80,6 +63,15 @@ In sintesi, il valore aggiunto dell'HR Manager come KCO non risiede nell'esecuzi
 
 ## 5.3 L'Insostituibilità del Giudizio Umano
 La transizione dal livello `machine-confirmed` al livello `human-reviewed` nei Trust Tiers (effettuata con il comando `/verify` o approvando le note nella Review Queue) esprime una precisa scelta etica e metodologica: la responsabilità finale delle decisioni relative alle persone deve rimanere saldamente presidiata dalla valutazione umana (*human-in-the-loop*).
+
+## 5.4 Governance, Controllo e Responsabilità: dal Vincolo Ontologico alla Conformità Normativa
+L'esperienza operativa descritta in §5.1 dimostra che nessuna architettura di Knowledge Engineering, per quanto sofisticata, è autosufficiente: i vincoli SHACL e i Trust Tiers sono presidi tecnici che acquistano senso solo se inseriti in un quadro di governance più ampio. È qui che il tema [governance-controllo-responsabilita](governance-controllo-responsabilita.md) incontra il ruolo del KCO. L'**EU AI Act (Regolamento UE 2024/1689)**, in vigore dal 1° agosto 2024 e integrato dagli sviluppi successivi (incluso l'AI Omnibus del 2026), adotta un approccio basato sul rischio e fissa i confini entro cui la curatela della conoscenza può dirsi legittima.
+
+La piramide del rischio articola quattro livelli. Le pratiche vietate — operative da febbraio 2025 e sanzionabili fino a 35 milioni di euro o al 7% del fatturato globale annuo — includono il riconoscimento delle emozioni sui luoghi di lavoro, la categorizzazione biometrica sensibile e il social scoring dei dipendenti. I sistemi ad Alto Rischio (Allegato III, applicabilità 2026-2027) assorbono la quasi totalità dei tool HR: screening dei CV, ranking automatizzato dei candidati, valutazione delle performance, decisioni su promozioni, incentivi o licenziamenti, algoritmi di assegnazione dei compiti.
+
+Su questo piano la piattaforma non è neutra. Il KCO assume le cinque categorie di obblighi dei *deployer*: supervisione umana effettiva con capacità di override; data governance e audit periodici dei bias; trasparenza e informativa preventiva verso lavoratori, candidati e rappresentanze; tracciabilità dei log per almeno sei mesi con redazione della FRIA; coinvolgimento dei comitati aziendali e co-determinazione (BetrVG §§87 e 90; art. 4 Statuto dei Lavoratori). I Trust Tiers e la Review Queue traducono questi obblighi in pratica quotidiana: il passaggio da `machine-confirmed` a `human-reviewed` non è un gesto formale, ma l'evidenza documentale che il controllo umano è effettivo e non soltanto dichiarato.
+
+Resta aperta la tensione, già emersa nel corpus, tra chi legge compliance e audit come un freno alla sperimentazione — in particolare la letteratura manageriale vicina a [stefano-gatti](stefano-gatti.md) — e chi, come i garantisti del corpus, li considera condizioni di legittimità del lavoro algoritmico. La posizione che questa tesi assume è intermedia ma non ambigua: la governance non è un costo accessorio da minimizzare, bensì il modo in cui l'organizzazione dimostra che l'AI al lavoro serve le persone e non le governa. Il confronto UE–USA–Cina ([geopolitica-ia-poli-us-eu-cn](geopolitica-ia-poli-us-eu-cn.md)) sposta il problema sul piano della competitività, ma non ne cancella il fondamento etico.
 
 ## Collegamenti Correlati
 - [[governance-controllo-responsabilita]]

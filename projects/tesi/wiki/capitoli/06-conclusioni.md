@@ -1,32 +1,17 @@
 ---
 type: Concept
-title: 'Capitolo 6: Conclusioni'
-description: Sintesi del percorso, prospettive future per le Risorse Umane e direzioni
-  di ricerca
-status: draft
-tags:
-- thesis/chapter
-- topic/conclusions
-- status/draft
-- topic/hr
+title: 'Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni
+  — Sintesi del Percorso e Prospettive Future per le Risorse Umane'
+description: La ricerca condotta in questo lavoro di tesi magistrale ha dimostrato
+  la fattibilità e l'efficacia strategica di un modello ibrido di Knowle...
+status: stable
 generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-- by: human:autore
-  at: '2026-10-12T00:00:00Z'
-sources:
-- id: thesis-design-doc
-  resource: raw/thesis-design-doc.md
-  title: Documento di Progettazione della Tesi Magistrale
-  author: process:conv2md
-  last_modified: '2026-10-20T06:04:34Z'
-maturita: 90
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
+  by: process:migrate-script
+  at: '2026-11-03T09:12:06Z'
+verified: []
+sources: []
 ---
-# Capitolo 6: Conclusioni — Sintesi del Percorso e Prospettive Future per le Risorse Umane
+# Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni — Sintesi del Percorso e Prospettive Future per le Risorse Umane
 
 ## 6.1 Sintesi dei Risultati
 La ricerca condotta in questo lavoro di tesi magistrale ha dimostrato la fattibilità e l'efficacia strategica di un modello ibrido di Knowledge Management basato sull'integrazione tra Google NotebookLM (fase di *Discovery*) e Wiki-Forge (fase di *Consolidation*).

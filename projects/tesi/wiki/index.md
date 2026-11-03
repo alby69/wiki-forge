@@ -6,10 +6,10 @@ okf_version: "0.2"
 
 ## Topics
 
+* [Q&A](Q&A/index.md) (2 articles)
 * [Analisi](analisi/index.md) (3 articles)
 * [Autori](autori/index.md) (6 articles)
-* [Capitoli](capitoli/index.md) (8 articles)
-* [Q&A](Q&A/index.md) (2 articles)
+* [Capitoli](capitoli/index.md) (9 articles)
 * [Strumenti](strumenti/index.md) (2 articles)
 * [Temi](temi/index.md) (6 articles)
 
