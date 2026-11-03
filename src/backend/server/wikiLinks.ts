@@ -115,11 +115,14 @@ export function setDocumentTitle(content: string, title: string): string {
 
   if (!frontmatter) {
     const body = normalized.replace(/^\uFEFF/, '').replace(/^\n+/, '');
-    return `---\ntitle: ${quoted}\n---\n\n${body}`;
+    // OKF lint requires a non-empty `type`: default to the same Concept type
+    // used by generated notes when the document had no frontmatter at all.
+    return `---\ntype: Concept\ntitle: ${quoted}\n---\n\n${body}`;
   }
 
   const lines = frontmatter[1].split('\n');
   const titleIndex = lines.findIndex(line => /^title\s*:/.test(line));
+  const hasType = lines.some(line => /^type\s*:/.test(line));
 
   if (titleIndex >= 0) {
     // Replace the whole scalar, including continuation lines produced by YAML
@@ -132,6 +135,10 @@ export function setDocumentTitle(content: string, title: string): string {
   } else {
     lines.unshift(`title: ${quoted}`);
   }
+
+  // Keep the document valid for the OKF linter even when only the title is
+  // being changed and the original frontmatter omitted `type`.
+  if (!hasType) lines.unshift('type: Concept');
 
   const hasTrailingNewline = frontmatter[0].endsWith('\n');
   const body = normalized.slice(frontmatter[0].length);

@@ -43,7 +43,12 @@ Body
 
   test('setDocumentTitle adds frontmatter when missing', () => {
     const updated = setDocumentTitle('# Titolo\n\nTesto\n', 'Nuovo Titolo');
-    assert.strictEqual(updated, "---\ntitle: 'Nuovo Titolo'\n---\n\n# Titolo\n\nTesto\n");
+    assert.strictEqual(updated, "---\ntype: Concept\ntitle: 'Nuovo Titolo'\n---\n\n# Titolo\n\nTesto\n");
+  });
+
+  test('setDocumentTitle keeps OKF frontmatter valid when type is missing', () => {
+    const updated = setDocumentTitle('---\ntitle: Vecchio\n---\nBody\n', 'Nuovo');
+    assert.ok(updated.startsWith("---\ntype: Concept\ntitle: 'Nuovo'\n---"));
   });
 
   test('setDocumentTitle replaces a wrapped multiline title', () => {

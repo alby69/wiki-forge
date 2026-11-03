@@ -1,5 +1,7 @@
 ---
+type: Concept
 title: 'Capitolo 5: Il Quadro Normativo Europeo: L''EU AI Act e la Tutela del Lavoratore nell''Era Algoritmica'
+status: stable
 ---
 
 ## Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
