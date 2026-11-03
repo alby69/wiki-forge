@@ -1,4 +1,4 @@
-import { WikiNote } from '@frontend/core/types/wiki';
+import { RenameResult, WikiNote } from '@frontend/core/types/wiki';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
@@ -366,6 +366,39 @@ export class ApiStorage implements IStorage {
       // Fallback
     }
     return this.fallback.renameItem(oldPath, newName);
+  }
+
+  /** Rename a document by title: slugified filename + title update + wikilink repair. */
+  public async renameDocument(oldPath: string, newTitle: string): Promise<RenameResult | null> {
+    return this.requestRename(oldPath, newTitle, false);
+  }
+
+  /** Preview how many links a rename would rewrite, without changing the disk. */
+  public async previewRename(oldPath: string, newTitle: string): Promise<RenameResult | null> {
+    return this.requestRename(oldPath, newTitle, true);
+  }
+
+  private async requestRename(oldPath: string, newTitle: string, dryRun: boolean): Promise<RenameResult | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/wiki/rename`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ oldPath, newTitle, dryRun }),
+      });
+      const json = (await res.json()) as RenameResult;
+      if (res.ok) return json;
+
+      return {
+        success: false,
+        dryRun,
+        renamed: { from: oldPath, to: oldPath, oldTitle: '', newTitle, id: '' },
+        updatedFiles: [],
+        totalReplacements: 0,
+        error: json.error ?? `HTTP ${res.status}`,
+      };
+    } catch (_err) {
+      return null;
+    }
   }
 
   public async moveItem(sourcePath: string, targetFolder: string): Promise<boolean> {

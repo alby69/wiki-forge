@@ -216,6 +216,44 @@ Backlink to [[01-index]].
           await this.storage.renameItem(oldPath, newName);
           await this.loadVault();
         },
+        onRenameDocument: async (oldPath, newTitle) => {
+          const preview = await this.storage.previewRename(oldPath, newTitle);
+          if (!preview) {
+            alert('Rinomina non disponibile: il backend API non risponde.');
+            return;
+          }
+          if (!preview.success) {
+            alert(`Impossibile rinominare:\n${preview.error ?? 'errore sconosciuto'}`);
+            return;
+          }
+
+          const fileCount = preview.updatedFiles.length;
+          const samples = preview.updatedFiles
+            .flatMap(update => update.samples)
+            .slice(0, 8)
+            .join('\n');
+          const proceed = confirm(
+            `Rinomina documento\n\n` +
+              `Titolo: ${preview.renamed.oldTitle} → ${preview.renamed.newTitle}\n` +
+              `File: ${preview.renamed.from} → ${preview.renamed.to}\n\n` +
+              `${preview.totalReplacements} collegamento(i) in ${fileCount} file verranno aggiornati.` +
+              (samples ? `\n\n${samples}` : '') +
+              `\n\nProcedere?`
+          );
+          if (!proceed) return;
+
+          const result = await this.storage.renameDocument(oldPath, newTitle);
+          if (!result || !result.success) {
+            alert(`Rinomina fallita:\n${result?.error ?? 'errore sconosciuto'}`);
+            return;
+          }
+
+          await this.loadVault();
+          this.selectNote(result.renamed.id);
+          this.editor.showSaveStatus(
+            `Rinominato in "${result.renamed.newTitle}" · ${result.totalReplacements} link aggiornati`
+          );
+        },
         onMove: async (sourcePath, targetFolder) => {
           await this.storage.moveItem(sourcePath, targetFolder);
           await this.loadVault();

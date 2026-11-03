@@ -1,4 +1,4 @@
-import { WikiNote } from '@frontend/core/types/wiki';
+import { RenameResult, WikiNote } from '@frontend/core/types/wiki';
 
 /** Result of a one-shot Markdown import (stage in `raw/` + compile). */
 export interface IngestResult {
@@ -53,6 +53,15 @@ export interface IStorage {
    * Renames a file or folder
    */
   renameItem?(oldPath: string, newName: string): Promise<boolean>;
+
+  /**
+   * Renames a document by its human-readable title, updating the frontmatter
+   * title and every `[[wikilink]]` that resolved to the old filename.
+   */
+  renameDocument?(oldPath: string, newTitle: string): Promise<RenameResult | null>;
+
+  /** Dry-run variant of `renameDocument` (no filesystem changes). */
+  previewRename?(oldPath: string, newTitle: string): Promise<RenameResult | null>;
 
   /**
    * Moves a file or folder to a target directory

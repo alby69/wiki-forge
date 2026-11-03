@@ -26,6 +26,7 @@ export interface FileActionCallbacks {
   onCreateFolder?: (parentFolder: string, name: string) => Promise<void>;
   onCreateFile?: (parentFolder: string, fileName: string) => Promise<void>;
   onRename?: (path: string, newName: string) => Promise<void>;
+  onRenameDocument?: (path: string, newTitle: string) => Promise<void>;
   onMove?: (sourcePath: string, targetFolder: string) => Promise<void>;
   onDelete?: (path: string) => Promise<void>;
   onUpload?: (folderPath: string, files: FileList) => Promise<void>;
@@ -323,6 +324,7 @@ export class Sidebar {
       const trustDot = node.note ? renderTrustTierDot(node.note) : '';
       html += `
         <div class="tree-file${active ? ' tree-file-active' : ''}${selected ? ' tree-item-selected' : ''}" data-note-id="${escapeHtml(node.note!.id)}" data-path="${escapeHtml(node.path)}" draggable="true"
+             title="${escapeHtml(node.path)}"
              style="padding: 4px 8px 4px ${pad + 14}px; font-size: 13px; color: ${active ? '#fff' : selected ? '#63b3ed' : '#cbd5e1'}; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 4px; ${active ? 'background: #3182ce; font-weight: 600;' : selected ? 'background: #2a4365;' : ''}">
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">📄 ${escapeHtml(node.note!.title)}</span>
           ${trustDot}
@@ -439,6 +441,29 @@ this.container.innerHTML = `
         alert('Please select a file or folder in the tree first.');
         return;
       }
+
+      const isMarkdownFile = /\.md$/i.test(this.selectedItemPath);
+      if (isMarkdownFile && this.actionCb?.onRenameDocument) {
+        const note = this.notes.find(
+          n =>
+            n.path === this.selectedItemPath ||
+            n.path === `wiki/${this.selectedItemPath}` ||
+            `wiki/${n.path}` === this.selectedItemPath
+        );
+        const fallbackTitle = (this.selectedItemPath.split('/').pop() ?? '')
+          .replace(/\.md$/i, '')
+          .replace(/[-_]/g, ' ');
+        const currentTitle = note?.title || fallbackTitle;
+        const newTitle = prompt(
+          `Nuovo titolo del documento:\n(file: ${this.selectedItemPath})\n\nI collegamenti [[...]] verranno aggiornati automaticamente.`,
+          currentTitle
+        );
+        if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+          await this.actionCb.onRenameDocument(this.selectedItemPath, newTitle.trim());
+        }
+        return;
+      }
+
       const currentName = this.selectedItemPath.split('/').pop() || '';
       const newName = prompt(`Rename '${currentName}' to:`, currentName);
       if (newName && newName !== currentName && this.actionCb?.onRename) {

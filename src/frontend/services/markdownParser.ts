@@ -54,6 +54,21 @@ export class MarkdownParser {
     const frontmatter: Record<string, unknown> = {};
     const lines = yamlBlock.split('\n');
 
+    const unquote = (value: string): string => {
+      const trimmed = value.trim();
+      if (trimmed.length >= 2 && trimmed.startsWith("'") && trimmed.endsWith("'")) {
+        return trimmed.slice(1, -1).replace(/''/g, "'");
+      }
+      if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed
+          .slice(1, -1)
+          .replace(/\\"/g, '"')
+          .replace(/\\n/g, '\n')
+          .replace(/\\\\/g, '\\');
+      }
+      return trimmed;
+    };
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // Only capture top-level mapping keys. Indented lines belong to nested
@@ -72,7 +87,7 @@ export class MarkdownParser {
         frontmatter[key] = value
           .slice(1, -1)
           .split(',')
-          .map(item => item.trim().replace(/^['"]|['"]$/g, ''))
+          .map(item => unquote(item))
           .filter(Boolean);
       } else if (value === '') {
         // Block-style list: `key:` followed by `- item` lines (indented by
@@ -82,11 +97,11 @@ export class MarkdownParser {
           const item = lines[j].trim();
           if (!item.startsWith('- ')) break;
           const body = item.slice(2).trim();
-          if (body) items.push(body.replace(/^['"]|['"]$/g, ''));
+          if (body) items.push(unquote(body));
         }
         frontmatter[key] = items;
       } else {
-        frontmatter[key] = value.replace(/^['"]|['"]$/g, '');
+        frontmatter[key] = unquote(value);
       }
     }
 

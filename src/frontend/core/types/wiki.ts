@@ -7,6 +7,28 @@ export interface Backlink {
   contextSnippet?: string;
 }
 
+/** One file whose links were rewritten by a document rename/move. */
+export interface RenameLinkUpdate {
+  file: string;
+  replacements: number;
+  samples: string[];
+}
+
+export interface RenameResult {
+  success: boolean;
+  dryRun: boolean;
+  renamed: {
+    from: string;
+    to: string;
+    oldTitle: string;
+    newTitle: string;
+    id: string;
+  };
+  updatedFiles: RenameLinkUpdate[];
+  totalReplacements: number;
+  error?: string;
+}
+
 export interface WikiNote {
   id: string;               // Unique path or identifier (e.g. "wiki/c64_dev.md" or "c64_dev")
   title: string;            // Display title of the note

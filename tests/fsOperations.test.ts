@@ -60,6 +60,46 @@ describe('Filesystem Operations Test Suite', () => {
     assert.strictEqual(existsNew, true);
   });
 
+  test('renameDocument updates the title and every wikilink that pointed to the old stem', async () => {
+    await storage.createFolder('capitoli');
+    await storage.createFile(
+      'capitoli',
+      '05-vecchio.md',
+      `---\ntype: Concept\ntitle: 'Capitolo 5: Vecchio Titolo'\n---\n# Capitolo 5: Vecchio Titolo\n\nTesto del capitolo.\n`
+    );
+    await storage.createFile(
+      'capitoli',
+      '04-mappatura.md',
+      `# Capitolo 4\n\nVedi [[capitoli/05-vecchio|Capitolo 5]] e [[05-vecchio]].\n`
+    );
+
+    const preview = await storage.previewRename('wiki/capitoli/05-vecchio.md', 'Capitolo 5: Nuovo Titolo');
+    assert.ok(preview);
+    assert.strictEqual(preview!.success, true);
+    assert.strictEqual(preview!.dryRun, true);
+    assert.strictEqual(preview!.totalReplacements, 2);
+    // Dry run must not touch the disk.
+    const oldStillExists = await fs.stat(path.join(tmpDir, 'wiki', 'capitoli', '05-vecchio.md')).then(s => s.isFile()).catch(() => false);
+    assert.strictEqual(oldStillExists, true);
+
+    const result = await storage.renameDocument('wiki/capitoli/05-vecchio.md', 'Capitolo 5: Nuovo Titolo');
+    assert.ok(result);
+    assert.strictEqual(result!.success, true);
+    assert.strictEqual(result!.renamed.to, 'wiki/capitoli/05-nuovo-titolo.md');
+
+    const oldExists = await fs.stat(path.join(tmpDir, 'wiki', 'capitoli', '05-vecchio.md')).then(() => true).catch(() => false);
+    assert.strictEqual(oldExists, false);
+
+    const renamed = await fs.readFile(path.join(tmpDir, 'wiki', 'capitoli', '05-nuovo-titolo.md'), 'utf-8');
+    assert.ok(renamed.includes("title: 'Capitolo 5: Nuovo Titolo'"));
+    assert.ok(renamed.includes('# Capitolo 5: Nuovo Titolo'));
+
+    const chapter4 = await fs.readFile(path.join(tmpDir, 'wiki', 'capitoli', '04-mappatura.md'), 'utf-8');
+    assert.ok(chapter4.includes('[[capitoli/05-nuovo-titolo|Capitolo 5]]'));
+    assert.ok(chapter4.includes('[[05-nuovo-titolo]]'));
+    assert.ok(!chapter4.includes('05-vecchio'));
+  });
+
   test('moveItem moves file into target folder', async () => {
     await storage.createFolder('archive');
     const sourcePath = 'wiki/project-docs/system-architecture.md';

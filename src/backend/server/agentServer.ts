@@ -7,6 +7,14 @@ import * as toml from 'smol-toml';
 import { MarkdownParser } from '../../frontend/services/markdownParser';
 import { WikiNote } from '../../frontend/core/types/wiki';
 import { LlmClient, LlmClientFactory } from './llmClient';
+import {
+  DocumentMove,
+  DocumentRef,
+  rewriteDocumentLinks,
+  setDocumentTitle,
+  slugifyDocumentTitle,
+  updateLeadingHeading,
+} from './wikiLinks';
 
 export interface ScriptParamDef {
   name: string;
@@ -452,13 +460,43 @@ export interface CreateFileRequest {
 
 export interface RenameRequest {
   oldPath: string;
-  newName: string;
+  /** Legacy raw filename (with or without `.md`). */
+  newName?: string;
+  /** Human-readable title shown in the UI. When set, the filename is derived from it. */
+  newTitle?: string;
+  /** Preview what would change without touching the filesystem. */
+  dryRun?: boolean;
+  /** Optional extra aliases (old names) that should be rewritten too. */
+  extraAliases?: string[];
 }
 
 export interface MoveRequest {
   sourcePath: string;
   targetFolder: string;
+  /** Preview what would change without touching the filesystem. */
+  dryRun?: boolean;
 }
+
+export interface RenameLinkUpdate {
+  file: string;
+  replacements: number;
+  samples: string[];
+}
+
+export interface RenameResult {
+  success: boolean;
+  dryRun: boolean;
+  renamed: {
+    from: string;
+    to: string;
+    oldTitle: string;
+    newTitle: string;
+    id: string;
+  };
+  updatedFiles: RenameLinkUpdate[];
+  totalReplacements: number;
+}
+
 
 export interface DeleteRequest {
   targetPath: string;
@@ -1754,9 +1792,9 @@ export class AgentServer {
     if (pathname === '/api/wiki/rename' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<RenameRequest>(req);
-        await this.renameHandler(body, projectId);
+        const result = await this.renameHandler(body, projectId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify(result));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -1768,9 +1806,9 @@ export class AgentServer {
     if (pathname === '/api/wiki/move' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<MoveRequest>(req);
-        await this.moveHandler(body, projectId);
+        const result = await this.moveHandler(body, projectId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify(result));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -1914,9 +1952,9 @@ export class AgentServer {
     if (pathname === '/api/wiki/rename' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<RenameRequest>(req);
-        await this.renameHandler(body);
+        const result = await this.renameHandler(body);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify(result));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -1928,9 +1966,9 @@ export class AgentServer {
     if (pathname === '/api/wiki/move' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<MoveRequest>(req);
-        await this.moveHandler(body);
+        const result = await this.moveHandler(body);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify(result));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -2318,19 +2356,335 @@ export class AgentServer {
     return this.parser.parseNote(id, id.replace(/[-_]/g, ' '), defaultContent, folderName === '.' ? 'wiki' : folderName, relativePath);
   }
 
-  public async renameHandler(data: RenameRequest, projectId: string = 'default'): Promise<void> {
+  private async listWikiMarkdownFiles(wikiDir: string): Promise<string[]> {
+    const files: string[] = [];
+
+    const walk = async (dir: string): Promise<void> => {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            await walk(fullPath);
+          } else if (entry.isFile() && /\.md$/i.test(entry.name)) {
+            files.push(fullPath);
+          }
+        }
+      } catch (_e) {
+        // Directory might not exist yet.
+      }
+    };
+
+    await walk(wikiDir);
+    return files;
+  }
+
+  /** Read a note and describe it the way the link rewriter needs it. */
+  private async describeDocument(
+    absPath: string,
+    projRoot: string,
+    wikiDir: string,
+    extraAliases: string[] = []
+  ): Promise<{ ref: DocumentRef; content: string; hasExplicitTitle: boolean }> {
+    const content = await fs.readFile(absPath, 'utf-8');
+    const stem = path.basename(absPath).replace(/\.md$/i, '');
+    const relPath = path.relative(projRoot, absPath).replace(/\\/g, '/');
+    const relId = path.relative(wikiDir, absPath).replace(/\\/g, '/').replace(/\.md$/i, '');
+    const folder = path.relative(wikiDir, path.dirname(absPath)).replace(/\\/g, '/') || 'wiki';
+    const note = this.parser.parseNote(stem, stem.replace(/[-_]/g, ' '), content, folder, relPath);
+
+    const frontmatterTitle = note.frontmatter?.title;
+    const hasExplicitTitle = typeof frontmatterTitle === 'string' && frontmatterTitle.trim().length > 0;
+
+    const aliasValue = note.frontmatter?.aliases ?? note.frontmatter?.altLabel;
+    const aliases = Array.isArray(aliasValue)
+      ? aliasValue.map(value => String(value))
+      : typeof aliasValue === 'string'
+        ? [aliasValue]
+        : [];
+
+    return {
+      content,
+      hasExplicitTitle,
+      ref: {
+        relPath,
+        relId,
+        stem,
+        title: String(note.title || stem),
+        aliases: [...aliases, ...extraAliases],
+      },
+    };
+  }
+
+  private buildDocumentRef(absPath: string, projRoot: string, wikiDir: string, title: string, aliases: string[] = []): DocumentRef {
+    return {
+      relPath: path.relative(projRoot, absPath).replace(/\\/g, '/'),
+      relId: path.relative(wikiDir, absPath).replace(/\\/g, '/').replace(/\.md$/i, ''),
+      stem: path.basename(absPath).replace(/\.md$/i, ''),
+      title,
+      aliases,
+    };
+  }
+
+  /**
+   * Rewrite every vault link that points to the moved documents, then apply the
+   * filesystem rename and write the updated contents.
+   *
+   * `performRename` is invoked only after all rewrites have been computed, so a
+   * dry-run preview never touches the disk.
+   */
+  private async applyDocumentMoves(options: {
+    projectId: string;
+    moves: Array<{ oldAbs: string; newAbs: string }>;
+    oldRefs: Map<string, DocumentRef>;
+    newRefs: Map<string, DocumentRef>;
+    contentOverrides: Map<string, string>;
+    dryRun: boolean;
+    performRename: () => Promise<void>;
+  }): Promise<{ updates: RenameLinkUpdate[]; total: number }> {
+    const projRoot = await this.resolveProjectRoot(options.projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(options.projectId));
+    const files = await this.listWikiMarkdownFiles(wikiDir);
+
+    const documents = new Map<string, { ref: DocumentRef; content: string }>();
+    for (const fileAbs of files) {
+      const key = path.resolve(fileAbs);
+      try {
+        documents.set(key, await this.describeDocument(fileAbs, projRoot, wikiDir));
+      } catch (_e) {
+        // Ignore unreadable files rather than aborting the whole operation.
+      }
+    }
+
+    const allRelIds = files.map(fileAbs =>
+      path.relative(wikiDir, fileAbs).replace(/\\/g, '/').replace(/\.md$/i, '')
+    );
+
+    const moves: DocumentMove[] = [];
+    const pathMap = new Map<string, string>();
+    for (const move of options.moves) {
+      const oldKey = path.resolve(move.oldAbs);
+      const oldRef = options.oldRefs.get(oldKey);
+      const newRef = options.newRefs.get(oldKey);
+      if (!oldRef || !newRef) continue;
+      moves.push({ old: oldRef, new: newRef });
+      pathMap.set(oldKey, path.resolve(move.newAbs));
+    }
+
+    const pending: Array<RenameLinkUpdate & { absPath: string; content: string }> = [];
+    let total = 0;
+
+    for (const fileAbs of files) {
+      const key = path.resolve(fileAbs);
+      const document = documents.get(key);
+      if (!document) continue;
+
+      const raw = options.contentOverrides.get(key) ?? document.content;
+      const report = rewriteDocumentLinks(raw, {
+        moves,
+        sourceRelPath: document.ref.relPath,
+        allRelIds,
+      });
+
+      const contentOverride = options.contentOverrides.has(key);
+      if (report.replacements === 0 && !contentOverride) continue;
+
+      total += report.replacements;
+      pending.push({
+        absPath: fileAbs,
+        content: report.content,
+        file: document.ref.relPath,
+        replacements: report.replacements,
+        samples: report.samples,
+      });
+    }
+
+    if (options.dryRun) {
+      return {
+        total,
+        updates: pending.map(({ file, replacements, samples }) => ({ file, replacements, samples })),
+      };
+    }
+
+    await options.performRename();
+
+    for (const update of pending) {
+      const targetAbs = pathMap.get(path.resolve(update.absPath)) ?? update.absPath;
+      await fs.mkdir(path.dirname(targetAbs), { recursive: true });
+      await fs.writeFile(targetAbs, update.content, 'utf-8');
+    }
+
+    return {
+      total,
+      updates: pending.map(({ file, replacements, samples }) => ({ file, replacements, samples })),
+    };
+  }
+
+  private buildRenameResult(
+    from: string,
+    to: string,
+    oldTitle: string,
+    newTitle: string,
+    id: string,
+    dryRun: boolean,
+    updates: RenameLinkUpdate[],
+    total: number
+  ): RenameResult {
+    return {
+      success: true,
+      dryRun,
+      renamed: { from, to, oldTitle, newTitle, id },
+      updatedFiles: updates,
+      totalReplacements: total,
+    };
+  }
+
+  public async renameHandler(data: RenameRequest, projectId: string = 'default'): Promise<RenameResult> {
     const projRoot = await this.resolveProjectRoot(projectId);
+    const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const absOld = path.isAbsolute(data.oldPath) ? path.resolve(data.oldPath) : path.resolve(projRoot, data.oldPath);
     await this.validateSafePath(absOld, projectId);
 
-    const parent = path.dirname(absOld);
-    const absNew = path.resolve(parent, data.newName);
-    await this.validateSafePath(absNew, projectId);
+    const stat = await fs.stat(absOld);
 
-    await fs.rename(absOld, absNew);
+    if (stat.isDirectory()) {
+      const rawName = (data.newTitle || data.newName || '').trim();
+      if (!rawName) {
+        const err = new Error('Missing "newTitle" or "newName" in rename request');
+        (err as unknown as { status: number }).status = 400;
+        throw err;
+      }
+      const folderName = data.newTitle ? slugifyDocumentTitle(rawName, path.basename(absOld)) : rawName;
+      const absNew = path.resolve(path.dirname(absOld), folderName);
+      await this.validateSafePath(absNew, projectId);
+
+      if (path.resolve(absNew) !== path.resolve(absOld)) {
+        const exists = await fs.stat(absNew).then(() => true).catch(() => false);
+        if (exists) {
+          const err = new Error(`Cannot rename: "${path.relative(projRoot, absNew)}" already exists`);
+          (err as unknown as { status: number }).status = 409;
+          throw err;
+        }
+      }
+
+      const files = await this.listWikiMarkdownFiles(absOld);
+      const oldRefs = new Map<string, DocumentRef>();
+      const newRefs = new Map<string, DocumentRef>();
+      const moves: Array<{ oldAbs: string; newAbs: string }> = [];
+
+      for (const fileAbs of files) {
+        const document = await this.describeDocument(fileAbs, projRoot, wikiDir);
+        const relative = path.relative(absOld, fileAbs);
+        const newFileAbs = path.resolve(absNew, relative);
+        oldRefs.set(path.resolve(fileAbs), document.ref);
+        newRefs.set(
+          path.resolve(fileAbs),
+          this.buildDocumentRef(newFileAbs, projRoot, wikiDir, document.ref.title, document.ref.aliases)
+        );
+        moves.push({ oldAbs: fileAbs, newAbs: newFileAbs });
+      }
+
+      const { updates, total } = await this.applyDocumentMoves({
+        projectId,
+        moves,
+        oldRefs,
+        newRefs,
+        contentOverrides: new Map(),
+        dryRun: Boolean(data.dryRun),
+        performRename: async () => {
+          if (path.resolve(absNew) !== path.resolve(absOld)) await fs.rename(absOld, absNew);
+        },
+      });
+
+      return this.buildRenameResult(
+        path.relative(projRoot, absOld).replace(/\\/g, '/'),
+        path.relative(projRoot, absNew).replace(/\\/g, '/'),
+        path.basename(absOld),
+        path.basename(absNew),
+        path.basename(absNew),
+        Boolean(data.dryRun),
+        updates,
+        total
+      );
+    }
+
+    const document = await this.describeDocument(absOld, projRoot, wikiDir, data.extraAliases ?? []);
+    const requestedTitle = (data.newTitle ?? '').trim();
+
+    let newTitle = document.ref.title;
+    let newAbs = absOld;
+    let writeTitle = false;
+
+    if (requestedTitle) {
+      newTitle = requestedTitle;
+      writeTitle = requestedTitle !== document.ref.title.trim();
+
+      if (writeTitle) {
+        const stem = slugifyDocumentTitle(requestedTitle, document.ref.stem);
+        const candidate = path.resolve(path.dirname(absOld), `${stem}.md`);
+        if (path.basename(candidate).toLowerCase() !== path.basename(absOld).toLowerCase()) {
+          newAbs = candidate;
+        }
+      }
+    } else if (data.newName?.trim()) {
+      const raw = data.newName.trim();
+      const filename = /\.md$/i.test(raw) ? raw : `${raw}.md`;
+      newAbs = path.resolve(path.dirname(absOld), filename);
+
+      if (!document.hasExplicitTitle && newAbs !== absOld) {
+        newTitle = path.basename(newAbs).replace(/\.md$/i, '').replace(/[-_]/g, ' ');
+      }
+    } else {
+      const err = new Error('Missing "newTitle" or "newName" in rename request');
+      (err as unknown as { status: number }).status = 400;
+      throw err;
+    }
+
+    await this.validateSafePath(newAbs, projectId);
+
+    if (path.resolve(newAbs) !== path.resolve(absOld)) {
+      const exists = await fs.stat(newAbs).then(() => true).catch(() => false);
+      if (exists) {
+        const err = new Error(`Cannot rename: "${path.relative(projRoot, newAbs)}" already exists`);
+        (err as unknown as { status: number }).status = 409;
+        throw err;
+      }
+    }
+
+    const newRef = this.buildDocumentRef(newAbs, projRoot, wikiDir, newTitle, document.ref.aliases);
+
+    const overrides = new Map<string, string>();
+    if (writeTitle) {
+      let updated = setDocumentTitle(document.content, newTitle);
+      updated = updateLeadingHeading(updated, document.ref.title, newTitle);
+      overrides.set(path.resolve(absOld), updated);
+    }
+
+    const { updates, total } = await this.applyDocumentMoves({
+      projectId,
+      moves: [{ oldAbs: absOld, newAbs }],
+      oldRefs: new Map([[path.resolve(absOld), document.ref]]),
+      newRefs: new Map([[path.resolve(absOld), newRef]]),
+      contentOverrides: overrides,
+      dryRun: Boolean(data.dryRun),
+      performRename: async () => {
+        if (path.resolve(newAbs) !== path.resolve(absOld)) await fs.rename(absOld, newAbs);
+      },
+    });
+
+    return this.buildRenameResult(
+      document.ref.relPath,
+      newRef.relPath,
+      document.ref.title,
+      newTitle,
+      newRef.stem,
+      Boolean(data.dryRun),
+      updates,
+      total
+    );
   }
 
-  public async moveHandler(data: MoveRequest, projectId: string = 'default'): Promise<void> {
+  public async moveHandler(data: MoveRequest, projectId: string = 'default'): Promise<RenameResult> {
     const projRoot = await this.resolveProjectRoot(projectId);
     const absSource = path.isAbsolute(data.sourcePath) ? path.resolve(data.sourcePath) : path.resolve(projRoot, data.sourcePath);
     await this.validateSafePath(absSource, projectId);
@@ -2338,12 +2692,80 @@ export class AgentServer {
     const wikiDir = path.resolve(await this.getWikiDir(projectId));
     const targetDir = path.resolve(wikiDir, data.targetFolder.replace(/^wiki\/?/, ''));
     await this.validateSafePath(targetDir, projectId);
-
     await fs.mkdir(targetDir, { recursive: true });
+
+    const stat = await fs.stat(absSource);
     const absDest = path.resolve(targetDir, path.basename(absSource));
     await this.validateSafePath(absDest, projectId);
 
-    await fs.rename(absSource, absDest);
+    if (path.resolve(absDest) === path.resolve(absSource)) {
+      return this.buildRenameResult(
+        path.relative(projRoot, absSource).replace(/\\/g, '/'),
+        path.relative(projRoot, absDest).replace(/\\/g, '/'),
+        path.basename(absSource),
+        path.basename(absDest),
+        path.basename(absDest).replace(/\.md$/i, ''),
+        Boolean(data.dryRun),
+        [],
+        0
+      );
+    }
+
+    const exists = await fs.stat(absDest).then(() => true).catch(() => false);
+    if (exists) {
+      const err = new Error(`Cannot move: "${path.relative(projRoot, absDest)}" already exists`);
+      (err as unknown as { status: number }).status = 409;
+      throw err;
+    }
+
+    const oldRefs = new Map<string, DocumentRef>();
+    const newRefs = new Map<string, DocumentRef>();
+    const moves: Array<{ oldAbs: string; newAbs: string }> = [];
+
+    if (stat.isDirectory()) {
+      const files = await this.listWikiMarkdownFiles(absSource);
+      for (const fileAbs of files) {
+        const document = await this.describeDocument(fileAbs, projRoot, wikiDir);
+        const newFileAbs = path.resolve(absDest, path.relative(absSource, fileAbs));
+        oldRefs.set(path.resolve(fileAbs), document.ref);
+        newRefs.set(
+          path.resolve(fileAbs),
+          this.buildDocumentRef(newFileAbs, projRoot, wikiDir, document.ref.title, document.ref.aliases)
+        );
+        moves.push({ oldAbs: fileAbs, newAbs: newFileAbs });
+      }
+    } else {
+      const document = await this.describeDocument(absSource, projRoot, wikiDir);
+      oldRefs.set(path.resolve(absSource), document.ref);
+      newRefs.set(
+        path.resolve(absSource),
+        this.buildDocumentRef(absDest, projRoot, wikiDir, document.ref.title, document.ref.aliases)
+      );
+      moves.push({ oldAbs: absSource, newAbs: absDest });
+    }
+
+    const { updates, total } = await this.applyDocumentMoves({
+      projectId,
+      moves,
+      oldRefs,
+      newRefs,
+      contentOverrides: new Map(),
+      dryRun: Boolean(data.dryRun),
+      performRename: async () => {
+        await fs.rename(absSource, absDest);
+      },
+    });
+
+    return this.buildRenameResult(
+      path.relative(projRoot, absSource).replace(/\\/g, '/'),
+      path.relative(projRoot, absDest).replace(/\\/g, '/'),
+      path.basename(absSource),
+      path.basename(absDest),
+      path.basename(absDest).replace(/\.md$/i, ''),
+      Boolean(data.dryRun),
+      updates,
+      total
+    );
   }
 
   public async deleteHandler(data: DeleteRequest, projectId: string = 'default'): Promise<void> {
