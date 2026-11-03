@@ -12,4 +12,3 @@ Thematic index for **capitoli**.
 - [[05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica]] â€” Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
 - [[06-considerazioni-personali-riflessioni-critiche-e-conclusioni]] â€” Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni
 - [[07-bibliografia-e-fonti]] â€” Bibliografia e Fonti
-- [[AI_ACT_e_questione_etica_Note]] â€” 'L''Impatto dell''Intelligenza Artificiale sul Lavoro e sulle Risorse Umane:

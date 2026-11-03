@@ -4,23 +4,24 @@ title: 'Capitolo 5: Il Quadro Normativo Europeo: L''EU AI Act e la Tutela del La
 status: stable
 ---
 
-## Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
+# Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
 
 Dopo aver analizzato, nei capitoli precedenti, le dinamiche operative dell'Intelligenza Artificiale e le sue implicazioni strategiche per il Knowledge Management, è indispensabile ancorare tale disamina al perimetro giuridico che oggi ne definisce i confini. La rapida diffusione dei sistemi algoritmici nei contesti occupazionali rappresenta una delle trasformazioni più profonde del mercato del lavoro contemporaneo, alterando le tradizionali dinamiche di potere tra datori di lavoro e prestatori d'opera. Per governare questi processi e prevenire derive discriminatorie o intrusive, l'Unione Europea ha strutturato un quadro giuridico organico attraverso il **Regolamento (UE) 2024/1689**, noto come *EU AI Act*. 
 
 Il presente capitolo si propone di esaminare in modo integrato le fonti normative e la riflessione etico-scientifica sottese al Regolamento, offrendo un quadro concettuale e operativo utile a comprendere l'impatto dell'IA sul settore delle Risorse Umane (HR).
 
-## 5.1 Introduzione al Regolamento (UE) 2024/1689: Verso un'IA Antropocentrica
+## 5.1 Il Regolamento (UE) 2024/1689: Verso un'IA Antropocentrica
 
-L'*EU AI Act* costituisce il primo regolamento orizzontale e organico al mondo dedicato alla disciplina dell'intelligenza artificiale. Basato sugli articoli 114 e 16 del Trattato sul Funzionamento dell'Unione Europea (TFUE), il testo mira a garantire il buon funzionamento del mercato unico, promuovendo al contempo un elevato livello di protezione della salute, della sicurezza e dei diritti fondamentali sanciti dalla Carta dei Diritti Fondamentali dell'Unione Europea.
+L'*EU AI Act* costituisce il primo regolamento orizzontale e organico al mondo dedicato alla disciplina dell'intelligenza artificiale. Basato sugli articoli 114 e 16 del Trattato sul Funzionamento dell'Unione Europea (TFUE), il testo mira a garantire il buon funzionamento del mercato unico, promuovendo al contempo un elevato livello di protezione della salute, della sicurezza e dei diritti fondamentali presenti nella Carta dei Diritti Fondamentali dell'Unione Europea.
+Nello specifico, gli articoli 114 e 16 del TFUE sanciscono rispettivamente il dovere dell'UE ad armonizzare le legislazioni nazionali per garantire il funzionamento del mercato interno e il diritto fondamentale di protezione dei dati personali di tutte le persone fisiche.
 
-Alla base della filosofia legislativa europea vi è un chiaro **approccio antropocentrico (*human-centric*)**. Come enunciato nei considerando del Regolamento, l'intelligenza artificiale non deve essere intesa come un fine a se stante o come un sostituto dell'autonomia e del giudizio umano, bensì come uno strumento al servizio dell'essere umano, destinato ad accrescerne il benessere e a supportarne le attività. 
+Alla base della filosofia legislativa europea vi è un chiaro **approccio antropocentrico (*human-centric*)**. L'intelligenza artificiale non deve essere intesa come un fine a se stante o come un sostituto dell'autonomia e del giudizio umano, bensì come uno strumento al servizio dell'essere umano, destinato ad accrescerne il benessere e a supportarne le attività. 
 
 Nel contesto specifico dell'occupazione e della gestione dei lavoratori, il Regolamento si pone in una posizione di complementarietà e rafforzamento rispetto al diritto esistente. Esso stabilisce espressamente che la nuova disciplina lascia impregiudicate le norme dell'Unione e le legislazioni nazionali sul diritto del lavoro, sulle condizioni di impiego, sulla salute e sicurezza nei luoghi di lavoro, nonché il diritto dei lavoratori e delle loro rappresentanze di essere informati e consultati. L'*AI Act* non sostituisce le tutele del lavoro preesistenti, ma vi aggiunge un livello di protezione "algoritmo-specifico", imponendo garanzie di trasparenza, tracciabilità e supervisione umana laddove le decisioni aziendali vengano mediate o delegate a sistemi automatizzati.
 
 ## 5.2 La Mappatura dei Rischi nel Settore HR: Divieti Assoluti e Sistemi ad Alto Rischio
 
-Il modello regolatorio dell'*AI Act* si fonda su un **approccio commisurato al rischio (*risk-based approach*)**, proporzionando gli obblighi giuridici alla gravità e alla probabilità dei danni che l'uso dell'IA può generare sui diritti fondamentali delle persone. Nel settore delle Risorse Umane, il legislatore ha individuato un rischio intrinsecamente elevato, dettato dallo strutturale squilibrio socio-economico tra il datore di lavoro e il lavoratore o candidato.
+Il modello regolatorio dell'*AI Act* si fonda su un **approccio commisurato al rischio (*risk-based approach*)**, proporzionando gli obblighi giuridici alla gravità e alla probabilità dei danni che l'uso dell'IA può generare sui diritti fondamentali delle persone. Nel settore delle Risorse Umane, il legislatore ha individuato un rischio intrinsecamente elevato, dettato dalla natura asimmetria della relazione lavorativa tra il datore di lavoro e il lavoratore o candidato. Quest'ultimo si trova in una posizione di strutturale subordinazione economica e gerarchica rispetto al datore di lavoro: la necessità di accedere al mercato del lavoro, di ottenere una promozione o, più semplicemente, di mantenere la propria occupazione, rende l'individuo estremamente vulnerabile.
 
 ### 5.2.1 Le Pratiche di IA Vietate sul Luogo di Lavoro (Rischio Inaccettabile)
 L'**Articolo 5** del Regolamento individua le pratiche ritenute contrarie ai valori fondanti dell'Unione Europea e alla dignità umana, sancendone il divieto assoluto di immissione sul mercato, messa in servizio o utilizzo. In ambito occupazionale, due divieti assumono un rilievo centrale:
@@ -33,7 +34,16 @@ L'**Allegato III (punto 4)** del Regolamento specifica che i sistemi di IA impie
 2.  **Adozione di decisioni sulle condizioni contrattuali e di carriera:** Sistemi algoritmici usati per decidere in materia di assunzione, assegnazione dei compiti basata su tratti o comportamenti individuali, promozioni, condizioni di lavoro o risoluzione del rapporto di lavoro (licenziamenti).
 3.  **Valutazione e monitoraggio delle prestazioni:** Strumenti di monitoraggio algoritmico usati per tracciare e valutare le prestazioni, la condotta o la produttività dei lavoratori.
 
-La motivazione normativa di tale classificazione risiede nel fatto che tali strumenti influenzano in modo determinante le prospettive di carriera, il sostentamento economico e i diritti fondamentali dei cittadini, rischiando di perpetuare o amplificare modelli storici di discriminazione qualora addestrati su dati storici distorti. L'unica deroga prevista dall'**Articolo 6(3)** stabilisce che un sistema non è considerato ad alto rischio solo se non presenta un rischio significativo di danno e non influenza materialmente l'esito del processo decisionale (ad esempio, se svolge un compito procedurale ristretto). Tuttavia, la norma chiarisce che **se il sistema effettua la profilazione delle persone fisiche, esso è considerato sempre e in ogni caso ad alto rischio**.
+La motivazione normativa di tale classificazione risiede nel fatto che tali strumenti influenzano in modo determinante le prospettive di carriera, il sostentamento economico e i diritti fondamentali dei cittadini, rischiando di perpetuare o amplificare modelli storici di discriminazione qualora addestrati su dati storici distorti.
+
+### 5.2.3 La Tassonomia Completa del Rischio: Oltre l'Alto Rischio
+Per completezza espositiva, è opportuno precisare che l'architettura dell'EU AI Act contempla in totale quattro livelli disposti piramidalmente e che quelli con "Rischio Limitato" e "Rischio Minimo o Nullo" interessano marginalmentele funzioni di supporto all'HR. 
+
+Nella categoria Rischio Limitato è compreso il rischio di manipolazione o di opacità nell'interazione uomo-macchina. L'AI Act (art. 50) impone per questi sistemi stringenti obblighi di trasparenza informativa. In ambito HR, rientrano in questa fascia i chatbot utilizzati per il primo contatto con i candidati o per l'assistenza ai dipendenti, nonché i sistemi che generano o manipolano contenuti sintetici (es. deepfake o avatar virtuali utilizzati per la formazione aziendale o per le comunicazioni interne).
+
+La strafrande maggioranza di IA attualmente sul mercato rientra nel quarto ed ultimo livello Rischio Minimo o Nullo, per il quale l'AI Act non introduce alcun vincolo normativo cogente, incoraggiando semmai l'adozione volontaria di codici di condotta etici. Nel perimetro HR, vi rientrano strumenti puramente amministrativi o di ottimizzazione logistica che non profilano il lavoratore né ne valutano l'operato, come i filtri antispam per la posta aziendale, i software per la pianificazione automatica dei turni o i gestionali di routine per l'archiviazione dei documenti.
+
+
 
 ## 5.3 La Catena del Valore dell'IA: Ripartizione degli Oneri tra Fornitori e Utilizzatori
 

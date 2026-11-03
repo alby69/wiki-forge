@@ -33,7 +33,6 @@ Welcome to the knowledge base.
 - [[05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica]]
 - [[06-considerazioni-personali-riflessioni-critiche-e-conclusioni]]
 - [[07-bibliografia-e-fonti]]
-- [[AI_ACT_e_questione_etica_Note]]
 - [[log]]
 - [[comandi-uso-wiki]]
 - [[wiki-forge-script-panel]]
