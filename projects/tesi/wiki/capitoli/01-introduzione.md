@@ -1,37 +1,8 @@
----
-type: Concept
-title: 'Capitolo 1: Introduzione'
-description: 'Panoramica, premesse e ipotesi di ricerca: l''impatto dell''AI sulle
-  Risorse Umane e il limite del RAG tradizionale'
-status: draft
-tags:
-- thesis/chapter
-- topic/ai
-- topic/hr
-- status/draft
-- status/review
-generated:
-  by: process:jules-agent
-  at: '2026-10-12T00:00:00Z'
-verified:
-- by: human:autore
-  at: '2026-10-12T00:00:00Z'
-sources:
-- id: thesis-design-doc
-  resource: raw/thesis-design-doc.md
-  title: Documento di Progettazione della Tesi Magistrale
-  author: process:conv2md
-  last_modified: '2026-10-20T06:04:34Z'
-maturita: 90
-copertura_fonti: 1
-domande_risolte: 0
-stato: draft
----
 # Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca
 
-Negli ultimi anni l'intelligenza artificiale ha smesso di essere una promessa di laboratorio per diventare una presenza concreta nelle nostre giornate e nelle nostre organizzazioni. Il punto di svolta è arrivato con i modelli linguistici di grande scala (LLM): sistemi capaci di leggere, riassumere, tradurre e generare testo con una naturalezza che fino a poco prima sembrava appannaggio esclusivo dell'essere umano. Da quella soglia la corsa non si è più fermata: modelli sempre più grandi, poi sempre più capaci di ragionare in passaggi sequenziali, poi in grado di usare strumenti e di agire con una certa autonomia come agenti. È un percorso che affascina e insieme inquieta, perché tocca molto più del software — tocca il modo in cui lavoriamo, decidiamo, impariamo e, in definitiva, attribuiamo valore a ciò che facciamo.
+Negli ultimi anni l'Intelligenza Artificiale ha smesso di essere una promessa di laboratorio per diventare una presenza concreta nelle nostre giornate e nelle nostre organizzazioni lavorative. Il punto di svolta è arrivato con i modelli linguistici di grande scala (LLM): sistemi capaci di leggere, riassumere, tradurre e generare testo con una naturalezza che fino a poco prima sembrava appannaggio esclusivo dell'essere umano. Da quella soglia la corsa non si è più fermata: modelli sempre più grandi, poi sempre più capaci di ragionare in passaggi sequenziali, poi in grado di usare strumenti e di agire con una certa autonomia come agenti. È un percorso che affascina e insieme inquieta, perché tocca molto più del software — riguarda concretamente il modo in cui lavoriamo, decidiamo, impariamo e, in definitiva, attribuiamo valore a ciò che facciamo.
 
-Ed è proprio qui che nasce l'interrogativo di questa tesi. Se da un lato l'AI generativa si presenta come uno strumento formidabile per automatizzare le attività ripetitive e liberare tempo da dedicare a ciò che conta davvero, dall'altro mostra il suo lato fragile appena la si spinge fuori dalla superficie: allucina, dimentica, semplifica la realtà in frammenti scollegati e, come osserva Cristianini, tende a scambiare una regolarità statistica per una comprensione del mondo. Nel lavoro quotidiano — e in particolare nelle Risorse Umane, dove le decisioni riguardano persone — queste fragilità non sono un dettaglio tecnico, ma una questione etica e organizzativa.
+Ed è proprio qui che nasce l'interrogativo di questa tesi. Se da un lato l'AI generativa si presenta come uno strumento formidabile per automatizzare le attività ripetitive e liberare tempo da dedicare a ciò che conta davvero, dall'altro mostra il suo lato fragile appena la si spinge fuori dalla superficie: allucina, dimentica, semplifica la realtà in frammenti scollegati e, come afferma nei suoi primi studi Cristianini, tende a scambiare una regolarità statistica per una comprensione del mondo. Nel lavoro quotidiano — e in particolare nelle Risorse Umane, dove le decisioni riguardano persone — queste fragilità non sono un dettaglio tecnico, ma una questione etica ed organizzativa.
 
 Le pagine che seguono vogliono essere la porta d'ingresso a questo mondo. Non ci si limiterà a osservare l'AI dall'esterno: la si seguirà nel suo funzionamento più intimo, dal recupero di informazioni in un sistema RAG fino ai suoi limiti strutturali, e da lì alla costruzione di una vera e propria knowledge base — un'infrastruttura in cui la conoscenza non viene consumata e dimenticata, ma coltivata, connessa e resa affidabile. È il racconto di un passaggio: dall'AI come strumento usa-e-getta all'AI come partner di ricerca, in un dialogo continuo tra tecnologia, lavoro e responsabilità umana.
 
@@ -48,19 +19,21 @@ Proprio questa linearità, tuttavia, ne rivela anche la fragilità. Poiché ogni
 ### 1.2.1 La Pipeline Classica del RAG
 La pipeline convenzionale del RAG opera attraverso tre fasi sequenziali:
 
-1. **Fase A — Indicizzazione (Preparazione della Base Conoscitiva)**:
+1. **Fase A — Indexing (Preparazione della Base Conoscitiva)**:
+   - **Data Ingestion & Parsing**: I documenti sorgente (PDF, policy aziendali, report) vengono preliminarmente acquisiti, convertiti in testo semplice e ripuliti da elementi di rumore strutturale (es. intestazioni, tabelle complesse o piè di pagina).
    - **Chunking**: I documenti sorgente (PDF, policy aziendali, report) vengono suddivisi in porzioni di testo chiamate *chunk* (in genere compresi tra 256 e 1024 token). Tale frammentazione è resa necessaria dai limiti delle finestre di contesto degli LLM e dalla maggiore resa dei modelli di embedding su testi di breve estensione.
    - **Embedding**: Ciascun chunk viene convertito in un vettore ad alta dimensionalità (es. 1536 dimensioni) tramite un modello di embedding. Il vettore sintetizza la rilevanza semantica superficiale del frammento, ma ne perde la struttura logica e relazionale.
    - **Vector Store**: I vettori vengono archiviati in un database vettoriale (es. Pinecone, Milvus, Weaviate) ottimizzato per la ricerca rapida per similarità spaziale.
 
-2. **Fase B — Retrieval (Recupero del Contesto)**:
+3. **Fase B — Retrieval (Recupero del Contesto)**:
    - **Vettorializzazione della query**: Il quesito dell'utente non viene confrontato come testo, ma tradotto nello stesso linguaggio numerico dei chunk. La query è convertita in un vettore tramite il medesimo modello di embedding usato in indicizzazione: solo così domanda e frammenti risultano collocati nella stessa "mappa" semantica e la loro vicinanza diventa confrontabile.
    - **Misura della vicinanza (similarità coseno)**: Il sistema valuta quanto ogni vettore-chunk "punta nella stessa direzione" del vettore-query calcolando la similarità coseno, cioè il coseno dell'angolo tra i due vettori (1 = stessa direzione, 0 = estranei, -1 = opposti). Misurare l'angolo e non la lunghezza rende il confronto indipendente dall'estensione del frammento. Altre metriche possibili sono il prodotto scalare e la distanza euclidea.
    - **Selezione dei k migliori (top-k)**: I chunk vengono ordinati per similarità decrescente e si conservano solo i k più vicini (tipicamente 3-10). Il parametro k è un compromesso: un valore troppo basso rischia di omettere contesto necessario, uno troppo alto introduce frammenti marginali che diluiscono la pertinenza e consumano inutilmente la finestra di contesto dell'LLM. Essendo una ricerca "piatta", essa individua ciò che assomiglia alla domanda ma resta cieca alle relazioni tra i concetti — il presupposto dei limiti discussi in §1.2.3.
 
-3. **Fase C — Generation (Produzione della Risposta)**:
-   - I frammenti recuperati vengono inseriti nel prompt inoltrato all'LLM come contesto aggiuntivo.
-   - L'LLM elabora una risposta basandosi unicamente su tali informazioni, riducendo l'incidenza di allucinazioni dirette ma rimanendo vincolato alla qualità e alla completezza dei chunk ricevuti.
+4. **Fase C — Generation (Produzione della Risposta)**:
+   - **Prompt Augmentation**: I frammenti recuperati vengono assemblati insieme alla domanda originale e a specifiche istruzioni di sistema (system prompt che vincolano il modello ai soli dati forniti) all'interno di un unico prompt arricchito, poi inoltrato all'LLM.
+   - **Response Generation**: L'LLM elabora una risposta basandosi unicamente sulle informazioni ricevute nel contesto, riducendo l'incidenza di allucinazioni dirette ma rimanendo vincolato alla qualità e alla completezza dei chunk recuperati.
+
 
 ### 1.2.2 Limite Strutturale #1: Effimerità e Mancato Accumulo di Capitale Intellettuale
 Il primo grande limite risiede nella natura **effimera** di ogni sessione di interazione. Ogni conversazione RAG costituisce un evento isolato: la risposta elaborata dall'LLM viene presentata all'utente per poi essere *dimenticata* dal sistema alla chiusura della sessione. Manca qualsiasi meccanismo nativo per:
