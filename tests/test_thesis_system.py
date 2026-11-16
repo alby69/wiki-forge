@@ -104,5 +104,40 @@ Analisi comparativa.
         self.assertIn("Capitolo 1: Introduzione all'IA", content)
         self.assertIn("Cristianini vs Graeber", content)
 
+    def test_build_thesis_from_capitoli_folder(self):
+        chapters_dir = self.wiki_dir / "capitoli"
+        chapters_dir.mkdir()
+
+        def write_chapter(name, title):
+            (chapters_dir / name).write_text(f"""---
+type: Concept
+title: '{title}'
+status: stable
+tags:
+- thesis/chapter
+---
+
+# {title}
+
+Contenuto.
+""", encoding="utf-8")
+
+        write_chapter("02-secondo.md", "Capitolo 2: Secondo")
+        write_chapter("00-frontespizio.md", "Frontespizio e Sinossi")
+        write_chapter("01-primo.md", "Capitolo 1: Primo")
+        (chapters_dir / "index.md").write_text("# Index\n", encoding="utf-8")
+
+        output_file = self.output_dir / "thesis_compiled.md"
+        build_thesis(chapters_dir, output_file, min_maturity=50, title="Tesi Test")
+
+        content = output_file.read_text(encoding="utf-8")
+        self.assertIn("## Parte I: Capitoli Strutturati", content)
+        self.assertNotIn("Parte II", content)
+        self.assertNotIn("Index", content)
+        # Frontespizio has no numeric heading, chapters keep their order by filename prefix.
+        self.assertLess(content.index("### Frontespizio e Sinossi"), content.index("### Capitolo 1: Primo"))
+        self.assertLess(content.index("### Capitolo 1: Primo"), content.index("### Capitolo 2: Secondo"))
+        self.assertEqual(content.count("### Capitolo 1: Primo"), 1)
+
 if __name__ == "__main__":
     unittest.main()

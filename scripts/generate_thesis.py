@@ -5,6 +5,14 @@ Aggregates thesis chapter drafts and mature synthesis wiki notes into a single c
 
 Outputs:
   output/thesis_compiled.md
+
+A note is treated as a thesis chapter when:
+  - its frontmatter `tipo`/`type` is `capitolo_tesi` or `capitolo`, or
+  - it carries the tag `thesis/chapter`, or
+  - it lives in a `capitoli/` folder (or the wiki directory itself is `capitoli`).
+
+Chapter order comes from `capitolo_numero` when present, otherwise from the
+numeric prefix of the filename (e.g. `01-introduzione.md` -> 1).
 """
 
 import sys
@@ -20,6 +28,11 @@ except ImportError:
     print("Error: PyYAML is required. Install via `pip install pyyaml`", file=sys.stderr)
     sys.exit(1)
 
+CHAPTER_TYPES = {"capitolo_tesi", "capitolo"}
+SYNTHESIS_TYPES = {"sintesi", "concetto", "concept"}
+CHAPTER_TAGS = {"thesis/chapter", "type/chapter", "chapter"}
+SKIP_NAMES = {"index.md", "log.md"}
+
 def parse_frontmatter(content: str):
     if not content.startswith("---"):
         return {}, content
@@ -33,33 +46,75 @@ def parse_frontmatter(content: str):
             return {}, content
     return {}, content
 
+def _as_int(value, default=None):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+def _tags(fm: dict) -> set:
+    tags = fm.get("tags", fm.get("tag", []))
+    if isinstance(tags, str):
+        tags = [tags]
+    if not isinstance(tags, (list, tuple, set)):
+        return set()
+    return {str(t).strip().lower() for t in tags}
+
+def _is_chapter_note(doc_type: str, fm: dict, rel_path: Path, wiki_is_chapters: bool) -> bool:
+    if doc_type in CHAPTER_TYPES:
+        return True
+    if _tags(fm) & CHAPTER_TAGS:
+        return True
+    if wiki_is_chapters:
+        return True
+    return any(part.lower() == "capitoli" for part in rel_path.parts[:-1])
+
+def _chapter_number(fm: dict, stem: str) -> int:
+    number = _as_int(fm.get("capitolo_numero"))
+    if number is not None:
+        return number
+    match = re.match(r"^(\d+)", stem)
+    if match:
+        return int(match.group(1))
+    return 999
+
+def _chapter_heading(number: int, title: str) -> str:
+    # Avoid "Capitolo 1: Capitolo 1: ..." when the title already carries the number.
+    if re.match(r"^capitolo\b", str(title), flags=re.IGNORECASE):
+        return str(title)
+    if number > 0 and number < 999:
+        return f"Capitolo {number}: {title}"
+    return str(title)
+
 def build_thesis(wiki_dir: Path, output_file: Path, min_maturity: int = 0, title: str = "Tesi di Laurea"):
-    wiki_notes = list(wiki_dir.glob("**/*.md"))
+    wiki_notes = sorted(wiki_dir.glob("**/*.md"))
+    wiki_is_chapters = wiki_dir.name.lower() == "capitoli"
 
     chapters = []
     syntheses = []
 
     for f in wiki_notes:
-        if f.name.lower() in ("index.md", "log.md"):
+        if f.name.lower() in SKIP_NAMES:
             continue
         content = f.read_text(encoding="utf-8")
         fm, body = parse_frontmatter(content)
 
-        doc_type = fm.get("tipo", fm.get("type", "")).lower()
-        maturita = int(fm.get("maturita", 0))
+        doc_type = str(fm.get("tipo", fm.get("type", "")) or "").strip().lower()
+        maturita = _as_int(fm.get("maturita"), 0) or 0
 
         rel_path = f.relative_to(wiki_dir)
 
-        if doc_type in ("capitolo_tesi", "capitolo"):
+        if _is_chapter_note(doc_type, fm, rel_path, wiki_is_chapters):
+            number = _chapter_number(fm, f.stem)
             chapters.append({
                 "file": f,
                 "rel_path": rel_path,
-                "number": int(fm.get("capitolo_numero", 999)),
+                "number": number,
                 "title": fm.get("titolo", fm.get("title", f.stem)),
                 "body": body,
                 "fm": fm
             })
-        elif doc_type in ("sintesi", "concetto", "concept") or "sintesi" in str(rel_path):
+        elif doc_type in SYNTHESIS_TYPES or "sintesi" in str(rel_path):
             if maturita >= min_maturity:
                 syntheses.append({
                     "file": f,
@@ -70,7 +125,7 @@ def build_thesis(wiki_dir: Path, output_file: Path, min_maturity: int = 0, title
                     "fm": fm
                 })
 
-    chapters.sort(key=lambda c: c["number"])
+    chapters.sort(key=lambda c: (c["number"], str(c["rel_path"]).lower()))
     syntheses.sort(key=lambda s: s["maturita"], reverse=True)
 
     compiled_text = []
@@ -81,7 +136,7 @@ def build_thesis(wiki_dir: Path, output_file: Path, min_maturity: int = 0, title
     if chapters:
         compiled_text.append("## Parte I: Capitoli Strutturati\n\n")
         for ch in chapters:
-            compiled_text.append(f"### Capitolo {ch['number']}: {ch['title']}\n")
+            compiled_text.append(f"### {_chapter_heading(ch['number'], ch['title'])}\n")
             compiled_text.append(f"*(Maturità capitolo: {ch['fm'].get('maturita', 0)}/100)*\n\n")
             compiled_text.append(ch["body"].strip() + "\n\n---\n\n")
 
@@ -95,7 +150,7 @@ def build_thesis(wiki_dir: Path, output_file: Path, min_maturity: int = 0, title
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text("".join(compiled_text), encoding="utf-8")
 
-    print(f"✅ Generated thesis markdown: {output_file} ({len(chapters)} capitoli, {len(syntheses)} sintesi incluse)")
+    print(f"Generated thesis markdown: {output_file} ({len(chapters)} capitoli, {len(syntheses)} sintesi incluse)")
 
 def main():
     parser = argparse.ArgumentParser(description="Generate compiled thesis markdown from wiki vault.")
