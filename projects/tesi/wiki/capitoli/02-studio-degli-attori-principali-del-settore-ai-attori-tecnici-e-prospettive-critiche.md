@@ -1,8 +1,16 @@
 ---
 type: Concept
-title: 'Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche'
+title: 'Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici
+  e Prospettive Critiche'
+description: Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione
+  con un LLM tramite chatbot è, per sua natura, un'esperienza...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-11-16T08:19:38Z'
+verified: []
+sources: []
 ---
-
 # Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche
 
 ## 2.1 Attori Tecnici e Visioni dell'Infrastruttura Cognitiva

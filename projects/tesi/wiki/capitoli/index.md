@@ -1,14 +1,13 @@
-# CAPITOLI Index
-
-Thematic index for **capitoli**.
+# Capitoli — Topic Index
 
 ## Articles
 
-- [[00-frontespizio-e-sinossi]] â€” Frontespizio e Sinossi
-- [[01-introduzione]] â€” Capitolo 1: Introduzione
-- [[02-studio-degli-attori-principali-del-settore-ai-attori-tecnici-e-prospettive-critiche]] â€” Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici
-- [[03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering]] â€” Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering
-- [[04-attivita-hr-storiche-analisi-del-grado-di-automazione-e-rischi]] â€” Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi
-- [[05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica]] â€” Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
-- [[06-considerazioni-personali-riflessioni-critiche-e-conclusioni]] â€” Capitolo 6: Considerazioni Personali — Riflessioni Critiche e Conclusioni
-- [[07-bibliografia-e-fonti]] â€” Bibliografia e Fonti
+* [Frontespizio e Sinossi](00-frontespizio-e-sinossi.md) — L'impatto dell'Intelligenza Artificiale sul Knowledge Management nelle Risorse Umane
+* [Capitolo 1: Introduzione](01-introduzione.md) `[draft]` — Panoramica, premesse e ipotesi di ricerca: l'impatto dell'AI sulle Risorse Umane e il limite del RAG tradizionale
+* [Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche](02-studio-degli-attori-principali-del-settore-ai-attori-tecnici-e-prospettive-critiche.md) — Come abbiamo visto analizzando i limiti dei sistemi convenzionali, l'interazione con un LLM tramite chatbot è, per sua natura, un'esperienza...
+* [Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering](03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering.md) — La stesura di una tesi magistrale rappresenta tradizionalmente un processo lineare e spesso frammentato: raccolta di PDF, appunti sparsi su ...
+* [Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi](04-attivita-hr-storiche-analisi-del-grado-di-automazione-e-rischi.md) — Per comprendere appieno la portata trasformativa delle nuove tecnologie e dei sistemi di Knowledge Management (KM) all'interno del dipartime...
+* [Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica](05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica.md) — Dopo aver analizzato, nei capitoli precedenti, le dinamiche operative dell'Intelligenza Artificiale e le sue implicazioni strategiche per il...
+* [Capitolo 6: Considerazioni Personali, Sintesi del Percorso e Prospettive Future per le Risorse Umane](06-considerazioni-personali-sintesi-del-percorso-e-prospettive-future-per-le-risorse-umane.md) — Al termine di questo percorso di ricerca, è necessario esplicitare con chiarezza il tema centrale che ha guidato ogni capitolo: la transizio...
+* [Bibliografia e Fonti](07-bibliografia-e-fonti.md) `[draft]` — Elenco delle fonti primarie, documentazione tecnica, standard W3C e sitografia della tesi
+

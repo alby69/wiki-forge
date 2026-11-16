@@ -1,3 +1,15 @@
+---
+type: Concept
+title: Frontespizio e Sinossi
+description: L'impatto dell'Intelligenza Artificiale sul Knowledge Management nelle
+  Risorse Umane
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-11-16T08:19:38Z'
+verified: []
+sources: []
+---
 # Frontespizio e Sinossi
 
 ## Titolo

@@ -1,8 +1,16 @@
 ---
 type: Concept
-title: 'Capitolo 5: Il Quadro Normativo Europeo: L''EU AI Act e la Tutela del Lavoratore nell''Era Algoritmica'
+title: 'Capitolo 5: Il Quadro Normativo Europeo: L''EU AI Act e la Tutela del Lavoratore
+  nell''Era Algoritmica'
+description: Dopo aver analizzato, nei capitoli precedenti, le dinamiche operative
+  dell'Intelligenza Artificiale e le sue implicazioni strategiche per il...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-11-16T08:19:38Z'
+verified: []
+sources: []
 ---
-
 # Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
 
 Dopo aver analizzato, nei capitoli precedenti, le dinamiche operative dell'Intelligenza Artificiale e le sue implicazioni strategiche per il Knowledge Management, è indispensabile ancorare tale disamina al perimetro giuridico che oggi ne definisce i confini. La rapida diffusione dei sistemi algoritmici nei contesti occupazionali rappresenta una delle trasformazioni più profonde del mercato del lavoro contemporaneo, alterando le tradizionali dinamiche di potere tra datori di lavoro e prestatori d'opera. Per governare questi processi e prevenire derive discriminatorie o intrusive, l'Unione Europea ha strutturato un quadro giuridico organico attraverso il **Regolamento (UE) 2024/1689**, noto come *EU AI Act*. 
