@@ -27,7 +27,7 @@ Welcome to the knowledge base.
 - [[stefano-gatti]]
 - [[00-frontespizio-e-sinossi]]
 - [[01-introduzione]]
-- [[02-studio-degli-attori-principali-del-settore-ai-attori-tecnici]]
+- [[02-studio-degli-attori-principali-del-settore-ai-attori-tecnici-e-prospettive-critiche]]
 - [[03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering]]
 - [[04-attivita-hr-storiche-analisi-del-grado-di-automazione-e-rischi]]
 - [[05-il-quadro-normativo-europeo-leu-ai-act-e-la-tutela-del-lavoratore-nellera-algoritmica]]

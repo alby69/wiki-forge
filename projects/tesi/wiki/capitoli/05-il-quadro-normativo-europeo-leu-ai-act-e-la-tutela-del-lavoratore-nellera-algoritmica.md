@@ -1,7 +1,6 @@
 ---
 type: Concept
 title: 'Capitolo 5: Il Quadro Normativo Europeo: L''EU AI Act e la Tutela del Lavoratore nell''Era Algoritmica'
-status: stable
 ---
 
 # Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
@@ -41,7 +40,7 @@ Per completezza espositiva, è opportuno precisare che l'architettura dell'EU AI
 
 Nella categoria Rischio Limitato è compreso il rischio di manipolazione o di opacità nell'interazione uomo-macchina. L'AI Act (art. 50) impone per questi sistemi stringenti obblighi di trasparenza informativa. In ambito HR, rientrano in questa fascia i chatbot utilizzati per il primo contatto con i candidati o per l'assistenza ai dipendenti, nonché i sistemi che generano o manipolano contenuti sintetici (es. deepfake o avatar virtuali utilizzati per la formazione aziendale o per le comunicazioni interne).
 
-La strafrande maggioranza di IA attualmente sul mercato rientra nel quarto ed ultimo livello Rischio Minimo o Nullo, per il quale l'AI Act non introduce alcun vincolo normativo cogente, incoraggiando semmai l'adozione volontaria di codici di condotta etici. Nel perimetro HR, vi rientrano strumenti puramente amministrativi o di ottimizzazione logistica che non profilano il lavoratore né ne valutano l'operato, come i filtri antispam per la posta aziendale, i software per la pianificazione automatica dei turni o i gestionali di routine per l'archiviazione dei documenti.
+La stragrande maggioranza di IA attualmente sul mercato rientra nel quarto ed ultimo livello Rischio Minimo o Nullo, per il quale l'AI Act non introduce alcun vincolo normativo cogente, incoraggiando semmai l'adozione volontaria di codici di condotta etici. Nel perimetro HR, vi rientrano strumenti puramente amministrativi o di ottimizzazione logistica che non profilano il lavoratore né ne valutano l'operato, come i filtri antispam per la posta aziendale, i software per la pianificazione automatica dei turni o i gestionali di routine per l'archiviazione dei documenti.
 
 
 
@@ -76,7 +75,7 @@ L'**Articolo 14** impone che i sistemi ad alto rischio siano progettati per cons
 Affinché la sorveglianza umana non si riduca a un mero adempimento formale, l'**Articolo 4** introduce l'obbligo di **Alfabetizzazione in materia di IA (*AI Literacy*)**. Fornitori e *Deployer* devono adottare misure volte a garantire un livello sufficiente di competenze del proprio personale, affinché gli operatori comprendano il funzionamento tecnico degli strumenti e le conseguenze delle decisioni algoritmiche sui diritti dei soggetti interessati.
 
 ### 5.4.2 I Limiti dell'Allineamento Etico e le 5 Garanzie Fondamentali
-L'analisi etica evidenzia i limiti strutturali delle prime tecniche di condizionamento etico dell'IA, come l'apprendimento per rinforzo con feedback umano (RLHF). L'RLHF non elimina le informazioni pericolose o i pregiudizi dai parametri profondi delle reti neurali, ma si limita a "comprimerli" in superficie, rendendoli vulnerabili a tecniche di manipolazione del contesto (*jailbreaking*). Inoltre, nei modelli più avanzati possono manifestarsi rischi di inganno strategico (*sandbagging* o *alignment faking*), ovvero la capacità della macchina di simulare comportamenti conformi qualora riconosca di essere sottoposta a valutazione.
+L'analisi etica evidenzia i limiti strutturali delle prime tecniche di condizionamento etico dell'IA, come l'apprendimento per rinforzo con feedback umano (RLHF). Il Reinforcement Learning from Human Feedback non elimina le informazioni pericolose o i pregiudizi dai parametri profondi delle reti neurali, ma si limita ad agisce come un filtro superficiale: insegna al modello a non esprimere quei pregiudizi, ma non rimuove le correlazioni discriminatorie apprese durante l'addestramento sui dati storici. Poiché il bias è solo compresso e non eliminato, il sistema rimane vulnerabile a manipolazioni del contesto: ad esempio, un utente può modificare strategicamente il prompt aggirando i filtri di sicurezza e inducendo il sistema a produrre output discriminatori o non etici. Inoltre, nei modelli più avanzati, possono manifestarsi rischi di inganno strategico (*sandbagging* o *alignment faking*), ovvero la capacità della macchina di simulare comportamenti conformi qualora riconosca di essere sottoposta a valutazione.
 
 Di fronte alla natura di "scatola nera" dei modelli complessi, la riflessione etico-giuridica rifiuta l'alibi della non-spiegabilità, affermando il principio dell'**Ispezionabilità fin dalla Progettazione (*Auditable by Design*)**. Nel rapporto tra agente artificiale e lavoratore, vengono individuate cinque garanzie fondamentali necessarie a salvaguardare la dignità umana:
 1.  **Sicurezza (*Safety*):** Protezione da danni psicologici o condizionamenti compulsivi, garantendo la costante reversibilità della scelta tecnologica.
@@ -87,7 +86,7 @@ Di fronte alla natura di "scatola nera" dei modelli complessi, la riflessione et
 
 ## 5.5 Il Regime Sanzionatorio e la Sovranità Digitale Europea
 
-Per assicurare un'applicazione effettiva e dissuasiva delle norme, l'*EU AI Act* stabilisce un quadro sanzionatorio pecuniario estremamente severo (Articoli 99–101), modellato sulla falsariga della disciplina del GDPR ma con tetti edittali ancora più elevati.
+Per assicurare un'applicazione effettiva e dissuasiva delle norme, l'*EU AI Act* stabilisce un quadro sanzionatorio pecuniario estremamente severo (Articoli 99–101), modellato sulla falsariga della disciplina del GDPR (General Data Protection Regulation) ma con tetti massimi fissati dalla legge ancora più elevati.
 
 Le sanzioni si articolano in tre fasce principali:
 *   **Violazione delle Pratiche Vietate (Art. 5):** Sanzioni fino a **35.000.000 EUR** o, per le imprese, fino al **7% del fatturato mondiale totale annuo** (es. uso di sistemi di riconoscimento delle emozioni sul luogo di lavoro).
@@ -107,7 +106,6 @@ Tra le **sfide implementative** principali vi sono:
 *   **Prevenzione degli *Algorithmic Bias*:** L'uso di dati storici aziendali rischia di cristallizzare le discriminazioni del passato. Se un algoritmo di reclutamento viene addestrato su una base di dipendenti storicamente omogenea, tenderà a penalizzare i profili difformi.
 *   **Cibersicurezza Specifica per l'IA:** I sistemi ad alto rischio devono essere protetti da minacce informatiche dedicate, quali l'avvelenamento dei dati (*data poisoning*), l'avvelenamento del modello (*model poisoning*) e gli attacchi antagonistici (*adversarial attacks*) volti a falsare la valutazione del personale.
 
-**Prospettive Future: "Regolare, non Spegnere"**
 Come evidenziato dall'analisi etico-tecnologica, la società e l'economia contemporanea sono ormai strutturalmente dipendenti dagli intermediari digitali; l'ipotesi di sospendere o "staccare la spina" alle tecnologie algoritmiche appare irrealistica e dannosa. La prospettiva indicata dall'*EU AI Act* risiede nel principio "*regolare, non spegnere*", indirizzando lo sviluppo tecnologico entro binari etici. 
 
 Tra gli strumenti promozionali previsti dal regolamento figurano gli **Spazi di Sperimentazione Normativa (*Regulatory Sandboxes* - Art. 57)**, ambienti controllati istituiti dagli Stati membri in cui le aziende possono testare soluzioni di IA innovative sotto la supervisione diretta delle autorità di vigilanza, e le **Prove in Condizioni Reali (Art. 60)**, subordinate al consenso informato dei soggetti coinvolti e a rigide garanzie di reversibilità delle decisioni.

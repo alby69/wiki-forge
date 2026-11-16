@@ -57,4 +57,4 @@ stato: draft
 - [[autori/david-graeber|David Graeber]]
 - [[autori/andrej-karpathy|Andrej Karpathy]]
 - [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
-- [[capitoli/06-considerazioni-personali-riflessioni-critiche-e-conclusioni|Capitolo 6: Conclusioni]]
+- [[capitoli/06-considerazioni-personali-sintesi-del-percorso-e-prospettive-future-per-le-risorse-umane|Capitolo 6: Conclusioni]]

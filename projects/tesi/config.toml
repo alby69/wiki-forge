@@ -24,7 +24,7 @@ opencode_command = ""
 opencode_args = [ "run", "--format", "json" ]
 api_base_url = ""
 api_key_env = "WIKIFORGE_LLM_API_KEY"
-model = "qwen2.5-coder:3b"
+model = "claude-sonnet-4-6"
 max_tokens = 4096
 timeout_seconds = 60
 

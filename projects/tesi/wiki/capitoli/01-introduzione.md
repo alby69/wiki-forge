@@ -122,7 +122,7 @@ In questo modo, la complessità tecnologica del Knowledge Engineering viene tota
 
 ## Collegamenti Correlati
 - [[capitoli/00-frontespizio-e-sinossi|Frontespizio e Sinossi]]
-- [[capitoli/02-studio-degli-attori-principali-del-settore-ai-attori-tecnici|Capitolo 2: Studio degli Attori Principali]]
+- [[capitoli/02-studio-degli-attori-principali-del-settore-ai-attori-tecnici-e-prospettive-critiche|Capitolo 2: Studio degli Attori Principali]]
 - [[capitoli/03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering|Capitolo 3: Progettazione della Piattaforma]]
 - [[sostituzione-o-trasformazione]]
 - [[concezioni-dell-ia]]
