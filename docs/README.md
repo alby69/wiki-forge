@@ -1,11 +1,12 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (21 file) e dei contenuti della guida in-app (`docs/help/`).
+Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida in-app (`docs/help/`).
 
 ## 📖 Per utenti ed operatori
 
 | Documento | Contenuto |
 |---|---|
+| [`GUIDA_OPERATIVA.md`](GUIDA_OPERATIVA.md) | **Guida unica non tecnica**: attività, flusso di lavoro tipico e buone pratiche. Punto di partenza consigliato. |
 | [`USER_GUIDE.md`](USER_GUIDE.md) | Focus Mode: i 3 passi (Carica / Compila / Chiedi), wizard guidati, toolbar dell'editor. |
 | [`TUTORIAL.md`](TUTORIAL.md) | Guida operativa completa: UI, workflow in 5 fasi, use case, comandi chat, troubleshooting. |
 | [`THESIS_GUIDE.md`](THESIS_GUIDE.md) | Esempio applicato alla Tesi Magistrale: dai capitoli al PDF finale (`output/thesis_final.pdf`). |
