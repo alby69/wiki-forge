@@ -588,19 +588,19 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
     role: 'Knowledge Engineer',
     category: 'Conceptual Modeling',
     summary: 'Infere e valida lo schema tipizzato della wiki, arricchendo le note con tag dal vocabolario controllato.',
-    objective: 'Estrarre predicati e classi dal vault, validare la conformitÃ  sintattica [schema] e normalizzare la tassonomia.',
+    objective: 'Estrarre predicati e classi dal vault, validare la conformità sintattica [schema] e normalizzare la tassonomia.',
     steps: [
       {
         stepNumber: 1,
         title: 'Infer Domain Schema',
-        description: 'Analizza i predicati ricorrenti nelle note e propone uno schema TOML di classi e proprietÃ .',
+        description: 'Analizza i predicati ricorrenti nelle note e propone uno schema TOML di classi e proprietà.',
         scriptId: 'schema_infer',
         defaultArgs: {},
       },
       {
         stepNumber: 2,
         title: 'Lint Schema Constraints',
-        description: 'Verifica la conformitÃ  sintattica e i vincoli di tipo delle note rispetto allo schema definito.',
+        description: 'Verifica la conformità sintattica e i vincoli di tipo delle note rispetto allo schema definito.',
         scriptId: 'schema_lint',
         defaultArgs: {},
       },
@@ -691,7 +691,7 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
     role: 'Knowledge Engineer',
     category: 'Interoperability & Graph',
     summary: 'Mappa l\'intero vault Zettelkasten in triple RDF W3C (JSON-LD e Turtle TTL) con identificatori IRI permanenti.',
-    objective: 'Garantire l\'interoperabilita con sistemi aziendali, GraphDB, ProtÃ©gÃ© ed engine GraphRAG.',
+    objective: 'Garantire l\'interoperabilita con sistemi aziendali, GraphDB, Protégé ed engine GraphRAG.',
     steps: [
       {
         stepNumber: 1,
@@ -737,7 +737,7 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
 
 function formatWizardList(): string {
   return Object.values(WIZARD_SCENARIOS)
-    .map(s => `- \`/wizard ${s.id}\` â€” **${s.name}**: ${s.description}`)
+    .map(s => `- \`/wizard ${s.id}\` — **${s.name}**: ${s.description}`)
     .join('\n');
 }
 
@@ -2988,7 +2988,7 @@ export class AgentServer {
     }
 
     if (command === 'wizard' && !WIZARD_SCENARIOS[args.toLowerCase().trim()]) {
-      const text = `### ðŸª„ Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
+      const text = `### 🪄 Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
       onChunk(text);
       return text;
     }
@@ -3030,9 +3030,9 @@ export class AgentServer {
             ? `Execute the "${wizardScenario.name}" wizard scenario now.`
             : (rawInput || 'Hello');
         const sysPrompt = command === 'consult'
-          ? `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md Â§5.4. Synthesize relevant notes and cite using [[wikilinks]].`
+          ? `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md §5.4. Synthesize relevant notes and cite using [[wikilinks]].`
           : wizardScenario
-            ? `${systemPrompt}\n\nTASK: Execute the "${wizardScenario.name}" wizard scenario according to AGENT.md Â§/wizard. Follow the workflow steps: ${wizardScenario.workflow.join(' â†’ ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${wizardScenario.prompt}`
+            ? `${systemPrompt}\n\nTASK: Execute the "${wizardScenario.name}" wizard scenario according to AGENT.md §/wizard. Follow the workflow steps: ${wizardScenario.workflow.join(' → ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${wizardScenario.prompt}`
             : systemPrompt;
 
         return await client.completeStream(
@@ -3106,12 +3106,12 @@ export class AgentServer {
         const client = await this.getOrInitLlmClient();
         try {
           return await client.complete({
-            systemPrompt: `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md Â§5.4. Synthesize relevant notes and cite using [[wikilinks]].`,
+            systemPrompt: `${systemPrompt}\n\nTASK: Process a /consult workflow query according to AGENT.md §5.4. Synthesize relevant notes and cite using [[wikilinks]].`,
             userMessage: `Perform /consult synthesis for query: "${args}"`,
             contextNotes,
           });
         } catch (err) {
-          return `### ðŸ” Consult Synthesis for "${args}" (Fallback)\n\nFound **${contextNotes.length}** matching article(s):\n\n` +
+          return `### 🔍 Consult Synthesis for "${args}" (Fallback)\n\nFound **${contextNotes.length}** matching article(s):\n\n` +
             contextNotes.map(n => `- [[${n.id}]] (${n.folder}): ${n.title}`).join('\n') +
             `\n\n*Note: LLM provider unavailable (${String(err)}).*`;
         }
@@ -3171,11 +3171,11 @@ export class AgentServer {
         try {
           const folders = await fs.readdir(skillsDir, { withFileTypes: true });
           const skillNames = folders.filter(f => f.isDirectory()).map(f => f.name);
-          return `### ðŸ› ï¸ Registered Agent Skills (${skillNames.length})\n\nAvailable skills in \`skills/\`:\n` +
-            skillNames.map(s => `- \`/skill ${s}\` â€” \`skills/${s}/SKILL.md\``).join('\n') +
+          return `### 🛠️ Registered Agent Skills (${skillNames.length})\n\nAvailable skills in \`skills/\`:\n` +
+            skillNames.map(s => `- \`/skill ${s}\` — \`skills/${s}/SKILL.md\``).join('\n') +
             `\n\n*Security Guardrail Active: Shell commands and write operations outside project workspace require explicit approval.*`;
         } catch (_e) {
-          return `### ðŸ› ï¸ Agent Skills\n\nSkills directory \`skills/\` not found.`;
+          return `### 🛠️ Agent Skills\n\nSkills directory \`skills/\` not found.`;
         }
       }
 
@@ -3183,18 +3183,18 @@ export class AgentServer {
         const scenarioId = args.toLowerCase().trim();
         const scenario = WIZARD_SCENARIOS[scenarioId];
         if (!scenario) {
-          return `### ðŸª„ Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
+          return `### 🪄 Wizard Scenarios\n\nChoose a scenario or launch it directly:\n\n${formatWizardList()}\n\n*Run with e.g. \`/wizard academic\`.*`;
         }
         const systemPrompt = await this.getSystemPrompt();
         const client = await this.getOrInitLlmClient();
         try {
           return await client.complete({
-            systemPrompt: `${systemPrompt}\n\nTASK: Execute the "${scenario.name}" wizard scenario according to AGENT.md Â§/wizard. Follow the workflow steps: ${scenario.workflow.join(' â†’ ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${scenario.prompt}`,
+            systemPrompt: `${systemPrompt}\n\nTASK: Execute the "${scenario.name}" wizard scenario according to AGENT.md §/wizard. Follow the workflow steps: ${scenario.workflow.join(' → ')}. Then run the scenario prompt and confirm each step.\nScenario prompt: ${scenario.prompt}`,
             userMessage: `Execute the "${scenario.name}" wizard scenario now.`,
             contextNotes,
           });
         } catch (err) {
-          return `### ðŸª„ Wizard: ${scenario.name}\n\n**Workflow:** ${scenario.workflow.join(' â†’ ')}\n\n**Prompt:** ${scenario.prompt}\n\n*(LLM provider unavailable (${String(err)}).)*`;
+          return `### 🪄 Wizard: ${scenario.name}\n\n**Workflow:** ${scenario.workflow.join(' → ')}\n\n**Prompt:** ${scenario.prompt}\n\n*(LLM provider unavailable (${String(err)}).)*`;
         }
       }
 
@@ -3225,9 +3225,9 @@ export class AgentServer {
           // Fallback response if LLM provider fails
           const match = contextNotes[0];
           if (match) {
-            return `### ðŸ’¡ Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${match.id}]] (${match.title}):\n\n${match.content.slice(0, 400)}...\n\nRelated articles: ${contextNotes.slice(0, 4).map(n => `[[${n.id}]]`).join(', ')}\n\n*(LLM completion error: ${String(err)})*`;
+            return `### 💡 Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${match.id}]] (${match.title}):\n\n${match.content.slice(0, 400)}...\n\nRelated articles: ${contextNotes.slice(0, 4).map(n => `[[${n.id}]]`).join(', ')}\n\n*(LLM completion error: ${String(err)})*`;
           }
-          return `### ðŸ’¡ Answer for "${rawInput}"\n\nProcessed query using agent guidelines. You can compile new findings into your wiki notes using the **Attach to Wiki** button below.\n\n*(LLM completion error: ${String(err)})*`;
+          return `### 💡 Answer for "${rawInput}"\n\nProcessed query using agent guidelines. You can compile new findings into your wiki notes using the **Attach to Wiki** button below.\n\n*(LLM completion error: ${String(err)})*`;
         }
       }
     }
@@ -3339,7 +3339,7 @@ export class AgentServer {
 
     if (uncompiledFiles.length === 0) {
       const notes = await this.readAllWikiNotes(projectId);
-      return `### âš¡ Compile Workflow Completed\n\n- **Uncompiled Files in \`raw/\`**: 0\n- **Wiki Articles Analyzed**: ${notes.length}\n- **Status**: Knowledge base fully interlinked and compiled according to \`AGENT.md\` guidelines.`;
+      return `### ⚡ Compile Workflow Completed\n\n- **Uncompiled Files in \`raw/\`**: 0\n- **Wiki Articles Analyzed**: ${notes.length}\n- **Status**: Knowledge base fully interlinked and compiled according to \`AGENT.md\` guidelines.`;
     }
 
     const client = await this.getOrInitLlmClient();
@@ -3351,7 +3351,7 @@ export class AgentServer {
       const content = await fs.readFile(rawPath, 'utf-8');
 
       try {
-        const prompt = `Ingest raw file '${fileName}' into the wiki following AGENT.md Â§5.1 compile guidelines. Generate article content in Markdown with YAML frontmatter, H1 title, summary, related [[wikilinks]], and sources section.`;
+        const prompt = `Ingest raw file '${fileName}' into the wiki following AGENT.md §5.1 compile guidelines. Generate article content in Markdown with YAML frontmatter, H1 title, summary, related [[wikilinks]], and sources section.`;
         const response = await client.complete({
           systemPrompt,
           userMessage: prompt,
@@ -3380,7 +3380,7 @@ export class AgentServer {
 
     await this.executeReindexWorkflow(projectId);
 
-    return `### âš¡ Compile Workflow Execution Report\n\n**Processed ${uncompiledFiles.length} file(s):**\n${compiledResults.join('\n')}\n\n- **Indexes updated**: Regenerated \`wiki/index.md\` and thematic indexes.`;
+    return `### ⚡ Compile Workflow Execution Report\n\n**Processed ${uncompiledFiles.length} file(s):**\n${compiledResults.join('\n')}\n\n- **Indexes updated**: Regenerated \`wiki/index.md\` and thematic indexes.`;
   }
 
   private async executeAuditWorkflow(notes: WikiNote[], projectId: string = 'default'): Promise<string> {
@@ -3427,7 +3427,7 @@ export class AgentServer {
     const brokenList = brokenLinks.map(b => `- [[${b.source}]] -> [[${b.target}]]`).join('\n') || 'None';
     const missingFmList = missingFrontmatter.map(id => `- [[${id}]]`).join('\n') || 'None (All notes contain tags/metadata)';
 
-    return `### ðŸ›¡ï¸ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter / Tags (${missingFrontmatter.length})**:\n${missingFmList}`;
+    return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter / Tags (${missingFrontmatter.length})**:\n${missingFmList}`;
   }
 
   public async executeStudyGuideWorkflow(topic: string, notes: WikiNote[]): Promise<string> {
@@ -3454,16 +3454,16 @@ ${sourceIds.map(id => `  - wiki/${id}.md`).join('\n')}
 
 # Study Guide: ${topic || 'General Overview'}
 
-## ðŸ“– Executive Summary
+## 📖 Executive Summary
 Comprehensive study guide covering key topics and concepts synthesized from **${relevantNotes.length}** wiki articles.
 
-## ðŸ—‚ï¸ Section Breakdown
+## 🗂️ Section Breakdown
 ${sections || 'No notes found for topic.'}
 
-## ðŸ’¡ Key Glossary & Terms
+## 💡 Key Glossary & Terms
 - **Primary Concepts**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ')}
 
-## â“ Self-Assessment Questions
+## ❓ Self-Assessment Questions
 1. **Q1**: What are the core arguments presented in ${sourceIds[0] ? `[[${sourceIds[0]}]]` : 'the wiki notes'}?
    - *Answer*: Refer to the summary section in the article.
 2. **Q2**: How do these concepts interlink across thematic folders?
@@ -3473,7 +3473,7 @@ ${sections || 'No notes found for topic.'}
     await fs.writeFile(filePath, content, 'utf-8');
     const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
 
-    return `### ðŸ“š Study Guide Generated\n\n- **Saved to**: \`${relPath}\`\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Study guide is ready in output directory.*`;
+    return `### 📚 Study Guide Generated\n\n- **Saved to**: \`${relPath}\`\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Study guide is ready in output directory.*`;
   }
 
   public async executeNoteWorkflow(noteText: string, projectId: string = 'default'): Promise<string> {
@@ -3482,7 +3482,7 @@ ${sections || 'No notes found for topic.'}
 
     const text = (noteText || '').trim();
     if (!text) {
-      return `### ðŸ“ Quick Note\n\nPlease provide note content. Example: \`/note Key insight about LLM memory\``;
+      return `### 📝 Quick Note\n\nPlease provide note content. Example: \`/note Key insight about LLM memory\``;
     }
 
     const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
@@ -3499,7 +3499,7 @@ ${sections || 'No notes found for topic.'}
     const entry = `## [${timestamp}]\n${text}\n\n`;
     await fs.writeFile(notesFilePath, existing + entry, 'utf-8');
 
-    return `### ðŸ“ Quick Note Saved\n\n- **Stored in**: \`notes/quick-notes.md\`\n- **Status**: Saved in scratchpad (excluded from \`wiki/index.md\`). Use \`/promote-note <id> <wiki-name>\` to convert to a formal article.`;
+    return `### 📝 Quick Note Saved\n\n- **Stored in**: \`notes/quick-notes.md\`\n- **Status**: Saved in scratchpad (excluded from \`wiki/index.md\`). Use \`/promote-note <id> <wiki-name>\` to convert to a formal article.`;
   }
 
   public async executeAudioOverviewWorkflow(target: string, notes: WikiNote[]): Promise<string> {
@@ -3537,7 +3537,7 @@ ${sections || 'No notes found for topic.'}
     await fs.writeFile(scriptPath, scriptLines.join('\n'), 'utf-8');
     const relScriptPath = path.relative(this.rootDir, scriptPath).replace(/\\/g, '/');
 
-    return `### ðŸŽ™ï¸ Audio Overview Script Generated\n\n- **Dialogue Script**: \`${relScriptPath}\`\n- **TTS Provider Status**: \`none\` (Audio synthesis disabled in \`config.toml\`). Dialogue script generated successfully.\n- **Sources Covered**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*To enable MP3 generation, configure \`[audio]\` provider in \`config.toml\`.*`;
+    return `### 🎙️ Audio Overview Script Generated\n\n- **Dialogue Script**: \`${relScriptPath}\`\n- **TTS Provider Status**: \`none\` (Audio synthesis disabled in \`config.toml\`). Dialogue script generated successfully.\n- **Sources Covered**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*To enable MP3 generation, configure \`[audio]\` provider in \`config.toml\`.*`;
   }
 
   public async executePromoteNoteWorkflow(argsText: string, projectId: string = 'default'): Promise<string> {
@@ -3546,7 +3546,7 @@ ${sections || 'No notes found for topic.'}
     const wikiName = parts[1] || 'general';
 
     if (!noteId) {
-      return `### ðŸš€ Promote Note\n\nUsage: \`/promote-note <note-id> [wiki-folder]\``;
+      return `### 🚀 Promote Note\n\nUsage: \`/promote-note <note-id> [wiki-folder]\``;
     }
 
     const notesDir = path.join(await this.resolveProjectRoot(projectId), 'notes');
@@ -3557,7 +3557,7 @@ ${sections || 'No notes found for topic.'}
       const raw = await fs.readFile(notesFilePath, 'utf-8');
       noteContent = raw;
     } catch (_e) {
-      return `### ðŸš€ Promote Note\n\nNo scratchpad notes found in \`notes/quick-notes.md\`.`;
+      return `### 🚀 Promote Note\n\nNo scratchpad notes found in \`notes/quick-notes.md\`.`;
     }
 
     const stem = noteId.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -3595,15 +3595,15 @@ ${noteContent.slice(0, 500)}
 
     await this.executeReindexWorkflow(projectId);
 
-    return `### ðŸš€ Note Promoted to Wiki Article\n\n- **Created Article**: \`wiki/${createdNote.folder}/${createdNote.id}.md\`\n- **Thematic Index Updated**: \`wiki/${createdNote.folder}/index.md\`\n- **Master Index Updated**: \`wiki/index.md\``;
+    return `### 🚀 Note Promoted to Wiki Article\n\n- **Created Article**: \`wiki/${createdNote.folder}/${createdNote.id}.md\`\n- **Thematic Index Updated**: \`wiki/${createdNote.folder}/index.md\`\n- **Master Index Updated**: \`wiki/index.md\``;
   }
 
   /**
    * Adds an OKF v0.2 human verification event to a note's frontmatter.
    *
    * This is the operation that flips a node's trust tier to `human-reviewed`
-   * (ðŸŸ¢ instead of ðŸŸ¡/âšª), because the tier is derived from the `verified`
-   * list (docs/OKF_SPEC.md Â§6). Optionally promotes `status` to `stable`,
+   * (🟢 instead of 🟡/⚪), because the tier is derived from the `verified`
+   * list (docs/OKF_SPEC.md §6). Optionally promotes `status` to `stable`,
    * which ontology Rule 3 only allows for human-verified notes.
    */
   public async executeVerifyWorkflow(argsText: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
@@ -3636,13 +3636,13 @@ ${noteContent.slice(0, 500)}
 
     const noteRef = noteTokens.join(' ').trim().replace(/^\[\[|\]\]$/g, '');
 
-    const usage = `### âœ… Human Verification\n\nUsage: \`/verify <note> [reviewer=<id>] [stable] [comment=<text>]\`\n\n` +
+    const usage = `### ✅ Human Verification\n\nUsage: \`/verify <note> [reviewer=<id>] [stable] [comment=<text>]\`\n\n` +
       `- \`<note>\`: note id, title, or path (e.g. \`stefano-gatti\` or \`wiki/autori/stefano-gatti.md\`).\n` +
       `- \`reviewer=<id>\`: human reviewer id (default \`local\`, written as \`human:<id>\`).\n` +
       `- \`stable\`: also promote \`status\` to \`stable\` (requires human review, per ontology Rule 3).\n` +
       `- \`comment=<text>\`: optional note recorded in \`wiki/log.md\`.\n\n` +
       `Example: \`/verify stefano-gatti reviewer=studente stable\`\n\n` +
-      `*This writes a \`verified: - by: human:<id>\` entry â€” the only action that turns a node ðŸŸ¢ in the graph/sidebar.*`;
+      `*This writes a \`verified: - by: human:<id>\` entry — the only action that turns a node 🟢 in the graph/sidebar.*`;
 
     if (!noteRef) {
       return usage;
@@ -3661,7 +3661,7 @@ ${noteContent.slice(0, 500)}
         .slice(0, 8)
         .map(n => `\`${n.id}\``)
         .join(', ');
-      return `### âœ… Human Verification\n\nNo wiki note matched \`${noteRef}\`.\n\nTry one of: ${sample || 'none'}.`;
+      return `### ✅ Human Verification\n\nNo wiki note matched \`${noteRef}\`.\n\nTry one of: ${sample || 'none'}.`;
     }
 
     const id = reviewerId.replace(/^human:/i, '').trim() || 'local';
@@ -3676,7 +3676,7 @@ ${noteContent.slice(0, 500)}
     try {
       raw = await fs.readFile(absPath, 'utf-8');
     } catch (err) {
-      return `### âœ… Human Verification\n\nCould not read \`${target.path}\`: ${String(err)}`;
+      return `### ✅ Human Verification\n\nCould not read \`${target.path}\`: ${String(err)}`;
     }
 
     const { content, alreadyVerified, changedStable, changed } = this.applyVerification(raw, actor, timestamp, setStable);
@@ -3685,20 +3685,20 @@ ${noteContent.slice(0, 500)}
     if (changed) {
       const changeBits: string[] = [];
       changeBits.push(alreadyVerified ? 'verification refreshed' : `added \`by: ${actor}\``);
-      if (setStable) changeBits.push(changedStable ? 'status â†’ stable' : 'status already stable');
-      const logMsg = `Human-verified [${target.title}](${target.path.replace(/^wiki\//, '')}) by \`${actor}\` (${changeBits.join('; ')})${comment ? ` â€” ${comment}` : ''}.`;
+      if (setStable) changeBits.push(changedStable ? 'status → stable' : 'status already stable');
+      const logMsg = `Human-verified [${target.title}](${target.path.replace(/^wiki\//, '')}) by \`${actor}\` (${changeBits.join('; ')})${comment ? ` — ${comment}` : ''}.`;
       const wikiDir = await this.getWikiDir(projectId);
       await this.appendWikiLog(wikiDir, logMsg, timestamp.slice(0, 10));
     }
 
     const finalNote = this.parser.parseNote(target.id, target.title, content, target.folder || 'wiki', target.path);
     const tierLabel = finalNote.trustTier === 'human-reviewed'
-      ? 'ðŸŸ¢ human-reviewed'
+      ? '🟢 human-reviewed'
       : finalNote.trustTier === 'machine-confirmed'
-        ? 'ðŸŸ¡ machine-confirmed'
-        : 'âšª unverified';
+        ? '🟡 machine-confirmed'
+        : '⚪ unverified';
 
-    return `### âœ… Human Verification Recorded\n\n` +
+    return `### ✅ Human Verification Recorded\n\n` +
       `- **Note**: [[${target.id}]] (\`${target.path}\`)\n` +
       `- **Reviewer**: \`${actor}\`\n` +
       `- **Verified at**: ${timestamp}\n` +
@@ -3807,7 +3807,7 @@ ${noteContent.slice(0, 500)}
   }
 
   /**
-   * Appends an entry to `wiki/log.md` (OKF Â§9), creating a dated section when
+   * Appends an entry to `wiki/log.md` (OKF §9), creating a dated section when
    * today's section does not exist yet (newest dates first).
    */
   private async appendWikiLog(wikiDir: string, message: string, date: string): Promise<void> {
@@ -3846,7 +3846,7 @@ ${noteContent.slice(0, 500)}
     const note = notes.find(n => n.id.toLowerCase() === q || n.title.toLowerCase() === q || n.path.toLowerCase().includes(q)) || notes[0];
 
     if (!note) {
-      return `### ðŸ§  Mind Map\n\nNo matching note found to generate mind map.`;
+      return `### 🧠 Mind Map\n\nNo matching note found to generate mind map.`;
     }
 
     const lines = note.content.split('\n');
@@ -3860,13 +3860,13 @@ ${noteContent.slice(0, 500)}
       if (line.startsWith('## ')) {
         const title = line.replace(/^##\s+/, '').trim();
         currentHeading = title;
-        treeLines.push(`  - ðŸ“Œ **${title}**`);
+        treeLines.push(`  - 📌 **${title}**`);
         const subId = `${note.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
         nodes.push({ id: subId, label: title, group: 'heading' });
         links.push({ source: note.id, target: subId });
       } else if (line.startsWith('### ')) {
         const title = line.replace(/^###\s+/, '').trim();
-        treeLines.push(`    - ðŸ”¹ ${title}`);
+        treeLines.push(`    - 🔹 ${title}`);
         const subId = `${note.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
         nodes.push({ id: subId, label: title, group: 'subheading' });
         const parentId = currentHeading ? `${note.id}-${currentHeading.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : note.id;
@@ -3891,13 +3891,13 @@ sources:
 
 # Mind Map: ${note.title}
 
-## ðŸŒ³ Hierarchical Tree
+## 🌳 Hierarchical Tree
 ${treeLines.join('\n')}
 
-## ðŸ”— Connected Wikilinks
+## 🔗 Connected Wikilinks
 ${note.outboundLinks.map(l => `- [[${l}]]`).join('\n') || '- None'}
 
-## ðŸ“Š ForceGraph Data Payload (JSON)
+## 📊 ForceGraph Data Payload (JSON)
 \`\`\`json
 ${jsonPayload}
 \`\`\`
@@ -3906,7 +3906,7 @@ ${jsonPayload}
     await fs.writeFile(filePath, content, 'utf-8');
     const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
 
-    return `### ðŸ§  Mind Map Generated for "${note.title}"\n\n- **Saved to**: \`${relPath}\`\n- **Extracted Headings**: ${nodes.length - 1}\n- **Wikilinks**: ${note.outboundLinks.length}\n\n\`\`\`text\n${treeLines.slice(0, 15).join('\n')}\n${treeLines.length > 15 ? '...' : ''}\n\`\`\`\n\n*Mind map tree and JSON stored in output/.*`;
+    return `### 🧠 Mind Map Generated for "${note.title}"\n\n- **Saved to**: \`${relPath}\`\n- **Extracted Headings**: ${nodes.length - 1}\n- **Wikilinks**: ${note.outboundLinks.length}\n\n\`\`\`text\n${treeLines.slice(0, 15).join('\n')}\n${treeLines.length > 15 ? '...' : ''}\n\`\`\`\n\n*Mind map tree and JSON stored in output/.*`;
   }
 
   public async executeDeepResearchWorkflow(question: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
@@ -3955,22 +3955,22 @@ ${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
 
 # Deep Research Report: ${q || 'Knowledge Base Analysis'}
 
-## ðŸŽ¯ Executive Summary
+## 🎯 Executive Summary
 Extended multi-source analysis synthesized across **${sources.length}** wiki article(s) regarding: *"${q || 'Knowledge Base Overview'}"*.
 
-## ðŸ”¬ Thematic Deep-Dive
+## 🔬 Thematic Deep-Dive
 ${sources.map(n => `### Analysis of [[${n.id}]] (${n.title})
 - **Folder**: \`${n.folder}\`
 - **Core Insights**: ${n.content.slice(0, 300).replace(/\n/g, ' ')}...
 - **Connected Links**: ${n.outboundLinks.map(l => `[[${l}]]`).join(', ') || 'None'}
 `).join('\n')}
 
-## ðŸ“Š Source Attribution Matrix
+## 📊 Source Attribution Matrix
 | Claim / Finding | Wiki Source | Raw Source Grounding |
 |---|---|---|
 ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
 
-## âš ï¸ Identified Knowledge Gaps
+## ⚠️ Identified Knowledge Gaps
 - **Potential Missing Sources**: Further documents regarding specific edge cases of *${q || 'this domain'}*.
 - **Recommended Action**: Ingest additional primary sources into \`sources/\` and run \`/compile\`.
 `;
@@ -3982,7 +3982,7 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
     const relSynthesis = path.relative(this.rootDir, synthesisPath).replace(/\\/g, '/');
 
     const count = sources.length;
-    return '### ðŸ”¬ Deep Research Report Generated\n\n- **Output File**: `' + relPath + '`\n- **Synthesis Note**: `' + relSynthesis + '`\n- **Articles Consulted**: ' + count + '\n- **Reasoning Trace**: Included in `<think>` block.\n\n*Report and synthesis note saved successfully.*';
+    return '### 🔬 Deep Research Report Generated\n\n- **Output File**: `' + relPath + '`\n- **Synthesis Note**: `' + relSynthesis + '`\n- **Articles Consulted**: ' + count + '\n- **Reasoning Trace**: Included in `<think>` block.\n\n*Report and synthesis note saved successfully.*';
   }
 
   public async executeQuizWorkflow(topicAndCount: string, notes: WikiNote[]): Promise<string> {
@@ -4045,7 +4045,7 @@ ${questions.join('\n---\n\n')}
     await fs.writeFile(filePath, content, 'utf-8');
     const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
 
-    return `### ðŸ§ª Quiz Generated\n\n- **Saved to**: \`${relPath}\`\n- **Total Questions**: ${questions.length}\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Quiz generated in output directory.*`;
+    return `### 🧪 Quiz Generated\n\n- **Saved to**: \`${relPath}\`\n- **Total Questions**: ${questions.length}\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Quiz generated in output directory.*`;
   }
 
   public async executeTraceWorkflow(target: string, notes: WikiNote[]): Promise<string> {
@@ -4058,7 +4058,7 @@ ${questions.join('\n---\n\n')}
     );
 
     if (connected.length === 0) {
-      return `### ðŸ•¸ï¸ Connection Trace for "${target}"\n\nNo target connections traced in wiki notes.`;
+      return `### 🕸️ Connection Trace for "${target}"\n\nNo target connections traced in wiki notes.`;
     }
 
     const traceEntries: string[] = [];
@@ -4125,7 +4125,7 @@ ${questions.join('\n---\n\n')}
       traceEntries.push(entry);
     }
 
-    return `### ðŸ•¸ï¸ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
+    return `### 🕸️ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
   }
 
   private async executeReindexWorkflow(projectId: string = 'default'): Promise<string> {
@@ -4153,7 +4153,7 @@ ${questions.join('\n---\n\n')}
 
       const nonIndexNotes = folderNotes.filter(n => n.id !== `${folder}/index` && !n.path.endsWith('index.md'));
       const articleList = nonIndexNotes
-        .map(n => `- [[${n.id}]] â€” ${n.title}`)
+        .map(n => `- [[${n.id}]] — ${n.title}`)
         .join('\n');
 
       const indexContent = `# ${folder.replace(/[-_]/g, ' ').toUpperCase()} Index\n\nThematic index for **${folder}**.\n\n## Articles\n\n${articleList || 'No articles yet.'}\n`;
@@ -4173,6 +4173,6 @@ ${questions.join('\n---\n\n')}
 
     await fs.writeFile(path.join(wikiDir, 'index.md'), masterIndexContent, 'utf-8');
 
-    return `### ðŸ”„ Reindex Complete\n\n- **Master Index Written**: \`wiki/index.md\`\n- **Thematic Indexes Updated**: ${thematicIndexesCount}\n- **Indexed Notes**: ${notes.length}\n- **Backlinks Re-evaluated**: Done.`;
+    return `### 🔄 Reindex Complete\n\n- **Master Index Written**: \`wiki/index.md\`\n- **Thematic Indexes Updated**: ${thematicIndexesCount}\n- **Indexed Notes**: ${notes.length}\n- **Backlinks Re-evaluated**: Done.`;
   }
 }
