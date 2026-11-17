@@ -47,9 +47,11 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 > Full index of all guides: **[`docs/README.md`](docs/README.md)**.
 
 ### 📖 Per Utenti ed Operatori
+- **[`docs/GUIDA_OPERATIVA.md`](docs/GUIDA_OPERATIVA.md)** — **Guida Operativa Unica (non tecnica)**: attività d'uso, flusso di lavoro tipico e buone pratiche. *Punto di partenza consigliato.*
 - **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — **Guida Operativa Focus Mode**: Guida passo-passo ai wizard guidati.
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida all'interfaccia Web UI, comandi chat e troubleshooting.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico per la tesi in Markdown.
+- **Screenshot UI/UX**: la cartella **[`img/`](img/)** contiene le schermate aggiornate (21 immagini, JPG 1920×1080) per le situazioni d'uso dello **studente** (01–13) e del **Knowledge Engineer** (14–21), catturate dall'implementazione corrente.
 
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager e Health Engine.
