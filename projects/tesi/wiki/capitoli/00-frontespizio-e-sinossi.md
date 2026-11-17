@@ -8,8 +8,8 @@ generated:
   by: process:migrate-script
   at: '2026-11-16T08:19:38Z'
 verified:
-  - by: human:studente
-    at: 2026-11-17T10:06:56Z
+- by: human:studente
+  at: 2026-11-17 10:06:56+00:00
 sources: []
 ---
 # Frontespizio e Sinossi

@@ -1,3 +1,15 @@
+---
+type: Concept
+title: 'Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca'
+description: Negli ultimi anni l'Intelligenza Artificiale ha smesso di essere una
+  promessa di laboratorio per diventare una presenza concreta nelle nostr...
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-11-17T17:06:39Z'
+verified: []
+sources: []
+---
 # Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca
 
 Negli ultimi anni l'Intelligenza Artificiale ha smesso di essere una promessa di laboratorio per diventare una presenza concreta nelle nostre giornate e nelle nostre organizzazioni lavorative. Il punto di svolta è arrivato con i modelli linguistici di grande scala (LLM): sistemi capaci di leggere, riassumere, tradurre e generare testo con una naturalezza che fino a poco prima sembrava appannaggio esclusivo dell'essere umano. Da quella soglia la corsa non si è più fermata: modelli sempre più grandi, poi sempre più capaci di ragionare in passaggi sequenziali, poi in grado di usare strumenti e di agire con una certa autonomia come agenti. È un percorso che affascina e insieme inquieta, perché tocca molto più del software — riguarda concretamente il modo in cui lavoriamo, decidiamo, impariamo e, in definitiva, attribuiamo valore a ciò che facciamo.
