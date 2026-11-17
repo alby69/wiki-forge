@@ -7,7 +7,9 @@ status: stable
 generated:
   by: process:migrate-script
   at: '2026-11-16T08:19:38Z'
-verified: []
+verified:
+  - by: human:studente
+    at: 2026-11-17T10:06:56Z
 sources: []
 ---
 # Frontespizio e Sinossi

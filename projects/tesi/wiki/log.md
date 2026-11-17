@@ -9,6 +9,10 @@ tags:
 
 # Wiki Update Log
 
+## 2026-11-17
+
+* **Update**: Human-verified [Frontespizio e Sinossi](capitoli/00-frontespizio-e-sinossi.md) by `human:studente` (added `by: human:studente`).
+
 ## 2026-10-13
 
 * **Update**: Aggiunto preambolo definitorio della pipeline nella [Introduzione](capitoli/01-introduzione.md), come ponte tra l'apertura del capitolo e il paragrafo §1.2.1.
