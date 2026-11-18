@@ -165,6 +165,32 @@ Synthesizes knowledge graphs.
     assert.ok(promotedContent.includes('# Llm agent loops'));
   });
 
+  await t.test('/note creates a separate entry even when the previous note has no trailing newline', async () => {
+    // Reproduces the reported bug: an older write left the heading glued to the
+    // previous note ("nota"## [timestamp]), so the parser saw a single entry and
+    // the new note looked attached to the old one.
+    await fs.writeFile(
+      path.join(notesDir, 'quick-notes.md'),
+      '# Quick Notes Scratchpad\n\n## [2026-10-10 14:58:13]\n"nota di prova"## [2026-10-24 07:12:51]\nseconda nota\n',
+      'utf-8'
+    );
+
+    const before = await agentServer.readScratchpadEntries();
+    assert.equal(before.length, 2, 'a glued heading must still be parsed as its own entry');
+
+    await agentServer.processChatCommand({ command: '/note terza nota' });
+
+    const entries = await agentServer.readScratchpadEntries();
+    assert.deepEqual(
+      entries.map(entry => entry.text),
+      ['"nota di prova"', 'seconda nota', 'terza nota']
+    );
+    assert.equal(new Set(entries.map(entry => entry.id)).size, 3, 'entry ids must stay unique');
+
+    const file = await fs.readFile(path.join(notesDir, 'quick-notes.md'), 'utf-8');
+    assert.ok(!/\S[ \t]*## \[/.test(file), 'every heading must start on its own line');
+  });
+
   await t.test('/audio-overview generates Host A / Host B dialogue script', async () => {
     const response = await agentServer.processChatCommand({ command: '/audio-overview agent-architecture' });
     assert.ok(response.includes('Audio Overview Script Generated'));

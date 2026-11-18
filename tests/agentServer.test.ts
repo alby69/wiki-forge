@@ -210,6 +210,23 @@ Body of the target note.
     assert.equal(notFound, false);
   });
 
+  await t.test('scratchpad keeps two notes saved in the same second distinct', async () => {
+    await fs.writeFile(
+      path.join(tmpDir, 'notes', 'quick-notes.md'),
+      '# Quick Notes Scratchpad\n\n## [2026-10-12 08:00:00]\nprima\n\n## [2026-10-12 08:00:00]\nseconda\n',
+      'utf-8'
+    );
+
+    const entries = await apiStorage.getScratchpad();
+    assert.equal(entries.length, 2);
+    assert.notEqual(entries[0].id, entries[1].id, 'ids must not collide');
+
+    await apiStorage.deleteScratchpad(entries[0].id);
+    const remaining = await apiStorage.getScratchpad();
+    assert.equal(remaining.length, 1);
+    assert.equal(remaining[0].text, 'seconda');
+  });
+
   await t.test('GET /api/wiki/scratchpad returns empty when scratchpad missing', async () => {
     await fs.rm(path.join(tmpDir, 'notes', 'quick-notes.md'), { force: true });
     const entries = await apiStorage.getScratchpad();

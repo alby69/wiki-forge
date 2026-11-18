@@ -444,6 +444,56 @@ export interface ScratchpadEntry {
   text: string;
 }
 
+/** Standard preamble of `notes/quick-notes.md`. */
+const SCRATCHPAD_INTRO =
+  '# Quick Notes Scratchpad\n\n' +
+  'Notes recorded here remain unindexed until promoted with `/promote-note`.\n\n';
+
+/**
+ * Every scratchpad entry starts with a `## [timestamp]` heading on its own
+ * line. Files written by older versions (or edited by hand) can end up with a
+ * heading glued to the previous note's last line, e.g.
+ * `"nota di prova"## [2026-10-24 07:12:51]`. The parser only splits on
+ * line-start headings, so the new note was silently merged into the previous
+ * one ("/note attaches to the last note"). Sorting out the separator here
+ * repairs such files on read and on the next write.
+ */
+function normalizeScratchpad(raw: string): string {
+  return raw
+    .replace(/\r\n/g, '\n')
+    .replace(/([^\n])[ \t]*(## \[\d{4}-\d{2}-\d{2}[^\]]*\])/g, '$1\n\n$2');
+}
+
+/**
+ * Splits `notes/quick-notes.md` into entries. Ids are the timestamp with
+ * non-digits turned into dashes; if two notes were saved within the same
+ * second (same heading) the duplicates get a `-2`, `-3`, … suffix so the UI
+ * keeps them distinct and deleting one does not take the other with it.
+ */
+function parseScratchpad(raw: string): ScratchpadEntry[] {
+  const entries: ScratchpadEntry[] = [];
+  const tokens = normalizeScratchpad(raw).split(/^## \[([^\]]+)\]/m);
+  const seen = new Map<string, number>();
+
+  for (let i = 1; i < tokens.length; i += 2) {
+    const timestamp = tokens[i].trim();
+    const text = (tokens[i + 1] ?? '').trim();
+    if (!text) continue;
+
+    const baseId = timestamp.replace(/\D/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const count = (seen.get(baseId) ?? 0) + 1;
+    seen.set(baseId, count);
+
+    entries.push({
+      id: count === 1 ? baseId || `note-${entries.length + 1}` : `${baseId}-${count}`,
+      timestamp,
+      text,
+    });
+  }
+
+  return entries;
+}
+
 export interface DeleteScratchpadRequest {
   id: string;
 }
@@ -2071,21 +2121,7 @@ export class AgentServer {
       return [];
     }
 
-    const entries: ScratchpadEntry[] = [];
-    const normalized = raw.replace(/\r\n/g, '\n');
-    const tokens = normalized.split(/^## \[([^\]]+)\]/m);
-    for (let i = 1; i < tokens.length; i += 2) {
-      const timestamp = tokens[i].trim();
-      const body = (tokens[i + 1] ?? '').trim();
-      if (!body) continue;
-      const id = timestamp.replace(/\D/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      entries.push({
-        id: id || `note-${entries.length + 1}`,
-        timestamp,
-        text: body,
-      });
-    }
-    return entries;
+    return parseScratchpad(raw);
   }
 
   /** Remove a single scratchpad entry (matched by id) from `notes/quick-notes.md`. */
@@ -2098,28 +2134,13 @@ export class AgentServer {
       return false;
     }
 
-    const normalized = raw.replace(/\r\n/g, '\n');
-    const tokens = normalized.split(/^## \[([^\]]+)\]/m);
-    const entryIdOf = (ts: string): string =>
-      ts.trim().replace(/\D/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const entries = parseScratchpad(raw);
+    const kept = entries.filter(entry => entry.id !== id);
+    if (kept.length === entries.length) return false;
 
-    let deleted = false;
-    const out: string[] = [tokens[0].trim()];
-    for (let i = 1; i < tokens.length; i += 2) {
-      const ts = tokens[i].trim();
-      const body = (tokens[i + 1] ?? '').trim();
-      if (!ts || !body) continue;
-      if (entryIdOf(ts) === id) {
-        deleted = true;
-        continue;
-      }
-      out.push(`## [${ts}]\n${body}`);
-    }
-
-    if (deleted) {
-      await fs.writeFile(notesFilePath, `${out.join('\n\n')}\n`, 'utf-8');
-    }
-    return deleted;
+    const body = kept.map(entry => `## [${entry.timestamp}]\n${entry.text}\n\n`).join('');
+    await fs.writeFile(notesFilePath, SCRATCHPAD_INTRO + body, 'utf-8');
+    return true;
   }
 
   public async getAllFolders(projectId: string = 'default'): Promise<string[]> {
@@ -3509,18 +3530,24 @@ ${sections || 'No notes found for topic.'}
     }
 
     const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    const dateStr = new Date().toISOString().slice(0, 10);
     const notesFilePath = path.join(notesDir, 'quick-notes.md');
 
+    // Read, then make sure the file ends with a blank line: appending the new
+    // heading straight after the previous text is what glued new notes to the
+    // old one. `normalizeScratchpad` also repairs files that already have a
+    // glued heading.
     let existing = '';
     try {
       existing = await fs.readFile(notesFilePath, 'utf-8');
     } catch (_e) {
-      existing = `# Quick Notes Scratchpad\n\nNotes recorded here remain unindexed until promoted with \`/promote-note\`.\n\n`;
+      existing = SCRATCHPAD_INTRO;
     }
 
+    const base = normalizeScratchpad(existing).replace(/\s+$/, '');
+    const prefix = base ? `${base}\n\n` : SCRATCHPAD_INTRO;
+
     const entry = `## [${timestamp}]\n${text}\n\n`;
-    await fs.writeFile(notesFilePath, existing + entry, 'utf-8');
+    await fs.writeFile(notesFilePath, prefix + entry, 'utf-8');
 
     return `### 📝 Quick Note Saved\n\n- **Stored in**: \`notes/quick-notes.md\`\n- **Status**: Saved in scratchpad (excluded from \`wiki/index.md\`). Use \`/promote-note <id> <wiki-name>\` to convert to a formal article.`;
   }
