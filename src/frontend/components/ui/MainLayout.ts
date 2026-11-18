@@ -1,3 +1,5 @@
+import { paneFlexes } from '@frontend/core/utils/viewMode';
+
 export class MainLayout {
   private container: HTMLElement;
   public sidebarContainer!: HTMLElement;
@@ -218,6 +220,12 @@ export class MainLayout {
     this.scratchContainer.style.display = showScratch ? 'flex' : 'none';
     this.emptyContainer.style.display = showEmpty ? 'flex' : 'none';
     this.graphControlsContainer.style.display = showGraph ? 'block' : 'none';
+
+    // A single visible pane must take the whole row; only split keeps the
+    // ratio the user dragged (see paneFlexes).
+    const flex = paneFlexes(showEditor, showGraph, this.editorFlex, this.graphFlex);
+    this.editorContainer.style.flex = flex.editor;
+    this.graphContainer.style.flex = flex.graph;
 
     const graphResizer = this.container.querySelector('#graph-resizer') as HTMLElement;
     if (graphResizer) graphResizer.style.display = showEditor && showGraph ? 'block' : 'none';

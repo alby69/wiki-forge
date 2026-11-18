@@ -28,3 +28,25 @@ export function nextViewMode(
   if (current === requested) return 'closed';
   return requested;
 }
+
+/**
+ * CSS `flex` values for the editor and graph panes of the central row.
+ *
+ * In split mode the two panes keep the ratio the user dragged. In every other
+ * mode the single visible pane must fill the whole row: `flex: 0.42` means
+ * "grow to 42% and leave the rest empty" (flex-grow < 1), so restoring the
+ * split ratio when going back to Editor left a blank strip on the right and,
+ * with the divider hidden, no way to fix it — the editor looked like it could
+ * not be resized.
+ */
+export function paneFlexes(
+  showEditor: boolean,
+  showGraph: boolean,
+  editorFlex: number,
+  graphFlex: number
+): { editor: string; graph: string } {
+  if (showEditor && showGraph) {
+    return { editor: String(editorFlex), graph: String(graphFlex) };
+  }
+  return { editor: '1', graph: '1' };
+}

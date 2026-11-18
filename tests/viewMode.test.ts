@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { isSingleView, nextViewMode } from '@frontend/core/utils/viewMode';
+import { isSingleView, nextViewMode, paneFlexes } from '@frontend/core/utils/viewMode';
 
 describe('Central area view mode toggle', () => {
   it('opens Split only when the Split toggle is clicked', () => {
@@ -31,5 +31,17 @@ describe('Central area view mode toggle', () => {
     assert.strictEqual(isSingleView('scratchpad'), true);
     assert.strictEqual(isSingleView('split'), false);
     assert.strictEqual(isSingleView('closed'), false);
+  });
+
+  it('keeps the dragged ratio only in Split', () => {
+    assert.deepStrictEqual(paneFlexes(true, true, 0.35, 0.65), { editor: '0.35', graph: '0.65' });
+  });
+
+  it('gives the whole row to the single visible pane', () => {
+    // Regression: after resizing in Split, going back to Editor used to leave
+    // `flex: 0.35` on the editor and a blank strip on the right, with no
+    // divider available to widen it.
+    assert.deepStrictEqual(paneFlexes(true, false, 0.35, 0.65), { editor: '1', graph: '1' });
+    assert.deepStrictEqual(paneFlexes(false, true, 0.35, 0.65), { editor: '1', graph: '1' });
   });
 });
