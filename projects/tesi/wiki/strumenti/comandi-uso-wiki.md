@@ -42,4 +42,4 @@ I comandi si danno in chat all'agente (prefisso `/`). Percorso consigliato:
 **4. Gestisci appunti**
 - `/note "<testo>"` → `notes/`; `/promote-note <id>` → articolo wiki ufficiale
 
-Nota importante: sul filesystem la cartella `wiki/` è **vuota** (solo `prova/` e `test-empty-folder/`) e `raw/` è assente. Per studiare serve prima contenuto compilato: metti le fonti in `sources/` (config: `backup/`) → `make convert` → `/compile`. Se invece intendi le note già presenti nel contesto, posso generarti subito uno `/study-guide` o un `/quiz` su Graeber, Cristianini, Sanfilippo e le linee guida HR: dimmi da quale autore/tema partire.
+Per studiare serve contenuto compilato: carica le fonti (config: `backup/`), convertile con `make convert` e lancia `/compile`. Vedi anche [[strumenti/wiki-forge-script-panel]] per il pannello Script.

@@ -6,24 +6,24 @@ generated: 2026-11-18
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 35 |
-| Total wikilinks | 117 |
-| Broken links | 2 |
-| Orphan articles | 1 |
+| Total articles | 34 |
+| Total wikilinks | 149 |
+| Broken links | 0 |
+| Orphan articles | 0 |
 | Thematic wikis | 6 |
-| Sources ingested | 0 |
+| Sources ingested | 16 |
 
 ## Most Linked Articles
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[competenze-e-hr]] | 14 |
-| [[03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering]] | 11 |
-| [[linee-guida-tesi-hr]] | 10 |
-| [[sostituzione-o-trasformazione]] | 9 |
-| [[governance-controllo-responsabilita]] | 8 |
-| [[concezioni-dell-ia]] | 8 |
-| [[capacita-emergenti-llm]] | 7 |
-| [[andrej-karpathy]] | 6 |
-| [[nello-cristianini]] | 6 |
-| [[wiki-forge-script-panel]] | 5 |
+| [[competenze-e-hr]] | 17 |
+| [[governance-controllo-responsabilita]] | 17 |
+| [[linee-guida-tesi-hr]] | 15 |
+| [[sostituzione-o-trasformazione]] | 12 |
+| [[concezioni-dell-ia]] | 11 |
+| [[capacita-emergenti-llm]] | 9 |
+| [[wiki-forge-script-panel]] | 9 |
+| [[nello-cristianini]] | 7 |
+| [[stefano-gatti]] | 6 |
+| [[david-graeber]] | 6 |

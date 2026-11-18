@@ -1,29 +1,29 @@
 ---
-generated: 2026-10-09
+generated: 2026-11-18
 ---
 
 # Wiki Metrics
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 21 |
-| Total wikilinks | 67 |
+| Total articles | 34 |
+| Total wikilinks | 149 |
 | Broken links | 0 |
-| Orphan articles | 1 |
-| Thematic wikis | 4 |
-| Sources ingested | 9 |
+| Orphan articles | 0 |
+| Thematic wikis | 6 |
+| Sources ingested | 16 |
 
 ## Most Linked Articles
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[competenze-e-hr]] | 8 |
-| [[governance-controllo-responsabilita]] | 8 |
-| [[linee-guida-tesi-hr]] | 8 |
-| [[concezioni-dell-ia]] | 6 |
-| [[sostituzione-o-trasformazione]] | 6 |
-| [[capacita-emergenti-llm]] | 5 |
-| [[wiki-forge-script-panel]] | 5 |
-| [[nello-cristianini]] | 4 |
-| [[geopolitica-ia-poli-us-eu-cn]] | 3 |
-| [[andrej-karpathy]] | 3 |
+| [[competenze-e-hr]] | 17 |
+| [[governance-controllo-responsabilita]] | 17 |
+| [[linee-guida-tesi-hr]] | 15 |
+| [[sostituzione-o-trasformazione]] | 12 |
+| [[concezioni-dell-ia]] | 11 |
+| [[capacita-emergenti-llm]] | 9 |
+| [[wiki-forge-script-panel]] | 9 |
+| [[nello-cristianini]] | 7 |
+| [[stefano-gatti]] | 6 |
+| [[david-graeber]] | 6 |

@@ -78,6 +78,7 @@ Il pannello è accessibile dall'interfaccia wiki-forge (Vite+TypeScript) nella s
 
 ## Related
 
+- [[wiki-forge-piattaforma-knowledge-engineering]]
 - [[linee-guida-tesi-hr]]
 - [[governance-controllo-responsabilita]]
 
