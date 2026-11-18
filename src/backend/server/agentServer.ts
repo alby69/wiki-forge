@@ -3428,50 +3428,71 @@ export class AgentServer {
   }
 
   private async executeAuditWorkflow(notes: WikiNote[], projectId: string = 'default'): Promise<string> {
-    const wikiDir = await this.getWikiDir(projectId);
+    void projectId;
 
-    // 1. Orphan notes
-    const orphans = notes.filter(n => (n.backlinks?.length ?? 0) === 0 && !n.id.endsWith('index'));
+    const baseName = (note: WikiNote): string => path.basename(note.path || '').toLowerCase();
+    const isIndexNote = (note: WikiNote): boolean => baseName(note) === 'index.md';
+    // index.md (§8) and log.md (§9) are OKF structural files: they are not
+    // linked from notes, so they must not show up as orphans or as notes
+    // missing frontmatter.
+    const isStructural = (note: WikiNote): boolean =>
+      isIndexNote(note) || baseName(note) === 'log.md';
 
-    // 2. Broken links
-    const knownIdentifiers = new Set<string>();
-    for (const n of notes) {
-      knownIdentifiers.add(n.id.toLowerCase());
-      knownIdentifiers.add(n.title.toLowerCase());
-      const stem = path.basename(n.path, '.md').toLowerCase();
-      knownIdentifiers.add(stem);
-      knownIdentifiers.add(stem.replace(/[-_]/g, ' '));
-    }
-
+    // 1 + 2. Links: resolve every wikilink with the same resolver used by the
+    // viewer and the graph. A plain id/title set missed folder-qualified
+    // targets such as [[strumenti/wiki-forge-script-panel]].
+    const inbound = new Set<string>();
+    const outbound = new Set<string>();
     const brokenLinks: Array<{ source: string; target: string }> = [];
 
     for (const note of notes) {
+      if (note.outboundLinks.length > 0) outbound.add(note.path || note.id);
+
       for (const link of note.outboundLinks) {
-        const cleanLink = link.toLowerCase().trim();
-        if (cleanLink && !knownIdentifiers.has(cleanLink) && !cleanLink.endsWith('/index') && cleanLink !== 'index') {
-          brokenLinks.push({ source: note.id, target: link });
+        const clean = link.trim();
+        if (!clean) continue;
+
+        const target = this.parser.resolveLinkTarget(clean, notes);
+        if (target) {
+          inbound.add(target.path || target.id);
+          continue;
         }
+
+        // Links to a bundle index are valid even when the file is missing.
+        const lower = clean.toLowerCase();
+        if (lower === 'index' || lower.endsWith('/index')) continue;
+
+        brokenLinks.push({ source: note.id, target: clean });
       }
     }
 
-    // 3. Frontmatter status
+    // A true orphan has neither inbound nor outbound links (same rule as
+    // scripts/wiki_stats.py); inbound-only would flag every note that is only
+    // reachable from an index.
+    const orphans = notes.filter(
+      note =>
+        !isStructural(note) &&
+        !inbound.has(note.path || note.id) &&
+        !outbound.has(note.path || note.id)
+    );
+
+    // 3. Frontmatter status. `note.content` has the YAML block stripped by
+    // parseNote(), so the check must look at `note.frontmatter`.
     const missingFrontmatter: string[] = [];
+    const missingTags: string[] = [];
+
     for (const note of notes) {
-      const isIndex = note.id.endsWith('index') || note.path.endsWith('index.md') || path.basename(note.path) === 'index.md';
-      if (isIndex) {
-        continue; // skip index files
-      }
-      const hasYaml = note.content.trim().startsWith('---');
-      if (!hasYaml || !note.tags || note.tags.length === 0) {
-        missingFrontmatter.push(note.id);
-      }
+      if (isStructural(note)) continue;
+      if (Object.keys(note.frontmatter ?? {}).length === 0) missingFrontmatter.push(note.id);
+      if (!note.tags || note.tags.length === 0) missingTags.push(note.id);
     }
 
     const orphanList = orphans.map(n => `- [[${n.id}]]`).join('\n') || 'None';
     const brokenList = brokenLinks.map(b => `- [[${b.source}]] -> [[${b.target}]]`).join('\n') || 'None';
-    const missingFmList = missingFrontmatter.map(id => `- [[${id}]]`).join('\n') || 'None (All notes contain tags/metadata)';
+    const missingFmList = missingFrontmatter.map(id => `- [[${id}]]`).join('\n') || 'None (every note has a YAML frontmatter)';
+    const missingTagsList = missingTags.map(id => `- [[${id}]]`).join('\n') || 'None (every note has tags)';
 
-    return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter / Tags (${missingFrontmatter.length})**:\n${missingFmList}`;
+    return `### 🛡️ Audit Report\n\n- **Total Notes**: ${notes.length}\n\n- **Orphan Notes (${orphans.length})**:\n${orphanList}\n\n- **Broken Links (${brokenLinks.length})**:\n${brokenList}\n\n- **Missing Frontmatter (${missingFrontmatter.length})**:\n${missingFmList}\n\n- **Missing Tags (${missingTags.length})**:\n${missingTagsList}`;
   }
 
   public async executeStudyGuideWorkflow(topic: string, notes: WikiNote[]): Promise<string> {

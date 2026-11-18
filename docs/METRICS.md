@@ -6,11 +6,11 @@ generated: 2026-11-18
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 34 |
+| Total articles | 35 |
 | Total wikilinks | 149 |
 | Broken links | 0 |
 | Orphan articles | 0 |
-| Thematic wikis | 6 |
+| Thematic wikis | 7 |
 | Sources ingested | 16 |
 
 ## Most Linked Articles

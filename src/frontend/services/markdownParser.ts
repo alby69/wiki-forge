@@ -3,13 +3,20 @@ import { WikiNote, Backlink } from '@frontend/core/types/wiki';
 export class MarkdownParser {
   /**
    * Extracts WikiLinks formatted as [[target]] or [[target|label]]
+   *
+   * Code spans/fences are stripped first: the docs show the syntax as
+   * `` `[[wikilink]]` ``, and that example used to be counted as a real link
+   * (and reported as a broken one by /audit).
    */
   public extractWikiLinks(content: string): string[] {
+    const source = content
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`[^`\n]*`/g, '');
     const wikiLinkRegex = /\[\[([^\]\|#]+)(?:#[^\]\|]+)?(?:\|[^\]]+)?\]\]/g;
     const links: string[] = [];
     let match: RegExpExecArray | null;
 
-    while ((match = wikiLinkRegex.exec(content)) !== null) {
+    while ((match = wikiLinkRegex.exec(source)) !== null) {
       const target = match[1].trim();
       if (target && !links.includes(target)) {
         links.push(target);
@@ -266,8 +273,12 @@ export class MarkdownParser {
    * Computes backlinks across a collection of parsed WikiNotes
    */
   public computeBacklinks(notes: WikiNote[]): WikiNote[] {
+    // Key by file path, not by id: every folder has an `index.md`, so eight
+    // notes share the id "index" and a Map keyed by id silently dropped seven
+    // of them (the audit counted 28 notes instead of 35).
+    const keyOf = (note: WikiNote): string => note.path || note.id;
     const noteMap = new Map<string, WikiNote>();
-    notes.forEach(note => noteMap.set(note.id, { ...note, backlinks: [] }));
+    notes.forEach(note => noteMap.set(keyOf(note), { ...note, backlinks: [] }));
 
     notes.forEach(sourceNote => {
       sourceNote.outboundLinks.forEach(targetId => {
