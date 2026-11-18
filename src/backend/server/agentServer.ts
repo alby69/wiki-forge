@@ -15,6 +15,50 @@ import {
   slugifyDocumentTitle,
   updateLeadingHeading,
 } from './wikiLinks';
+import {
+  findBacklinks,
+  NoteRef,
+  ResearchTraceNote,
+  ResearchTraceResponse,
+  ResearchTraceSource,
+  searchNotes,
+  suggestRelated,
+  toNoteRef,
+} from './researchHelpers';
+
+export interface ResearchConsultCitation {
+  id: string;
+  title: string;
+  path: string;
+}
+
+export interface ResearchConsultResponse {
+  success: boolean;
+  markdown: string;
+  fallback: boolean;
+  citations: ResearchConsultCitation[];
+  error?: string;
+}
+
+export interface ResearchDeepResearchResult {
+  summary: string;
+  report: string;
+  outputPath: string;
+  synthesisPath: string;
+  articles: number;
+  fallback: boolean;
+  error?: string;
+}
+
+export interface ResearchDeepResearchResponse {
+  success: boolean;
+  markdown: string;
+  outputPath?: string;
+  synthesisPath?: string;
+  articles: number;
+  fallback: boolean;
+  error?: string;
+}
 
 export interface ScriptParamDef {
   name: string;
@@ -1874,6 +1918,137 @@ export class AgentServer {
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Research Studio endpoints
+    // -------------------------------------------------------------------------
+
+    if (pathname === '/api/notes/research/search' && req.method === 'GET') {
+      try {
+        const query = url.searchParams.get('q') || '';
+        if (!query.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Parametro "q" mancante' }));
+          return true;
+        }
+        const parsedLimit = Number(url.searchParams.get('limit') || 30);
+        const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(100, parsedLimit)) : 30;
+        const notes = await this.readAllWikiNotes(projectId);
+        const result = searchNotes(notes, query, limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/backlinks' && req.method === 'GET') {
+      try {
+        const noteRef = url.searchParams.get('note') || '';
+        if (!noteRef) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
+          return true;
+        }
+        const notes = await this.readAllWikiNotes(projectId);
+        const target = this.resolveReviewTarget(noteRef, notes);
+        if (!target) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Nota non trovata: ${noteRef}` }));
+          return true;
+        }
+        const result = findBacklinks(notes, target, (ref, list) => this.resolveReviewTarget(ref, list));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/related' && req.method === 'GET') {
+      try {
+        const noteRef = url.searchParams.get('note') || '';
+        if (!noteRef) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
+          return true;
+        }
+        const parsedLimit = Number(url.searchParams.get('limit') || 12);
+        const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(50, parsedLimit)) : 12;
+        const notes = await this.readAllWikiNotes(projectId);
+        const target = this.resolveReviewTarget(noteRef, notes);
+        if (!target) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Nota non trovata: ${noteRef}` }));
+          return true;
+        }
+        const result = suggestRelated(notes, target, (ref, list) => this.resolveReviewTarget(ref, list), limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/trace' && req.method === 'GET') {
+      try {
+        const query = url.searchParams.get('q') || '';
+        if (!query.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Parametro "q" mancante' }));
+          return true;
+        }
+        const trace = await this.traceClaim(query, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...trace }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/consult' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ question?: string }>(req);
+        if (!body.question || !body.question.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Campo "question" mancante' }));
+          return true;
+        }
+        const answer = await this.consultWiki(body.question, projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(answer));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, fallback: true, markdown: '', citations: [], error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/deep-research' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ question?: string }>(req);
+        if (!body.question || !body.question.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Campo "question" mancante' }));
+          return true;
+        }
+        const report = await this.generateDeepResearch(body.question, projectId);
+        res.writeHead(report.success ? 200 : 400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(report));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, articles: 0, fallback: true, markdown: '', error: String(err) }));
       }
       return true;
     }
@@ -5102,7 +5277,17 @@ ${jsonPayload}
     return `### 🧠 Mind Map Generated for "${note.title}"\n\n- **Saved to**: \`${relPath}\`\n- **Extracted Headings**: ${nodes.length - 1}\n- **Wikilinks**: ${note.outboundLinks.length}\n\n\`\`\`text\n${treeLines.slice(0, 15).join('\n')}\n${treeLines.length > 15 ? '...' : ''}\n\`\`\`\n\n*Mind map tree and JSON stored in output/.*`;
   }
 
-  public async executeDeepResearchWorkflow(question: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+  /**
+   * Builds and stores the deep research report. The deterministic scaffolding
+   * is always produced; when an LLM is configured its synthesis replaces the
+   * report body while frontmatter and source provenance stay grounded in the
+   * notes that matched the question.
+   */
+  private async writeDeepResearchReport(
+    question: string,
+    notes: WikiNote[],
+    projectId: string = 'default'
+  ): Promise<ResearchDeepResearchResult> {
     const projRoot = await this.resolveProjectRoot(projectId);
     const outputDir = path.resolve(projRoot, 'output');
     const synthesisDir = path.resolve(projRoot, 'wiki/synthesis');
@@ -5137,16 +5322,7 @@ Scanned ${sources.length} knowledge base sources.
 Synthesizing evidence and generating grounded report...
 </think>`;
 
-    const content = `${thinkingTrace}
-
----
-tags: [deep-research, synthesis, ${slug}]
-created: ${dateStr}
-sources:
-${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
----
-
-# Deep Research Report: ${q || 'Knowledge Base Analysis'}
+    const deterministicBody = `# Deep Research Report: ${q || 'Knowledge Base Analysis'}
 
 ## 🎯 Executive Summary
 Extended multi-source analysis synthesized across **${sources.length}** wiki article(s) regarding: *"${q || 'Knowledge Base Overview'}"*.
@@ -5168,6 +5344,48 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
 - **Recommended Action**: Ingest additional primary sources into \`sources/\` and run \`/compile\`.
 `;
 
+    let body = deterministicBody;
+    let fallback = true;
+    let error: string | undefined;
+
+    try {
+      const client = await this.getOrInitLlmClient();
+      const systemPrompt = await this.getSystemPrompt();
+      const markdown = await client.complete({
+        systemPrompt,
+        userMessage: [
+          `Domanda di ricerca: "${q || 'panoramica della knowledge base'}"`,
+          'Scrivi un report di deep research in Markdown, in italiano, basandoti solo sulle note fornite.',
+          'Struttura richiesta:',
+          '1. # Deep Research Report: <domanda>',
+          '2. ## Executive Summary',
+          '3. ## Thematic Deep-Dive',
+          '4. ## Source Attribution Matrix (tabella: Claim | Wiki Source | Grounding)',
+          '5. ## Knowledge Gaps',
+          'Cita ogni affermazione con [[wikilink]] tratti esclusivamente dalle note fornite.',
+        ].join('\n'),
+        contextNotes: sources,
+      });
+      if (markdown.trim()) {
+        body = markdown.trim();
+        fallback = false;
+      }
+    } catch (err) {
+      error = String(err);
+    }
+
+    const content = `${thinkingTrace}
+
+---
+tags: [deep-research, synthesis, ${slug}]
+created: ${dateStr}
+sources:
+${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
+---
+
+${body}
+`;
+
     await fs.writeFile(filePath, content, 'utf-8');
     await fs.writeFile(synthesisPath, content, 'utf-8');
 
@@ -5175,7 +5393,100 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
     const relSynthesis = path.relative(this.rootDir, synthesisPath).replace(/\\/g, '/');
 
     const count = sources.length;
-    return '### 🔬 Deep Research Report Generated\n\n- **Output File**: `' + relPath + '`\n- **Synthesis Note**: `' + relSynthesis + '`\n- **Articles Consulted**: ' + count + '\n- **Reasoning Trace**: Included in `<think>` block.\n\n*Report and synthesis note saved successfully.*';
+    const summary = '### 🔬 Deep Research Report Generated\n\n- **Output File**: `' + relPath + '`\n- **Synthesis Note**: `' + relSynthesis + '`\n- **Articles Consulted**: ' + count + '\n- **Reasoning Trace**: Included in `<think>` block.\n\n*Report and synthesis note saved successfully.*';
+
+    return {
+      summary,
+      report: content,
+      outputPath: relPath,
+      synthesisPath: relSynthesis,
+      articles: count,
+      fallback,
+      error,
+    };
+  }
+
+  public async executeDeepResearchWorkflow(question: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+    const result = await this.writeDeepResearchReport(question, notes, projectId);
+    return result.summary;
+  }
+
+  public async generateDeepResearch(
+    question: string,
+    projectId: string = 'default'
+  ): Promise<ResearchDeepResearchResponse> {
+    const notes = await this.readAllWikiNotes(projectId);
+    const result = await this.writeDeepResearchReport(question, notes, projectId);
+    return {
+      success: true,
+      markdown: result.report,
+      outputPath: result.outputPath,
+      synthesisPath: result.synthesisPath,
+      articles: result.articles,
+      fallback: result.fallback,
+      error: result.error,
+    };
+  }
+
+  public async consultWiki(question: string, projectId: string = 'default'): Promise<ResearchConsultResponse> {
+    const q = (question || '').trim();
+    const notes = await this.readAllWikiNotes(projectId);
+    const search = searchNotes(notes, q, 8);
+    const noteById = new Map(notes.map(note => [note.id, note]));
+    const sources = search.results
+      .map(result => noteById.get(result.note.id))
+      .filter((note): note is WikiNote => Boolean(note));
+    const citations: ResearchConsultCitation[] = sources.map(note => ({
+      id: note.id,
+      title: note.title,
+      path: note.path,
+    }));
+
+    try {
+      const client = await this.getOrInitLlmClient();
+      const systemPrompt = await this.getSystemPrompt();
+      const markdown = await client.complete({
+        systemPrompt,
+        userMessage: [
+          `Domanda: "${q}"`,
+          'Rispondi in italiano, in Markdown, citando solo le note fornite con [[wikilink]].',
+          'Struttura richiesta:',
+          '## Risposta',
+          '## Passaggi chiave',
+          '## Fonti consultate',
+          'Se le note non contengono la risposta, dichiaralo esplicitamente invece di inventare.',
+        ].join('\n'),
+        contextNotes: sources,
+      });
+      return { success: true, markdown: markdown.trim(), fallback: false, citations };
+    } catch (err) {
+      const lines = [
+        '## Risposta',
+        `Il provider LLM non è disponibile, quindi ecco le note più pertinenti trovate nella wiki per **"${q}"**.`,
+        '',
+        '## Passaggi chiave',
+      ];
+      if (search.results.length === 0) {
+        lines.push('- Nessuna nota contiene i termini della domanda.');
+      } else {
+        for (const result of search.results.slice(0, 5)) {
+          const firstMatch = result.matches[0];
+          lines.push(
+            `- [[${result.note.id}]] (${result.note.title}) — ${result.matchCount} righe corrispondenti${firstMatch ? `, a partire dalla riga ${firstMatch.line}` : ''}.`
+          );
+        }
+      }
+      lines.push(
+        '',
+        '## Fonti consultate',
+        ...(citations.length > 0
+          ? citations.map(citation => `- [[${citation.id}]] — \`${citation.path}\``)
+          : ['- Nessuna fonte pertinente.']),
+        '',
+        `_Provider LLM non disponibile: ${String(err)}_`
+      );
+      return { success: true, markdown: lines.join('\n'), fallback: true, error: String(err), citations };
+    }
   }
 
   public async executeQuizWorkflow(topicAndCount: string, notes: WikiNote[]): Promise<string> {
@@ -5241,8 +5552,15 @@ ${questions.join('\n---\n\n')}
     return `### 🧪 Quiz Generated\n\n- **Saved to**: \`${relPath}\`\n- **Total Questions**: ${questions.length}\n- **Source Articles Cited**: ${relevantNotes.map(n => `[[${n.id}]]`).join(', ') || 'None'}\n\n*Quiz generated in output directory.*`;
   }
 
-  public async executeTraceWorkflow(target: string, notes: WikiNote[]): Promise<string> {
-    const q = target.toLowerCase();
+  /**
+   * Shared deterministic engine for `/trace` and the Trace tab: finds notes
+   * matching the query, lists outgoing links and resolves the raw source
+   * passages declared in frontmatter or in a `## Sources` section.
+   */
+  private async traceClaimInNotes(target: string, notes: WikiNote[]): Promise<ResearchTraceResponse> {
+    const q = target.trim().toLowerCase();
+    if (!q) return { query: target, notes: [], scanned: notes.length };
+
     const connected = notes.filter(n =>
       n.id.toLowerCase().includes(q) ||
       n.title.toLowerCase().includes(q) ||
@@ -5250,14 +5568,14 @@ ${questions.join('\n---\n\n')}
       n.outboundLinks.some((l: string) => l.toLowerCase().includes(q))
     );
 
-    if (connected.length === 0) {
-      return `### 🕸️ Connection Trace for "${target}"\n\nNo target connections traced in wiki notes.`;
-    }
+    const traced: ResearchTraceNote[] = [];
 
-    const traceEntries: string[] = [];
-
-    for (const n of connected.slice(0, 5)) {
-      let entry = `- **Article**: [[${n.id}]] (${n.folder})\n  - **Outbound Links**: ${n.outboundLinks.map((l: string) => `[[${l}]]`).join(', ') || 'none'}`;
+    for (const n of connected.slice(0, 12)) {
+      const matchedIn: string[] = [];
+      if (n.id.toLowerCase().includes(q)) matchedIn.push('id');
+      if (n.title.toLowerCase().includes(q)) matchedIn.push('titolo');
+      if (n.content.toLowerCase().includes(q)) matchedIn.push('corpo');
+      if (n.outboundLinks.some((l: string) => l.toLowerCase().includes(q))) matchedIn.push('link');
 
       // Extract sources listed in frontmatter or ## Sources section
       const rawSources: string[] = [];
@@ -5278,45 +5596,88 @@ ${questions.join('\n---\n\n')}
         }
       }
 
-      if (rawSources.length > 0) {
-        entry += `\n  - **Grounded Raw Sources**:`;
-        for (const rawRef of rawSources) {
-          const [rawFile, anchor] = rawRef.split('#');
-          const absRawPath = path.resolve(this.rootDir, rawFile);
-          let passage = '';
+      const sources: ResearchTraceSource[] = [];
+      for (const rawRef of rawSources) {
+        const [rawFile, anchor] = rawRef.split('#');
+        const absRawPath = path.resolve(this.rootDir, rawFile);
+        const source: ResearchTraceSource = { rawRef, file: rawFile, exists: false };
 
-          try {
-            const rawContent = await fs.readFile(absRawPath, 'utf-8');
-            const lines = rawContent.split('\n');
+        try {
+          const rawContent = await fs.readFile(absRawPath, 'utf-8');
+          source.exists = true;
+          const lines = rawContent.split('\n');
 
-            if (anchor && /^L\d+(?:-L?\d+)?$/i.test(anchor)) {
-              const numMatch = anchor.match(/^L(\d+)(?:-L?(\d+))?$/i);
-              if (numMatch) {
-                const startLine = Math.max(1, parseInt(numMatch[1], 10));
-                const endLine = numMatch[2] ? Math.min(lines.length, parseInt(numMatch[2], 10)) : startLine;
-                const snippet = lines.slice(startLine - 1, endLine).join('\n').trim();
-                passage = ` (Lines ${startLine}-${endLine}): "${snippet.slice(0, 150)}${snippet.length > 150 ? '...' : ''}"`;
-              }
-            } else if (q) {
-              // Search for matching line in raw file
-              const lineIdx = lines.findIndex(l => l.toLowerCase().includes(q));
-              if (lineIdx !== -1) {
-                const startLine = Math.max(1, lineIdx);
-                const endLine = Math.min(lines.length, lineIdx + 3);
-                const snippet = lines.slice(startLine - 1, endLine).join('\n').trim();
-                passage = ` (Inferred #L${startLine}-L${endLine}): "${snippet.slice(0, 150)}${snippet.length > 150 ? '...' : ''}"`;
-              }
+          if (anchor && /^L\d+(?:-L?\d+)?$/i.test(anchor)) {
+            const numMatch = anchor.match(/^L(\d+)(?:-L?(\d+))?$/i);
+            if (numMatch) {
+              const startLine = Math.max(1, parseInt(numMatch[1], 10));
+              const endLine = numMatch[2] ? Math.min(lines.length, parseInt(numMatch[2], 10)) : startLine;
+              source.startLine = startLine;
+              source.endLine = endLine;
+              source.passage = lines.slice(startLine - 1, endLine).join('\n').trim();
             }
-          } catch (_e) {
-            // Source file not found or inaccessible
+          } else if (q) {
+            // Search for matching line in raw file
+            const lineIdx = lines.findIndex(l => l.toLowerCase().includes(q));
+            if (lineIdx !== -1) {
+              const startLine = Math.max(1, lineIdx);
+              const endLine = Math.min(lines.length, lineIdx + 3);
+              source.startLine = startLine;
+              source.endLine = endLine;
+              source.inferred = true;
+              source.passage = lines.slice(startLine - 1, endLine).join('\n').trim();
+            }
           }
+        } catch (_e) {
+          // Source file not found or inaccessible
+        }
 
-          entry += `\n    - \`${rawRef}\`${passage}`;
+        sources.push(source);
+      }
+
+      traced.push({
+        note: toNoteRef(n),
+        matchedIn,
+        outboundLinks: n.outboundLinks,
+        sources,
+      });
+    }
+
+    return { query: target, notes: traced, scanned: notes.length };
+  }
+
+  public async traceClaim(query: string, projectId: string = 'default'): Promise<ResearchTraceResponse> {
+    const notes = await this.readAllWikiNotes(projectId);
+    return this.traceClaimInNotes(query, notes);
+  }
+
+  public async executeTraceWorkflow(target: string, notes: WikiNote[]): Promise<string> {
+    const trace = await this.traceClaimInNotes(target, notes);
+
+    if (trace.notes.length === 0) {
+      return `### 🕸️ Connection Trace for "${target}"\n\nNo target connections traced in wiki notes.`;
+    }
+
+    const traceEntries = trace.notes.slice(0, 5).map(t => {
+      let entry = `- **Article**: [[${t.note.id}]] (${t.note.folder})\n  - **Outbound Links**: ${t.outboundLinks.map((l: string) => `[[${l}]]`).join(', ') || 'none'}`;
+
+      if (t.sources.length > 0) {
+        entry += `\n  - **Grounded Raw Sources**:`;
+        for (const source of t.sources) {
+          let passage = '';
+          if (source.passage && source.startLine) {
+            const endLine = source.endLine ?? source.startLine;
+            const label = source.inferred
+              ? ` (Inferred #L${source.startLine}-L${endLine})`
+              : ` (Lines ${source.startLine}-${endLine})`;
+            passage = `${label}: "${source.passage.slice(0, 150)}${source.passage.length > 150 ? '...' : ''}"`;
+          }
+          entry += `\n    - \`${source.rawRef}\`${passage}`;
         }
       }
 
-      traceEntries.push(entry);
-    }
+      return entry;
+    });
 
     return `### 🕸️ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
   }

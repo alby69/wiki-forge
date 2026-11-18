@@ -5,6 +5,16 @@ import { ApiStorage, AttachOptions } from '@frontend/storage/ApiStorage';
 import { appStore } from '@frontend/store/appStore';
 import { AttachModal } from './AttachModal';
 import { COMMAND_CATALOG } from './commandCatalog';
+import type { ResearchTab } from '@frontend/core/types/research';
+
+const RESEARCH_COMMANDS: Record<string, ResearchTab> = {
+  '/consult': 'consult',
+  '/search': 'search',
+  '/backlinks': 'backlinks',
+  '/related': 'related',
+  '/trace': 'trace',
+  '/deep-research': 'deep',
+};
 
 export interface ChatMessage {
   id: string;
@@ -29,19 +39,22 @@ export class ChatDrawer {
   private notesGetter: () => WikiNote[];
   private onVaultUpdatedCb?: () => void;
   private onOpenLinkCb?: (target: string) => void;
+  private onOpenResearchCb?: (tab: ResearchTab, query: string) => void;
 
   constructor(
     container: HTMLElement,
     apiStorage: ApiStorage,
     notesGetter: () => WikiNote[],
     onVaultUpdated?: () => void,
-    onOpenLink?: (target: string) => void
+    onOpenLink?: (target: string) => void,
+    onOpenResearch?: (tab: ResearchTab, query: string) => void
   ) {
     this.container = container;
     this.apiStorage = apiStorage;
     this.notesGetter = notesGetter;
     this.onVaultUpdatedCb = onVaultUpdated;
     this.onOpenLinkCb = onOpenLink;
+    this.onOpenResearchCb = onOpenResearch;
 
     this.loadHistory();
     this.loadChatWidth();
@@ -540,8 +553,32 @@ export class ChatDrawer {
     );
   }
 
+  private matchResearchCommand(text: string): { tab: ResearchTab; query: string } | null {
+    const match = text.trim().match(/^(\/[a-z-]+)(?:\s+([\s\S]*))?$/i);
+    if (!match) return null;
+    const tab = RESEARCH_COMMANDS[match[1].toLowerCase()];
+    if (!tab) return null;
+    return { tab, query: (match[2] || '').trim() };
+  }
+
   public async handleSendMessage(text: string): Promise<void> {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // The six query commands are visual tools: open the Research Studio instead
+    // of streaming a plain chat answer.
+    const research = this.matchResearchCommand(text);
+    if (research && this.onOpenResearchCb) {
+      this.messages.push({
+        id: `msg-${Date.now()}`,
+        sender: 'user',
+        text,
+        timestamp: time,
+      });
+      this.saveHistory();
+      this.render();
+      this.onOpenResearchCb(research.tab, research.query);
+      return;
+    }
 
     const lastAssistant = [...this.messages].reverse().find(m => m.sender === 'assistant');
     const pendingEdits = lastAssistant ? parseWikiEdits(lastAssistant.text) : [];

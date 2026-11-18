@@ -20,6 +20,7 @@ export class MarkdownEditor {
   private onToggleContextCb?: () => void;
   private onOpenHistoryCb?: () => void;
   private onOpenReviewCb?: () => void;
+  private onOpenResearchCb?: () => void;
   private contextVisible = true;
   private editorView: EditorView | null = null;
 
@@ -30,7 +31,8 @@ export class MarkdownEditor {
     getNotes?: () => WikiNote[],
     onToggleContext?: () => void,
     onOpenHistory?: () => void,
-    onOpenReview?: () => void
+    onOpenReview?: () => void,
+    onOpenResearch?: () => void
   ) {
     this.container = container;
     this.onSaveCb = onSave;
@@ -39,6 +41,7 @@ export class MarkdownEditor {
     this.onToggleContextCb = onToggleContext;
     this.onOpenHistoryCb = onOpenHistory;
     this.onOpenReviewCb = onOpenReview;
+    this.onOpenResearchCb = onOpenResearch;
     this.render();
   }
 
@@ -124,6 +127,7 @@ export class MarkdownEditor {
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
             <button id="editor-review-btn" title="Apri la Review Studio (verifica, critica, digest, diff)" style="background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">🔍 Revisione</button>
+            <button id="editor-research-btn" title="Apri la Research Studio (consult, ricerca, backlink, correlate, traccia, deep research)" style="background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">🔎 Ricerca</button>
             <button id="editor-history-btn" title="Cronologia delle versioni della nota" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🕐 Cronologia</button>
             ${
               isPreview
@@ -209,6 +213,11 @@ export class MarkdownEditor {
     const reviewBtn = this.container.querySelector('#editor-review-btn');
     reviewBtn?.addEventListener('click', () => {
       this.onOpenReviewCb?.();
+    });
+
+    const researchBtn = this.container.querySelector('#editor-research-btn');
+    researchBtn?.addEventListener('click', () => {
+      this.onOpenResearchCb?.();
     });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');

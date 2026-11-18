@@ -1,8 +1,10 @@
 import { escapeHtml } from '@frontend/core/utils/html';
 import { ReviewTab } from '@frontend/core/types/review';
+import { ResearchTab } from '@frontend/core/types/research';
 
 export interface ReviewContextMenuCallbacks {
   onOpenReview: (noteId: string, tab: ReviewTab) => void;
+  onOpenResearch?: (noteId: string, tab: ResearchTab) => void;
   onOpenNote?: (noteId: string) => void;
 }
 
@@ -11,6 +13,11 @@ const ITEMS: Array<{ tab: ReviewTab; label: string; icon: string; shortcut?: str
   { tab: 'critique', label: 'Revisione critica', icon: '⚡', shortcut: 'Ctrl+Alt+C' },
   { tab: 'digest', label: 'Digest attività', icon: '◷', shortcut: 'Ctrl+Alt+D' },
   { tab: 'diff', label: 'Confronta versioni', icon: '⇄', shortcut: 'Ctrl+Alt+F' },
+];
+
+const RESEARCH_ITEMS: Array<{ tab: ResearchTab; label: string; icon: string }> = [
+  { tab: 'backlinks', label: 'Backlink della nota', icon: '↩' },
+  { tab: 'related', label: 'Correlazioni suggerite', icon: '🧩' },
 ];
 
 /**
@@ -55,14 +62,25 @@ export class ReviewContextMenu {
           <span class="icon">${item.icon}</span>
           <span class="label">${item.label}</span>
           ${item.shortcut ? `<span class="shortcut">${item.shortcut}</span>` : ''}
-        </button>`).join('')}`;
+        </button>`).join('')}
+      ${RESEARCH_ITEMS.length > 0 ? `
+        <div class="wf-rs-ctx-head" style="border-bottom: none; margin: 5px 0 0; padding-bottom: 2px;">
+          <span>Research Studio</span>
+        </div>
+        ${RESEARCH_ITEMS.map(item => `
+          <button class="wf-rs-ctx-item" data-rq-tab="${item.tab}">
+            <span class="icon">${item.icon}</span>
+            <span class="label">${item.label}</span>
+          </button>`).join('')}` : ''}`;
 
     this.el.querySelectorAll<HTMLElement>('.wf-rs-ctx-item').forEach(button => {
       button.addEventListener('click', () => {
         const tab = button.getAttribute('data-tab') as ReviewTab | null;
+        const researchTab = button.getAttribute('data-rq-tab') as ResearchTab | null;
         const noteId = this.noteId;
         this.hide();
         if (tab && noteId) this.callbacks.onOpenReview(noteId, tab);
+        else if (researchTab && noteId) this.callbacks.onOpenResearch?.(noteId, researchTab);
       });
     });
 

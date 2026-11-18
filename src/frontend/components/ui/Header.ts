@@ -19,6 +19,7 @@ export interface HeaderOptions {
   onOpenTools?: () => void;
   onOpenWizard?: () => void;
   onOpenKEWorkbench?: () => void;
+  onOpenResearch?: () => void;
   onOpenHelp?: () => void;
 }
 
@@ -31,6 +32,7 @@ export class Header {
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenWizardCb?: () => void;
   private onOpenKEWorkbenchCb?: () => void;
+  private onOpenResearchCb?: () => void;
   private onOpenHelpCb?: () => void;
   private simpleDashboard?: SimpleModeDashboard;
   private projects: ProjectInfo[] = [];
@@ -47,6 +49,7 @@ export class Header {
     this.onOpenToolsCb = options.onOpenTools;
     this.onOpenWizardCb = options.onOpenWizard;
     this.onOpenKEWorkbenchCb = options.onOpenKEWorkbench;
+    this.onOpenResearchCb = options.onOpenResearch;
     this.onOpenHelpCb = options.onOpenHelp;
 
     this.unsubscribeStore = appStore.subscribe(() => {
@@ -149,6 +152,7 @@ export class Header {
                    <span>🪄</span> Onboarding Wizard
                  </button>
                  <button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
+                 <button id="header-research-btn" title="Research Studio: consult, ricerca, backlink, correlate, traccia, deep research" style="background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🔎 Research</button>
                  <button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
                  <button id="header-config-btn" style="background: #334155; color: #ffffff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">⚙️ Config</button>`
               : `<!-- Simple-mode action pills in Focus Mode -->
@@ -164,6 +168,7 @@ export class Header {
 
     const wizardBtn = this.container.querySelector('#header-wizard-btn');
     const keBtn = this.container.querySelector('#header-ke-btn');
+    const researchBtn = this.container.querySelector('#header-research-btn');
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
     const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
@@ -179,6 +184,7 @@ export class Header {
 
     if (wizardBtn) wizardBtn.addEventListener('click', () => this.onOpenWizardCb?.());
     if (keBtn) keBtn.addEventListener('click', () => this.onOpenKEWorkbenchCb?.());
+    if (researchBtn) researchBtn.addEventListener('click', () => this.onOpenResearchCb?.());
     if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());
     if (chatBtn) chatBtn.addEventListener('click', () => this.onToggleChatCb?.());

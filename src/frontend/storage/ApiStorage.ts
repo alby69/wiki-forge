@@ -8,6 +8,14 @@ import {
   ReviewSnapshot,
   ReviewVerifyResponse,
 } from '@frontend/core/types/review';
+import {
+  ResearchBacklinksResponse,
+  ResearchConsultResponse,
+  ResearchDeepResearchResponse,
+  ResearchRelatedResponse,
+  ResearchSearchResponse,
+  ResearchTraceResponse,
+} from '@frontend/core/types/research';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
@@ -766,5 +774,83 @@ export class ApiStorage implements IStorage {
       // Backend unavailable
     }
     return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Research Studio
+  // ---------------------------------------------------------------------------
+
+  public async researchSearch(query: string, limit: number = 30): Promise<ResearchSearchResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/research/search${this.reviewQuery({ q: query, limit })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ResearchSearchResponse;
+    } catch (err) {
+      return { success: false, error: String(err), query, total: 0, totalMatches: 0, scanned: 0, tookMs: 0, results: [] };
+    }
+  }
+
+  public async researchBacklinks(noteRef: string): Promise<ResearchBacklinksResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/research/backlinks${this.reviewQuery({ note: noteRef })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ResearchBacklinksResponse;
+    } catch (err) {
+      return { success: false, error: String(err), items: [], scanned: 0 };
+    }
+  }
+
+  public async researchRelated(noteRef: string, limit: number = 12): Promise<ResearchRelatedResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/research/related${this.reviewQuery({ note: noteRef, limit })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ResearchRelatedResponse;
+    } catch (err) {
+      return { success: false, error: String(err), suggestions: [], scanned: 0 };
+    }
+  }
+
+  public async researchTrace(query: string): Promise<ResearchTraceResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/research/trace${this.reviewQuery({ q: query })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ResearchTraceResponse;
+    } catch (err) {
+      return { success: false, error: String(err), query, notes: [], scanned: 0 };
+    }
+  }
+
+  public async researchConsult(question: string): Promise<ResearchConsultResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/research/consult`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ question }),
+      });
+      return (await res.json()) as ResearchConsultResponse;
+    } catch (err) {
+      return { success: false, markdown: '', fallback: true, citations: [], error: String(err) };
+    }
+  }
+
+  public async researchDeepResearch(question: string): Promise<ResearchDeepResearchResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/research/deep-research`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ question }),
+      });
+      return (await res.json()) as ResearchDeepResearchResponse;
+    } catch (err) {
+      return { success: false, markdown: '', articles: 0, fallback: true, error: String(err) };
+    }
   }
 }

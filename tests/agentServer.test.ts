@@ -283,6 +283,114 @@ Original body.
     assert.ok(!afterRestore.includes('Modified body.'));
   });
 
+  await t.test('Research Studio: search, backlinks, related and trace are deterministic', async () => {
+    const search = await apiStorage.researchSearch('sample');
+    assert.equal(search.success, true);
+    assert.ok(search.total >= 1);
+    assert.ok(search.results.some(hit => hit.note.id === 'sample-note'));
+
+    await fs.writeFile(
+      path.join(wikiDir, 'linker.md'),
+      `---
+title: Linker
+tags: [test]
+---
+# Linker
+
+Vedi [[sample-note]] per i dettagli.
+`,
+      'utf-8'
+    );
+    await fs.writeFile(
+      path.join(wikiDir, 'affine.md'),
+      `---
+title: Affine
+tags: [test]
+---
+# Affine
+
+Sample note: governance clinica content.
+`,
+      'utf-8'
+    );
+    await fs.mkdir(path.join(tmpDir, 'raw'), { recursive: true });
+    await fs.writeFile(
+      path.join(tmpDir, 'raw', 'evidence.md'),
+      'Governance evidence line\nSecond line\nThird line\n',
+      'utf-8'
+    );
+    await fs.writeFile(
+      path.join(wikiDir, 'traced.md'),
+      `---
+title: Traced Claim
+tags: [trace]
+sources:
+  - raw/evidence.md#L1-L2
+---
+# Traced Claim
+
+The governance board approved the protocol.
+`,
+      'utf-8'
+    );
+
+    const backlinks = await apiStorage.researchBacklinks('sample-note');
+    assert.equal(backlinks.success, true);
+    assert.ok(backlinks.items.some(item => item.source.id === 'linker'));
+    assert.ok(backlinks.items.every(item => item.source.id !== 'sample-note'));
+
+    const related = await apiStorage.researchRelated('sample-note');
+    assert.equal(related.success, true);
+    assert.ok(related.suggestions.every(item => item.note.id !== 'linker'));
+    assert.ok(related.suggestions.some(item => item.note.id === 'affine'));
+
+    const trace = await apiStorage.researchTrace('governance');
+    assert.equal(trace.success, true);
+    const traced = trace.notes.find(item => item.note.id === 'traced');
+    assert.ok(traced);
+    assert.ok(traced!.matchedIn.includes('corpo'));
+    assert.equal(traced!.sources.length, 1);
+    assert.equal(traced!.sources[0].exists, true);
+    assert.equal(traced!.sources[0].startLine, 1);
+    assert.equal(traced!.sources[0].endLine, 2);
+    assert.ok(traced!.sources[0].passage?.includes('Governance'));
+  });
+
+  await t.test('Research Studio: consult returns the mocked LLM answer with citations', async () => {
+    const consult = await apiStorage.researchConsult('sample note');
+    assert.equal(consult.success, true);
+    assert.equal(consult.fallback, false);
+    assert.ok(consult.markdown.includes('Consult Synthesis'));
+    assert.ok(consult.citations.some(citation => citation.id === 'sample-note'));
+  });
+
+  await t.test('Research Studio: deep research writes report and synthesis files', async () => {
+    const deep = await apiStorage.researchDeepResearch('sample note');
+    assert.equal(deep.success, true);
+    assert.ok(deep.articles >= 1);
+    assert.ok(deep.outputPath && deep.synthesisPath);
+    await fs.access(path.join(tmpDir, deep.outputPath!));
+    await fs.access(path.join(tmpDir, deep.synthesisPath!));
+
+    const onDisk = await fs.readFile(path.join(tmpDir, deep.synthesisPath!), 'utf-8');
+    assert.ok(onDisk.includes('tags: [deep-research'));
+  });
+
+  await t.test('Research Studio: endpoints validate their input', async () => {
+    const searchRes = await fetch(`${baseUrl}/api/notes/research/search`);
+    assert.equal(searchRes.status, 400);
+
+    const consultRes = await fetch(`${baseUrl}/api/notes/research/consult`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    assert.equal(consultRes.status, 400);
+
+    const missing = await apiStorage.researchBacklinks('does-not-exist');
+    assert.equal(missing.success, false);
+  });
+
   await t.test('GET /api/wiki/scratchpad parses quick notes from notes/quick-notes.md', async () => {
     const notesDir = path.join(tmpDir, 'notes');
     await fs.mkdir(notesDir, { recursive: true });

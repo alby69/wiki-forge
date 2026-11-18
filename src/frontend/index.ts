@@ -3,9 +3,11 @@ import './styles/sidebar.css';
 import './styles/chat-drawer.css';
 import './styles/editor.css';
 import './styles/review-studio.css';
+import './styles/research-studio.css';
 
 import { WikiNote } from '@frontend/core/types/wiki';
 import type { ReviewTab } from '@frontend/core/types/review';
+import type { ResearchTab } from '@frontend/core/types/research';
 import { MarkdownParser } from '@frontend/services/markdownParser';
 import { GraphService } from '@frontend/services/graphService';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
@@ -28,6 +30,7 @@ import { OnboardingWizard } from '@frontend/components/simple-mode/OnboardingWiz
 import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from '@frontend/components/advanced-mode/VersionTimeline';
 import { ReviewStudio } from '@frontend/components/review/ReviewStudio';
+import { ResearchStudio } from '@frontend/components/research/ResearchStudio';
 import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu';
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 
@@ -59,6 +62,7 @@ export class WikiForgeApp {
   private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
   private reviewStudio!: ReviewStudio;
+  private researchStudio!: ResearchStudio;
   private reviewContextMenu!: ReviewContextMenu;
   private helpPanel!: HelpPanel;
 
@@ -183,8 +187,17 @@ Backlink to [[01-index]].
       },
     });
 
+    this.researchStudio = new ResearchStudio(this.storage, {
+      onOpenNote: noteId => this.selectNote(noteId),
+      onVaultChanged: () => {
+        void this.loadVault(true);
+        this.editor.showSaveStatus('Deep research salvato nella wiki');
+      },
+    });
+
     this.reviewContextMenu = new ReviewContextMenu({
       onOpenReview: (noteId, tab) => this.openReviewStudio(noteId, tab),
+      onOpenResearch: (noteId, tab) => this.openResearchStudio({ noteId, tab }),
     });
 
     document.addEventListener('keydown', event => {
@@ -199,6 +212,22 @@ Backlink to [[01-index]].
       if (!tab) return;
       event.preventDefault();
       this.openReviewStudio(undefined, tab);
+    });
+
+    document.addEventListener('keydown', event => {
+      if (!event.ctrlKey || !event.altKey) return;
+      const tabByKey: Record<string, ResearchTab> = {
+        q: 'consult',
+        s: 'search',
+        b: 'backlinks',
+        l: 'related',
+        t: 'trace',
+        h: 'deep',
+      };
+      const tab = tabByKey[event.key.toLowerCase()];
+      if (!tab) return;
+      event.preventDefault();
+      this.openResearchStudio({ tab });
     });
 
     this.header = new Header({
@@ -222,6 +251,9 @@ Backlink to [[01-index]].
       },
       onOpenKEWorkbench: () => {
         void this.keWorkbenchModal.open();
+      },
+      onOpenResearch: () => {
+        this.openResearchStudio();
       },
       onOpenHelp: () => {
         void this.helpPanel.open();
@@ -324,7 +356,8 @@ Backlink to [[01-index]].
       () => this.notes,
       () => this.toggleContext(),
       () => this.openVersionTimeline(),
-      () => this.openReviewStudio()
+      () => this.openReviewStudio(),
+      () => this.openResearchStudio()
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
@@ -362,7 +395,8 @@ Backlink to [[01-index]].
       () => {
         void this.loadVault(true);
       },
-      target => this.openWikilink(target)
+      target => this.openWikilink(target),
+      (tab, query) => this.openResearchStudio({ tab, query })
     );
 
     this.helpPanel = new HelpPanel({
@@ -399,6 +433,7 @@ Backlink to [[01-index]].
     this.editor.setNote(this.selectedNote);
     this.contextPanel.setSelectedNote(this.selectedNote);
     this.reviewStudio.setNotes(this.notes);
+    this.researchStudio.setNotes(this.notes);
     this.refreshGraph();
   }
 
@@ -475,6 +510,19 @@ Backlink to [[01-index]].
     const id = noteId || this.selectedNote?.id;
     if (!id) return;
     this.reviewStudio.open(id, tab);
+  }
+
+  /**
+   * Opens the Research Studio. Search and trace take a free-text query, while
+   * backlinks and related default to the current note; consult and deep
+   * research accept a question.
+   */
+  public openResearchStudio(options: { noteId?: string; tab?: ResearchTab; query?: string } = {}): void {
+    this.researchStudio.open({
+      noteId: options.noteId || this.selectedNote?.id,
+      tab: options.tab ?? 'search',
+      query: options.query,
+    });
   }
 
   private async updateAndSaveNote(noteId: string, newContent: string): Promise<void> {
