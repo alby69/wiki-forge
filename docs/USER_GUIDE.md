@@ -21,7 +21,7 @@ When editing notes, the editor view includes a built-in formatting toolbar:
 - **Wikilink Autocomplete**: Type `[[` inside the editor to invoke automatic autocomplete for existing wiki notes.
 
 ## Review Studio
-The editor header includes a **🔍 Revisione** button that opens the **Review Studio**, a single modal with four horizontal tabs:
+The editor header includes a **🧐 Revisione** button that opens the **Review Studio**, a single modal with four horizontal tabs:
 
 | Tab | Purpose |
 |---|---|
@@ -32,7 +32,7 @@ The editor header includes a **🔍 Revisione** button that opens the **Review S
 
 Ways to open it:
 - right-click a note in the left file tree and pick a tab from the review menu;
-- click **🔍 Revisione** in the editor header;
+- click **🧐 Revisione** in the editor header;
 - press `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest) or `Ctrl+Alt+F` (Confronta versioni).
 
 Review history is stored locally in `.wiki-forge/snapshots/<note-path>/` as a `.md` snapshot plus a `.json` sidecar (timestamp and reason). The last **25** snapshots per note are kept and the folder is gitignored. The chat `/verify` (alias `/human-review`) shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` stay available as agent commands, while their Review Studio tabs are deterministic.

@@ -1,7 +1,7 @@
 ---
 id: review-studio
 title: Review Studio
-icon: 🔍
+icon: 🧐
 order: 8
 group: 📖 Uso quotidiano
 mode: both
@@ -23,7 +23,7 @@ La **Review Studio** è un'unica finestra per controllare la qualità della nota
 ## Come aprirla
 
 - **Tasto destro** su una nota nell'albero dei file → scegli la scheda desiderata.
-- Pulsante **🔍 Revisione** nell'header dell'editor.
+- Pulsante **🧐 Revisione** nell'header dell'editor.
 - Scorciatoie: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
 
 La scheda si apre sulla nota selezionata; se nessuna nota è aperta, selezionala prima dall'albero dei file o dall'editor.

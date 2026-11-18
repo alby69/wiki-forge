@@ -26,7 +26,7 @@ Apri `review-studio.html` con un browser (doppio clic). Non serve un server: il 
 - **Digest**: statistiche della settimana e timeline di verifiche, modifiche e snapshot.
 - **Confronta versioni**: scegli uno snapshot e passa da *Affiancata* a *Unificata*; il pulsante di ripristino mostra il toast. (Il prototipo esplora entrambe le viste; l'app reale usa oggi la vista **Unificata**.)
 - **Tasto destro** su un file nell'albero a sinistra: si apre il menu contestuale *Revisione e QA*; ogni voce apre la scheda corrispondente.
-- **Pulsante `🔍 Revisione`** nell'header dell'editor e scorciatoie `Ctrl+Alt+R` (verifica), `Ctrl+Alt+C` (critica), `Ctrl+Alt+D` (digest), `Ctrl+Alt+F` (diff).
+- **Pulsante `🧐 Revisione`** nell'header dell'editor e scorciatoie `Ctrl+Alt+R` (verifica), `Ctrl+Alt+C` (critica), `Ctrl+Alt+D` (digest), `Ctrl+Alt+F` (diff).
 - **Barra in basso**: passa tra le due viste del mockup (`Review Studio` / `Menu contestuale`).
 
 ## Deep link per gli screenshot

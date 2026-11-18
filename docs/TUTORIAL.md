@@ -59,12 +59,12 @@ I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Scratchpad**, **�
 
 La scelta viene ricordata automaticamente. Passando alla sola vista **Graph**, il pannello **Node Metadata** sotto l'editor resta visibile; cliccando una nota dalla barra laterale si apre automaticamente la vista **Editor**, senza forzare lo Split.
 
-### 🔍 Review Studio nell'Interfaccia Grafica
+### 🧐 Review Studio nell'Interfaccia Grafica
 
 La **Review Studio** è un'unica finestra di revisione, con quattro **schede orizzontali** in alto. Si apre in tre modi:
 
 - **tasto destro** su una nota nell'albero dei file → scegli la scheda;
-- pulsante **🔍 Revisione** nell'header dell'editor;
+- pulsante **🧐 Revisione** nell'header dell'editor;
 - scorciatoie `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
 
 | Scheda | Contenuto |

@@ -52,7 +52,7 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
 ### Review Studio per la governance della conoscenza
-La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🔍 Revisione**) offre al Knowledge Engineer un punto unico per:
+La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🧐 Revisione**) offre al Knowledge Engineer un punto unico per:
 
 - **Verifica**: quality gate deterministico (link, frontmatter OKF, tag, fonti, `stale_after`), storico delle verifiche e registrazione della revisione umana (stesso percorso di `/verify`);
 - **Critica**: revisione avversariale con profondità e focus, utile prima di promuovere note a `stable` o di includerle in un capitolo di tesi;

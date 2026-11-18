@@ -44,7 +44,7 @@ Scrivi `[[nome-della-nota]]` per collegare due note:
 
 ## Revisione e confronto versioni (Review Studio)
 
-Dall'header dell'editor, col pulsante **🔍 Revisione**, oppure con **tasto destro** su una nota, apri la **Review Studio**:
+Dall'header dell'editor, col pulsante **🧐 Revisione**, oppure con **tasto destro** su una nota, apri la **Review Studio**:
 
 - **✓ Verifica** — quality gate della nota, storico delle verifiche e modulo di revisione umana (`reviewer`, `stable`, commento).
 - **⚡ Critica** — revisione avversariale con profondità e focus selezionabili.

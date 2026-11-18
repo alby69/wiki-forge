@@ -16,13 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation alignment**: README + docs index, USER_GUIDE, TUTORIAL (§2 and §5), TECHNICAL_ARCHITECTURE (§2.12), AGENT, CHANGELOG, ROADMAP, in-app help (new `research-studio` topic plus `inizio`, `barra-alto`, `modifica-note`, `chat-comandi`).
 
 ### Review Studio (UI)
-- **Single review console (`ReviewStudio.ts`)**: one modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — dark theme and emerald accent. Opened from the note context menu (`ReviewContextMenu.ts`), the **🔍 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`.
+- **Single review console (`ReviewStudio.ts`)**: one modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — dark theme and emerald accent. Opened from the note context menu (`ReviewContextMenu.ts`), the **🧐 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`.
 - **Review API (`agentServer.ts`)**: new routes `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.
 - **Deterministic quality gate and digest**: `getReviewMeta` checks internal links, OKF frontmatter, tags, cited sources and `stale_after`; `getReviewDigest` groups `wiki/log.md` activity by day with health stats and next actions. Human verification reuses `recordHumanVerification` (same path as `/verify`).
 - **Local snapshot store**: pre-write content saved to `.wiki-forge/snapshots/<note-path>/<timestamp>.md` plus a `.json` sidecar; the latest 25 snapshots per note are retained, gitignored, no git binary required. Unified line-by-line diff and one-click restore.
 - **Critique tab**: LLM-backed adversarial review (`fast`/`standard`/`deep`, selectable focus) with a deterministic fallback when no provider is configured.
 - **Design deliverables**: rewritten `docs/mockups/review-studio.html` and 5 regenerated PNG previews (Verifica, Critica, Digest, Diff, context menu), documented in `docs/mockups/README.md`.
 - **Documentation alignment**: README + docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL (§2 and §5.1), ARCHITECTURE, TECHNICAL_ARCHITECTURE (§2.11), AGENT, WORKFLOW, OKF_SPEC, THESIS_GUIDE, in-app help (new `review-studio` topic + `inizio`, `stati-okf`, `modifica-note`, `barra-alto`, `chat-comandi`, `maturita-metriche`), and both ROADMAPs.
+- **Icon change**: the Review Studio entry points now use 🧐 instead of 🔍 (the editor button, the `review-studio` help topic icon, mockups and docs), because 🔍 was too similar to the Research Studio 🔎. 🔍 is kept where it means search/zoom/consult.
 
 ### Documentation & Screenshots Refresh
 - **New `docs/GUIDA_OPERATIVA.md`**: single non-technical operational guide (glossary, Focus/Developer modes, activities A–I, typical workflow, best practices); indexed as the recommended starting point in `docs/README.md` and root `README.md`.

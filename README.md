@@ -36,7 +36,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl`.
 - **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wikiforge/state/<run_id>.json`.
 - **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
-- **🔍 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🔍 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
+- **🧐 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🧐 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
 - **🔎 Research Studio**: One modal with six horizontal tabs — **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research** — matching the six query commands `/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`. Open it from the **🔎 Research** header button, the **🔎 Ricerca** editor button, the note context menu, `Ctrl+Alt+Q/S/B/L/T/H`, or by typing the command in chat. Search, backlinks, related and trace are deterministic (`/api/notes/research/*`); consult and deep research use the configured LLM and fall back to a deterministic response, with deep-research reports stored in `output/` and `wiki/synthesis/`.
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
@@ -84,7 +84,7 @@ The LLM Knowledge Engineer agent supports the following slash commands:
 
 ---
 
-## 🔍 Review Studio (Web UI)
+## 🧐 Review Studio (Web UI)
 
 A single review console for the active note, built from four horizontal tabs:
 
@@ -97,7 +97,7 @@ A single review console for the active note, built from four horizontal tabs:
 
 **How to open it**
 - Right-click a note in the left file tree → **Verifica umana / Revisione critica / Digest attività / Confronta versioni**.
-- Click **🔍 Revisione** in the editor header.
+- Click **🧐 Revisione** in the editor header.
 - Keyboard: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
 
 The review history is local and independent of git: before each save/verify/restore the previous content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a `.json` sidecar (reason and timestamp). The latest **25** snapshots per note are kept; the folder is gitignored. The chat `/verify` (alias `/human-review`) command shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` remain available as agent commands, while their Review Studio tabs are deterministic.

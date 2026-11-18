@@ -27,7 +27,7 @@ Da **sinistra a destra** trovi:
 7. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
 8. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
 
-> **Nell'header dell'editor** trovi anche **🔍 Revisione** (apre la Review Studio a quattro schede), **🔎 Ricerca** (apre la Research Studio a sei schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie sono `Ctrl+Alt+R/C/D/F` per la Review Studio e `Ctrl+Alt+Q/S/B/L/T/H` per la Research Studio; in alternativa usa il tasto destro su una nota.
+> **Nell'header dell'editor** trovi anche **🧐 Revisione** (apre la Review Studio a quattro schede), **🔎 Ricerca** (apre la Research Studio a sei schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie sono `Ctrl+Alt+R/C/D/F` per la Review Studio e `Ctrl+Alt+Q/S/B/L/T/H` per la Research Studio; in alternativa usa il tasto destro su una nota.
 
 ## La barra laterale sinistra (file manager e tag cloud)
 

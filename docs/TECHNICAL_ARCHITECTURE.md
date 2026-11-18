@@ -117,7 +117,7 @@ Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextM
 
 **UI surface**
 - One modal with four horizontal tabs: **Verifica**, **Critica**, **Digest**, **Confronta versioni**. The default tab is `verify`.
-- Opened by right-clicking a note in the sidebar (`ReviewContextMenu`), by the **🔍 Revisione** button in the editor header, or with `Ctrl+Alt+R/C/D/F`.
+- Opened by right-clicking a note in the sidebar (`ReviewContextMenu`), by the **🧐 Revisione** button in the editor header, or with `Ctrl+Alt+R/C/D/F`.
 - Only the dark theme is supported; the accent colour is emerald (`#10b981`).
 
 **REST endpoints** (all accept `projectId`; `note` is a wiki-relative path such as `wiki/temi/nota.md` or an id/title resolvable by `resolveReviewTarget`):

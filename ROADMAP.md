@@ -242,7 +242,7 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 **Deliverables:**
 - **Four-tab modal (`src/frontend/components/review/ReviewStudio.ts`)**: horizontal tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**; dark theme with emerald accent; unified line-by-line diff and one-click restore.
-- **Entry points**: note context menu (`ReviewContextMenu.ts`), **🔍 Revisione** button in the editor header, and `Ctrl+Alt+R/C/D/F`.
+- **Entry points**: note context menu (`ReviewContextMenu.ts`), **🧐 Revisione** button in the editor header, and `Ctrl+Alt+R/C/D/F`.
 - **Review API (`src/backend/server/agentServer.ts`)**: `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.
 - **Shared verification path** with chat `/verify`; deterministic quality gate (links, OKF frontmatter, tags, sources, `stale_after`), digest from `wiki/log.md`, and critique with deterministic fallback.
 - **Local snapshot store**: `.wiki-forge/snapshots/<note-path>/<timestamp>.md` + `.json` sidecar, best-effort, gitignored, retention 25 per note.

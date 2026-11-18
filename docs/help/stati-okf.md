@@ -35,7 +35,7 @@ Dalla chat:
 
 `/human-review` è un alias identico di `/verify`. La nota passa a 🟢 **Human-Reviewed** e così appare anche nell'header.
 
-In alternativa, senza scrivere comandi: apri la **Review Studio** con **tasto destro** sulla nota, col pulsante **🔍 Revisione** nell'editor o con `Ctrl+Alt+R`. Nella scheda **Verifica** trovi il quality gate, lo storico e il modulo con revisore, `stable` e commento; premi **Registra verifica** per lo stesso risultato di `/verify`.
+In alternativa, senza scrivere comandi: apri la **Review Studio** con **tasto destro** sulla nota, col pulsante **🧐 Revisione** nell'editor o con `Ctrl+Alt+R`. Nella scheda **Verifica** trovi il quality gate, lo storico e il modulo con revisore, `stable` e commento; premi **Registra verifica** per lo stesso risultato di `/verify`.
 
 ## Rivedere e confrontare le versioni
 

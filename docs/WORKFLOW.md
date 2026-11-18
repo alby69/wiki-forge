@@ -79,7 +79,7 @@ Usa i comandi di consultazione avanzata:
 Quando le note raggiungono uno stato `stable` o `mature`:
 
 1. **Aggregazione**: Nella chat **💬 3. Chiedi** invia il comando `/thesis-chapter` per aggregare tutte le note relative a un macro-tema (es. "Capitolo 2: L'Impatto degli LLM sul Lavoro Cognitivo") in un unico documento coerente e ben strutturato.
-2. **Revisione Avversaria e QA**: Apri la **Review Studio** (tasto destro sulla nota, pulsante **🔍 Revisione** o `Ctrl+Alt+C`) e usa la scheda **Critica** per far emergere punti deboli, contraddizioni logiche o citazioni mancanti nel capitolo generato. Nella scheda **Verifica** controlla il quality gate e registra la revisione umana; nella scheda **Confronta versioni** confronta la bozza con lo snapshot precedente. Gli stessi controlli restano disponibili in chat con `/adversarial-review`, `/verify` e `/diff`.
+2. **Revisione Avversaria e QA**: Apri la **Review Studio** (tasto destro sulla nota, pulsante **🧐 Revisione** o `Ctrl+Alt+C`) e usa la scheda **Critica** per far emergere punti deboli, contraddizioni logiche o citazioni mancanti nel capitolo generato. Nella scheda **Verifica** controlla il quality gate e registra la revisione umana; nella scheda **Confronta versioni** confronta la bozza con lo snapshot precedente. Gli stessi controlli restano disponibili in chat con `/adversarial-review`, `/verify` e `/diff`.
 3. **Esportazione PDF in un clic**: Apri il menu **🛠️ Strumenti** nella barra superiore, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema genererà il documento PDF finale pronto per la stampa, con bibliografia e citazioni tracciate.
 
 ---
