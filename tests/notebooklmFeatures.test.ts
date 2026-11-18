@@ -80,6 +80,17 @@ Synthesizes knowledge graphs.
     assert.ok(html.includes('data-note-ref="analisi/linee-guida-tesi-hr.md"'));
   });
 
+  await t.test('renderMarkdown keeps Markdown links to raw sources intact (no nested anchors)', async () => {
+    const rawMarkdown = '- [Capitolo 1](<raw/1_ Limiti del RAG.md#L3-L44>) — descrizione';
+    const html = renderMarkdown(rawMarkdown);
+
+    assert.ok(html.includes('class="source-link"'));
+    assert.ok(html.includes('data-source-file="raw/1_ Limiti del RAG.md"'));
+    assert.ok(html.includes('data-line-anchor="L3-L44"'));
+    assert.ok(html.includes('>Capitolo 1</a>'), 'link label must be preserved');
+    assert.ok(!html.includes('<a href="<a'), 'must not nest anchors');
+  });
+
   await t.test('/trace extracts line-anchored passages from raw sources', async () => {
     const response = await agentServer.processChatCommand({ command: '/trace Agent' });
     assert.ok(response.includes('Passage Trace for "Agent"'));
