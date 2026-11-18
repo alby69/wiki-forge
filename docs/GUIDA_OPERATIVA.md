@@ -26,6 +26,7 @@ Niente va in cloud: la tua conoscenza resta in una cartella locale (*vault*).
 | **Fiducia (trust tier)** | Quanto una nota è affidabile: verificata da umano, confermata dall'agente, non verificata |
 | **Review Studio** | La finestra di revisione con quattro schede: Verifica, Critica, Digest, Confronta versioni |
 | **Research Studio** | La finestra di ricerca con sei schede: Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research |
+| **Study Studio** | La finestra di studio con sette schede: Guida, Quiz, Mindmap, Audio, Note, Promuovi, Tesi |
 
 ---
 
@@ -111,6 +112,8 @@ Nella chat puoi semplicemente **fare domande in linguaggio naturale**: *«Quali 
 
 Per cercare e interrogare la wiki in modo strutturato, usa la **Research Studio** (pulsante **🔎 Research** in alto o **🔎 Ricerca** nell'editor): le sei schede coprono **Consult** (domanda con citazioni), **Ricerca** (full-text con numeri di riga), **Backlink** (chi cita la nota), **Correlate** (connessioni mancanti), **Traccia** (note e fonti raw di un'affermazione) e **Deep Research** (report esteso salvato in `output/` e `wiki/synthesis/`). Scrivendo in chat `/consult`, `/search`, `/backlinks`, `/related`, `/trace` o `/deep-research` si apre la scheda corrispondente con la query già pronta.
 
+Per studiare e ripassare, usa la **Study Studio** (pulsante **📚 Studio** in alto o nell'editor, `Ctrl+Alt+G/K/M/A`): **Guida**, **Quiz**, **Mindmap** e **Audio** generano materiale in `output/`, mentre **Note** e **Promuovi** gestiscono lo scratchpad.
+
 ---
 
 ### Attività E — Scrivere, correggere, annotare
@@ -119,7 +122,7 @@ Per cercare e interrogare la wiki in modo strutturato, usa la **Research Studio*
 2. Collega le note scrivendo `[[nome-nota]]`: nella lettura diventano link cliccabili.
 3. Usa la **cronologia** della nota per vedere le versioni precedenti e ripristinarle.
 4. Apri **🧐 Revisione** (o fai **tasto destro** sulla nota) per verificare la qualità e confrontare le versioni nella **Review Studio**.
-5. Scrivi appunti veloci con `/note <testo>`; quando un appunto è pronto, **promuovilo a nota** con `/promote-note` (o il pulsante nello Scratchpad).
+5. Scrivi appunti veloci con `/note <testo>` o dalla scheda **📝 Note** della Study Studio; quando un appunto è pronto, **promuovilo a nota** con `/promote-note`, il pulsante nello Scratchpad o la scheda **🚀 Promuovi**.
 
 Le note sono **semplici file di testo**: puoi modificarle anche col tuo editor preferito, senza rompere nulla.
 
@@ -166,7 +169,7 @@ Scorciatoie: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Dige
 
 ### Attività G — Studiare, sintetizzare, produrre
 
-Tutti questi comandi lavorano sulle note **già compilate** e si lanciano dalla chat:
+Tutti questi comandi lavorano sulle note **già compilate** e si lanciano dalla chat. Le stesse operazioni sono disponibili in forma grafica nella **Study Studio** (pulsante **📚 Studio**, `Ctrl+Alt+G/K/M/A`), che mostra subito il risultato, le fonti e il file salvato:
 
 | Comando | Risultato |
 |---|---|

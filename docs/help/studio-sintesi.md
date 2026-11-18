@@ -2,7 +2,7 @@
 id: studio-sintesi
 title: Studio, quiz e sintesi
 icon: 🎓
-order: 11
+order: 12
 group: 📖 Uso quotidiano
 mode: both
 keywords: [studio, study, quiz, mindmap, mappa, sintesi, consult, approfondimento, riassunto, audio, capitolo, tesi]
@@ -11,7 +11,9 @@ context: []
 
 ## Studiare la tua wiki
 
-Tutti questi comandi si usano **dalla chat** e lavorano sulle note già compilate:
+Tutti questi comandi si usano **dalla chat** e lavorano sulle note già compilate. Lo stesso flusso è disponibile in forma grafica nella **Study Studio** (pulsante **📚 Studio**, `Ctrl+Alt+G/K/M/A`): ogni scheda corrisponde a un comando e mostra subito risultato, fonti e percorso del file salvato.
+
+I comandi principali:
 
 | Comando | Cosa ottieni |
 |---|---|

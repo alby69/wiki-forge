@@ -2,7 +2,7 @@
 id: problematic
 title: Problemi frequenti
 icon: 🛠️
-order: 13
+order: 14
 group: 📖 Uso quotidiano
 mode: both
 keywords: [problema, errore, error, non funziona, aiuto, bug, offline, lento, crash, debug, log]

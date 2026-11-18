@@ -172,6 +172,34 @@ Implemented in `src/frontend/components/research/ResearchStudio.ts`, `src/fronte
 - Missing query/note parameters return `400`; unknown notes for backlinks/related return `404`; unexpected errors return `500` with a JSON body.
 - Deep research writes files only through the backend; the modal refreshes the vault after a successful run.
 
+### 2.13 Study Studio API & Deterministic Study Helpers
+Implemented in `src/frontend/components/study/StudyStudio.ts`, `src/frontend/core/types/study.ts`, `src/frontend/styles/study-studio.css`, the `study*` methods of `src/frontend/storage/ApiStorage.ts`, `src/backend/server/studyHelpers.ts`, and the seven routes in `src/backend/server/agentServer.ts`.
+
+**UI surface**
+- One modal with seven horizontal tabs: **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi** (`StudyStudio.ts`). The default tab is `guide`.
+- Reuses the Review Studio shell (`.wf-rs-*`) with an amber accent (`#f59e0b`) and the `.wf-st-*` classes for source lists, scratchpad entries, badges and maturity rows.
+- Entry points: **📚 Studio** in the top header (`Header.ts`), **📚 Studio** in the editor header (`MarkdownEditor.ts`), the note context menu entries **Guida di studio** / **Quiz di autovalutazione** / **Mappa concettuale** / **Copione audio** (`ReviewContextMenu.ts`), and shortcuts `Ctrl+Alt+G/K/M/A`. The chat commands keep their text behaviour and share the same builders.
+- The opened tab can prefill its topic from the current note; the Mindmap tab uses that title as the tree root.
+
+**REST endpoints** (all `POST`, JSON body, `projectId` from the query string):
+
+| Path | Body | Purpose |
+|---|---|---|
+| `/api/notes/study/guide` | `{ topic? }` | Builds a study guide from the most relevant notes and writes `output/study-guide-<slug>.md`. Returns `{ success, markdown, outputPath, sources[] }`. |
+| `/api/notes/study/quiz` | `{ topic?, count? }` | Builds an exact number of multiple-choice questions (`count` clamped to 1–25, default 5) and writes `output/quiz-<slug>.md`. Returns the output shape plus `count`. |
+| `/api/notes/study/mindmap` | `{ target? }` | Selects a note by id, title or path (falling back to the first note), extracts `##`/`###` headings and outbound wikilinks, and writes `output/mindmap-<slug>.md`. Returns `note`, `nodes[]`, `links[]`, `headings`, `wikilinks`; `404` only when the wiki is empty. |
+| `/api/notes/study/audio-overview` | `{ topic? }` | Builds a Host A / Host B dialogue script with the covered notes in frontmatter and writes `output/audio-script-<slug>.md`. |
+| `/api/notes/study/note` | `{ text }` | Appends a timestamped entry to `notes/quick-notes.md` and returns `{ success, markdown, entry?, entries[] }` so the modal can refresh without a second call. Empty text returns `400`. |
+| `/api/notes/study/promote-note` | `{ noteId, folder? }` | Promotes the matching scratchpad entry into `wiki/<folder>/<slug>.md`, updates the folder and master indexes, and returns the created `note`. `400` when the id is missing or the scratchpad does not exist. |
+| `/api/notes/study/thesis-chapter` | `{ topic?, title?, minMaturity? }` | Aggregates `tipo: capitolo_tesi` notes (ordered by `capitolo_numero`) and `tipo: sintesi` notes at or above `maturita >= minMaturity`. Writes `output/thesis-<slug>.md` and refreshes the canonical `output/thesis_compiled.md` used by `export_thesis_pdf.py`. Returns `title`, `chapters[]`, `syntheses[]` and `sources[]`. |
+
+**Determinism & edge cases**
+- Every tab is deterministic: `studyHelpers.ts` is a pure module over the notes already loaded by `readAllWikiNotes`, unit-tested in `tests/studyHelpers.test.ts`. No LLM provider is involved.
+- Structural notes (`index`, `log`, `README`, `sources`-style entries) are filtered out of topic matching via `usableStudyNotes`; slugs are normalised with `slugifyTopic`.
+- `sources` are built from `note.path` (already `wiki/...`), avoiding the historical `wiki/wiki/...` double prefix.
+- `/promote-note` uses the selected entry text when `noteId` matches a parsed scratchpad entry; a timestamp id (`YYYY-MM-DD...`) derives the article title from the note text, while a plain slug keeps the legacy `/promote-note <slug> <folder>` behaviour.
+- Promotion and note creation trigger `executeReindexWorkflow`, so the modal refreshes the vault and the scratchpad panel after a successful run.
+
 ---
 
 ## 3. Comparative Matrix: `wiki-forge` Local RAG vs. From-Scratch Training (`nanochat`)

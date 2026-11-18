@@ -99,6 +99,27 @@ La **Research Studio** riunisce in un'unica finestra le sei schede della categor
 
 > **Determinismo**: Ricerca, Backlink, Correlate e Traccia usano solo le note già caricate e funzionano offline. Consult e Deep Research usano il provider LLM configurato; se non è disponibile, mostrano un **fallback deterministico** etichettato in ambra e restano utilizzabili.
 
+### 📚 Study Studio nell'Interfaccia Grafica
+
+La **Study Studio** riunisce in un'unica finestra le sette schede della categoria 📚 *Studio e Sintesi*. Si apre con:
+
+- il pulsante **📚 Studio** nella barra in alto;
+- il pulsante **📚 Studio** nell'header dell'editor;
+- il **tasto destro** su una nota (voci *Guida di studio*, *Quiz di autovalutazione*, *Mappa concettuale*, *Copione audio*);
+- le scorciatoie `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap), `Ctrl+Alt+A` (Audio).
+
+| Scheda | Comando | Contenuto |
+|---|---|---|
+| **📝 Guida** | `/study-guide` | Riassunto, sezioni per nota, glossario e domande di autovalutazione; il frontmatter `sources` usa i percorsi reali delle note. |
+| **🧪 Quiz** | `/quiz` | Quiz a risposta multipla con numero esatto di domande (1–25), risposta corretta e spiegazione. |
+| **🧠 Mindmap** | `/mindmap` | Albero gerarchico dei titoli (`##`/`###`), wikilink uscenti e payload JSON per il grafo. |
+| **🎙️ Audio** | `/audio-overview` | Copione dialogo **Host A / Host B** in stile podcast; la sintesi MP3 resta disattivata finché non configuri `[audio]`. |
+| **📝 Note** | `/note` | Appunto rapido in `notes/quick-notes.md`, con id timestamp e lista aggiornata dello scratchpad. |
+| **🚀 Promuovi** | `/promote-note` | Crea l'articolo dalla voce selezionata, aggiorna indice tematico e indice principale. |
+| **🎓 Tesi** | `/thesis-chapter` | Aggrega capitoli (`tipo: capitolo_tesi`) e sintesi sopra la soglia di maturità; aggiorna anche `output/thesis_compiled.md`. |
+
+> **Determinismo**: tutte le schede usano gli stessi builder dei comandi chat (`src/backend/server/studyHelpers.ts`, endpoint `POST /api/notes/study/*`) e non richiedono un modello LLM. I file finiscono in `output/`, gli appunti in `notes/quick-notes.md`; le note promosse entrano in `wiki/<cartella>/`.
+
 ---
 
 ### 🎯 Scenari di Utilizzo Pratici
@@ -109,7 +130,7 @@ La **Research Studio** riunisce in un'unica finestra le sei schede della categor
   1. Carica i PDF dei paper cliccando **📥 1. Carica**.
   2. Clicca sul pulsante **⚡ 2. Compila**.
   3. Fai domande alla chat cliccando **💬 3. Chiedi**: *"Crea una mappa concettuale che colleghi le teorie di Graeber e Cristianini presenti nei paper"*.
-  4. Per generare la tesi finale, scrivi il comando `/thesis-chapter` nella chat per unire le note e poi apri **🛠️ Strumenti**, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool** per scaricare il PDF pronto per la stampa.
+  4. Per generare la tesi finale, usa la scheda **🎓 Tesi** della **Study Studio** oppure scrivi `/thesis-chapter` nella chat per unire le note: la bozza viene salvata in `output/thesis-<argomento>.md` e in `output/thesis_compiled.md`. Poi apri **🛠️ Strumenti**, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool** per scaricare il PDF pronto per la stampa.
 
 #### Scenario B: Il Professionista HR (Gestione Riunioni e Progetti)
 - **Obiettivo**: Non perdere le decisioni prese durante le riunioni ed organizzare le competenze aziendali.
@@ -261,7 +282,7 @@ Questa è la fase centrale in cui la conoscenza prende vita nell'interfaccia UI.
 
 ### FASE 4: Sintesi, Studio & Calcolo Maturità nell'Interfaccia UI
 
-Mentre la wiki cresce, puoi utilizzare la Suite di Studio e Sintesi accessibile sia dalla chat **💬 3. Chiedi** sia dal menu **🛠️ Strumenti**:
+Mentre la wiki cresce, puoi utilizzare la Suite di Studio e Sintesi accessibile sia dalla chat **💬 3. Chiedi** sia dal menu **🛠️ Strumenti**. Le stesse operazioni sono disponibili in forma grafica nella **Study Studio** (pulsante **📚 Studio** o `Ctrl+Alt+G/K/M/A`), che mostra subito risultato, fonti e percorso del file salvato.
 
 1. **Strumenti di Sintesi e Didattica (`study-guide`, `quiz`, `mindmap`, `audio-overview`, `deep-research`)**:
    - `/study-guide <argomento>`: Genera una guida di studio strutturata.
@@ -289,6 +310,7 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
    ```text
    /thesis-chapter
    ```
+   In alternativa usa la scheda **🎓 Tesi** della **Study Studio**, dove puoi impostare argomento, titolo e maturità minima. La bozza viene salvata in `output/thesis-<argomento>.md` e la copia canonica `output/thesis_compiled.md` viene aggiornata per l'export.
 
 2. **Esportazione PDF dall'Interfaccia Grafica (`export_thesis_pdf.py` via UI)**:
    Per generare il PDF finale formattato per la tesi di laurea, apri il menu **🛠️ Strumenti** nella barra in alto, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema elaborerà il documento e renderà disponibile il file `thesis_final.pdf` pronto per il download e la stampa.
@@ -313,6 +335,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 | `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki (analogo alla scheda **Digest** della Review Studio, che però è deterministica) |
 | `diff` / `/diff` | Confronto tra la nota e una versione precedente (analogo alla scheda **Confronta versioni**, che usa gli snapshot locali in modo deterministico) |
 | `consult`, `search`, `backlinks`, `related`, `trace`, `deep-research` | Interrogazione e ricerca: chat e **Research Studio** condividono gli stessi endpoint. Scrivendo uno dei sei comandi nella chat si apre la scheda corrispondente con la query già compilata. |
+| `study-guide`, `quiz`, `mindmap`, `audio-overview`, `note`, `promote-note`, `thesis-chapter` | Studio e sintesi: chat e **Study Studio** condividono gli stessi generatori deterministici (`POST /api/notes/study/*`). Gli artefatti vanno in `output/`, gli appunti in `notes/quick-notes.md`; la scheda **Tesi** aggiorna anche `output/thesis_compiled.md`. |
 | `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 (equivalente alla scheda **Verifica**) |
 | `slides` / `/slides` (`/generate-slides`) | Generazione di una presentazione a diapositive (reveal.js) dai capitoli della tesi |
 | `audit` / `/audit` | Controllo generale dell'archivio (link rotti, note isolate, sovrapposizioni) |

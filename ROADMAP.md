@@ -78,6 +78,7 @@
 | 63 | Robustness, KE Cockpit & Guided Procedures (Master Brief) | ✅ Done | Unified Health Engine (`health.py`), Procedure Engine (`procedures.py`), Safe Vault (`vault.py`), Resumable Wizards, Live SSE Sync, and KE Cockpit UI (`KECockpitModal.ts`). |
 | 64 | Review Studio (Unified Review UI) | ✅ Done | Four-tab review modal (`ReviewStudio.ts`), `/api/notes/review/*` endpoints, local snapshot store (`.wiki-forge/snapshots/`, 25 per note), context menu + `Ctrl+Alt+R/C/D/F`, and design previews in `docs/mockups/`. |
 | 65 | Research Studio (Query & Research UI) | ✅ Done | Six-tab query modal (`ResearchStudio.ts`), `/api/notes/research/*` endpoints, deterministic query helpers (`researchHelpers.ts`), LLM consult/deep research with fallback, `Ctrl+Alt+Q/S/B/L/T/H`, chat-command hand-off, and help topic `research-studio`. |
+| 66 | Study Studio (Study & Synthesis UI) | ✅ Done | Seven-tab study modal (`StudyStudio.ts`), `/api/notes/study/*` endpoints, deterministic study helpers (`studyHelpers.ts`), `Ctrl+Alt+G/K/M/A`, chat-command parity, canonical thesis draft refresh, and help topic `study-studio`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -259,3 +260,15 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Deterministic helpers (`src/backend/server/researchHelpers.ts`)**: tokenisation, key terms, ranked full-text search, wikilink backlinks, related-note suggestions and trace-source resolution, with unit tests in `tests/researchStudio.test.ts`.
 - **LLM paths with fallback**: `consultWiki` answers with the configured model and falls back to the ranked note list; `generateDeepResearch` writes `output/research-*.md` and `wiki/synthesis/*.md` with a source-attribution matrix and knowledge gaps.
 - **Docs**: in-app help topic `research-studio`, plus updates to README, docs index, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.12), AGENT and CHANGELOG.
+
+## Phase 66 — Study Studio (Study & Synthesis UI) ✅ Done
+
+**Goal:** Bring the seven "📚 Studio e Sintesi" agent commands into one graphical console that stays deterministic and offline-friendly.
+
+**Deliverables:**
+- **Seven-tab modal (`src/frontend/components/study/StudyStudio.ts`)**: horizontal tabs **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi**; reuses the Review Studio shell (`.wf-rs-*`) with an amber accent and dedicated `.wf-st-*` styles.
+- **Entry points**: **📚 Studio** top-bar button, **📚 Studio** editor button, note context menu (Guida / Quiz / Mindmap / Copione audio), and `Ctrl+Alt+G/K/M/A`.
+- **Study API (`src/backend/server/agentServer.ts`)**: `POST /api/notes/study/{guide,quiz,mindmap,audio-overview,note,promote-note,thesis-chapter}`.
+- **Deterministic helpers (`src/backend/server/studyHelpers.ts`)**: pure builders for study guides, exact-count quizzes (1–25), heading/wikilink mind maps, Host A / Host B audio scripts, and maturity-filtered thesis chapters, with unit tests in `tests/studyHelpers.test.ts`.
+- **Command parity**: the chat workflows call the same builders, including the new TypeScript `executeThesisChapterWorkflow`; `/thesis-chapter` writes both `output/thesis-<slug>.md` and the canonical `output/thesis_compiled.md`.
+- **Docs**: in-app help topic `study-studio`, plus updates to README, docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.13), AGENT, WORKFLOW and CHANGELOG.

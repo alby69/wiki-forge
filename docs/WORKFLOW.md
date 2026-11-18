@@ -75,10 +75,12 @@ Usa i comandi di consultazione avanzata:
 - **`/deep-research`**: *"Quali attività HR sembrano maggiormente automatizzabili secondo le caratteristiche degli LLM descritte da tutte le fonti presenti nel grafo?"*
 - **`/validate-cq`** (Competency Questions): Verifica se le note attuali rispondono alle domande fondamentali della tesi (es. *"In che modo l'IA trasforma il ruolo del recruiter?"*).
 
+Per studiare e ripassare, la **Study Studio** (pulsante **📚 Studio** o `Ctrl+Alt+G/K/M/A`) offre le stesse note in forma grafica: **Guida**, **Quiz**, **Mindmap** e **Audio** generano materiale didattico in `output/`, mentre **Note** e **Promuovi** gestiscono lo scratchpad.
+
 ### FASE 5: Scrittura e Compilazione della Tesi nell'Interfaccia Grafica
 Quando le note raggiungono uno stato `stable` o `mature`:
 
-1. **Aggregazione**: Nella chat **💬 3. Chiedi** invia il comando `/thesis-chapter` per aggregare tutte le note relative a un macro-tema (es. "Capitolo 2: L'Impatto degli LLM sul Lavoro Cognitivo") in un unico documento coerente e ben strutturato.
+1. **Aggregazione**: Nella chat **💬 3. Chiedi** invia il comando `/thesis-chapter`, oppure apri la scheda **🎓 Tesi** della **Study Studio** e imposta argomento, titolo e maturità minima. Le note relative al macro-tema (es. "Capitolo 2: L'Impatto degli LLM sul Lavoro Cognitivo") vengono aggregate in `output/thesis-<argomento>.md`; la bozza canonica `output/thesis_compiled.md` viene aggiornata per l'export.
 2. **Revisione Avversaria e QA**: Apri la **Review Studio** (tasto destro sulla nota, pulsante **🧐 Revisione** o `Ctrl+Alt+C`) e usa la scheda **Critica** per far emergere punti deboli, contraddizioni logiche o citazioni mancanti nel capitolo generato. Nella scheda **Verifica** controlla il quality gate e registra la revisione umana; nella scheda **Confronta versioni** confronta la bozza con lo snapshot precedente. Gli stessi controlli restano disponibili in chat con `/adversarial-review`, `/verify` e `/diff`.
 3. **Esportazione PDF in un clic**: Apri il menu **🛠️ Strumenti** nella barra superiore, scegli lo script **Export Thesis to PDF** e clicca **▶ Run Tool**. Il sistema genererà il documento PDF finale pronto per la stampa, con bibliografia e citazioni tracciate.
 
@@ -92,6 +94,7 @@ Quando le note raggiungono uno stato `stable` o `mature`:
 - [ ] **Interrogazione**: Ho lanciato almeno una domanda trasversale con `/consult` o `/deep-research` nella chat per testare la coerenza della tesi?
 - [ ] **Maturità**: Ho usato `/maturity` o il pulsante "Calcola Maturità" per vedere quali sezioni della tesi sono ancora "stub" (abbozzate) e necessitano di approfondimento?
 - [ ] **Review Studio**: Ho controllato il quality gate, registrato le verifiche umane e confrontato le modifiche con gli snapshot precedenti?
+- [ ] **Study Studio**: Ho generato guida, quiz o mindmap per il ripasso e ho promosso gli appunti maturi dallo scratchpad?
 
 ---
 

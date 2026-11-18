@@ -2,7 +2,7 @@
 id: progetti-config
 title: Progetti e configurazione
 icon: ⚙️
-order: 14
+order: 15
 group: ⚙️ Progetti e Dev Mode
 mode: both
 keywords: [progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle]

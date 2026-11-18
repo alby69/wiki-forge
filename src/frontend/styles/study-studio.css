@@ -1,0 +1,241 @@
+/* --------------------------------------------------------------------------
+   Study Studio
+   Reuses the Review Studio shell (.wf-rs-*) with an amber accent.
+   -------------------------------------------------------------------------- */
+
+.wf-st-overlay .wf-rs-modal {
+  width: min(1240px, 96vw);
+  height: min(860px, 92vh);
+}
+
+.wf-st-overlay .wf-rs-header h2 .dot {
+  background: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.85);
+}
+
+.wf-st-overlay .wf-rs-tab.active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+}
+
+.wf-st-overlay .wf-rs-field input:focus,
+.wf-st-overlay .wf-rs-field select:focus,
+.wf-st-overlay .wf-rs-field textarea:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+}
+
+.wf-st-overlay .wf-rs-btn.primary {
+  background: #b45309;
+  border-color: #f59e0b;
+  color: #fffbeb;
+}
+
+.wf-st-overlay .wf-rs-btn.primary:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.wf-st-overlay .wf-rs-md blockquote {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.wf-st-overlay .wf-rs-check input {
+  accent-color: #f59e0b;
+}
+
+.wf-st-overlay .wf-rs-bar > div {
+  background: linear-gradient(90deg, #b45309, #f59e0b);
+}
+
+/* Stats, sources and scratchpad entries ----------------------------------- */
+
+.wf-st-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.wf-st-stats strong {
+  color: #fef3c7;
+}
+
+.wf-st-stats code {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #fbbf24;
+  background: #1c1407;
+  border: 1px solid #3f2d0a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  word-break: break-all;
+}
+
+.wf-st-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wf-st-note-link {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #3f2d0a;
+  border-left: 3px solid #f59e0b;
+  border-radius: 7px;
+  background: #1c1407;
+  color: #fcd34d;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.wf-st-note-link:hover {
+  background: #2a1e08;
+  color: #fde68a;
+}
+
+.wf-st-note-link code {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 400;
+  color: #a16207;
+  word-break: break-all;
+}
+
+.wf-st-entry {
+  border: 1px solid #1e293b;
+  border-left: 3px solid rgba(245, 158, 11, 0.55);
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 10px 12px;
+}
+
+.wf-st-entry + .wf-st-entry {
+  margin-top: 8px;
+}
+
+.wf-st-entry-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.wf-st-entry-head code {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+.wf-st-entry pre {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wf-st-badge {
+  display: inline-block;
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+  white-space: nowrap;
+}
+
+.wf-st-badge.alt {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.wf-st-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.wf-st-list-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #1e293b;
+  border-radius: 7px;
+  background: #0b1220;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+
+.wf-st-list-item code {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.wf-st-maturity {
+  margin-left: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #fbbf24;
+}
+
+.wf-st-actions-inline {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.wf-st-hint {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.wf-st-feedback,
+.wf-st-feedback-inline {
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fde68a;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.wf-st-feedback {
+  margin-top: 12px;
+  padding: 8px 12px;
+}
+
+.wf-st-feedback-inline {
+  margin-top: 10px;
+  padding: 7px 10px;
+}
+
+.wf-st-feedback-inline code {
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #fbbf24;
+}

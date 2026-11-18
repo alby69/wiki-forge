@@ -60,3 +60,25 @@ Ways to open it:
 Search, backlinks, related and trace are deterministic and work offline. Consult and deep research use the configured LLM and fall back to a deterministic, clearly labelled response when no provider is available; the deep-research report and synthesis note are written only when the backend responds.
 
 See [`TUTORIAL.md`](TUTORIAL.md) §2 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) §2.12 for the API.
+
+## Study Studio
+The **📚 Studio** button in the top bar and in the editor header opens the **Study Studio**, a single modal with seven horizontal tabs matching the 📚 study commands:
+
+| Tab | Command | Purpose |
+|---|---|---|
+| **Guida** | `/study-guide` | Study guide with executive summary, per-note sections, glossary and self-assessment questions; `sources` uses real note paths. |
+| **Quiz** | `/quiz` | Multiple-choice quiz with an exact count of 1–25 questions, correct answers and explanations. |
+| **Mindmap** | `/mindmap` | Heading tree (`##`/`###`), outbound wikilinks and the JSON payload for the graph. |
+| **Audio** | `/audio-overview` | Host A / Host B podcast script; MP3 synthesis stays off until an `[audio]` provider is configured. |
+| **Note** | `/note` | Quick note in `notes/quick-notes.md` with a timestamp id, excluded from `wiki/index.md`. |
+| **Promuovi** | `/promote-note` | Promotes the selected scratchpad entry into `wiki/<folder>/<slug>.md` and updates both indexes. |
+| **Tesi** | `/thesis-chapter` | Aggregates `tipo: capitolo_tesi` notes and mature syntheses; also refreshes `output/thesis_compiled.md`. |
+
+Ways to open it:
+- click **📚 Studio** in the top bar or in the editor header;
+- right-click a note and pick **Guida di studio**, **Quiz di autovalutazione**, **Mappa concettuale** or **Copione audio**;
+- press `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap) or `Ctrl+Alt+A` (Audio).
+
+All seven tabs are deterministic: they use the same builders as the chat commands (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`) and need no LLM. Generated artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and promoted articles to `wiki/`.
+
+See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) §2.13 for the API.

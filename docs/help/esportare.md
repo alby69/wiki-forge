@@ -2,10 +2,10 @@
 id: esportare
 title: Esportare: PDF, slide, RDF
 icon: 📄
-order: 12
+order: 13
 group: 📖 Uso quotidiano
 mode: both
-keywords: [esporta, export, pdf, slide, presentazione, rdf, json-ld, turtle, tesi, pandoc, scarica]
+keywords: [esporta, export, pdf, slide, presentazione, rdf, json-ld, turtle, tesi, pandoc, scarica, studio, thesis]
 context: []
 ---
 
@@ -16,7 +16,7 @@ context: []
 
 ## La tesi in PDF (percorso completo)
 
-1. **Compile Thesis Draft** (🛠️ Tools) o chat `/thesis-chapter` — aggrega le note mature in `output/thesis_compiled.md` (parametri: cartella wiki, punteggio minimo di maturità, titolo).
+1. **Compile Thesis Draft** (🛠️ Tools) o **Study Studio → 🎓 Tesi** / chat `/thesis-chapter` — aggrega le note mature in `output/thesis-<argomento>.md` e aggiorna la bozza corrente `output/thesis_compiled.md` (parametri: argomento, punteggio minimo di maturità, titolo).
 2. **Export Thesis to PDF** (🛠️ Tools) — converte il Markdown in PDF con **Pandoc** (motore `xelatex` di default; supportati anche `pdflatex`, `wkhtmltopdf`, `weasyprint`; opzione senza indice dei contenuti).
 
 > Prerequisito: Pandoc (+ un motore PDF) installati sulla macchina. Se mancano, lo script riporta l'errore nella **console di Tools**.

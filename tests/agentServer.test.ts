@@ -391,6 +391,101 @@ The governance board approved the protocol.
     assert.equal(missing.success, false);
   });
 
+  await t.test('Study Studio: guide, quiz, mindmap and audio write artefacts', async () => {
+    const guide = await apiStorage.studyGuide('sample');
+    assert.equal(guide.success, true);
+    assert.ok(guide.outputPath.startsWith('output/study-guide-'));
+    assert.ok(guide.markdown.includes('Executive Summary'));
+    assert.ok(guide.sources.some(source => source.id === 'sample-note'));
+    await fs.access(path.join(tmpDir, guide.outputPath));
+
+    const quiz = await apiStorage.studyQuiz('sample', 3);
+    assert.equal(quiz.success, true);
+    assert.equal(quiz.count, 3);
+    assert.equal((quiz.markdown.match(/### Question \d+/g) || []).length, 3);
+    assert.ok(quiz.outputPath.startsWith('output/quiz-'));
+    await fs.access(path.join(tmpDir, quiz.outputPath));
+
+    const mindmap = await apiStorage.studyMindmap('sample-note');
+    assert.equal(mindmap.success, true);
+    assert.ok(mindmap.nodes.length >= 1);
+    assert.equal(mindmap.note?.id, 'sample-note');
+    await fs.access(path.join(tmpDir, mindmap.outputPath));
+
+    const audio = await apiStorage.studyAudioOverview('sample');
+    assert.equal(audio.success, true);
+    assert.ok(audio.markdown.includes('**Host A**'));
+    await fs.access(path.join(tmpDir, audio.outputPath));
+
+    const missing = await apiStorage.studyMindmap('definitely-not-a-note');
+    assert.equal(missing.success, true, 'fallback to the first note keeps the command usable');
+  });
+
+  await t.test('Study Studio: quick note promotion uses the selected entry', async () => {
+    await fs.rm(path.join(tmpDir, 'notes', 'quick-notes.md'), { force: true });
+
+    const saved = await apiStorage.studyQuickNote('Promuovi questa idea di studio');
+    assert.equal(saved.success, true);
+    assert.equal(saved.entries.length, 1);
+    assert.ok(saved.entry?.id);
+
+    const promoted = await apiStorage.studyPromoteNote(saved.entry!.id, 'sperimentale');
+    assert.equal(promoted.success, true);
+    assert.ok(promoted.note);
+
+    const articlePath = path.join(wikiDir, 'sperimentale', `${promoted.note!.id}.md`);
+    const article = await fs.readFile(articlePath, 'utf-8');
+    assert.ok(article.includes('Promuovi questa idea di studio'));
+    assert.ok(article.includes(`entry \`${saved.entry!.id}\``));
+  });
+
+  await t.test('Study Studio: thesis chapter aggregates chapters and mature syntheses', async () => {
+    await fs.mkdir(path.join(wikiDir, 'capitoli'), { recursive: true });
+    await fs.mkdir(path.join(wikiDir, 'sintesi'), { recursive: true });
+    await fs.writeFile(
+      path.join(wikiDir, 'capitoli', '01-introduzione.md'),
+      `---
+titolo: Introduzione
+tipo: capitolo_tesi
+capitolo_numero: 1
+maturita: 80
+---
+# Introduzione
+
+Testo del capitolo introduttivo con [[sample-note]].
+`,
+      'utf-8'
+    );
+    await fs.writeFile(
+      path.join(wikiDir, 'sintesi', 'modelli.md'),
+      `---
+titolo: Modelli concettuali
+tipo: sintesi
+maturita: 70
+---
+# Modelli concettuali
+
+Sintesi matura pronta per la tesi.
+`,
+      'utf-8'
+    );
+
+    const thesis = await apiStorage.studyThesisChapter('tesi di prova', { minMaturity: 50 });
+    assert.equal(thesis.success, true);
+    assert.equal(thesis.chapters.length, 1);
+    assert.equal(thesis.chapters[0].title, 'Introduzione');
+    assert.equal(thesis.syntheses.length, 1);
+    assert.ok(thesis.markdown.includes('Capitolo 1: Introduzione'));
+    assert.ok(thesis.markdown.includes('Modelli concettuali'));
+    await fs.access(path.join(tmpDir, thesis.outputPath));
+  });
+
+  await t.test('Study Studio: the chat router routes /thesis-chapter', async () => {
+    const reply = await apiStorage.sendChat('/thesis-chapter governance maturity=50');
+    assert.ok(reply.includes('Thesis Chapter Generated'));
+    assert.ok(reply.includes('thesis-governance.md') || reply.includes('thesis-'));
+  });
+
   await t.test('GET /api/wiki/scratchpad parses quick notes from notes/quick-notes.md', async () => {
     const notesDir = path.join(tmpDir, 'notes');
     await fs.mkdir(notesDir, { recursive: true });

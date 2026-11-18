@@ -123,7 +123,7 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 | Curation | create/merge/split an article, tag it, stub a missing link | `skills/wiki-curate/SKILL.md` |
 | Audit & Maintenance | check health, fix broken links, schema-lint, schema-infer, reindex, prune, lint | `skills/wiki-audit/SKILL.md` |
 | Query & Research | ask a question, search, trace a claim, deep-research (the Research Studio tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**) | `skills/wiki-query/SKILL.md` |
-| Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes | `skills/wiki-study/SKILL.md` |
+| Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes, note promotion, thesis chapter (the Study Studio tabs **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi**) | `skills/wiki-study/SKILL.md` |
 | Onboarding & Utility | run the scenario wizard, stats, export, tags, help | `skills/wiki-onboarding/SKILL.md` |
 | Adversarial Review | stress-test notes/thesis for contradictions or missing citations (the Review Studio **Critica** tab) | `skills/wiki-adversarial-review/SKILL.md` |
 | Digest | natural language summary of recent log updates & health (the Review Studio **Digest** tab) | `skills/wiki-digest/SKILL.md` |
@@ -139,7 +139,8 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 3. **Explicit Confidence & Grounding**: Always state confidence levels (**High / Medium / Low**) and anchor claims to source line numbers (`raw/source.md#L10-L25`).
 4. **Graphical Review Studio**: The Web UI exposes the same review operations in one modal (tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**). `/verify` shares the exact code path with the **Verifica** tab; `/digest`, `/adversarial-review` and `/diff` remain the agent (prompt-level) commands, while the corresponding Review Studio tabs call deterministic endpoints.
 5. **Graphical Research Studio**: The six query commands (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`) have one modal (tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**). Typing the command in chat opens the matching tab with the query pre-filled. Search, backlinks, related and trace are deterministic; consult and deep-research call the model and fall back deterministically.
-6. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
+6. **Graphical Study Studio**: The seven study commands (`/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`) have one modal (tabs **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi**). Every tab uses the same deterministic builders as the command (`studyHelpers.ts`, `POST /api/notes/study/*`), writes artefacts to `output/`, quick notes to `notes/quick-notes.md`, and promotes articles into `wiki/`. The **Tesi** tab also refreshes the canonical `output/thesis_compiled.md`.
+7. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
 
 ---
 

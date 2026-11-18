@@ -5,7 +5,7 @@ icon: 🧭
 order: 2
 group: 🚀 Primi passi
 mode: both
-keywords: [barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar]
+keywords: [barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar, research, studio, study]
 context: []
 ---
 
@@ -23,11 +23,11 @@ Da **sinistra a destra** trovi:
 5. **4 viste** (al centro-destra): **Editor**, **Scratchpad**, **Graph**, **Split** — vedi la voce *Viste* nella guida.
 6. **Contesto della modalità**:
    - In **Focus Mode**: i 4 pulsanti **Carica · Importa · Compila · Chiedi**.
-   - In **Developer Mode**: **Onboarding Wizard · KE Workbench · Tools · Config**.
+   - In **Developer Mode**: **Onboarding Wizard · KE Workbench · 🔎 Research · 📚 Studio · Tools · Config**.
 7. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
 8. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
 
-> **Nell'header dell'editor** trovi anche **🧐 Revisione** (apre la Review Studio a quattro schede), **🔎 Ricerca** (apre la Research Studio a sei schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie sono `Ctrl+Alt+R/C/D/F` per la Review Studio e `Ctrl+Alt+Q/S/B/L/T/H` per la Research Studio; in alternativa usa il tasto destro su una nota.
+> **Nell'header dell'editor** trovi anche **🧐 Revisione** (apre la Review Studio a quattro schede), **🔎 Ricerca** (apre la Research Studio a sei schede), **📚 Studio** (apre la Study Studio a sette schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie sono `Ctrl+Alt+R/C/D/F` per la Review Studio, `Ctrl+Alt+Q/S/B/L/T/H` per la Research Studio e `Ctrl+Alt+G/K/M/A` per la Study Studio; in alternativa usa il tasto destro su una nota.
 
 ## La barra laterale sinistra (file manager e tag cloud)
 

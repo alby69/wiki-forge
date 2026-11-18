@@ -16,6 +16,14 @@ import {
   ResearchSearchResponse,
   ResearchTraceResponse,
 } from '@frontend/core/types/research';
+import {
+  StudyMindmapResponse,
+  StudyOutputResponse,
+  StudyPromoteResponse,
+  StudyQuickNoteResponse,
+  StudyQuizResponse,
+  StudyThesisResponse,
+} from '@frontend/core/types/study';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
@@ -852,5 +860,97 @@ export class ApiStorage implements IStorage {
     } catch (err) {
       return { success: false, markdown: '', articles: 0, fallback: true, error: String(err) };
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Study Studio
+  // ---------------------------------------------------------------------------
+
+  private async studyPost<T>(path: string, body: Record<string, unknown>, fallback: T): Promise<T> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/study/${path}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(body),
+      });
+      return (await res.json()) as T;
+    } catch (err) {
+      return { ...fallback, error: String(err) } as T;
+    }
+  }
+
+  public async studyGuide(topic: string): Promise<StudyOutputResponse> {
+    return this.studyPost<StudyOutputResponse>('guide', { topic }, {
+      success: false,
+      markdown: '',
+      outputPath: '',
+      sources: [],
+    });
+  }
+
+  public async studyQuiz(topic: string, count: number = 5): Promise<StudyQuizResponse> {
+    return this.studyPost<StudyQuizResponse>('quiz', { topic, count }, {
+      success: false,
+      markdown: '',
+      outputPath: '',
+      sources: [],
+      count: 0,
+    });
+  }
+
+  public async studyMindmap(target: string): Promise<StudyMindmapResponse> {
+    return this.studyPost<StudyMindmapResponse>('mindmap', { target }, {
+      success: false,
+      markdown: '',
+      outputPath: '',
+      sources: [],
+      nodes: [],
+      links: [],
+      headings: 0,
+      wikilinks: 0,
+    });
+  }
+
+  public async studyAudioOverview(topic: string): Promise<StudyOutputResponse> {
+    return this.studyPost<StudyOutputResponse>('audio-overview', { topic }, {
+      success: false,
+      markdown: '',
+      outputPath: '',
+      sources: [],
+    });
+  }
+
+  public async studyQuickNote(text: string): Promise<StudyQuickNoteResponse> {
+    return this.studyPost<StudyQuickNoteResponse>('note', { text }, {
+      success: false,
+      markdown: '',
+      entries: [],
+    });
+  }
+
+  public async studyPromoteNote(noteId: string, folder: string): Promise<StudyPromoteResponse> {
+    return this.studyPost<StudyPromoteResponse>('promote-note', { noteId, folder }, {
+      success: false,
+      markdown: '',
+    });
+  }
+
+  public async studyThesisChapter(
+    topic: string,
+    options: { title?: string; minMaturity?: number } = {}
+  ): Promise<StudyThesisResponse> {
+    return this.studyPost<StudyThesisResponse>('thesis-chapter', {
+      topic,
+      title: options.title || '',
+      minMaturity: options.minMaturity ?? 0,
+    }, {
+      success: false,
+      markdown: '',
+      outputPath: '',
+      sources: [],
+      title: '',
+      chapters: [],
+      syntheses: [],
+    });
   }
 }

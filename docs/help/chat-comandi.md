@@ -5,7 +5,7 @@ icon: 💬
 order: 5
 group: 📖 Uso quotidiano
 mode: both
-keywords: [chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks, related, trace, deep-research, research]
+keywords: [chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks, related, trace, deep-research, research, study, studio, quiz, mindmap, audio, note, tesi]
 context: []
 ---
 
@@ -51,6 +51,8 @@ L'elenco completo è nel pannello ⚡ Comandi dentro la chat.
 > **Equivalente grafico**: `/verify`, `/digest`, `/adversarial-review` e `/diff` hanno una controparte nella **Review Studio** (tasto destro sulla nota, pulsante **🧐 Revisione** o `Ctrl+Alt+R/C/D/F`), che è il percorso consigliato per controllare qualità, storico e diff della nota aperta.
 >
 > I sei comandi di ricerca (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`) hanno una controparte nella **Research Studio** (pulsanti **🔎 Research** / **🔎 Ricerca**, tasto destro sulla nota o `Ctrl+Alt+Q/S/B/L/T/H`). Scrivendo uno di questi comandi nella chat, la scheda corrispondente si apre con la query già compilata.
+>
+> I comandi di studio (`/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`) hanno una controparte nella **Study Studio** (pulsanti **📚 Studio** o `Ctrl+Alt+G/K/M/A`). La finestra usa gli stessi generatori deterministici dei comandi e salva i risultati in `output/`; gli appunti restano in `notes/quick-notes.md` finché non li promuovi.
 
 ## Suggerimento
 

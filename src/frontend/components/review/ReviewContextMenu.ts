@@ -1,10 +1,12 @@
 import { escapeHtml } from '@frontend/core/utils/html';
 import { ReviewTab } from '@frontend/core/types/review';
 import { ResearchTab } from '@frontend/core/types/research';
+import { StudyTab } from '@frontend/core/types/study';
 
 export interface ReviewContextMenuCallbacks {
   onOpenReview: (noteId: string, tab: ReviewTab) => void;
   onOpenResearch?: (noteId: string, tab: ResearchTab) => void;
+  onOpenStudy?: (noteId: string, tab: StudyTab) => void;
   onOpenNote?: (noteId: string) => void;
 }
 
@@ -18,6 +20,13 @@ const ITEMS: Array<{ tab: ReviewTab; label: string; icon: string; shortcut?: str
 const RESEARCH_ITEMS: Array<{ tab: ResearchTab; label: string; icon: string }> = [
   { tab: 'backlinks', label: 'Backlink della nota', icon: '↩' },
   { tab: 'related', label: 'Correlazioni suggerite', icon: '🧩' },
+];
+
+const STUDY_ITEMS: Array<{ tab: StudyTab; label: string; icon: string; shortcut?: string }> = [
+  { tab: 'guide', label: 'Guida di studio', icon: '📝', shortcut: 'Ctrl+Alt+G' },
+  { tab: 'quiz', label: 'Quiz di autovalutazione', icon: '🧪', shortcut: 'Ctrl+Alt+K' },
+  { tab: 'mindmap', label: 'Mappa concettuale', icon: '🧠', shortcut: 'Ctrl+Alt+M' },
+  { tab: 'audio', label: 'Copione audio', icon: '🎙️', shortcut: 'Ctrl+Alt+A' },
 ];
 
 /**
@@ -71,16 +80,28 @@ export class ReviewContextMenu {
           <button class="wf-rs-ctx-item" data-rq-tab="${item.tab}">
             <span class="icon">${item.icon}</span>
             <span class="label">${item.label}</span>
+          </button>`).join('')}` : ''}
+      ${STUDY_ITEMS.length > 0 ? `
+        <div class="wf-rs-ctx-head" style="border-bottom: none; margin: 5px 0 0; padding-bottom: 2px;">
+          <span>Study Studio</span>
+        </div>
+        ${STUDY_ITEMS.map(item => `
+          <button class="wf-rs-ctx-item" data-st-tab="${item.tab}">
+            <span class="icon">${item.icon}</span>
+            <span class="label">${item.label}</span>
+            ${item.shortcut ? `<span class="shortcut">${item.shortcut}</span>` : ''}
           </button>`).join('')}` : ''}`;
 
     this.el.querySelectorAll<HTMLElement>('.wf-rs-ctx-item').forEach(button => {
       button.addEventListener('click', () => {
         const tab = button.getAttribute('data-tab') as ReviewTab | null;
         const researchTab = button.getAttribute('data-rq-tab') as ResearchTab | null;
+        const studyTab = button.getAttribute('data-st-tab') as StudyTab | null;
         const noteId = this.noteId;
         this.hide();
         if (tab && noteId) this.callbacks.onOpenReview(noteId, tab);
         else if (researchTab && noteId) this.callbacks.onOpenResearch?.(noteId, researchTab);
+        else if (studyTab && noteId) this.callbacks.onOpenStudy?.(noteId, studyTab);
       });
     });
 

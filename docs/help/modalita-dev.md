@@ -2,7 +2,7 @@
 id: modalita-dev
 title: Developer Mode e strumenti
 icon: 👑
-order: 15
+order: 16
 group: ⚙️ Progetti e Dev Mode
 mode: dev
 keywords: [dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills]

@@ -5,7 +5,7 @@ icon: 🚀
 order: 1
 group: 🚀 Primi passi
 mode: both
-keywords: [inizio, benvenuto, primo passo, come funziona, cosa è, quickstart, aiuto, guida, intro, research, ricerca]
+keywords: [inizio, benvenuto, primo passo, come funziona, cosa è, quickstart, aiuto, guida, intro, research, ricerca, study, studio]
 context: [inizio]
 ---
 
@@ -54,5 +54,6 @@ Clicca il badge (o premi **Ctrl+Shift+D**) per cambiare modalità in qualsiasi m
 | **Trust tier** | Livello di fiducia di una nota (verificata, confermata, non verificata) |
 | **Review Studio** | Finestra di revisione con quattro schede: Verifica, Critica, Digest, Confronta versioni |
 | **Research Studio** | Finestra di ricerca con sei schede: Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research |
+| **Study Studio** | Finestra di studio con sette schede: Guida, Quiz, Mindmap, Audio, Note, Promuovi, Tesi |
 
 **Approfondisci:** `docs/TUTORIAL.md` (guida passo-passo completa), `docs/USER_GUIDE.md` (funzionalità dell'interfaccia), `docs/WORKFLOW.md` (flusso di lavoro consigliato).

@@ -1,6 +1,6 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (23 file), dei contenuti della guida in-app (`docs/help/`, 16 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (23 file), dei contenuti della guida in-app (`docs/help/`, 17 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -49,7 +49,7 @@ Indice completo dei documenti in `docs/` (23 file), dei contenuti della guida in
 | Documento | Contenuto |
 |---|---|
 | [`AGENT.md`](../AGENT.md) (radice) | Operating manual v3.0 per agenti LLM: ruolo, OKF checklist, skill router (10 skill), macro-command. |
-| [`help/*.md`](help/) (16 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
+| [`help/*.md`](help/) (17 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
 
 ## 🗺️ Mappa: argomenti guida in-app ↔ documenti
 
@@ -64,6 +64,7 @@ Indice completo dei documenti in `docs/` (23 file), dei contenuti della guida in
 | `modifica-note` | `USER_GUIDE.md` (toolbar), `TUTORIAL.md` FASE 3 |
 | `review-studio` | `TUTORIAL.md` §2/§5.1, `USER_GUIDE.md` (Review Studio), `TECHNICAL_ARCHITECTURE.md` §2.11 |
 | `research-studio` | `TUTORIAL.md` §2/§5, `USER_GUIDE.md` (Research Studio), `TECHNICAL_ARCHITECTURE.md` §2.12 |
+| `study-studio` | `TUTORIAL.md` §4, `USER_GUIDE.md` (Study Studio), `TECHNICAL_ARCHITECTURE.md` §2.13 |
 | `stati-okf` | `TUTORIAL.md` §5.1, `OKF_SPEC.md` §3/§6 |
 | `studio-sintesi` | `TUTORIAL.md` FASE 4 |
 | `esportare` | `TUTORIAL.md` FASE 5, `THESIS_GUIDE.md` |

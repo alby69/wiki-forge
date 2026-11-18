@@ -38,6 +38,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
 - **🧐 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🧐 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
 - **🔎 Research Studio**: One modal with six horizontal tabs — **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research** — matching the six query commands `/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`. Open it from the **🔎 Research** header button, the **🔎 Ricerca** editor button, the note context menu, `Ctrl+Alt+Q/S/B/L/T/H`, or by typing the command in chat. Search, backlinks, related and trace are deterministic (`/api/notes/research/*`); consult and deep research use the configured LLM and fall back to a deterministic response, with deep-research reports stored in `output/` and `wiki/synthesis/`.
+- **📚 Study Studio**: One modal with seven horizontal tabs — **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi** — matching `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`. Open it from the **📚 Studio** header/editor buttons, the note context menu, or `Ctrl+Alt+G/K/M/A`. All tabs share deterministic builders (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`); artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and thesis runs also refresh `output/thesis_compiled.md` for the PDF export.
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
@@ -56,6 +57,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **Screenshot UI/UX**: la cartella **[`img/`](img/)** contiene le schermate aggiornate (21 immagini, JPG 1920×1080) per le situazioni d'uso dello **studente** (01–13) e del **Knowledge Engineer** (14–21), catturate dall'implementazione corrente.
 - **Review Studio (mockup e anteprime)**: **[`docs/mockups/`](docs/mockups/README.md)** contiene il prototipo interattivo e le 5 anteprime delle schede Verifica, Critica, Digest, Confronta versioni e del menu contestuale.
 - **Research Studio**: le sei schede **Consult · Ricerca · Backlink · Correlate · Traccia · Deep Research** sono descritte in **[`docs/help/research-studio.md`](docs/help/research-studio.md)** (guida in-app) e in `docs/TECHNICAL_ARCHITECTURE.md` §2.12.
+- **Study Studio**: le sette schede **Guida · Quiz · Mindmap · Audio · Note · Promuovi · Tesi** sono descritte in **[`docs/help/study-studio.md`](docs/help/study-studio.md)** (guida in-app) e in `docs/TECHNICAL_ARCHITECTURE.md` §2.13.
 
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
@@ -103,6 +105,28 @@ A single review console for the active note, built from four horizontal tabs:
 The review history is local and independent of git: before each save/verify/restore the previous content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a `.json` sidecar (reason and timestamp). The latest **25** snapshots per note are kept; the folder is gitignored. The chat `/verify` (alias `/human-review`) command shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` remain available as agent commands, while their Review Studio tabs are deterministic.
 
 Design preview and screenshots: **[`docs/mockups/`](docs/mockups/README.md)**.
+
+---
+
+## 📚 Study Studio (Web UI)
+
+A single study console for the knowledge base, built from seven horizontal tabs:
+
+| Tab | Command | Output |
+|---|---|---|
+| **Guida** | `/study-guide [topic]` | `output/study-guide-<slug>.md` — summary, per-note sections, glossary, self-assessment questions. |
+| **Quiz** | `/quiz [topic] [n]` | `output/quiz-<slug>.md` — exactly 1–25 multiple-choice questions with answers and explanations. |
+| **Mindmap** | `/mindmap [note]` | `output/mindmap-<slug>.md` — heading tree plus the JSON payload for the graph. |
+| **Audio** | `/audio-overview [topic]` | `output/audio-script-<slug>.md` — Host A / Host B podcast script (TTS off by default). |
+| **Note** | `/note <text>` | `notes/quick-notes.md` — scratchpad entry, excluded from `wiki/index.md`. |
+| **Promuovi** | `/promote-note <id> [folder]` | `wiki/<folder>/<slug>.md` — article created from the selected entry, indexes updated. |
+| **Tesi** | `/thesis-chapter [topic]` | `output/thesis-<slug>.md` plus the canonical `output/thesis_compiled.md`. |
+
+**How to open it**
+- Click **📚 Studio** in the top bar or in the editor header.
+- Right-click a note → **Study Studio** (guide, quiz, mindmap, audio).
+- Keyboard: `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap), `Ctrl+Alt+A` (Audio).
+- Chat commands use the same deterministic generators (`POST /api/notes/study/*`); no LLM is required.
 
 ---
 

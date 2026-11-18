@@ -5,7 +5,7 @@ icon: ✏️
 order: 7
 group: 📖 Uso quotidiano
 mode: both
-keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot, ricerca, search, trace, deep-research]
+keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot, ricerca, search, trace, deep-research, studio, study, quiz, mindmap, note, tesi]
 context: [versioni]
 ---
 
@@ -66,8 +66,22 @@ Il pulsante **🔎 Ricerca** nell'header dell'editor (o **🔎 Research** nella 
 
 Scorciatoie: `Ctrl+Alt+Q` (Consult), `Ctrl+Alt+S` (Ricerca), `Ctrl+Alt+B` (Backlink), `Ctrl+Alt+L` (Correlate), `Ctrl+Alt+T` (Traccia), `Ctrl+Alt+H` (Deep Research). Dalla chat puoi scrivere gli stessi comandi (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`): la scheda si apre con la query già compilata. Ricerca, Backlink, Correlate e Traccia funzionano offline; Consult e Deep Research usano il modello configurato e, in mancanza, un fallback deterministico.
 
+## Studiare e sintetizzare (Study Studio)
+
+Il pulsante **📚 Studio** nell'header dell'editor (o nella barra in alto) apre la **Study Studio**, con sette schede:
+
+- **📝 Guida** — guida di studio con sezioni, glossario e domande di autovalutazione.
+- **🧪 Quiz** — quiz a risposta multipla con un numero esatto di domande (1–25).
+- **🧠 Mindmap** — albero dei titoli della nota e payload JSON per il grafo.
+- **🎙️ Audio** — copione dialogo Host A / Host B in stile podcast.
+- **📝 Note** — salvataggio rapido nello Scratchpad (`notes/quick-notes.md`).
+- **🚀 Promuovi** — trasforma una voce dello scratchpad in un articolo della wiki.
+- **🎓 Tesi** — aggrega capitoli e sintesi mature in una bozza (`output/thesis-<slug>.md` e `output/thesis_compiled.md`).
+
+Scorciatoie: `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap), `Ctrl+Alt+A` (Audio). Dalla chat restano disponibili gli stessi comandi (`/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`), che usano gli stessi generatori deterministici.
+
 ## Appunti veloci (Scratchpad)
 
-La vista **📒 Scratchpad** raccoglie appunti rapidi (`/note <testo>` dalla chat, o il campo apposito). Un appunto utile si **promuove a nota vera** con il pulsante dedicato (o `/promote-note <id>`).
+La vista **📒 Scratchpad** raccoglie appunti rapidi (`/note <testo>` dalla chat, o il campo apposito). Un appunto utile si **promuove a nota vera** con il pulsante dedicato, con `/promote-note <id>` oppure dalla scheda **🚀 Promuovi** della Study Studio.
 
 **Approfondisci:** `docs/USER_GUIDE.md` (editor), `docs/OKF_SPEC.md` (frontmatter e versioni), `docs/PROCEDURES.md`.

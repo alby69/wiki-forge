@@ -51,6 +51,13 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Storico locale pre-scrittura in `.wiki-forge/snapshots/` (25 snapshot per nota, gitignored) con diff unificato e ripristino.
   - Mockup interattivo e 5 anteprime in `docs/mockups/`; documentazione utente, tecnica e guida in-app aggiornata.
 
+- [x] **Task 8: Study Studio (UI di studio e sintesi)**
+  - Modale unica con sette schede orizzontali: **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi** (`StudyStudio.ts`, `study-studio.css`).
+  - Apertura dai pulsanti **📚 Studio** della barra in alto e dell'editor, dal menu contestuale della nota e dalle scorciatoie `Ctrl+Alt+G/K/M/A`.
+  - API dedicate `/api/notes/study/{guide,quiz,mindmap,audio-overview,note,promote-note,thesis-chapter}` con builder deterministici condivisi (`studyHelpers.ts`) e test in `tests/studyHelpers.test.ts`.
+  - Parità con i comandi chat, quiz a numero esatto di domande (1–25), `sources` basate sui percorsi reali delle note, promozione della voce selezionata dello scratchpad e aggiornamento della bozza canonica `output/thesis_compiled.md`.
+  - Documentazione utente, tecnica e guida in-app aggiornata (topic `study-studio`).
+
 ---
 
 ## 🔮 Medio / Lungo Termine (Q1-Q2 2027)

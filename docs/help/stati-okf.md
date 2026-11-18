@@ -2,7 +2,7 @@
 id: stati-okf
 title: Stati e livelli di fiducia (OKF)
 icon: 🏷️
-order: 10
+order: 11
 group: 📖 Uso quotidiano
 mode: both
 keywords: [stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed, unverified, verify, verifica, stale, review, revisione, snapshot, diff]

@@ -4,10 +4,12 @@ import './styles/chat-drawer.css';
 import './styles/editor.css';
 import './styles/review-studio.css';
 import './styles/research-studio.css';
+import './styles/study-studio.css';
 
 import { WikiNote } from '@frontend/core/types/wiki';
 import type { ReviewTab } from '@frontend/core/types/review';
 import type { ResearchTab } from '@frontend/core/types/research';
+import type { StudyTab } from '@frontend/core/types/study';
 import { MarkdownParser } from '@frontend/services/markdownParser';
 import { GraphService } from '@frontend/services/graphService';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
@@ -31,6 +33,7 @@ import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleMode
 import { VersionTimeline } from '@frontend/components/advanced-mode/VersionTimeline';
 import { ReviewStudio } from '@frontend/components/review/ReviewStudio';
 import { ResearchStudio } from '@frontend/components/research/ResearchStudio';
+import { StudyStudio } from '@frontend/components/study/StudyStudio';
 import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu';
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 
@@ -63,6 +66,7 @@ export class WikiForgeApp {
   private versionTimeline!: VersionTimeline;
   private reviewStudio!: ReviewStudio;
   private researchStudio!: ResearchStudio;
+  private studyStudio!: StudyStudio;
   private reviewContextMenu!: ReviewContextMenu;
   private helpPanel!: HelpPanel;
 
@@ -195,9 +199,19 @@ Backlink to [[01-index]].
       },
     });
 
+    this.studyStudio = new StudyStudio(this.storage, {
+      onOpenNote: noteId => this.selectNote(noteId),
+      onVaultChanged: () => {
+        void this.loadVault(true);
+        void this.scratchpadPanel.load();
+        this.editor.showSaveStatus('Study Studio: wiki e scratchpad aggiornati');
+      },
+    });
+
     this.reviewContextMenu = new ReviewContextMenu({
       onOpenReview: (noteId, tab) => this.openReviewStudio(noteId, tab),
       onOpenResearch: (noteId, tab) => this.openResearchStudio({ noteId, tab }),
+      onOpenStudy: (noteId, tab) => this.openStudyStudio({ noteId, tab }),
     });
 
     document.addEventListener('keydown', event => {
@@ -230,6 +244,20 @@ Backlink to [[01-index]].
       this.openResearchStudio({ tab });
     });
 
+    document.addEventListener('keydown', event => {
+      if (!event.ctrlKey || !event.altKey) return;
+      const tabByKey: Record<string, StudyTab> = {
+        g: 'guide',
+        k: 'quiz',
+        m: 'mindmap',
+        a: 'audio',
+      };
+      const tab = tabByKey[event.key.toLowerCase()];
+      if (!tab) return;
+      event.preventDefault();
+      this.openStudyStudio({ tab });
+    });
+
     this.header = new Header({
       container: this.layout.headerContainer,
       onViewModeChange: mode => this.handleViewModeToggle(mode),
@@ -254,6 +282,9 @@ Backlink to [[01-index]].
       },
       onOpenResearch: () => {
         this.openResearchStudio();
+      },
+      onOpenStudy: () => {
+        this.openStudyStudio();
       },
       onOpenHelp: () => {
         void this.helpPanel.open();
@@ -357,7 +388,8 @@ Backlink to [[01-index]].
       () => this.toggleContext(),
       () => this.openVersionTimeline(),
       () => this.openReviewStudio(),
-      () => this.openResearchStudio()
+      () => this.openResearchStudio(),
+      () => this.openStudyStudio()
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
@@ -434,6 +466,7 @@ Backlink to [[01-index]].
     this.contextPanel.setSelectedNote(this.selectedNote);
     this.reviewStudio.setNotes(this.notes);
     this.researchStudio.setNotes(this.notes);
+    this.studyStudio.setNotes(this.notes);
     this.refreshGraph();
   }
 
@@ -522,6 +555,19 @@ Backlink to [[01-index]].
       noteId: options.noteId || this.selectedNote?.id,
       tab: options.tab ?? 'search',
       query: options.query,
+    });
+  }
+
+  /**
+   * Opens the Study Studio. Generative tabs (guide, quiz, mindmap, audio)
+   * prefill the topic from the current note; notes/promote use the scratchpad
+   * and thesis aggregates chapters and syntheses.
+   */
+  public openStudyStudio(options: { noteId?: string; tab?: StudyTab; topic?: string } = {}): void {
+    this.studyStudio.open({
+      noteId: options.noteId || this.selectedNote?.id,
+      tab: options.tab ?? 'guide',
+      topic: options.topic,
     });
   }
 

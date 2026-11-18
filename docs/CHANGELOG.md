@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Study Studio (UI)
+- **Single study console (`StudyStudio.ts`)**: one modal with seven horizontal tabs — **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi** — reusing the Review Studio shell with an amber accent. Opened from the **📚 Studio** top-bar/editor buttons, the note context menu (Guida / Quiz / Mindmap / Copione audio), and `Ctrl+Alt+G/K/M/A`.
+- **Study API (`agentServer.ts`)**: new routes `POST /api/notes/study/guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`.
+- **Deterministic helpers (`studyHelpers.ts`)**: pure, unit-tested builders for study guides, exact-count quizzes (1–25), heading/wikilink mind maps with graph JSON, Host A / Host B audio scripts and thesis chapters filtered by maturity.
+- **Command parity**: `executeStudyGuideWorkflow`, `executeQuizWorkflow`, `executeMindmapWorkflow`, `executeAudioOverviewWorkflow`, `executeNoteWorkflow`, `executePromoteNoteWorkflow` and the new `executeThesisChapterWorkflow` all call the shared builders, so chat and modal produce identical artefacts. `/thesis-chapter` is now routed in TypeScript and refreshes both `output/thesis-<slug>.md` and the canonical `output/thesis_compiled.md`.
+- **UX details**: quiz count is exact (clamped 1–25), `sources` use real `note.path` values (no `wiki/wiki/...`), promotion uses the selected scratchpad entry and its text for the article title, and the Mindmap tab falls back to the first note.
+- **Tests**: new `tests/studyHelpers.test.ts` (10 tests) and 4 integration tests in `tests/agentServer.test.ts`.
+- **Documentation alignment**: README + docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL (§2 and §4), TECHNICAL_ARCHITECTURE (§2.13), AGENT, WORKFLOW, CHANGELOG, both ROADMAPs, in-app help (new `study-studio` topic plus `inizio`, `barra-alto`, `modifica-note`, `chat-comandi`, `studio-sintesi`, `esportare`).
+
 ### Research Studio (UI)
 - **Single query console (`ResearchStudio.ts`)**: one modal with six horizontal tabs — **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research** — reusing the Review Studio shell with a cyan accent. Opened from the **🔎 Research** top-bar button, the **🔎 Ricerca** editor button, the note context menu (Backlink / Correlate), `Ctrl+Alt+Q/S/B/L/T/H`, or by typing one of the six commands in chat.
 - **Research API (`agentServer.ts`)**: new routes `GET /api/notes/research/search`, `GET /api/notes/research/backlinks`, `GET /api/notes/research/related`, `GET /api/notes/research/trace`, `POST /api/notes/research/consult`, `POST /api/notes/research/deep-research`.
