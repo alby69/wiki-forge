@@ -9,6 +9,10 @@ generated:
   at: '2026-11-03T09:12:06Z'
 verified: []
 sources: []
+maturita: 41
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 4: Attività HR Storiche, Analisi del Grado di Automazione e Rischi legati all'Innovazione
 

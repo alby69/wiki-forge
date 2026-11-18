@@ -10,6 +10,10 @@ generated:
   at: '2026-11-16T08:19:38Z'
 verified: []
 sources: []
+maturita: 41
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 2: Studio degli Attori Principali del Settore AI — Attori Tecnici e Prospettive Critiche
 

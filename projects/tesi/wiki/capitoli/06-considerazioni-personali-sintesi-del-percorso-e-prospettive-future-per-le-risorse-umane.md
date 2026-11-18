@@ -10,6 +10,10 @@ generated:
   at: '2026-11-16T08:19:38Z'
 verified: []
 sources: []
+maturita: 38
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 6: Considerazioni Personali, Sintesi del Percorso e Prospettive Future per le Risorse Umane
 

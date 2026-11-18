@@ -12,6 +12,10 @@ generated:
   at: '2026-10-10T00:00:00Z'
 verified: []
 sources: []
+maturita: 7
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Comandi per iniziare a studiare la wiki
 

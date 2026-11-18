@@ -4,7 +4,7 @@ title: Architetture Multi-Agente ed AI Workflows
 description: Piattaforme agentiche avanzate, dibattito multi-agente e workflow autonomi
   coordinati per il dominio HR e il Knowledge Engineering
 status: draft
-maturita: 90
+maturita: 33
 tags:
 - topic/ai
 - topic/agents
@@ -22,6 +22,9 @@ sources:
   title: Documento di Progettazione della Tesi Magistrale
   author: process:conv2md
   last_modified: '2026-10-20T06:04:34Z'
+copertura_fonti: 1
+domande_risolte: 0
+stato: draft
 ---
 # Architetture Multi-Agente ed AI Workflows
 

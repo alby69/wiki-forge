@@ -10,6 +10,10 @@ generated:
   at: '2026-11-16T08:19:38Z'
 verified: []
 sources: []
+maturita: 20
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 5: Il Quadro Normativo Europeo: L'EU AI Act e la Tutela del Lavoratore nell'Era Algoritmica
 

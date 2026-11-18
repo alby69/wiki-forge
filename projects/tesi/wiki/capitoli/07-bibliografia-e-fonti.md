@@ -23,7 +23,7 @@ sources:
   title: Documento di Progettazione della Tesi Magistrale
   author: process:conv2md
   last_modified: '2026-10-20T06:04:34Z'
-maturita: 90
+maturita: 37
 copertura_fonti: 1
 domande_risolte: 0
 stato: draft

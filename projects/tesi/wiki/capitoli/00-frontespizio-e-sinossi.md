@@ -11,6 +11,10 @@ verified:
 - by: human:studente
   at: 2026-11-17 10:06:56+00:00
 sources: []
+maturita: 21
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Frontespizio e Sinossi
 

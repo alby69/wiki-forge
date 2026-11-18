@@ -1,15 +1,15 @@
 ---
-generated: 2026-11-03
+generated: 2026-11-18
 ---
 
 # Wiki Metrics
 
 | Metric | Value |
 |--------|-------|
-| Total articles | 36 |
-| Total wikilinks | 180 |
-| Broken links | 4 |
-| Orphan articles | 0 |
+| Total articles | 35 |
+| Total wikilinks | 117 |
+| Broken links | 2 |
+| Orphan articles | 1 |
 | Thematic wikis | 6 |
 | Sources ingested | 0 |
 
@@ -17,13 +17,13 @@ generated: 2026-11-03
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[competenze-e-hr]] | 15 |
-| [[03-progettazione-della-piattaforma]] | 14 |
-| [[linee-guida-tesi-hr]] | 12 |
-| [[concezioni-dell-ia]] | 10 |
-| [[governance-controllo-responsabilita]] | 10 |
-| [[sostituzione-o-trasformazione]] | 10 |
-| [[capacita-emergenti-llm]] | 9 |
-| [[andrej-karpathy]] | 8 |
-| [[nello-cristianini]] | 8 |
-| [[index]] | 7 |
+| [[competenze-e-hr]] | 14 |
+| [[03-introduzione-a-wiki-forge-come-piattaforma-di-knowledge-engineering]] | 11 |
+| [[linee-guida-tesi-hr]] | 10 |
+| [[sostituzione-o-trasformazione]] | 9 |
+| [[governance-controllo-responsabilita]] | 8 |
+| [[concezioni-dell-ia]] | 8 |
+| [[capacita-emergenti-llm]] | 7 |
+| [[andrej-karpathy]] | 6 |
+| [[nello-cristianini]] | 6 |
+| [[wiki-forge-script-panel]] | 5 |

@@ -9,6 +9,10 @@ generated:
   at: '2026-11-03T09:12:06Z'
 verified: []
 sources: []
+maturita: 23
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 3: Introduzione a Wiki-Forge come Piattaforma di Knowledge Engineering per la Ricerca Accademica
 

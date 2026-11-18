@@ -9,6 +9,10 @@ generated:
   at: '2026-11-17T17:06:39Z'
 verified: []
 sources: []
+maturita: 38
+copertura_fonti: 0
+domande_risolte: 0
+stato: draft
 ---
 # Capitolo 1: Introduzione — Panoramica, Premesse e Ipotesi di Ricerca
 
