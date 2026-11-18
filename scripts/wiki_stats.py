@@ -69,9 +69,15 @@ def analyze_wiki(wiki_dir: Path, raw_dir: Path) -> dict:
     outbound_links: dict[str, int] = {a.stem: 0 for a in articles}
 
     wikilink_pattern = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]+)?\]\]")
+    # Wikilinks shown as syntax examples inside fenced blocks or inline code
+    # (e.g. `[[wikilink]]` in the command docs) are documentation, not links.
+    fenced_code_pattern = re.compile(r"```.*?```", re.DOTALL)
+    inline_code_pattern = re.compile(r"`[^`\n]*`")
 
     for article in articles:
         content = article.read_text(encoding="utf-8", errors="ignore")
+        content = fenced_code_pattern.sub("", content)
+        content = inline_code_pattern.sub("", content)
         matches = wikilink_pattern.findall(content)
         total_wikilinks += len(matches)
 
@@ -91,7 +97,9 @@ def analyze_wiki(wiki_dir: Path, raw_dir: Path) -> dict:
     orphan_articles = [
         stem
         for stem in article_stems
-        if stem != "index" and inbound_links.get(stem, 0) == 0 and outbound_links.get(stem, 0) == 0
+        # index.md and log.md are reserved OKF structural files (§8, §9):
+        # they are never linked from notes, so they must not count as orphans.
+        if stem not in {"index", "log"} and inbound_links.get(stem, 0) == 0 and outbound_links.get(stem, 0) == 0
     ]
 
     top_linked = sorted(link_targets.items(), key=lambda x: x[1], reverse=True)[:10]
