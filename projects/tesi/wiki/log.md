@@ -11,11 +11,11 @@ tags:
 
 ## 2026-11-18
 
-* **Creation**: Aggiunto [Considerazioni Personali, Sintesi del Percorso e Prospettive Future](temi/considerazioni-personali-e-prospettive-future.md), sintesi del capitolo 6 sul passaggio dal RAG estrattivo al Knowledge Engineering umano-centrico, sulle scelte tecnologiche come scelte antropologiche e sulle prospettive neuro-simboliche per Wiki-Forge.
-* **Creation**: Aggiunto [Attività HR, Automazione e Bias Algoritmico](temi/attivita-hr-automazione-e-bias-algoritmico.md), sintesi del capitolo 4 su macro-funzioni HR, grado di automazione per task, modello SECI applicato ai competency framework, tre radici del bias algoritmico e potenziale operativo di Wiki-Forge in HR.
-* **Creation**: Aggiunto [Wiki-Forge, una Piattaforma di Knowledge Engineering](temi/wiki-forge-piattaforma-knowledge-engineering.md), sintesi del capitolo 3 su modello SECI, architettura a due stadi, tre pilastri del Meta-Cervello, OKF v0.2, Trust Tiers e maturità L1-L4.
-* **Creation**: Aggiunto [Limiti del RAG e Transizione verso il Knowledge Engineering](temi/limiti-rag-e-knowledge-engineering.md), sintesi del capitolo 1 su effimerità e chunking del RAG, GraphRAG e paradigma del Knowledge Engineering.
-* **Creation**: Aggiunto [Studio degli Attori Principali del Settore AI](temi/studio-attori-principali-settore-ai.md), sintesi del capitolo 2 su infrastruttura cognitiva persistente, LLM Council, prospettive critiche (Hinton, Cristianini, Graeber) e sintesi per HR e Wiki-Forge.
+* **Creation**: Aggiunto [Considerazioni Personali, Sintesi del Percorso e Prospettive Future](capitoli/considerazioni-personali-e-prospettive-future.md), sintesi del capitolo 6 sul passaggio dal RAG estrattivo al Knowledge Engineering umano-centrico, sulle scelte tecnologiche come scelte antropologiche e sulle prospettive neuro-simboliche per Wiki-Forge.
+* **Creation**: Aggiunto [Attività HR, Automazione e Bias Algoritmico](capitoli/attivita-hr-automazione-e-bias-algoritmico.md), sintesi del capitolo 4 su macro-funzioni HR, grado di automazione per task, modello SECI applicato ai competency framework, tre radici del bias algoritmico e potenziale operativo di Wiki-Forge in HR.
+* **Creation**: Aggiunto [Wiki-Forge, una Piattaforma di Knowledge Engineering](capitoli/wiki-forge-piattaforma-knowledge-engineering.md), sintesi del capitolo 3 su modello SECI, architettura a due stadi, tre pilastri del Meta-Cervello, OKF v0.2, Trust Tiers e maturità L1-L4.
+* **Creation**: Aggiunto [Limiti del RAG e Transizione verso il Knowledge Engineering](capitoli/limiti-rag-e-knowledge-engineering.md), sintesi del capitolo 1 su effimerità e chunking del RAG, GraphRAG e paradigma del Knowledge Engineering.
+* **Creation**: Aggiunto [Studio degli Attori Principali del Settore AI](capitoli/studio-attori-principali-settore-ai.md), sintesi del capitolo 2 su infrastruttura cognitiva persistente, LLM Council, prospettive critiche (Hinton, Cristianini, Graeber) e sintesi per HR e Wiki-Forge.
 
 ## 2026-11-17
 

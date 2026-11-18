@@ -1,24 +1,26 @@
 ---
 type: Concept
-title: "Impatto dell'IA nel settore HR: task, automazione e caso IBM AskHR (2026)"
-description: Analisi 2026 della ridistribuzione del valore nella funzione HR per task, probabilità di automazione, caso AskHR di IBM, vincoli regolatori e implicazioni per il profilo professionale.
+title: 'Impatto dell''IA nel settore HR: task, automazione e caso IBM AskHR (2026)'
+description: Analisi 2026 della ridistribuzione del valore nella funzione HR per task,
+  probabilità di automazione, caso AskHR di IBM, vincoli regolatori e implicazioni
+  per il profilo professionale.
 status: draft
 tags:
-  - topic/hr
-  - topic/ai
-  - status/draft
+- topic/hr
+- topic/ai
+- status/draft
 generated:
   by: process:wiki-forge-compile
-  at: "2026-11-18T00:00:00Z"
+  at: '2026-11-18T00:00:00Z'
 verified: []
 sources:
-  - id: ai-hr-impact-2026
-    resource: raw/AI_HR_Impact_2026.md
-    title: "Impatto dell'Intelligenza Artificiale nel Settore HR — Analisi dei Task, Probabilità di Automazione e Casi Studio (2026)"
-    author: process:wiki-forge-compile
-    last_modified: "2026-10-12"
+- id: ai-hr-impact-2026
+  resource: raw/AI_HR_Impact_2026.md
+  title: Impatto dell'Intelligenza Artificiale nel Settore HR — Analisi dei Task,
+    Probabilità di Automazione e Casi Studio (2026)
+  author: process:wiki-forge-compile
+  last_modified: '2026-10-12'
 ---
-
 # Impatto dell'IA nel settore HR: task, automazione e caso IBM AskHR (2026)
 
 Il documento analizza come, nel 2026, l'IA non sostituisca la funzione HR nel suo complesso ma ne ridistribuisca il valore: automazione del lavoro ripetitivo e maggiore spazio per attività strategiche, relazionali e di giudizio critico. La stima riportata indica un potenziale di automazione del 45-50% delle attività HR con le tecnologie attuali e un effetto di *augmentation* esteso al 100% delle funzioni entro il 2030.

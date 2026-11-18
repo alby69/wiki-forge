@@ -57,7 +57,7 @@ Questa riprogettazione è il terreno in cui le posizioni divergono di più. **St
 - [evidenza-mercato-del-lavoro](evidenza-mercato-del-lavoro.md)
 - [governance-controllo-responsabilita](governance-controllo-responsabilita.md)
 - [sostituzione-o-trasformazione](sostituzione-o-trasformazione.md)
-- [attivita-hr-automazione-e-bias-algoritmico](attivita-hr-automazione-e-bias-algoritmico.md)
+- [attivita-hr-automazione-e-bias-algoritmico](../capitoli/attivita-hr-automazione-e-bias-algoritmico.md)
 
 ## Sources
 

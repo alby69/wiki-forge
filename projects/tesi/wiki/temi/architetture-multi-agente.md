@@ -48,5 +48,5 @@ Nel contesto della gestione delle Risorse Umane, l'adozione di architetture mult
 ## Collegamenti Correlati
 - [[capacita-emergenti-llm|Capacità Emergenti degli LLM]]
 - [[competenze-e-hr|Competenze ed HR]]
-- [[temi/studio-attori-principali-settore-ai|Capitolo 2: Studio degli Attori Principali]]
-- [[temi/wiki-forge-piattaforma-knowledge-engineering|Capitolo 3: Wiki-Forge, una Piattaforma di Knowledge Engineering]]
+- [[capitoli/studio-attori-principali-settore-ai|Capitolo 2: Studio degli Attori Principali]]
+- [[capitoli/wiki-forge-piattaforma-knowledge-engineering|Capitolo 3: Wiki-Forge, una Piattaforma di Knowledge Engineering]]
