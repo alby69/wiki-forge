@@ -32,7 +32,15 @@ This is a test note linking to [[other-note]].
 
   // Deterministic mock so /consult does not spawn the real opencode CLI.
   const mockClient: LlmClient = {
-    complete: async () => '### 🔍 Consult Synthesis (Mock)\n\nBased on [[sample-note]].',
+    // Article-shaped (frontmatter first) so the compile workflow persists it
+    // as a note, while still carrying the marker the assertions look for.
+    complete: async () => `---
+title: Mock Note
+tags: [test]
+---
+### 🔍 Consult Synthesis (Mock)
+
+Based on [[sample-note]].`,
   };
 
   const serverInstance = new AgentServer(tmpDir, mockClient);

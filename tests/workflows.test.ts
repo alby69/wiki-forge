@@ -32,6 +32,15 @@ test('Workflow Commands Real Execution Test Suite', async t => {
   await fs.mkdir(wikiDir, { recursive: true });
   await fs.mkdir(rawDir, { recursive: true });
 
+  // `/reindex` delegates to the OKF v0.2 script, so the fixture needs it.
+  await fs.mkdir(path.join(tmpDir, 'scripts'), { recursive: true });
+  for (const script of ['okf_reindex.py', 'okf_common.py']) {
+    await fs.copyFile(
+      path.join(process.cwd(), 'scripts', script),
+      path.join(tmpDir, 'scripts', script)
+    );
+  }
+
   // Add initial note with missing link and frontmatter
   await fs.writeFile(
     path.join(wikiDir, 'sample-note.md'),
@@ -73,7 +82,7 @@ Links to [[non-existent-note]].
     assert.ok(response.includes('Reindex Complete'));
 
     const masterIndex = await fs.readFile(path.join(wikiDir, 'index.md'), 'utf-8');
-    assert.ok(masterIndex.includes('Wiki Master Index'));
+    assert.ok(masterIndex.includes('okf_version'), 'Index must stay OKF v0.2 compliant');
     assert.ok(masterIndex.includes('sample-note'));
   });
 

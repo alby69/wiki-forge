@@ -3305,10 +3305,16 @@ export class AgentServer {
       note = notes.find(
         n => (n.folder || 'general') === targetFolder && path.basename(n.path).toLowerCase() === `${stem}.md`
       );
+      // The agent may have filed the article in a thematic folder chosen by
+      // itself (e.g. wiki/temi/), so fall back to a filename match anywhere.
+      if (!note) {
+        note = notes.find(n => path.basename(n.path).toLowerCase() === `${stem}.md`);
+      }
     }
 
+    const notePath = note?.path || `wiki/${targetFolder}/${stem}.md`;
     const message = compiled
-      ? `Importato e compilato in wiki/${targetFolder}/${stem}.md`
+      ? `Importato e compilato in ${notePath}`
       : `File copiato in raw/${fileName}: compilazione differita (agente/LLM non disponibile). Usa "Compila" per completare.`;
 
     return { note, compiled, targetFolder, message };
@@ -3358,21 +3364,38 @@ export class AgentServer {
           contextNotes: [{ id: fileName, title: fileName, content, folder: 'raw', path: `raw/${fileName}`, outboundLinks: [], tags: [], frontmatter: {}, backlinks: [] }],
         });
 
-        // Determine title / note ID
+        // The OpenCode agent runs with filesystem tools and usually writes the
+        // article itself (following AGENT.md), returning only a prose summary.
+        // Persisting that summary as a note would create a junk "narration"
+        // note next to the real article, so only save responses that are an
+        // OKF article (YAML frontmatter + body).
         const stem = fileName.replace(/\.md$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const folder = options.targetFolder || 'general';
-        await this.saveWikiNote({
-          id: stem,
-          folder,
-          content: response,
-          title: stem.replace(/[-_]/g, ' '),
-        }, projectId);
+        const isArticle = response.trim().startsWith('---');
+        if (isArticle) {
+          await this.saveWikiNote({
+            id: stem,
+            folder,
+            content: response,
+            title: stem.replace(/[-_]/g, ' '),
+          }, projectId);
+        }
 
-        // Rename file in raw/ to _COMPILED.md
+        // Rename file in raw/ to _COMPILED.md (the agent may have done it already).
         const compiledPath = path.join(rawDir, fileName.replace(/\.md$/i, '_COMPILED.md'));
-        await fs.rename(rawPath, compiledPath);
+        let rawStillStaged = true;
+        try {
+          await fs.access(rawPath);
+        } catch {
+          rawStillStaged = false;
+        }
+        if (rawStillStaged) await fs.rename(rawPath, compiledPath);
 
-        compiledResults.push(`- Ingested \`${fileName}\` -> created \`wiki/${folder}/${stem}.md\` & renamed to \`_COMPILED.md\``);
+        compiledResults.push(
+          isArticle
+            ? `- Ingested \`${fileName}\` -> created \`wiki/${folder}/${stem}.md\` & renamed to \`_COMPILED.md\``
+            : `- Ingested \`${fileName}\` -> note written by the agent (no duplicate saved); renamed to \`_COMPILED.md\``
+        );
       } catch (err) {
         compiledResults.push(`- Error processing \`${fileName}\`: ${String(err)}`);
       }
@@ -4129,8 +4152,24 @@ ${questions.join('\n---\n\n')}
   }
 
   private async executeReindexWorkflow(projectId: string = 'default'): Promise<string> {
+    const projRoot = await this.resolveProjectRoot(projectId);
     const wikiDir = await this.getWikiDir(projectId);
     const notes = await this.readAllWikiNotes(projectId);
+
+    // Single source of truth for index generation: the OKF v0.2 Python script.
+    // The legacy inline writer below emits a non-conformant "# Wiki Master
+    // Index" (no okf_version, no Topics/Recently Updated) and used to break
+    // `make okf-lint` after every /compile.
+    const scriptPath = path.resolve(this.rootDir, 'scripts/okf_reindex.py');
+    const relWiki = path.relative(projRoot, wikiDir).replace(/\\/g, '/') || 'wiki';
+    try {
+      const res = spawnSync(PYTHON_CMD, [scriptPath, relWiki], { cwd: projRoot, encoding: 'utf-8' });
+      if (res.status === 0) {
+        return `### 🔄 Reindex Complete\n\n- **OKF v0.2 indexes regenerated** via \`scripts/okf_reindex.py\`\n- **Indexed Notes**: ${notes.length}\n- **Bundle root**: \`${relWiki}/index.md\``;
+      }
+    } catch (_e) {
+      // Fall through to the inline writer below.
+    }
 
     // Group notes by folder
     const folderMap = new Map<string, WikiNote[]>();
