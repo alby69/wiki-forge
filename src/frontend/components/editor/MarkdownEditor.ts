@@ -115,8 +115,8 @@ export class MarkdownEditor {
     this.container.innerHTML = `
       <div class="editor-panel-wrapper" style="height: 100%; display: flex; flex-direction: column; background: #18191c; color: #e2e8f0; border-right: 1px solid #2d3748;">
         <div class="editor-header" style="padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: #121316;">
-          <h2 style="flex: 1; min-width: 0; margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(note.title)}</h2>
-          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <h2 style="flex: 1 1 220px; min-width: 0; margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(note.title)}</h2>
+          <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; max-width: 100%;">
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
@@ -136,19 +136,19 @@ export class MarkdownEditor {
               ? `<div id="markdown-preview" class="markdown-body" style="flex: 1; overflow-y: auto; line-height: 1.6; font-size: 14px;">${renderMarkdown(note.content)}</div>`
               : `<div id="codemirror-wrapper" style="flex: 1; display: flex; flex-direction: column; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden;">
                    <div class="editor-toolbar" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; background: #121316; border-bottom: 1px solid #2d3748; font-size: 12px; user-select: none;">
-                     <div class="toolbar-group" style="display: flex; gap: 4px; align-items: center;">
+                     <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <button id="tb-undo" class="toolbar-btn" title="Annulla (Ctrl+Z)" disabled style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">↩️ Undo</button>
                        <button id="tb-redo" class="toolbar-btn" title="Ripristina (Ctrl+Y)" disabled style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">↪️ Redo</button>
                      </div>
                      <div class="toolbar-divider" style="width: 1px; height: 18px; background: #3d4759; margin: 0 2px;"></div>
-                     <div class="toolbar-group" style="display: flex; gap: 4px; align-items: center;">
+                     <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <button id="tb-bold" class="toolbar-btn" title="Grassetto (**bold**)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-weight: bold; font-size: 12px;">B</button>
                        <button id="tb-italic" class="toolbar-btn" title="Corsivo (*italic*)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-style: italic; font-size: 12px;">I</button>
                        <button id="tb-strike" class="toolbar-btn" title="Barrato (~~strike~~)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; text-decoration: line-through; font-size: 12px;">S</button>
                        <button id="tb-code" class="toolbar-btn" title="Codice (\`code\`)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-family: monospace; font-size: 11px;">&lt;/&gt;</button>
                      </div>
                      <div class="toolbar-divider" style="width: 1px; height: 18px; background: #3d4759; margin: 0 2px;"></div>
-                     <div class="toolbar-group" style="display: flex; gap: 4px; align-items: center;">
+                     <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <select id="tb-heading" class="toolbar-select" title="Intestazione (Header)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 6px; font-size: 12px; cursor: pointer;">
                          <option value="">Header...</option>
                          <option value="# ">H1 - Titolo</option>
@@ -160,7 +160,7 @@ export class MarkdownEditor {
                        <button id="tb-quote" class="toolbar-btn" title="Citazione (> quote)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">&rdquo; Quote</button>
                      </div>
                      <div class="toolbar-divider" style="width: 1px; height: 18px; background: #3d4759; margin: 0 2px;"></div>
-                     <div class="toolbar-group" style="display: flex; gap: 4px; align-items: center;">
+                     <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <select id="tb-color" class="toolbar-select" title="Colore del testo" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 6px; font-size: 12px; cursor: pointer;">
                          <option value="">🎨 Colore...</option>
                          <option value="#e53e3e">🔴 Rosso</option>
