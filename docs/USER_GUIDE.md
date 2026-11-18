@@ -38,3 +38,25 @@ Ways to open it:
 Review history is stored locally in `.wiki-forge/snapshots/<note-path>/` as a `.md` snapshot plus a `.json` sidecar (timestamp and reason). The last **25** snapshots per note are kept and the folder is gitignored. The chat `/verify` (alias `/human-review`) shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` stay available as agent commands, while their Review Studio tabs are deterministic.
 
 See [`TUTORIAL.md`](TUTORIAL.md) §5.1 for trust tiers and [`mockups/`](mockups/README.md) for the design preview.
+
+## Research Studio
+The **🔎 Research** button in the top bar and the **🔎 Ricerca** button in the editor header open the **Research Studio**, a single modal with six horizontal tabs matching the six query commands:
+
+| Tab | Command | Purpose |
+|---|---|---|
+| **Consult** | `/consult` | Natural-language question: the most relevant notes become the model context and the answer cites sources with `[[wikilinks]]`. |
+| **Ricerca** | `/search` | Case-insensitive full-text search over title, id, tags and body, ranked by relevance, with line numbers and one line of context. |
+| **Backlink** | `/backlinks` | Notes that reference the selected one through `[[wikilinks]]`, with the first citing line. |
+| **Correlate** | `/related` | Affine notes sharing tags/vocabulary that are **not linked yet** in either direction. |
+| **Traccia** | `/trace` | Notes matching a claim, their outbound links, and the raw sources declared in frontmatter or `## Sources`, with the quoted passage. |
+| **Deep Research** | `/deep-research` | Extended report saved to `output/research-*.md` plus a synthesis note in `wiki/synthesis/`, with source-attribution matrix and knowledge gaps. |
+
+Ways to open it:
+- click **🔎 Research** in the top bar or **🔎 Ricerca** in the editor header;
+- right-click a note and pick **Backlink della nota** or **Correlazioni suggerite**;
+- press `Ctrl+Alt+Q` (Consult), `Ctrl+Alt+S` (Ricerca), `Ctrl+Alt+B` (Backlink), `Ctrl+Alt+L` (Correlate), `Ctrl+Alt+T` (Traccia) or `Ctrl+Alt+H` (Deep Research);
+- type one of the six commands in the chat: the matching tab opens with the query pre-filled.
+
+Search, backlinks, related and trace are deterministic and work offline. Consult and deep research use the configured LLM and fall back to a deterministic, clearly labelled response when no provider is available; the deep-research report and synthesis note are written only when the backend responds.
+
+See [`TUTORIAL.md`](TUTORIAL.md) §2 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) §2.12 for the API.

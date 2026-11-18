@@ -5,7 +5,7 @@ icon: 💬
 order: 5
 group: 📖 Uso quotidiano
 mode: both
-keywords: [chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff]
+keywords: [chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks, related, trace, deep-research, research]
 context: []
 ---
 
@@ -36,6 +36,10 @@ Digitando `/` si apre il pannello **⚡ Comandi**: il catalogo completo, diviso 
 | `/compile` | Compila fonti → wiki |
 | `/audit` | Controlla link rotti, orfani, frontmatter |
 | `/trace <argomento>` | Traccia le connessioni di un concetto |
+| `/search <query>` | Ricerca full-text nella wiki |
+| `/backlinks <nota>` | Note che citano quella indicata |
+| `/related <nota>` | Correlazioni suggerite (note non ancora collegate) |
+| `/deep-research <domanda>` | Report esteso con matrice delle fonti |
 | `/verify <nota>` | Segna la nota come verificata da un umano |
 | `/digest` | Riassunto delle attività e della salute della wiki |
 | `/adversarial-review [nota]` | Revisione critica: contraddizioni e citazioni mancanti |
@@ -45,6 +49,8 @@ Digitando `/` si apre il pannello **⚡ Comandi**: il catalogo completo, diviso 
 L'elenco completo è nel pannello ⚡ Comandi dentro la chat.
 
 > **Equivalente grafico**: `/verify`, `/digest`, `/adversarial-review` e `/diff` hanno una controparte nella **Review Studio** (tasto destro sulla nota, pulsante **🔍 Revisione** o `Ctrl+Alt+R/C/D/F`), che è il percorso consigliato per controllare qualità, storico e diff della nota aperta.
+>
+> I sei comandi di ricerca (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`) hanno una controparte nella **Research Studio** (pulsanti **🔎 Research** / **🔎 Ricerca**, tasto destro sulla nota o `Ctrl+Alt+Q/S/B/L/T/H`). Scrivendo uno di questi comandi nella chat, la scheda corrispondente si apre con la query già compilata.
 
 ## Suggerimento
 

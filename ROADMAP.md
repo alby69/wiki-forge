@@ -77,6 +77,7 @@
 | 62 | Frontend-Backend DRY Contract for Script UI | ✅ Done | Endpoint `/api/scripts/registry` e generazione dinamica dei form UI da schema condiviso. |
 | 63 | Robustness, KE Cockpit & Guided Procedures (Master Brief) | ✅ Done | Unified Health Engine (`health.py`), Procedure Engine (`procedures.py`), Safe Vault (`vault.py`), Resumable Wizards, Live SSE Sync, and KE Cockpit UI (`KECockpitModal.ts`). |
 | 64 | Review Studio (Unified Review UI) | ✅ Done | Four-tab review modal (`ReviewStudio.ts`), `/api/notes/review/*` endpoints, local snapshot store (`.wiki-forge/snapshots/`, 25 per note), context menu + `Ctrl+Alt+R/C/D/F`, and design previews in `docs/mockups/`. |
+| 65 | Research Studio (Query & Research UI) | ✅ Done | Six-tab query modal (`ResearchStudio.ts`), `/api/notes/research/*` endpoints, deterministic query helpers (`researchHelpers.ts`), LLM consult/deep research with fallback, `Ctrl+Alt+Q/S/B/L/T/H`, chat-command hand-off, and help topic `research-studio`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -246,3 +247,15 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Shared verification path** with chat `/verify`; deterministic quality gate (links, OKF frontmatter, tags, sources, `stale_after`), digest from `wiki/log.md`, and critique with deterministic fallback.
 - **Local snapshot store**: `.wiki-forge/snapshots/<note-path>/<timestamp>.md` + `.json` sidecar, best-effort, gitignored, retention 25 per note.
 - **Design & docs**: interactive mockup + 5 screenshots in `docs/mockups/`, in-app help topic `review-studio`, and updates across README and `docs/`.
+
+## Phase 65 — Research Studio (Query & Research UI) ✅ Done
+
+**Goal:** Bring the six "🔍 Interrogazione e Ricerca" agent commands into one graphical console, with deterministic results for search/backlinks/related/trace and an LLM-assisted consult/deep research.
+
+**Deliverables:**
+- **Six-tab modal (`src/frontend/components/research/ResearchStudio.ts`)**: horizontal tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**; reuses the Review Studio shell (`.wf-rs-*`) with a cyan accent and dedicated `.wf-rq-*` result styles.
+- **Entry points**: **🔎 Research** top-bar button, **🔎 Ricerca** editor button, note context menu (Backlink / Correlate), `Ctrl+Alt+Q/S/B/L/T/H`, and chat-command hand-off from `ChatDrawer.ts`.
+- **Research API (`src/backend/server/agentServer.ts`)**: `GET /api/notes/research/search`, `GET /api/notes/research/backlinks`, `GET /api/notes/research/related`, `GET /api/notes/research/trace`, `POST /api/notes/research/consult`, `POST /api/notes/research/deep-research`.
+- **Deterministic helpers (`src/backend/server/researchHelpers.ts`)**: tokenisation, key terms, ranked full-text search, wikilink backlinks, related-note suggestions and trace-source resolution, with unit tests in `tests/researchStudio.test.ts`.
+- **LLM paths with fallback**: `consultWiki` answers with the configured model and falls back to the ranked note list; `generateDeepResearch` writes `output/research-*.md` and `wiki/synthesis/*.md` with a source-attribution matrix and knowledge gaps.
+- **Docs**: in-app help topic `research-studio`, plus updates to README, docs index, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.12), AGENT and CHANGELOG.

@@ -5,7 +5,7 @@ icon: ✏️
 order: 7
 group: 📖 Uso quotidiano
 mode: both
-keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot]
+keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot, ricerca, search, trace, deep-research]
 context: [versioni]
 ---
 
@@ -52,6 +52,19 @@ Dall'header dell'editor, col pulsante **🔍 Revisione**, oppure con **tasto des
 - **⇄ Confronta versioni** — diff **unificato** con uno snapshot precedente (righe aggiunte/rimosse e numeri di riga) e ripristino in un clic.
 
 Scorciatoie: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni). Gli snapshot sono locali (`.wiki-forge/snapshots/`, ultimi 25 per nota) e indipendenti da git.
+
+## Interrogare e cercare (Research Studio)
+
+Il pulsante **🔎 Ricerca** nell'header dell'editor (o **🔎 Research** nella barra in alto) apre la **Research Studio**, con sei schede:
+
+- **💬 Consult** — domanda in linguaggio naturale, risposta con citazioni.
+- **🔍 Ricerca** — full-text su titolo, id, tag e corpo, con numeri di riga e contesto.
+- **↩ Backlink** — note che citano quella selezionata tramite `[[wikilink]]`.
+- **🧩 Correlate** — note affini per tag e concetti non ancora collegate.
+- **🕸️ Traccia** — note che contengono un'affermazione e fonti raw dichiarate, con il passaggio citato.
+- **🔬 Deep Research** — report esteso in `output/` e nota di sintesi in `wiki/synthesis/`.
+
+Scorciatoie: `Ctrl+Alt+Q` (Consult), `Ctrl+Alt+S` (Ricerca), `Ctrl+Alt+B` (Backlink), `Ctrl+Alt+L` (Correlate), `Ctrl+Alt+T` (Traccia), `Ctrl+Alt+H` (Deep Research). Dalla chat puoi scrivere gli stessi comandi (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`): la scheda si apre con la query già compilata. Ricerca, Backlink, Correlate e Traccia funzionano offline; Consult e Deep Research usano il modello configurato e, in mancanza, un fallback deterministico.
 
 ## Appunti veloci (Scratchpad)
 

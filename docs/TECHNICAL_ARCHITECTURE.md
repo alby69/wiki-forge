@@ -147,6 +147,31 @@ Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextM
 - `critique` calls the configured LLM when available; otherwise it returns a deterministic Markdown report (`fallback: true`) so the tab remains usable.
 - Missing `note` parameters return `400`; unknown notes/snapshots return `404`; unexpected errors return `500` with a JSON body.
 
+### 2.12 Research Studio API & Deterministic Query Helpers
+Implemented in `src/frontend/components/research/ResearchStudio.ts`, `src/frontend/core/types/research.ts`, `src/frontend/styles/research-studio.css`, the `research*` methods of `src/frontend/storage/ApiStorage.ts`, `src/backend/server/researchHelpers.ts`, and the six routes in `src/backend/server/agentServer.ts`.
+
+**UI surface**
+- One modal with six horizontal tabs: **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**. The default tab is `search`.
+- Reuses the Review Studio shell (`.wf-rs-*`) with a cyan accent (`#38bdf8`) and the `.wf-rq-*` classes for result cards, snippets, chips and source passages.
+- Entry points: **🔎 Research** in the top header (`Header.ts`), **🔎 Ricerca** in the editor header (`MarkdownEditor.ts`), the note context menu entries **Backlink della nota** / **Correlazioni suggerite** (`ReviewContextMenu.ts`), shortcuts `Ctrl+Alt+Q/S/B/L/T/H`, and the six chat commands (`ChatDrawer.ts` intercepts them before streaming and opens the matching tab with the query pre-filled).
+
+**REST endpoints** (all accept `projectId`; `note` is an id, title or wiki-relative path resolvable by `resolveReviewTarget`):
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/notes/research/search?q=&limit=` | Deterministic full-text search (title/id/tag weights + phrase bonus). `limit` clamped to 1–100, default 30. Returns `query`, `total`, `totalMatches`, `scanned`, `tookMs`, `results: {note, score, matchCount, matches[]}` with up to 4 line-numbered snippets per note. |
+| `GET /api/notes/research/backlinks?note=` | Notes whose `[[wikilinks]]` resolve to the target, with the first citing line and snippet. The target itself is excluded. `404` for an unknown note. |
+| `GET /api/notes/research/related?note=&limit=` | Notes sharing tags/vocabulary with the target that are **not linked yet** (outbound or backlink). Score = `tags × 6 + min(sharedTerms, 12)`; `limit` clamped to 1–50, default 12. |
+| `GET /api/notes/research/trace?q=` | Notes matching the query in id/title/body/outbound links (`matchedIn`), their outbound links, and the raw sources declared in frontmatter `sources:` or the `## Sources` section. Anchors `#L10-L25` are read verbatim; without an anchor the query is searched in the raw file and the passage is flagged `inferred`. Missing files are reported with `exists: false`. |
+| `POST /api/notes/research/consult` | Body `{ question }`. Ranks the notes with `searchNotes(..., 8)` and sends them as `contextNotes` to the configured LLM with a fixed three-section prompt. Returns `{ success, markdown, fallback, citations[] }`; on provider failure it returns a deterministic answer listing the matching notes (`fallback: true`). |
+| `POST /api/notes/research/deep-research` | Body `{ question }`. Filters notes containing at least one query word, writes `output/research-<slug>-<date>.md` and `wiki/synthesis/<slug>.md` (frontmatter `tags: [deep-research, synthesis, …]`, `sources`), and returns `{ success, markdown, outputPath, synthesisPath, articles, fallback }`. The LLM rewrites the report body when available; the deterministic report with Executive Summary, Thematic Deep-Dive, Source Attribution Matrix and Knowledge Gaps is always produced first. |
+
+**Determinism & fallbacks**
+- `search`, `backlinks`, `related` and `trace` never call a model: they are pure helpers over the notes already loaded by `readAllWikiNotes`, unit-tested in `tests/researchStudio.test.ts`.
+- `consult` and `deep-research` call the configured LLM and fall back deterministically (`fallback: true`) when it is unavailable, so both tabs stay usable offline.
+- Missing query/note parameters return `400`; unknown notes for backlinks/related return `404`; unexpected errors return `500` with a JSON body.
+- Deep research writes files only through the backend; the modal refreshes the vault after a successful run.
+
 ---
 
 ## 3. Comparative Matrix: `wiki-forge` Local RAG vs. From-Scratch Training (`nanochat`)

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Research Studio (UI)
+- **Single query console (`ResearchStudio.ts`)**: one modal with six horizontal tabs — **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research** — reusing the Review Studio shell with a cyan accent. Opened from the **🔎 Research** top-bar button, the **🔎 Ricerca** editor button, the note context menu (Backlink / Correlate), `Ctrl+Alt+Q/S/B/L/T/H`, or by typing one of the six commands in chat.
+- **Research API (`agentServer.ts`)**: new routes `GET /api/notes/research/search`, `GET /api/notes/research/backlinks`, `GET /api/notes/research/related`, `GET /api/notes/research/trace`, `POST /api/notes/research/consult`, `POST /api/notes/research/deep-research`.
+- **Deterministic helpers (`researchHelpers.ts`)**: pure, unit-tested functions for tokenisation/key terms, ranked full-text search, wikilink backlinks, related-note suggestions (shared tags + vocabulary, excluding existing links) and trace-source resolution.
+- **LLM paths with fallback**: `consultWiki` ranks the notes and answers with the configured model, falling back to a deterministic note list; `generateDeepResearch` writes `output/research-*.md` and `wiki/synthesis/*.md` with a source-attribution matrix and knowledge gaps, using the LLM for the body when available.
+- **Tests**: new `tests/researchStudio.test.ts` (6 helper tests) and 4 integration tests in `tests/agentServer.test.ts`.
+- **Documentation alignment**: README + docs index, USER_GUIDE, TUTORIAL (§2 and §5), TECHNICAL_ARCHITECTURE (§2.12), AGENT, CHANGELOG, ROADMAP, in-app help (new `research-studio` topic plus `inizio`, `barra-alto`, `modifica-note`, `chat-comandi`).
+
 ### Review Studio (UI)
 - **Single review console (`ReviewStudio.ts`)**: one modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — dark theme and emerald accent. Opened from the note context menu (`ReviewContextMenu.ts`), the **🔍 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`.
 - **Review API (`agentServer.ts`)**: new routes `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.

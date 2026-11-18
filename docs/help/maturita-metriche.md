@@ -2,7 +2,7 @@
 id: maturita-metriche
 title: Metriche e maturità
 icon: 📊
-order: 15
+order: 16
 group: ⚙️ Progetti e Dev Mode
 mode: both
 keywords: [metriche, metrics, maturità, maturity, stats, statistiche, audit, punteggio, score, ke-maturity, indicatore]

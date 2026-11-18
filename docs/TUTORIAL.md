@@ -78,6 +78,27 @@ La cronologia della Review Studio è **locale** e non richiede git: prima di ogn
 
 > La scheda **Critica** usa il modello LLM configurato; se non è disponibile, produce comunque una revisione deterministica. Le schede **Verifica**, **Digest** e **Confronta versioni** sono sempre deterministiche e funzionano offline.
 
+### 🔎 Research Studio nell'Interfaccia Grafica
+
+La **Research Studio** riunisce in un'unica finestra le sei schede della categoria 🔍 *Interrogazione e Ricerca*. Si apre con:
+
+- il pulsante **🔎 Research** nella barra in alto;
+- il pulsante **🔎 Ricerca** nell'header dell'editor;
+- il **tasto destro** su una nota (voci *Backlink della nota* e *Correlazioni suggerite*);
+- le scorciatoie `Ctrl+Alt+Q` (Consult), `Ctrl+Alt+S` (Ricerca), `Ctrl+Alt+B` (Backlink), `Ctrl+Alt+L` (Correlate), `Ctrl+Alt+T` (Traccia), `Ctrl+Alt+H` (Deep Research);
+- scrivendo il comando corrispondente nella chat: la scheda si apre con la query già compilata.
+
+| Scheda | Comando | Contenuto |
+|---|---|---|
+| **💬 Consult** | `/consult` | Domanda in linguaggio naturale; le note più pertinenti diventano il contesto della risposta, che cita le fonti con `[[wikilink]]`. |
+| **🔍 Ricerca** | `/search` | Ricerca full-text case-insensitive su titolo, id, tag e corpo, ordinata per rilevanza, con numero di riga e contesto. |
+| **↩ Backlink** | `/backlinks` | Note che citano quella selezionata tramite `[[wikilink]]`, con la riga della citazione. |
+| **🧩 Correlate** | `/related` | Note affini per tag e vocabolario **non ancora collegate** in nessuna direzione. |
+| **🕸️ Traccia** | `/trace` | Note che contengono l'affermazione, link uscenti e fonti raw dichiarate, con il passaggio citato. |
+| **🔬 Deep Research** | `/deep-research` | Report esteso in `output/research-*.md` e nota di sintesi in `wiki/synthesis/`, con matrice delle fonti e knowledge gap. |
+
+> **Determinismo**: Ricerca, Backlink, Correlate e Traccia usano solo le note già caricate e funzionano offline. Consult e Deep Research usano il provider LLM configurato; se non è disponibile, mostrano un **fallback deterministico** etichettato in ambra e restano utilizzabili.
+
 ---
 
 ### 🎯 Scenari di Utilizzo Pratici
@@ -291,6 +312,7 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 | `adversarial-review` / `/adversarial-review` | Stress-test e revisione avversaria della tesi per identificare contraddizioni e citazioni mancanti |
 | `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki (analogo alla scheda **Digest** della Review Studio, che però è deterministica) |
 | `diff` / `/diff` | Confronto tra la nota e una versione precedente (analogo alla scheda **Confronta versioni**, che usa gli snapshot locali in modo deterministico) |
+| `consult`, `search`, `backlinks`, `related`, `trace`, `deep-research` | Interrogazione e ricerca: chat e **Research Studio** condividono gli stessi endpoint. Scrivendo uno dei sei comandi nella chat si apre la scheda corrispondente con la query già compilata. |
 | `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 (equivalente alla scheda **Verifica**) |
 | `slides` / `/slides` (`/generate-slides`) | Generazione di una presentazione a diapositive (reveal.js) dai capitoli della tesi |
 | `audit` / `/audit` | Controllo generale dell'archivio (link rotti, note isolate, sovrapposizioni) |

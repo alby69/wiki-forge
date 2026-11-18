@@ -2,7 +2,7 @@
 
 ## Overview & Unified System Diagram
 
-Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, Review Studio API, and W3C SHACL/RDF semantics.
+Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, Review and Research Studio APIs, and W3C SHACL/RDF semantics.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -50,3 +50,6 @@ Enforces atomic writes via temporary files and `os.replace`, soft deletes files 
 
 ### 4. Review Studio API & Snapshot Store (`src/backend/server/agentServer.ts`)
 Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critique|snapshots|diff|restore`). The quality gate, digest, diff and human verification are deterministic; the critique tab uses the configured LLM with a deterministic fallback. Before every save, verification or restore the previous note content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a JSON sidecar (reason and timestamp); the latest 25 snapshots per note are retained. The folder is gitignored and independent of the git-based `VersionTimeline` history.
+
+### 5. Research Studio API & Query Helpers (`src/backend/server/agentServer.ts`, `researchHelpers.ts`)
+Serves the six-tab Research Studio (`/api/notes/research/search|backlinks|related|trace` on `GET`, `consult|deep-research` on `POST`). Search, backlinks, related and trace are pure deterministic functions over the loaded notes (`researchHelpers.ts`, unit-tested); consult and deep-research use the configured LLM with a deterministic fallback. Deep research writes `output/research-*.md` and `wiki/synthesis/<slug>.md` with a source-attribution matrix and knowledge gaps.

@@ -122,7 +122,7 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 | Ingestion | add sources, convert, compile, (re)ingest a file | `skills/wiki-ingest/SKILL.md` |
 | Curation | create/merge/split an article, tag it, stub a missing link | `skills/wiki-curate/SKILL.md` |
 | Audit & Maintenance | check health, fix broken links, schema-lint, schema-infer, reindex, prune, lint | `skills/wiki-audit/SKILL.md` |
-| Query & Research | ask a question, search, trace a claim, deep-research | `skills/wiki-query/SKILL.md` |
+| Query & Research | ask a question, search, trace a claim, deep-research (the Research Studio tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**) | `skills/wiki-query/SKILL.md` |
 | Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes | `skills/wiki-study/SKILL.md` |
 | Onboarding & Utility | run the scenario wizard, stats, export, tags, help | `skills/wiki-onboarding/SKILL.md` |
 | Adversarial Review | stress-test notes/thesis for contradictions or missing citations (the Review Studio **Critica** tab) | `skills/wiki-adversarial-review/SKILL.md` |
@@ -138,7 +138,8 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 2. **Proactive Assistance**: When completing tasks, scan for broken links, missing tags, or orphaned notes. Highlight potential improvements alongside command outputs.
 3. **Explicit Confidence & Grounding**: Always state confidence levels (**High / Medium / Low**) and anchor claims to source line numbers (`raw/source.md#L10-L25`).
 4. **Graphical Review Studio**: The Web UI exposes the same review operations in one modal (tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**). `/verify` shares the exact code path with the **Verifica** tab; `/digest`, `/adversarial-review` and `/diff` remain the agent (prompt-level) commands, while the corresponding Review Studio tabs call deterministic endpoints.
-5. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
+5. **Graphical Research Studio**: The six query commands (`/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`) have one modal (tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**). Typing the command in chat opens the matching tab with the query pre-filled. Search, backlinks, related and trace are deterministic; consult and deep-research call the model and fall back deterministically.
+6. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
 
 ---
 
@@ -155,6 +156,7 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.
 - **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`. The same path is used by the Review Studio **Verifica** tab, which also snapshots the pre-write content.
 - **`review studio`** (Web UI): Opens the four-tab review console (Verifica, Critica, Digest, Confronta versioni) from a note's context menu, the **🔍 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`. It is a UI wrapper around the deterministic review endpoints; the **Critica** tab additionally uses the configured LLM with a deterministic fallback.
+- **`research studio`** (Web UI): Opens the six-tab query console (Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research) from the **🔎 Research** / **🔎 Ricerca** buttons, the note context menu, `Ctrl+Alt+Q/S/B/L/T/H`, or by typing one of the six commands in chat. Search/backlinks/related/trace are deterministic endpoints; consult and deep-research use the LLM with a deterministic fallback, and deep-research writes `output/research-*.md` plus `wiki/synthesis/<slug>.md`.
 - **`study-guide`**: Aggregates wiki knowledge into structured study guides (`output/study-guide-*.md`) with summaries, key terms, and self-assessment questions.
 
 ---

@@ -2,7 +2,7 @@
 id: esportare
 title: Esportare: PDF, slide, RDF
 icon: 📄
-order: 11
+order: 12
 group: 📖 Uso quotidiano
 mode: both
 keywords: [esporta, export, pdf, slide, presentazione, rdf, json-ld, turtle, tesi, pandoc, scarica]

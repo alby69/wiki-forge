@@ -25,6 +25,7 @@ Niente va in cloud: la tua conoscenza resta in una cartella locale (*vault*).
 | **Grafo** | La mappa visiva di tutte le note e dei loro collegamenti |
 | **Fiducia (trust tier)** | Quanto una nota è affidabile: verificata da umano, confermata dall'agente, non verificata |
 | **Review Studio** | La finestra di revisione con quattro schede: Verifica, Critica, Digest, Confronta versioni |
+| **Research Studio** | La finestra di ricerca con sei schede: Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research |
 
 ---
 
@@ -107,6 +108,8 @@ Strumenti di orientamento:
 - **Pannello in basso** sulla nota aperta: metadati, **Backlink** (chi la cita) e **Outbound** (cosa cita).
 
 Nella chat puoi semplicemente **fare domande in linguaggio naturale**: *«Quali note parlano di ontologie?»*, *«Riassumi la nota X»*.
+
+Per cercare e interrogare la wiki in modo strutturato, usa la **Research Studio** (pulsante **🔎 Research** in alto o **🔎 Ricerca** nell'editor): le sei schede coprono **Consult** (domanda con citazioni), **Ricerca** (full-text con numeri di riga), **Backlink** (chi cita la nota), **Correlate** (connessioni mancanti), **Traccia** (note e fonti raw di un'affermazione) e **Deep Research** (report esteso salvato in `output/` e `wiki/synthesis/`). Scrivendo in chat `/consult`, `/search`, `/backlinks`, `/related`, `/trace` o `/deep-research` si apre la scheda corrispondente con la query già pronta.
 
 ---
 
