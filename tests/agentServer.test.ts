@@ -176,6 +176,113 @@ Body of the target note.
     assert.ok(log.includes('Human-verified'));
   });
 
+  await t.test('Review Studio: meta returns note identity, quality gate and history', async () => {
+    const meta = await apiStorage.getReviewMeta('human-target');
+
+    assert.equal(meta.success, true);
+    assert.equal(meta.note?.id, 'human-target');
+    assert.equal(meta.note?.trustTier, 'human-reviewed');
+    assert.equal(meta.quality?.total, 5);
+    assert.ok((meta.quality?.passed ?? 0) >= 3);
+    assert.ok(meta.history?.some(event => event.actor === 'human:studente'));
+    assert.equal(meta.suggestedReviewer, 'studente');
+  });
+
+  await t.test('Review Studio: meta reports a missing note instead of throwing', async () => {
+    const meta = await apiStorage.getReviewMeta('does-not-exist');
+    assert.equal(meta.success, false);
+    assert.ok(meta.error?.includes('Nota non trovata'));
+  });
+
+  await t.test('Review Studio: verify endpoint records the reviewer and refreshes meta', async () => {
+    await fs.writeFile(
+      path.join(wikiDir, 'review-target.md'),
+      `---
+title: Review Target
+status: draft
+tags: [test]
+sources:
+  - id: source-1
+    resource: raw/source-1.md
+---
+# Review Target
+
+Body used by the Review Studio tests, linking to [[sample-note]].
+`,
+      'utf-8'
+    );
+
+    const result = await apiStorage.verifyNote({
+      note: 'review-target',
+      reviewer: 'alice',
+      comment: 'Controllata in Review Studio.',
+      setStable: true,
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(result.changed, true);
+    assert.equal(result.actor, 'human:alice');
+    assert.equal(result.note?.trustTier, 'human-reviewed');
+    assert.equal(result.note?.status, 'stable');
+    assert.equal(result.meta?.suggestedReviewer, 'alice');
+
+    const onDisk = await fs.readFile(path.join(wikiDir, 'review-target.md'), 'utf-8');
+    assert.ok(onDisk.includes('by: human:alice'));
+
+    // The verification is a write, so a pre-write snapshot must exist.
+    const snapshots = await apiStorage.listReviewSnapshots('review-target');
+    assert.ok(snapshots.length >= 1);
+    assert.equal(snapshots[0].reason, 'verifica');
+  });
+
+  await t.test('Review Studio: digest summarises the recent log and note health', async () => {
+    const digest = await apiStorage.getReviewDigest({ days: 30, scope: 'all' });
+
+    assert.equal(digest.success, true);
+    assert.equal(digest.rangeDays, 30);
+    assert.ok(digest.stats.notes >= 4);
+    assert.ok(digest.stats.verified >= 2);
+    assert.ok(digest.health.score >= 0 && digest.health.score <= 100);
+    assert.ok(digest.markdown.includes('Digest Wiki'));
+    assert.ok(digest.days.length >= 1);
+  });
+
+  await t.test('Review Studio: save creates a snapshot, diff shows changes, restore reverts', async () => {
+    const notePath = path.join(wikiDir, 'history-target.md');
+    const original = `---
+title: History Target
+status: draft
+tags: [test]
+---
+# History Target
+
+Original body.
+`;
+    await fs.writeFile(notePath, original, 'utf-8');
+
+    await apiStorage.saveNote({
+      id: 'history-target',
+      title: 'History Target',
+      folder: 'wiki',
+      content: original.replace('Original body.', 'Modified body.'),
+    });
+
+    const snapshots = await apiStorage.listReviewSnapshots('history-target');
+    assert.equal(snapshots.length, 1);
+    assert.equal(snapshots[0].reason, 'salvataggio');
+
+    const diff = await apiStorage.getReviewDiff('history-target', snapshots[0].id);
+    assert.equal(diff.success, true);
+    assert.ok((diff.stats?.added ?? 0) >= 1);
+    assert.ok((diff.stats?.removed ?? 0) >= 1);
+
+    const restored = await apiStorage.restoreReviewSnapshot('history-target', snapshots[0].id);
+    assert.ok(restored);
+    const afterRestore = await fs.readFile(notePath, 'utf-8');
+    assert.ok(afterRestore.includes('Original body.'));
+    assert.ok(!afterRestore.includes('Modified body.'));
+  });
+
   await t.test('GET /api/wiki/scratchpad parses quick notes from notes/quick-notes.md', async () => {
     const notesDir = path.join(tmpDir, 'notes');
     await fs.mkdir(notesDir, { recursive: true });

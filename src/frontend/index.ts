@@ -2,8 +2,10 @@ import './styles/theme.css';
 import './styles/sidebar.css';
 import './styles/chat-drawer.css';
 import './styles/editor.css';
+import './styles/review-studio.css';
 
 import { WikiNote } from '@frontend/core/types/wiki';
+import type { ReviewTab } from '@frontend/core/types/review';
 import { MarkdownParser } from '@frontend/services/markdownParser';
 import { GraphService } from '@frontend/services/graphService';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
@@ -25,6 +27,8 @@ import { KEWorkbenchModal } from '@frontend/components/ke/KEWorkbenchModal';
 import { OnboardingWizard } from '@frontend/components/simple-mode/OnboardingWizard';
 import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from '@frontend/components/advanced-mode/VersionTimeline';
+import { ReviewStudio } from '@frontend/components/review/ReviewStudio';
+import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu';
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 
 export class WikiForgeApp {
@@ -54,6 +58,8 @@ export class WikiForgeApp {
   private onboardingWizard!: OnboardingWizard;
   private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
+  private reviewStudio!: ReviewStudio;
+  private reviewContextMenu!: ReviewContextMenu;
   private helpPanel!: HelpPanel;
 
   constructor(rootContainer: HTMLElement) {
@@ -169,6 +175,32 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
+    this.reviewStudio = new ReviewStudio(this.storage, {
+      onNoteChanged: note => {
+        this.selectedNote = note;
+        void this.loadVault(true);
+        this.editor.showSaveStatus('Nota aggiornata dalla Review Studio');
+      },
+    });
+
+    this.reviewContextMenu = new ReviewContextMenu({
+      onOpenReview: (noteId, tab) => this.openReviewStudio(noteId, tab),
+    });
+
+    document.addEventListener('keydown', event => {
+      if (!event.ctrlKey || !event.altKey) return;
+      const tabByKey: Record<string, ReviewTab> = {
+        r: 'verify',
+        c: 'critique',
+        d: 'digest',
+        f: 'diff',
+      };
+      const tab = tabByKey[event.key.toLowerCase()];
+      if (!tab) return;
+      event.preventDefault();
+      this.openReviewStudio(undefined, tab);
+    });
+
     this.header = new Header({
       container: this.layout.headerContainer,
       onViewModeChange: mode => this.handleViewModeToggle(mode),
@@ -276,6 +308,10 @@ Backlink to [[01-index]].
         getFolders: async () => {
           return this.storage.getAllFolders();
         },
+        onContextMenu: (noteId, _filePath, event) => {
+          const note = this.notes.find(candidate => candidate.id === noteId);
+          this.reviewContextMenu.show(noteId, note?.title || noteId, event.clientX, event.clientY);
+        },
       }
     );
 
@@ -287,7 +323,8 @@ Backlink to [[01-index]].
       target => this.openWikilink(target),
       () => this.notes,
       () => this.toggleContext(),
-      () => this.openVersionTimeline()
+      () => this.openVersionTimeline(),
+      () => this.openReviewStudio()
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
@@ -361,6 +398,7 @@ Backlink to [[01-index]].
     if (this.selectedNote) this.sidebar.setActiveNote(this.selectedNote.id);
     this.editor.setNote(this.selectedNote);
     this.contextPanel.setSelectedNote(this.selectedNote);
+    this.reviewStudio.setNotes(this.notes);
     this.refreshGraph();
   }
 
@@ -430,6 +468,13 @@ Backlink to [[01-index]].
     if (this.selectedNote) {
       this.versionTimeline.open(this.selectedNote);
     }
+  }
+
+  /** Opens the Review Studio on the given note (or the current selection). */
+  public openReviewStudio(noteId?: string, tab: ReviewTab = 'verify'): void {
+    const id = noteId || this.selectedNote?.id;
+    if (!id) return;
+    this.reviewStudio.open(id, tab);
   }
 
   private async updateAndSaveNote(noteId: string, newContent: string): Promise<void> {

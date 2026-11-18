@@ -19,6 +19,7 @@ export class MarkdownEditor {
   private getNotesCb?: () => WikiNote[];
   private onToggleContextCb?: () => void;
   private onOpenHistoryCb?: () => void;
+  private onOpenReviewCb?: () => void;
   private contextVisible = true;
   private editorView: EditorView | null = null;
 
@@ -28,7 +29,8 @@ export class MarkdownEditor {
     onOpenLink?: (target: string) => void,
     getNotes?: () => WikiNote[],
     onToggleContext?: () => void,
-    onOpenHistory?: () => void
+    onOpenHistory?: () => void,
+    onOpenReview?: () => void
   ) {
     this.container = container;
     this.onSaveCb = onSave;
@@ -36,6 +38,7 @@ export class MarkdownEditor {
     this.getNotesCb = getNotes;
     this.onToggleContextCb = onToggleContext;
     this.onOpenHistoryCb = onOpenHistory;
+    this.onOpenReviewCb = onOpenReview;
     this.render();
   }
 
@@ -120,6 +123,7 @@ export class MarkdownEditor {
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
             <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
+            <button id="editor-review-btn" title="Apri la Review Studio (verifica, critica, digest, diff)" style="background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">🔍 Revisione</button>
             <button id="editor-history-btn" title="Cronologia delle versioni della nota" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🕐 Cronologia</button>
             ${
               isPreview
@@ -200,6 +204,11 @@ export class MarkdownEditor {
     const historyBtn = this.container.querySelector('#editor-history-btn');
     historyBtn?.addEventListener('click', () => {
       this.onOpenHistoryCb?.();
+    });
+
+    const reviewBtn = this.container.querySelector('#editor-review-btn');
+    reviewBtn?.addEventListener('click', () => {
+      this.onOpenReviewCb?.();
     });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');

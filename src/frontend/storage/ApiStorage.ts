@@ -1,4 +1,13 @@
 import { RenameResult, WikiNote } from '@frontend/core/types/wiki';
+import {
+  ReviewCritiqueResponse,
+  ReviewDepth,
+  ReviewDiffResponse,
+  ReviewDigest,
+  ReviewMetaResponse,
+  ReviewSnapshot,
+  ReviewVerifyResponse,
+} from '@frontend/core/types/review';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
@@ -616,6 +625,142 @@ export class ApiStorage implements IStorage {
         if (json.success && json.topic) {
           return json.topic;
         }
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Review Studio
+  // ---------------------------------------------------------------------------
+
+  private reviewQuery(params: Record<string, string | number | undefined>): string {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== '') search.set(key, String(value));
+    }
+    const query = search.toString();
+    return query ? `?${query}` : '';
+  }
+
+  public async getReviewMeta(noteRef: string): Promise<ReviewMetaResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/review/meta${this.reviewQuery({ note: noteRef })}`,
+        { headers: this.getHeaders() }
+      );
+      const json = (await res.json()) as ReviewMetaResponse;
+      return json;
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  }
+
+  public async verifyNote(options: {
+    note: string;
+    reviewer?: string;
+    comment?: string;
+    setStable?: boolean;
+  }): Promise<ReviewVerifyResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/review/verify`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(options),
+      });
+      return (await res.json()) as ReviewVerifyResponse;
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  }
+
+  public async getReviewDigest(
+    options: { days?: number; scope?: 'all' | 'folder' | 'note'; note?: string } = {}
+  ): Promise<ReviewDigest> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/review/digest${this.reviewQuery({
+          days: options.days,
+          scope: options.scope,
+          note: options.note,
+        })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ReviewDigest;
+    } catch (err) {
+      return {
+        success: false,
+        error: String(err),
+        rangeDays: options.days ?? 7,
+        scope: options.scope ?? 'all',
+        generatedAt: new Date().toISOString(),
+        stats: { notesChanged: 0, verified: 0, stale: 0, brokenLinks: 0, notes: 0 },
+        days: [],
+        health: { score: 0, label: 'n/d', summary: '' },
+        nextActions: [],
+        markdown: '',
+      };
+    }
+  }
+
+  public async critiqueNote(options: {
+    note: string;
+    depth?: ReviewDepth;
+    focus?: string[];
+    instructions?: string;
+  }): Promise<ReviewCritiqueResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/review/critique`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(options),
+      });
+      return (await res.json()) as ReviewCritiqueResponse;
+    } catch (err) {
+      return { success: false, markdown: '', fallback: false, error: String(err) };
+    }
+  }
+
+  public async listReviewSnapshots(noteRef: string): Promise<ReviewSnapshot[]> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/review/snapshots${this.reviewQuery({ note: noteRef })}`,
+        { headers: this.getHeaders() }
+      );
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; snapshots?: ReviewSnapshot[] };
+        if (json.success && Array.isArray(json.snapshots)) return json.snapshots;
+      }
+    } catch (_err) {
+      // Backend unavailable
+    }
+    return [];
+  }
+
+  public async getReviewDiff(noteRef: string, snapshotId: string): Promise<ReviewDiffResponse> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/notes/review/diff${this.reviewQuery({ note: noteRef, snapshot: snapshotId })}`,
+        { headers: this.getHeaders() }
+      );
+      return (await res.json()) as ReviewDiffResponse;
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  }
+
+  public async restoreReviewSnapshot(noteRef: string, snapshotId: string): Promise<WikiNote | null> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/review/restore`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ note: noteRef, snapshot: snapshotId }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { success: boolean; note?: WikiNote };
+        if (json.success && json.note) return json.note;
       }
     } catch (_err) {
       // Backend unavailable

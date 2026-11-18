@@ -26,6 +26,8 @@ tests/tmp-*/
 Thumbs.db
 
 # ----- Excluded data -----
+# Local note history for the Review Studio "Confronta versioni" tab.
+.wiki-forge/snapshots/
 # `backup/` holds the ORIGINAL source files (e.g. copyrighted books/EPUBs).
 #   Do not publish them. Keep them only on your local disk.
 # `raw/`, `output/` are regenerable/ephemeral (rebuild with conv2md / the agent).

@@ -31,6 +31,8 @@ export interface FileActionCallbacks {
   onDelete?: (path: string) => Promise<void>;
   onUpload?: (folderPath: string, files: FileList) => Promise<void>;
   getFolders?: () => Promise<string[]>;
+  /** Opens the Review Studio for a note, optionally on a specific tab. */
+  onContextMenu?: (noteId: string, filePath: string, event: MouseEvent) => void;
 }
 
 export class Sidebar {
@@ -505,6 +507,17 @@ this.container.innerHTML = `
         if (filePath) this.selectedItemPath = filePath;
         if (noteId && this.onSelectNoteCb) this.onSelectNoteCb(noteId);
         void this.refresh();
+      });
+
+      item.addEventListener('contextmenu', (e) => {
+        const event = e as MouseEvent;
+        const noteId = item.getAttribute('data-note-id');
+        const filePath = item.getAttribute('data-path');
+        if (!noteId || !this.actionCb?.onContextMenu) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (filePath) this.selectedItemPath = filePath;
+        this.actionCb.onContextMenu(noteId, filePath || '', event);
       });
     });
 
