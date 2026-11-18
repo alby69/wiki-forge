@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Review Studio (UI)
+- **Single review console (`ReviewStudio.ts`)**: one modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — dark theme and emerald accent. Opened from the note context menu (`ReviewContextMenu.ts`), the **🔍 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`.
+- **Review API (`agentServer.ts`)**: new routes `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.
+- **Deterministic quality gate and digest**: `getReviewMeta` checks internal links, OKF frontmatter, tags, cited sources and `stale_after`; `getReviewDigest` groups `wiki/log.md` activity by day with health stats and next actions. Human verification reuses `recordHumanVerification` (same path as `/verify`).
+- **Local snapshot store**: pre-write content saved to `.wiki-forge/snapshots/<note-path>/<timestamp>.md` plus a `.json` sidecar; the latest 25 snapshots per note are retained, gitignored, no git binary required. Unified line-by-line diff and one-click restore.
+- **Critique tab**: LLM-backed adversarial review (`fast`/`standard`/`deep`, selectable focus) with a deterministic fallback when no provider is configured.
+- **Design deliverables**: rewritten `docs/mockups/review-studio.html` and 5 regenerated PNG previews (Verifica, Critica, Digest, Diff, context menu), documented in `docs/mockups/README.md`.
+- **Documentation alignment**: README + docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL (§2 and §5.1), ARCHITECTURE, TECHNICAL_ARCHITECTURE (§2.11), AGENT, WORKFLOW, OKF_SPEC, THESIS_GUIDE, in-app help (new `review-studio` topic + `inizio`, `stati-okf`, `modifica-note`, `barra-alto`, `chat-comandi`, `maturita-metriche`), and both ROADMAPs.
+
 ### Documentation & Screenshots Refresh
 - **New `docs/GUIDA_OPERATIVA.md`**: single non-technical operational guide (glossary, Focus/Developer modes, activities A–I, typical workflow, best practices); indexed as the recommended starting point in `docs/README.md` and root `README.md`.
 - **Recreated UI/UX screenshots (`img/`, 21 JPG @1920×1080)**: captured from the running app against the real `tesi` vault — 13 student scenarios (onboarding wizard, editor, upload, markdown import, wikilinks/backlinks, graph, split, scratchpad, chat commands, compile progress, study help) and 8 Knowledge Engineer scenarios (developer mode, KE Workbench, use-case log, Tools panel, tools execution log, Config Manager general/LLM, `/audit` chat); removed the 18 outdated screenshots.
@@ -16,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Context-Sensitive In-App Help & UI Polish
 - **Help panel (F1 / `?` button)**: new `HelpPanel` component with live search, topic grouping, context-aware suggestions (⭐), and a "💬 Chiedi all'agente" hand-off that prefills the chat drawer.
-- **`/help [topic]` chat command**: deterministic index/topic rendering served from `docs/help/*.md` (14 topics), plus new backend routes `GET /api/help` and `GET /api/help/<id>` (no LLM required, works offline).
+- **`/help [topic]` chat command**: deterministic index/topic rendering served from `docs/help/*.md` (15 topics, including the new `review-studio`), plus new backend routes `GET /api/help` and `GET /api/help/<id>` (no LLM required, works offline).
 - **Help context registry**: Config, Tools, Import, Wizard, KE Workbench, Version Timeline, upload and compile flows register their context so the panel suggests the relevant topic; fallbacks derive from mode/view.
 - **Sidebar collapse**: toggle on the left sidebar (file manager + tag cloud), persisted in `localStorage` (`wiki-forge:sidebar-collapsed`).
 - **Editor Cronologia**: new **🕐 Cronologia** button in the editor header opens the existing *Version History & Rollback* modal (`VersionTimeline.ts`), previously unreachable.

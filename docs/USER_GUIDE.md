@@ -19,3 +19,22 @@ When editing notes, the editor view includes a built-in formatting toolbar:
 - **Structure**: Headers dropdown (H1, H2, H3), Bulleted Lists (`- `), Numbered Lists (`1. `), and Blockquotes (`> `).
 - **Formatting & Alignment**: Text Color picker (`<span style="color: ...">`) and Text Alignment dropdown (`<div align="...">`).
 - **Wikilink Autocomplete**: Type `[[` inside the editor to invoke automatic autocomplete for existing wiki notes.
+
+## Review Studio
+The editor header includes a **🔍 Revisione** button that opens the **Review Studio**, a single modal with four horizontal tabs:
+
+| Tab | Purpose |
+|---|---|
+| **Verifica** | Note quality gate (links, OKF frontmatter, tags, sources, `stale_after`), verification history, and the human-review form (reviewer, `stable`, comment). |
+| **Critica** | Adversarial critique with `fast` / `standard` / `deep` depth and selectable focus areas; structured findings, counter-arguments and recommended actions. Uses the configured LLM when available and a deterministic fallback otherwise. |
+| **Digest** | Activity over the last N days (from `wiki/log.md`) grouped by day, plus freshness and link-health stats, next actions and a Markdown report. |
+| **Confronta versioni** | Unified line-by-line diff against a local pre-write snapshot (both line-number columns), with one-click restore. |
+
+Ways to open it:
+- right-click a note in the left file tree and pick a tab from the review menu;
+- click **🔍 Revisione** in the editor header;
+- press `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest) or `Ctrl+Alt+F` (Confronta versioni).
+
+Review history is stored locally in `.wiki-forge/snapshots/<note-path>/` as a `.md` snapshot plus a `.json` sidecar (timestamp and reason). The last **25** snapshots per note are kept and the folder is gitignored. The chat `/verify` (alias `/human-review`) shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` stay available as agent commands, while their Review Studio tabs are deterministic.
+
+See [`TUTORIAL.md`](TUTORIAL.md) §5.1 for trust tiers and [`mockups/`](mockups/README.md) for the design preview.

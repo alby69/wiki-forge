@@ -36,6 +36,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl`.
 - **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wikiforge/state/<run_id>.json`.
 - **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
+- **🔍 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🔍 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
@@ -52,9 +53,11 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida all'interfaccia Web UI, comandi chat e troubleshooting.
 - **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico per la tesi in Markdown.
 - **Screenshot UI/UX**: la cartella **[`img/`](img/)** contiene le schermate aggiornate (21 immagini, JPG 1920×1080) per le situazioni d'uso dello **studente** (01–13) e del **Knowledge Engineer** (14–21), catturate dall'implementazione corrente.
+- **Review Studio (mockup e anteprime)**: **[`docs/mockups/`](docs/mockups/README.md)** contiene il prototipo interattivo e le 5 anteprime delle schede Verifica, Critica, Digest, Confronta versioni e del menu contestuale.
 
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
-- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager e Health Engine.
+- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
+- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Analisi tecnica approfondita**: moduli, versioning, API della Review Studio e snapshot store, MCP, export RDF.
 - **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
 - **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.
 - **[`docs/MIGRATION.md`](docs/MIGRATION.md)** — **Guida alla Migrazione Changeset Review**: Sistema Plan-Review-Apply per modifiche AI.
@@ -79,6 +82,28 @@ The LLM Knowledge Engineer agent supports the following slash commands:
 
 ---
 
+## 🔍 Review Studio (Web UI)
+
+A single review console for the active note, built from four horizontal tabs:
+
+| Tab | What it does | Backend |
+|---|---|---|
+| **Verifica** | Quality gate (links, OKF frontmatter, tags, sources, `stale_after`), verification history and the human-review form (`reviewer`, `stable`, comment). | `GET /api/notes/review/meta`, `POST /api/notes/review/verify` |
+| **Critica** | Adversarial critique with depth (`fast`/`standard`/`deep`), focus areas and structured findings; deterministic fallback when no LLM provider is configured. | `POST /api/notes/review/critique` |
+| **Digest** | Last N days of `wiki/log.md` grouped by day, plus freshness/link-health stats, next actions and a Markdown export. | `GET /api/notes/review/digest` |
+| **Confronta versioni** | Unified line-by-line diff against a local pre-write snapshot (both line-number columns), with one-click restore. | `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore` |
+
+**How to open it**
+- Right-click a note in the left file tree → **Verifica umana / Revisione critica / Digest attività / Confronta versioni**.
+- Click **🔍 Revisione** in the editor header.
+- Keyboard: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
+
+The review history is local and independent of git: before each save/verify/restore the previous content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a `.json` sidecar (reason and timestamp). The latest **25** snapshots per note are kept; the folder is gitignored. The chat `/verify` (alias `/human-review`) command shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` remain available as agent commands, while their Review Studio tabs are deterministic.
+
+Design preview and screenshots: **[`docs/mockups/`](docs/mockups/README.md)**.
+
+---
+
 ## 🛠️ Struttura del Repository
 
 ```
@@ -92,6 +117,7 @@ The LLM Knowledge Engineer agent supports the following slash commands:
 │   ├── STATUS.md             # Summary di salute generato automaticamente
 │   ├── state/                # Stato di esecuzione delle procedure (.json)
 │   ├── changesets/           # Proposte di modifica staged da revisionare
+│   ├── snapshots/            # Storico pre-scrittura delle note (Review Studio)
 │   ├── trash/                # Cestino soft-delete con timestamp
 │   └── metrics/              # Storico metriche di salute (history.jsonl)
 ├── src/

@@ -44,6 +44,13 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Motore di Procedure TOML dichiarative e resummabili (`src/backend/wikiforge/procedures.py`) con supporto per grafi di dipendenze DAG, esecuzione automatica di script, pause per revisione umana e stato persistente in `.wikiforge/state/<run_id>.json`.
   - Integrazione completa nella Web UI: cruscotto KE Cockpit (`KECockpitModal.ts`), Command Palette (`Ctrl+K`), Changeset Review Queue (`ChangesetReviewModal.ts`), Live Sync SSE ed ETag SHA256 per la prevenzione delle collisioni in scrittura.
 
+- [x] **Task 7: Review Studio (UI di revisione unificata)**
+  - Modale unica con quattro schede orizzontali: **Verifica**, **Critica**, **Digest**, **Confronta versioni** (`ReviewStudio.ts`, `review-studio.css`).
+  - Apertura da menu contestuale della nota (`ReviewContextMenu.ts`), pulsante **🔍 Revisione** nell'editor e scorciatoie `Ctrl+Alt+R/C/D/F`.
+  - API dedicate `/api/notes/review/{meta,verify,digest,critique,snapshots,diff,restore}`; verifica umana condivisa con `/verify`, digest e diff deterministici, critica LLM con fallback.
+  - Storico locale pre-scrittura in `.wiki-forge/snapshots/` (25 snapshot per nota, gitignored) con diff unificato e ripristino.
+  - Mockup interattivo e 5 anteprime in `docs/mockups/`; documentazione utente, tecnica e guida in-app aggiornata.
+
 ---
 
 ## 🔮 Medio / Lungo Termine (Q1-Q2 2027)

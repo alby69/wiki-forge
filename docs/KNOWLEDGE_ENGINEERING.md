@@ -51,6 +51,14 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
+### Review Studio per la governance della conoscenza
+La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🔍 Revisione**) offre al Knowledge Engineer un punto unico per:
+
+- **Verifica**: quality gate deterministico (link, frontmatter OKF, tag, fonti, `stale_after`), storico delle verifiche e registrazione della revisione umana (stesso percorso di `/verify`);
+- **Critica**: revisione avversariale con profondità e focus, utile prima di promuovere note a `stable` o di includerle in un capitolo di tesi;
+- **Digest**: attività recenti e statistiche di salute, con prossime azioni;
+- **Confronta versioni**: diff e ripristino dagli snapshot locali in `.wiki-forge/snapshots/` (25 per nota), indipendenti da git.
+
 > **Nota operativa**: gli endpoint `/api/ke/*` sono serviti dal container `api`, che gira con `npx tsx` **senza hot-reload**. Dopo ogni modifica sotto `src/backend/server/**` esegui `docker compose restart api`, altrimenti la Web UI interroga un processo obsoleto e il pannello resta vuoto. Se l'API non risponde, il modal mostra un box di errore con messaggio ed endpoint in `#ke-usecase-list`.
 
 ---

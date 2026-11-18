@@ -2,7 +2,7 @@
 id: studio-sintesi
 title: Studio, quiz e sintesi
 icon: 🎓
-order: 9
+order: 10
 group: 📖 Uso quotidiano
 mode: both
 keywords: [studio, study, quiz, mindmap, mappa, sintesi, consult, approfondimento, riassunto, audio, capitolo, tesi]

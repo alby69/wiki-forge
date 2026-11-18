@@ -5,7 +5,7 @@ icon: ✏️
 order: 7
 group: 📖 Uso quotidiano
 mode: both
-keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata]
+keywords: [modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot]
 context: [versioni]
 ---
 
@@ -41,6 +41,17 @@ Scrivi `[[nome-della-nota]]` per collegare due note:
 - Ogni nota ha anche una `version` nel suo frontmatter: è la versione "documentale" usata dai processi OKF.
 
 > Nota: il ripristino versioni agisce sull'interfaccia della storia; per cambiamenti strutturati usa i flussi della **cronologia di progetto** (vedi `docs/PROCEDURES.md`).
+
+## Revisione e confronto versioni (Review Studio)
+
+Dall'header dell'editor, col pulsante **🔍 Revisione**, oppure con **tasto destro** su una nota, apri la **Review Studio**:
+
+- **✓ Verifica** — quality gate della nota, storico delle verifiche e modulo di revisione umana (`reviewer`, `stable`, commento).
+- **⚡ Critica** — revisione avversariale con profondità e focus selezionabili.
+- **◷ Digest** — attività recenti, statistiche di salute e prossime azioni.
+- **⇄ Confronta versioni** — diff **unificato** con uno snapshot precedente (righe aggiunte/rimosse e numeri di riga) e ripristino in un clic.
+
+Scorciatoie: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni). Gli snapshot sono locali (`.wiki-forge/snapshots/`, ultimi 25 per nota) e indipendenti da git.
 
 ## Appunti veloci (Scratchpad)
 

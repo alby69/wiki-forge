@@ -76,6 +76,7 @@
 | 61 | Standardized Error Handling Hierarchy | ✅ Done | Introduzione di `WikiForgeError` e sottoclassi specifiche in `core/exceptions.py`. |
 | 62 | Frontend-Backend DRY Contract for Script UI | ✅ Done | Endpoint `/api/scripts/registry` e generazione dinamica dei form UI da schema condiviso. |
 | 63 | Robustness, KE Cockpit & Guided Procedures (Master Brief) | ✅ Done | Unified Health Engine (`health.py`), Procedure Engine (`procedures.py`), Safe Vault (`vault.py`), Resumable Wizards, Live SSE Sync, and KE Cockpit UI (`KECockpitModal.ts`). |
+| 64 | Review Studio (Unified Review UI) | ✅ Done | Four-tab review modal (`ReviewStudio.ts`), `/api/notes/review/*` endpoints, local snapshot store (`.wiki-forge/snapshots/`, 25 per note), context menu + `Ctrl+Alt+R/C/D/F`, and design previews in `docs/mockups/`. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -231,3 +232,17 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Stateful Procedure Engine (`src/backend/wikiforge/procedures.py`)**: Executes TOML-defined procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria evaluation, and persistent state in `.wikiforge/state/<run_id>.json`.
 - **Knowledge Engineer Cockpit & UI Upgrades**: Built `KECockpitModal.ts` dashboard, `CommandPalette.ts` (`Ctrl+K`), `ChangesetReviewModal.ts`, and `SimpleModeDashboard.ts` resumable user wizard launcher (`.wikiforge/wizard_state.json`).
 - **Live Sync & ETag Collision Prevention**: Server-Sent Events stream (`/api/v1/sync/events`) and HTTP 412 (Precondition Failed) ETag checks on note save.
+
+---
+
+## Phase 64 — Review Studio (Unified Review UI) ✅ Done
+
+**Goal:** Give every note a single review console for quality, adversarial critique, activity digest and version comparison, without leaving the Web UI.
+
+**Deliverables:**
+- **Four-tab modal (`src/frontend/components/review/ReviewStudio.ts`)**: horizontal tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**; dark theme with emerald accent; unified line-by-line diff and one-click restore.
+- **Entry points**: note context menu (`ReviewContextMenu.ts`), **🔍 Revisione** button in the editor header, and `Ctrl+Alt+R/C/D/F`.
+- **Review API (`src/backend/server/agentServer.ts`)**: `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.
+- **Shared verification path** with chat `/verify`; deterministic quality gate (links, OKF frontmatter, tags, sources, `stale_after`), digest from `wiki/log.md`, and critique with deterministic fallback.
+- **Local snapshot store**: `.wiki-forge/snapshots/<note-path>/<timestamp>.md` + `.json` sidecar, best-effort, gitignored, retention 25 per note.
+- **Design & docs**: interactive mockup + 5 screenshots in `docs/mockups/`, in-app help topic `review-studio`, and updates across README and `docs/`.

@@ -24,6 +24,7 @@ Niente va in cloud: la tua conoscenza resta in una cartella locale (*vault*).
 | **Wikilink** | Il collegamento `[[nome-nota]]` tra due note |
 | **Grafo** | La mappa visiva di tutte le note e dei loro collegamenti |
 | **Fiducia (trust tier)** | Quanto una nota è affidabile: verificata da umano, confermata dall'agente, non verificata |
+| **Review Studio** | La finestra di revisione con quattro schede: Verifica, Critica, Digest, Confronta versioni |
 
 ---
 
@@ -114,7 +115,8 @@ Nella chat puoi semplicemente **fare domande in linguaggio naturale**: *«Quali 
 1. Seleziona la nota → **Modifica** → formatta con la toolbar → **Salva**.
 2. Collega le note scrivendo `[[nome-nota]]`: nella lettura diventano link cliccabili.
 3. Usa la **cronologia** della nota per vedere le versioni precedenti e ripristinarle.
-4. Scrivi appunti veloci con `/note <testo>`; quando un appunto è pronto, **promuovilo a nota** con `/promote-note` (o il pulsante nello Scratchpad).
+4. Apri **🔍 Revisione** (o fai **tasto destro** sulla nota) per verificare la qualità e confrontare le versioni nella **Review Studio**.
+5. Scrivi appunti veloci con `/note <testo>`; quando un appunto è pronto, **promuovilo a nota** con `/promote-note` (o il pulsante nello Scratchpad).
 
 Le note sono **semplici file di testo**: puoi modificarle anche col tuo editor preferito, senza rompere nulla.
 
@@ -132,7 +134,18 @@ Tre domande da porsi periodicamente: *le note sono complete? sono collegate? mi 
 | 🔵 **Machine-Confirmed** | Prodotta dall'agente, non ancora riletta |
 | ⚪ **Unverified** | Nessuna conferma |
 
-Per promuovere una nota: `/verify <nota> reviewer=<nome>`.
+Per promuovere una nota: apri la **Review Studio** (pulsante **🔍 Revisione**, tasto destro sulla nota o `Ctrl+Alt+R`), controlla il quality gate e premi **Registra verifica**. In alternativa, dalla chat: `/verify <nota> reviewer=<nome>`.
+
+La **Review Studio** riunisce quattro schede:
+
+| Scheda | Cosa ci fai |
+|---|---|
+| **✓ Verifica** | Controlli qualità, storico verifiche, revisione umana (con `stable` e commento) |
+| **⚡ Critica** | Revisione avversariale: contraddizioni, citazioni mancanti, azioni consigliate |
+| **◷ Digest** | Ultimi giorni di attività, statistiche di salute e prossime azioni |
+| **⇄ Confronta versioni** | Diff unificato riga per riga con uno snapshot precedente e ripristino |
+
+Scorciatoie: `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
 
 **Controlli** — dalla chat, in ordine di importanza:
 
@@ -208,7 +221,7 @@ In pratica:
 
 1. **Raccogli** il materiale di oggi e caricalo.
 2. **Compila** e guarda cosa è nato.
-3. **Rivedi**: apri le note nuove, correggi, aggiungi wikilink mancanti.
+3. **Rivedi**: apri le note nuove, correggi, aggiungi wikilink mancanti e controlla la qualità con la **Review Studio**.
 4. **Usa** la wiki: fai domande, produci sintesi, esporta quello che ti serve.
 5. **Verifica** (`/audit`) e segna come verificate le note di cui ti fidi.
 
@@ -217,7 +230,7 @@ In pratica:
 | Frequenza | Cosa fare | Perché |
 |---|---|---|
 | **Ogni sessione** | Carica → Compila → rileggi le note nuove → `/audit` | Chiudi il ciclo con materiale pulito |
-| **Ogni settimana** | `/stats` + `/maturity`, rileggi le note 🔵 e verifica le migliori con `/verify` | La wiki cresce senza perdere qualità |
+| **Ogni settimana** | `/stats` + `/maturity`, rileggi le note 🔵 e verifica le migliori dalla **Review Studio** (o con `/verify`) | La wiki cresce senza perdere qualità |
 | **Ogni mese** | `/ontology-check`, `/schema-lint`, riorganizza tag e cartelle, backup | Mantieni la struttura sana nel tempo |
 | **Al bisogno** | `/consult`, `/deep-research`, `/quiz`, `/slides`, export tesi | Trasformi la conoscenza in un prodotto |
 

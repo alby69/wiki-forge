@@ -2,10 +2,10 @@
 id: stati-okf
 title: Stati e livelli di fiducia (OKF)
 icon: 🏷️
-order: 8
+order: 9
 group: 📖 Uso quotidiano
 mode: both
-keywords: [stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed, unverified, verify, verifica, stale]
+keywords: [stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed, unverified, verify, verifica, stale, review, revisione, snapshot, diff]
 context: []
 ---
 
@@ -34,6 +34,12 @@ Dalla chat:
 - `stable` — la revisione è considerata stabile (non scade).
 
 `/human-review` è un alias identico di `/verify`. La nota passa a 🟢 **Human-Reviewed** e così appare anche nell'header.
+
+In alternativa, senza scrivere comandi: apri la **Review Studio** con **tasto destro** sulla nota, col pulsante **🔍 Revisione** nell'editor o con `Ctrl+Alt+R`. Nella scheda **Verifica** trovi il quality gate, lo storico e il modulo con revisore, `stable` e commento; premi **Registra verifica** per lo stesso risultato di `/verify`.
+
+## Rivedere e confrontare le versioni
+
+La scheda **Confronta versioni** della Review Studio mostra il diff unificato tra la nota e uno snapshot precedente e permette di ripristinarlo. Gli snapshot sono locali, in `.wiki-forge/snapshots/`; non serve git. Per lo storico documentale resta disponibile il pulsante **🕐 Cronologia**.
 
 ## Gli altri stati (frontmatter OKF)
 

@@ -1,13 +1,13 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida in-app (`docs/help/`).
+Indice completo dei documenti in `docs/` (22 file), dei contenuti della guida in-app (`docs/help/`, 15 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
 | Documento | Contenuto |
 |---|---|
 | [`GUIDA_OPERATIVA.md`](GUIDA_OPERATIVA.md) | **Guida unica non tecnica**: attività, flusso di lavoro tipico e buone pratiche. Punto di partenza consigliato. |
-| [`USER_GUIDE.md`](USER_GUIDE.md) | Focus Mode: i 3 passi (Carica / Compila / Chiedi), wizard guidati, toolbar dell'editor. |
+| [`USER_GUIDE.md`](USER_GUIDE.md) | Focus Mode: i 3 passi (Carica / Compila / Chiedi), wizard guidati, toolbar dell'editor e Review Studio. |
 | [`TUTORIAL.md`](TUTORIAL.md) | Guida operativa completa: UI, workflow in 5 fasi, use case, comandi chat, troubleshooting. |
 | [`THESIS_GUIDE.md`](THESIS_GUIDE.md) | Esempio applicato alla Tesi Magistrale: dai capitoli al PDF finale (`output/thesis_final.pdf`). |
 | [`WORKFLOW.md`](WORKFLOW.md) | Flusso integrato NotebookLM → Wiki-Forge in 5 fasi + checklist operativa settimanale. |
@@ -27,8 +27,8 @@ Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida i
 
 | Documento | Contenuto |
 |---|---|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault. |
-| [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, MCP, export RDF, confronto con LLM locali. |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
+| [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
 | [`KE_PLAYBOOK.md`](KE_PLAYBOOK.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
 | [`PROCEDURES.md`](PROCEDURES.md) | Specifica del Procedure Engine: schema TOML, DAG, criteri di uscita. |
 | [`SCHEMA.md`](SCHEMA.md) | Guida allo schema tipizzato (`[schema]`), validazione e inferenza (`/schema-lint`, `/schema-infer`). |
@@ -40,6 +40,7 @@ Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida i
 |---|---|
 | [`OKF_SPEC.md`](OKF_SPEC.md) | Specifica Open Knowledge Format (OKF) v0.2: frontmatter, trust tiers, indici. |
 | [`MIGRATION.md`](MIGRATION.md) | Flusso Plan-Review-Apply: proposte `wiki-edit` + **Applica modifica**, changeset backend, soft delete. |
+| [`mockups/`](mockups/README.md) | Review Studio: prototipo HTML interattivo e 5 anteprime (Verifica, Critica, Digest, Diff, menu contestuale). |
 | [`AUDIT_BASELINE.md`](AUDIT_BASELINE.md) | Baseline audit del repository (fase 0). |
 | [`CHANGELOG.md`](CHANGELOG.md) | Storico delle release. |
 
@@ -48,7 +49,7 @@ Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida i
 | Documento | Contenuto |
 |---|---|
 | [`AGENT.md`](../AGENT.md) (radice) | Operating manual v3.0 per agenti LLM: ruolo, OKF checklist, skill router (10 skill), macro-command. |
-| [`help/*.md`](help/) (14 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
+| [`help/*.md`](help/) (15 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
 
 ## 🗺️ Mappa: argomenti guida in-app ↔ documenti
 
@@ -61,6 +62,7 @@ Indice completo dei documenti in `docs/` (22 file) e dei contenuti della guida i
 | `chat-comandi` | `TUTORIAL.md` §5, `AGENT.md` §5, README (radice) |
 | `viste-grafo` | `TUTORIAL.md` §2 (viste dell'area di lavoro) |
 | `modifica-note` | `USER_GUIDE.md` (toolbar), `TUTORIAL.md` FASE 3 |
+| `review-studio` | `TUTORIAL.md` §2/§5.1, `USER_GUIDE.md` (Review Studio), `TECHNICAL_ARCHITECTURE.md` §2.11 |
 | `stati-okf` | `TUTORIAL.md` §5.1, `OKF_SPEC.md` §3/§6 |
 | `studio-sintesi` | `TUTORIAL.md` FASE 4 |
 | `esportare` | `TUTORIAL.md` FASE 5, `THESIS_GUIDE.md` |

@@ -27,6 +27,8 @@ Da **sinistra a destra** trovi:
 7. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
 8. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
 
+> **Nell'header dell'editor** trovi anche **🔍 Revisione** (apre la Review Studio a quattro schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie della Review Studio sono `Ctrl+Alt+R/C/D/F`; in alternativa usa il tasto destro su una nota.
+
 ## La barra laterale sinistra (file manager e tag cloud)
 
 Sulla sinistra c'è la colonna con l'**albero dei file** della wiki e la **tag cloud**:

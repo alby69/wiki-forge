@@ -59,6 +59,25 @@ I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Scratchpad**, **�
 
 La scelta viene ricordata automaticamente. Passando alla sola vista **Graph**, il pannello **Node Metadata** sotto l'editor resta visibile; cliccando una nota dalla barra laterale si apre automaticamente la vista **Editor**, senza forzare lo Split.
 
+### 🔍 Review Studio nell'Interfaccia Grafica
+
+La **Review Studio** è un'unica finestra di revisione, con quattro **schede orizzontali** in alto. Si apre in tre modi:
+
+- **tasto destro** su una nota nell'albero dei file → scegli la scheda;
+- pulsante **🔍 Revisione** nell'header dell'editor;
+- scorciatoie `Ctrl+Alt+R` (Verifica), `Ctrl+Alt+C` (Critica), `Ctrl+Alt+D` (Digest), `Ctrl+Alt+F` (Confronta versioni).
+
+| Scheda | Contenuto |
+|---|---|
+| **✓ Verifica** | Quality gate della nota (link interni, frontmatter OKF, tag, fonti, scadenza), storico delle verifiche e modulo di revisione umana con revisore, flag `stable` e commento. |
+| **⚡ Critica** | Revisione avversariale con profondità (`Veloce`, `Standard`, `Approfondita`) e focus selezionabili; produce sintesi, finding in tabella, contro-argomenti e azioni consigliate. |
+| **◷ Digest** | Attività degli ultimi giorni da `wiki/log.md`, raggruppata per data, con statistiche di salute, prossime azioni e report Markdown. |
+| **⇄ Confronta versioni** | Diff **unificato** riga per riga tra la nota e uno snapshot precedente (due colonne di numeri di riga: snapshot e versione attuale), con ripristino in un clic. |
+
+La cronologia della Review Studio è **locale** e non richiede git: prima di ogni salvataggio, verifica o ripristino il contenuto precedente viene salvato in `.wiki-forge/snapshots/<percorso-nota>/<timestamp>.md` (con sidecar `.json`); per ogni nota restano gli ultimi **25** snapshot.
+
+> La scheda **Critica** usa il modello LLM configurato; se non è disponibile, produce comunque una revisione deterministica. Le schede **Verifica**, **Digest** e **Confronta versioni** sono sempre deterministiche e funzionano offline.
+
 ---
 
 ### 🎯 Scenari di Utilizzo Pratici
@@ -270,8 +289,9 @@ Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v
 |--------------|--------------------------------------------|
 | `help [argomento]` / `/help` | Guida in-app: indice completo o un argomento specifico (pannello **?** / tasto **F1**) |
 | `adversarial-review` / `/adversarial-review` | Stress-test e revisione avversaria della tesi per identificare contraddizioni e citazioni mancanti |
-| `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki |
-| `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 |
+| `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki (analogo alla scheda **Digest** della Review Studio, che però è deterministica) |
+| `diff` / `/diff` | Confronto tra la nota e una versione precedente (analogo alla scheda **Confronta versioni**, che usa gli snapshot locali in modo deterministico) |
+| `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 (equivalente alla scheda **Verifica**) |
 | `slides` / `/slides` (`/generate-slides`) | Generazione di una presentazione a diapositive (reveal.js) dai capitoli della tesi |
 | `audit` / `/audit` | Controllo generale dell'archivio (link rotti, note isolate, sovrapposizioni) |
 | `reindex` / `/reindex` | Rigenerazione automatica degli indici generali e tematici |
@@ -303,11 +323,11 @@ Il tier **non è un campo che si scrive a mano**: viene calcolato in modo automa
 
 | Tier | Significato | Come si cambia |
 |------|-------------|----------------|
-| ⚪ `unverified` | Nessuna verifica registrata: è lo stato iniziale di ogni nota nuova o appena compilata | Stato predefinito; per uscirne esegui `/verify` |
+| ⚪ `unverified` | Nessuna verifica registrata: è lo stato iniziale di ogni nota nuova o appena compilata | Stato predefinito; per uscirne esegui `/verify` o usa la scheda **Verifica** della Review Studio |
 | 🟡 `machine-confirmed` | Il `verified` contiene voci di attori macchina (es. `wiki-forge-agent/v2.7`) ma nessun umano | Solo modificando a mano la frontmatter dall'editor, aggiungendo una voce con attore macchina (vedi esempio sotto) |
-| 🟢 `human-reviewed` | Almeno una voce `by: human:<id>` in `verified`: livello massimo di fiducia | Comando chat `/verify` — **unica via supportata** |
+| 🟢 `human-reviewed` | Almeno una voce `by: human:<id>` in `verified`: livello massimo di fiducia | `/verify` oppure scheda **Verifica** della Review Studio |
 
-**Il comando `/verify`** (alias `/human-review`) è l'unico meccanismo che fa passare una nota a `human-reviewed`:
+**Il comando `/verify`** (alias `/human-review`) e il pulsante **Registra verifica** della Review Studio sono i meccanismi supportati per far passare una nota a `human-reviewed`:
 
 ```text
 /verify capitoli/01-introduzione reviewer=alby69 stable comment="Revisionato dall'autore"
@@ -323,6 +343,8 @@ Il tier **non è un campo che si scrive a mano**: viene calcolato in modo automa
 - È **idempotente per revisore**: ripetere lo stesso `/verify` con lo stesso revisore non crea voci duplicate.
 - Ogni verifica viene tracciata in `wiki/log.md` con la data.
 - Il risultato è immediato: il badge passa a 🟢 nel pannello **Node Metadata**, nel filtro della barra laterale e sul colore del nodo nel **Graph**.
+- Dalla **Review Studio** (scheda **Verifica**) puoi fare lo stesso senza scrivere il comando: scegli revisore, eventuale `stable` e commento, poi premi **Registra verifica**. La finestra mostra anche il quality gate e lo storico delle verifiche.
+- Ogni verifica salva prima una copia della nota in `.wiki-forge/snapshots/`, così la scheda **Confronta versioni** può mostrare il diff e ripristinare lo stato precedente.
 
 Per registrare una verifica di tipo macchina (tier 🟡 `machine-confirmed`) bisogna inserire a mano la voce in frontmatter dall'editor:
 
@@ -343,7 +365,7 @@ verified:
 - Quando la data passa, compare il badge **⏰ Stale** accanto al tier e `/audit` segnala la nota tra quelle scadute.
 - La scadenza **non modifica il trust tier**: una nota resta `human-reviewed` ma viene marcata come da rivedere.
 
-> **Dove si visualizzano gli stati**: pannello **Node Metadata** sotto l'editor (tier, status, scadenza ed elenco delle verifiche), filtri per tier e "stale" nella **barra laterale**, colori dei nodi nel **Graph** (🟢/🟡/⚪), e i report di `/stats`, `/audit` e dello script **`okf_stats.py`** (eseguibile dal pannello **🛠️ Strumenti**).
+> **Dove si visualizzano gli stati**: scheda **Verifica** della **Review Studio** (quality gate, tier, storico), pannello **Node Metadata** sotto l'editor (tier, status, scadenza ed elenco delle verifiche), filtri per tier e "stale" nella **barra laterale**, colori dei nodi nel **Graph** (🟢/🟡/⚪), e i report di `/stats`, `/audit` e dello script **`okf_stats.py`** (eseguibile dal pannello **🛠️ Strumenti**).
 
 ---
 

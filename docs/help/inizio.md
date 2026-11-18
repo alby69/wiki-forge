@@ -52,5 +52,6 @@ Clicca il badge (o premi **Ctrl+Shift+D**) per cambiare modalità in qualsiasi m
 | **Compilazione** | Processo che trasforma le fonti in note collegate (`/compile`) |
 | **Wikilink** | Collegamento `[[nome-nota]]` tra due note |
 | **Trust tier** | Livello di fiducia di una nota (verificata, confermata, non verificata) |
+| **Review Studio** | Finestra di revisione con quattro schede: Verifica, Critica, Digest, Confronta versioni |
 
 **Approfondisci:** `docs/TUTORIAL.md` (guida passo-passo completa), `docs/USER_GUIDE.md` (funzionalità dell'interfaccia), `docs/WORKFLOW.md` (flusso di lavoro consigliato).

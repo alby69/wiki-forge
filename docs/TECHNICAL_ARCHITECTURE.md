@@ -79,7 +79,7 @@ Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/componen
 - **Source/Synthesis Isolation**: Original sources remain untouched in `sources/` (`backup/`) and `raw/`.
 - **Git Auto-Commits**: `scripts/versioning.py` creates an incremental git commit for a note (`version: auto-commit <note> ...`), keeping a repository-level history of changes.
 - **Version Snapshots**: the scan scripts skip a reserved `wiki/versions/` folder (`<note>.vN.md`) when present; the frontend timeline itself is built from the note's `version` frontmatter field.
-- **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Chat commands `/rollback` and `/history` are **not implemented** (docs only); `/diff` exists in the chat catalog but is answered by the LLM on a best-effort basis.
+- **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Chat commands `/rollback` and `/history` are **not implemented** (docs only); the chat `/diff` command remains LLM best-effort, while the deterministic diff lives in the **Review Studio** (§2.11).
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
 Implemented in `src/backend/server/mcp_server.py` and `docker-compose.yml`:
@@ -111,6 +111,41 @@ Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpS
 - **Route Dispatch**: `AgentServer.handleRequest()` dispatches every request and returns `true` once it has written a response, or `false` when no route matches. `httpServer.ts` inspects this value and answers `404` (JSON) for unmatched paths and `500` for uncaught handler errors when headers have not yet been sent. Previously the return value was ignored, leaving unknown paths (including routes missing from a stale process) unanswered and hanging the client.
 - **Dual Base URL Resolution**: The browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service.
 - **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts.
+
+### 2.11 Review Studio API & Local Snapshot Store
+Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextMenu.ts`, `src/frontend/core/types/review.ts`, `src/frontend/storage/ApiStorage.ts`, `src/frontend/styles/review-studio.css`, and `src/backend/server/agentServer.ts`.
+
+**UI surface**
+- One modal with four horizontal tabs: **Verifica**, **Critica**, **Digest**, **Confronta versioni**. The default tab is `verify`.
+- Opened by right-clicking a note in the sidebar (`ReviewContextMenu`), by the **🔍 Revisione** button in the editor header, or with `Ctrl+Alt+R/C/D/F`.
+- Only the dark theme is supported; the accent colour is emerald (`#10b981`).
+
+**REST endpoints** (all accept `projectId`; `note` is a wiki-relative path such as `wiki/temi/nota.md` or an id/title resolvable by `resolveReviewTarget`):
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/notes/review/meta?note=` | Note identity, status, trust tier, tags, links, sources, verification history, snapshot count and the quality gate. |
+| `POST /api/notes/review/verify` | Body `{ note, reviewer?, comment?, setStable? }`; reuses `recordHumanVerification` (the same path as chat `/verify`). |
+| `GET /api/notes/review/digest?days=&scope=&note=` | Deterministic activity digest from `wiki/log.md` (`days` clamped to 1–365; `scope` = `all`, `folder`, `note`). |
+| `POST /api/notes/review/critique` | Body `{ note, depth?: fast\|standard\|deep, focus?, instructions? }`; LLM critique with deterministic fallback. |
+| `GET /api/notes/review/snapshots?note=` | Lists local snapshots (`id`, `at`, `reason`, `bytes`), newest first. |
+| `GET /api/notes/review/diff?note=&snapshot=` | Row-based diff (`rows: {type,leftNo,rightNo,left,right}`) plus `stats {added, removed, context}`. |
+| `POST /api/notes/review/restore` | Body `{ note, snapshot }`; snapshots the current content, then restores and returns the updated note. |
+
+**Quality gate** (`getReviewMeta`) evaluates five deterministic checks: internal links (broken-link count), OKF frontmatter (`title`, `tags`, `status`, `generated`, `sources`), tag taxonomy, cited sources, and `stale_after`. Each item carries `key`, `label`, `ok`, `value` and `detail`.
+
+**Verification path** — `recordHumanVerification` is shared by the chat command and the tab, so it stays idempotent per reviewer, appends the OKF `verified` entry (`by: human:<id>`, `at`), optionally promotes `status: stable`, writes `wiki/log.md`, and snapshots the pre-write content.
+
+**Snapshot store**
+- Path: `.wiki-forge/snapshots/<note-path-without-wiki-and-.md>/<timestamp>.md`, with a `.json` sidecar `{ at, reason, path }`.
+- Written before note saves, verifications and restores (`reason` = `salvataggio`, `verifica`, `pre-ripristino`).
+- Retention: the latest **25** `.md`/`.json` pairs per note; older ones are deleted.
+- Best-effort: snapshot failures never block the note write. The folder is gitignored and requires no git binary (which is unavailable inside the API container).
+
+**Determinism & fallbacks**
+- `meta`, `digest`, `snapshots`, `diff` and `restore` are deterministic and work offline.
+- `critique` calls the configured LLM when available; otherwise it returns a deterministic Markdown report (`fallback: true`) so the tab remains usable.
+- Missing `note` parameters return `400`; unknown notes/snapshots return `404`; unexpected errors return `500` with a JSON body.
 
 ---
 

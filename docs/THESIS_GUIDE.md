@@ -143,6 +143,9 @@ Questa fase corrisponde allo **Stadio 2 (Consolidation)**: le note grezze divent
 2. **Sintesi e Revisione**:
    Usa i comandi `/study-guide`, `/quiz`, `/mindmap` e `/deep-research` nella chat per verificare la tenuta concettuale delle tue argomentazioni ed identificare eventuali lacune nella bibliografia.
 
+3. **Review Studio (QA del capitolo)**:
+   Apri la **Review Studio** (`Ctrl+Alt+R`) sulla nota o sul capitolo e usa la scheda **Verifica** per controllare il quality gate (link, frontmatter, tag, fonti) e registrare la revisione umana; la scheda **Critica** (`Ctrl+Alt+C`) evidenzia contraddizioni e citazioni mancanti; la scheda **Confronta versioni** (`Ctrl+Alt+F`) mostra il diff rispetto allo snapshot precedente. Solo le note verificate e mature dovrebbero entrare nel PDF finale.
+
 ---
 
 ### Fase 5: Compilazione e Generazione del PDF Stampabile

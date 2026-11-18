@@ -24,7 +24,7 @@ Apri `review-studio.html` con un browser (doppio clic). Non serve un server: il 
 - **Verifica**: quality gate della nota, storico verifiche, form con reviewer, `stable` e commento; premi **Registra verifica** per il toast di conferma.
 - **Critica**: scegli profondità e focus, premi **Avvia revisione critica** per vedere progresso e finding strutturati.
 - **Digest**: statistiche della settimana e timeline di verifiche, modifiche e snapshot.
-- **Confronta versioni**: scegli uno snapshot e passa da *Affiancata* a *Unificata*; il pulsante di ripristino mostra il toast.
+- **Confronta versioni**: scegli uno snapshot e passa da *Affiancata* a *Unificata*; il pulsante di ripristino mostra il toast. (Il prototipo esplora entrambe le viste; l'app reale usa oggi la vista **Unificata**.)
 - **Tasto destro** su un file nell'albero a sinistra: si apre il menu contestuale *Revisione e QA*; ogni voce apre la scheda corrispondente.
 - **Pulsante `🔍 Revisione`** nell'header dell'editor e scorciatoie `Ctrl+Alt+R` (verifica), `Ctrl+Alt+C` (critica), `Ctrl+Alt+D` (digest), `Ctrl+Alt+F` (diff).
 - **Barra in basso**: passa tra le due viste del mockup (`Review Studio` / `Menu contestuale`).
@@ -62,3 +62,4 @@ foreach ($s in $shots) {
 - I dati sono finti e servono solo a valutare densità, gerarchia e palette.
 - Palette: `#0b1220` / `#0f172a` / `#1e293b`, testo `#e2e8f0`, accento **emerald** `#10b981`, poi amber/sky/violet per gli stati.
 - Il prototipo non usa dipendenze esterne né font remoti.
+- Uso nell'app reale: `docs/TUTORIAL.md` §2 (Review Studio), guida in-app `docs/help/review-studio.md`.

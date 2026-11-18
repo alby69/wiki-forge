@@ -2,7 +2,7 @@
 id: maturita-metriche
 title: Metriche e maturità
 icon: 📊
-order: 14
+order: 15
 group: ⚙️ Progetti e Dev Mode
 mode: both
 keywords: [metriche, metrics, maturità, maturity, stats, statistiche, audit, punteggio, score, ke-maturity, indicatore]
@@ -25,6 +25,8 @@ Le metriche dicono **quanto è solida** la tua wiki: note complete, collegamenti
 | `/schema-lint` | Valida lo schema tipizzato |
 | `/ontology-check` | Coerenza ontologica e regole |
 | `/neuro-check` | Controllo di coerenza neuro-simbolica |
+
+> La scheda **Digest** della **Review Studio** (`Ctrl+Alt+D`) mostra le ultime attività, le statistiche di salute e le prossime azioni senza scrivere comandi; la scheda **Verifica** (`Ctrl+Alt+R`) applica un quality gate alla singola nota.
 
 ## Da 🛠️ Tools (Developer Mode)
 

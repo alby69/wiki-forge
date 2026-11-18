@@ -2,12 +2,12 @@
 
 ## Overview & Unified System Diagram
 
-Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, and W3C SHACL/RDF semantics.
+Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, Review Studio API, and W3C SHACL/RDF semantics.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Web UI (TypeScript / Vite)                      │
-│  [Focus Mode: Guided Pills]  [KE Workbench & Chat Commands]             │
+│  [Focus Mode: Guided Pills] [KE Workbench & Chat] [Review Studio]       │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ HTTP / SSE (Server-Sent Events)
 ┌───────────────────────────────▼─────────────────────────────────────────┐
@@ -26,6 +26,10 @@ Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, 
 │  │ 3. Safe Vault & Changeset Manager (vault.py)                      │  │
 │  │    - Atomic writes, .wikiforge/trash/, staged changesets          │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ 4. Review Studio API & Snapshot Store (agentServer.ts)            │  │
+│  │    - /api/notes/review/*, .wiki-forge/snapshots/ (25 per note)    │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ Subprocess / MCP
 ┌───────────────────────────────▼─────────────────────────────────────────┐
@@ -43,3 +47,6 @@ Executes declarative TOML workflows (`config/procedures/*.toml`). Features DAG p
 
 ### 3. Safe Vault Manager (`src/backend/wikiforge/vault.py`)
 Enforces atomic writes via temporary files and `os.replace`, soft deletes files to `.wikiforge/trash/` with timestamping, and stages AI proposed file changes into `.wikiforge/changesets/` for review before applying.
+
+### 4. Review Studio API & Snapshot Store (`src/backend/server/agentServer.ts`)
+Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critique|snapshots|diff|restore`). The quality gate, digest, diff and human verification are deterministic; the critique tab uses the configured LLM with a deterministic fallback. Before every save, verification or restore the previous note content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a JSON sidecar (reason and timestamp); the latest 25 snapshots per note are retained. The folder is gitignored and independent of the git-based `VersionTimeline` history.

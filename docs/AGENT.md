@@ -125,8 +125,8 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 | Query & Research | ask a question, search, trace a claim, deep-research | `skills/wiki-query/SKILL.md` |
 | Study & Synthesis | study guide, quiz, mindmap, audio overview, quick notes | `skills/wiki-study/SKILL.md` |
 | Onboarding & Utility | run the scenario wizard, stats, export, tags, help | `skills/wiki-onboarding/SKILL.md` |
-| Adversarial Review | stress-test notes/thesis for contradictions or missing citations | `skills/wiki-adversarial-review/SKILL.md` |
-| Digest | natural language summary of recent log updates & health | `skills/wiki-digest/SKILL.md` |
+| Adversarial Review | stress-test notes/thesis for contradictions or missing citations (the Review Studio **Critica** tab) | `skills/wiki-adversarial-review/SKILL.md` |
+| Digest | natural language summary of recent log updates & health (the Review Studio **Digest** tab) | `skills/wiki-digest/SKILL.md` |
 | Presentation Slides | generate reveal.js slide deck from mature notes/chapters | `skills/wiki-slides/SKILL.md` |
 | KE Ontology Suite | schema lint/infer, CQ validation, ODP suggestions, neuro checks, KE maturity | `skills/wiki-ke-ontology/SKILL.md` |
 
@@ -137,7 +137,8 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 1. **Interactive Chat & Tutoring**: In chat mode (`/consult`, `/study-guide`, `/quiz`), act as an interactive tutor. Provide immediate answers, ask follow-up evaluation questions, and adapt depth based on user responses.
 2. **Proactive Assistance**: When completing tasks, scan for broken links, missing tags, or orphaned notes. Highlight potential improvements alongside command outputs.
 3. **Explicit Confidence & Grounding**: Always state confidence levels (**High / Medium / Low**) and anchor claims to source line numbers (`raw/source.md#L10-L25`).
-4. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
+4. **Graphical Review Studio**: The Web UI exposes the same review operations in one modal (tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**). `/verify` shares the exact code path with the **Verifica** tab; `/digest`, `/adversarial-review` and `/diff` remain the agent (prompt-level) commands, while the corresponding Review Studio tabs call deterministic endpoints.
+5. **Scratchpad Note Promotion**: Capture fast user ideas with `/note <text>` into `notes/` and promote them to interlinked OKF articles with `/promote-note <id>`.
 
 ---
 
@@ -152,7 +153,8 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`changeset review` / `changeset apply <id>`**: Inspects and applies staged changeset proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety.
 - **`ke-usecase` / `ke-wizard`**: Guided execution of the 6 Knowledge Engineer Use Cases (Schema & Taxonomy Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, Semantic RDF Export, KE Maturity Evaluation).
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.
-- **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`.
+- **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`. The same path is used by the Review Studio **Verifica** tab, which also snapshots the pre-write content.
+- **`review studio`** (Web UI): Opens the four-tab review console (Verifica, Critica, Digest, Confronta versioni) from a note's context menu, the **🔍 Revisione** editor button, or `Ctrl+Alt+R/C/D/F`. It is a UI wrapper around the deterministic review endpoints; the **Critica** tab additionally uses the configured LLM with a deterministic fallback.
 - **`study-guide`**: Aggregates wiki knowledge into structured study guides (`output/study-guide-*.md`) with summaries, key terms, and self-assessment questions.
 
 ---
@@ -192,4 +194,4 @@ Track and maintain wiki quality against key health metrics:
   - **v1.0**: Initial LLM Wiki Schema (Karpathy pattern).
 
 ## /rollback (not implemented)
-> **Status: documented but not implemented.** There is no `/rollback` (or `/history`) chat command in the server. Version history and restore are available from the **Web UI only**: the **🕐 Cronologia** button in the editor header opens the *Version History & Rollback* modal (`src/frontend/components/advanced-mode/VersionTimeline.ts`), whose **🔄 Rollback to vN** action restores the selected snapshot.
+> **Status: documented but not implemented.** There is no `/rollback` (or `/history`) chat command in the server. Version history and restore are available from the **Web UI only**: the **🕐 Cronologia** button in the editor header opens the *Version History & Rollback* modal (`src/frontend/components/advanced-mode/VersionTimeline.ts`), whose **🔄 Rollback to vN** action restores the selected snapshot. The **Review Studio → Confronta versioni** tab additionally offers a deterministic diff and restore against the local `.wiki-forge/snapshots/` store.

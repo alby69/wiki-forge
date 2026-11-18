@@ -16,6 +16,7 @@ Open the **🧠 KE Workbench** panel from the toolbar in Developer Mode.
 - **Six guided use cases**: Schema & Taxonomy Modeling, Ontological Integrity, Competency Questions, Neuro-Symbolic & ODP, Semantic Export, Maturity Evaluation — each with step-by-step workflows you can run individually or with **▶ Run All Steps**.
 - **Health metrics**: run `/ke-maturity` in chat for the L1-L4 maturity evaluation, or call the backend endpoint `/api/v1/health` for a 0-100 Health Score and prioritized Next Best Actions.
 - **Procedure definitions** live in `config/procedures/<id>.toml` and are executed by the backend Procedure Engine (see [`docs/PROCEDURES.md`](PROCEDURES.md)).
+- **Human verification gate**: the **Review Studio → Verifica** tab (or chat `/verify`) records the human review required by the L4 gate (`all stable notes human-verified`); the **Digest** and **Confronta versioni** tabs support periodic governance checks.
 
 ## Writing Custom Procedures
 Custom TOML procedures reside in `config/procedures/<id>.toml`:
