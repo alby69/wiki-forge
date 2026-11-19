@@ -23,7 +23,8 @@ Il laboratorio di **Knowledge Engineering**:
 
 - **Use case** predefiniti (modello concettuale, validazione, audit, pattern, interoperabilità, governance) con passi eseguibili;
 - ogni esecuzione scrive nella **console di log** della finestra;
-- i risultati finiscono nella wiki (`/api/ke/*` del backend).
+- i risultati finiscono nella wiki (`/api/ke/*` del backend);
+- tab **🤖 Agenti & Schedule**: card dei job automatici con orario, prossima corsa e ultimo esito, interruttore on/off, **Esegui ora**, **Annulla**, log in streaming e storico dei run. La console è nascondibile e ridimensionabile.
 
 ### 🛠️ Tools
 Il **pannello degli script** (Python) del progetto, per categoria:

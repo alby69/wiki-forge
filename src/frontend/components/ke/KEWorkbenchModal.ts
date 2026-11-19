@@ -1,6 +1,19 @@
 import { KEUseCaseDef, KEUseCaseStep } from '@backend/server/agentServer';
 import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
+import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
+import { escapeHtml } from '@frontend/core/utils/html';
+import {
+  formatScheduleTime,
+  parseSseEvents,
+  schedulerEventToLogLine,
+  statusLabel,
+  toScheduleRunViews,
+  toScheduleSnapshotView,
+  ScheduleJobView,
+  ScheduleRunView,
+  ScheduleSnapshotView,
+} from '@frontend/core/utils/schedulePanel';
 import { LogConsole } from '../tools/LogConsole';
 
 export class KEWorkbenchModal {
@@ -10,6 +23,18 @@ export class KEWorkbenchModal {
   private logConsole!: LogConsole;
   private onVaultRefreshCb?: () => void;
   private apiBaseUrl: string = resolveApiBaseUrl();
+  private consoleHeight = 280;
+  private consoleCollapsed = false;
+  private isResizingConsole = false;
+
+  // F4 — Agent schedule tab
+  private activeTab: 'usecases' | 'schedule' = 'usecases';
+  private scheduleSnapshot: ScheduleSnapshotView | null = null;
+  private scheduleErrors: string[] = [];
+  private scheduleRuns: ScheduleRunView[] = [];
+  private readonly scheduleBusy = new Set<string>();
+  private scheduleEventsAbort?: AbortController;
+  private scheduleRunAbort?: AbortController;
 
   constructor(onVaultRefresh?: () => void) {
     this.onVaultRefreshCb = onVaultRefresh;
@@ -27,7 +52,29 @@ export class KEWorkbenchModal {
     this.overlay.style.justifyContent = 'center';
     document.body.appendChild(this.overlay);
 
+    this.loadConsolePrefs();
     this.renderBase();
+  }
+
+  private loadConsolePrefs(): void {
+    try {
+      const storedHeight = Number(localStorage.getItem('wiki-forge:ke-console-height'));
+      if (storedHeight > 0) {
+        this.consoleHeight = clampConsoleHeight(storedHeight);
+      }
+      this.consoleCollapsed = localStorage.getItem('wiki-forge:ke-console-collapsed') === 'true';
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
+  private saveConsolePrefs(): void {
+    try {
+      localStorage.setItem('wiki-forge:ke-console-height', String(this.consoleHeight));
+      localStorage.setItem('wiki-forge:ke-console-collapsed', String(this.consoleCollapsed));
+    } catch {
+      /* storage unavailable */
+    }
   }
 
   private renderBase(): void {
@@ -45,25 +92,52 @@ export class KEWorkbenchModal {
           <button id="ke-modal-close" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
         </div>
 
+        <!-- Workbench tabs -->
+        <div role="tablist" aria-label="Sezioni del KE Workbench" style="background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 4px; padding: 8px 14px 0;">
+          <button class="ke-workbench-tab" data-tab="usecases" type="button" role="tab" aria-selected="true" style="padding: 8px 14px; background: transparent; border: none; border-bottom: 2px solid #6366f1; color: #ffffff; font-weight: 700; font-size: 12px; cursor: pointer;">🧩 Use Case</button>
+          <button class="ke-workbench-tab" data-tab="schedule" type="button" role="tab" aria-selected="false" style="padding: 8px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: #94a3b8; font-weight: 700; font-size: 12px; cursor: pointer;">🤖 Agenti &amp; Schedule</button>
+          <span id="ke-schedule-health" style="margin-left: 10px; font-size: 11px; color: #64748b;"></span>
+          <button id="ke-schedule-refresh" type="button" title="Aggiorna stato agenti" style="margin-left: auto; background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">↻ Aggiorna</button>
+        </div>
+
         <!-- Main Body -->
         <div style="flex: 1; display: flex; overflow: hidden;">
-          <!-- Left Sidebar: KE Use Cases -->
+          <!-- Left Sidebar: Use Cases / Schedule history -->
           <div style="width: 310px; background: #020617; border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow-y: auto; padding: 14px;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 10px; letter-spacing: 0.5px;">Guided Use Cases (CommonKADS)</div>
-            <div id="ke-usecase-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <div id="ke-usecase-sidebar" style="display: flex; flex-direction: column;">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 10px; letter-spacing: 0.5px;">Guided Use Cases (CommonKADS)</div>
+              <div id="ke-usecase-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            <div id="ke-schedule-sidebar" style="display: none; flex-direction: column; gap: 10px;">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Stato Scheduler</div>
+              <div id="ke-schedule-summary" style="font-size: 12px; color: #cbd5e1; line-height: 1.5;"></div>
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-top: 6px; letter-spacing: 0.5px;">Ultimi run</div>
+              <div id="ke-schedule-history" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
           </div>
 
           <!-- Right Content Area -->
-          <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0f172a;">
-            <!-- Top Half: Use Case Details & Steps -->
-            <div id="ke-usecase-container" style="flex: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #1e293b;">
+          <div id="ke-right-pane" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0f172a; min-height: 0; position: relative;">
+            <!-- Use Case details & steps -->
+            <div id="ke-usecase-container" style="flex: 1; min-height: 0; padding: 20px; overflow-y: auto; border-bottom: 1px solid #1e293b;">
               <div style="color: #94a3b8; font-style: italic;">Seleziona un Use Case guidato dal menu laterale per avviarne l'esecuzione.</div>
             </div>
 
+            <!-- F4: scheduled agent cards -->
+            <div id="ke-schedule-container" style="display: none; flex: 1; min-height: 0; padding: 20px; overflow-y: auto; border-bottom: 1px solid #1e293b;">
+              <div style="color: #94a3b8; font-style: italic;">Caricamento agenti schedulati…</div>
+            </div>
+
+            <!-- Drag handle: resize the Console Output -->
+            <div id="ke-console-resizer" title="Trascina per ridimensionare la Console Output" style="height: 4px; flex-shrink: 0; cursor: row-resize; background: transparent; position: relative; z-index: 6; touch-action: none;"></div>
+
             <!-- Bottom Half: SSE Log Console -->
-            <div style="height: 280px; padding: 12px; background: #020617;">
+            <div id="ke-console-panel" style="height: ${this.consoleHeight}px; flex-shrink: 0; padding: 12px; background: #020617; overflow: hidden;">
               <div id="ke-log-console-root" style="height: 100%;"></div>
             </div>
+
+            <!-- Collapse toggle, kept outside the panel so it stays visible when hidden -->
+            <button id="ke-console-toggle" type="button" title="Nascondi Console Output" aria-label="Nascondi Console Output" style="position: absolute; right: 16px; bottom: ${this.consoleHeight + 8}px; z-index: 10; background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 2px 9px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: color 0.15s, background 0.15s;">▾ Console</button>
           </div>
         </div>
       </div>
@@ -76,19 +150,145 @@ export class KEWorkbenchModal {
 
     const consoleHost = this.overlay.querySelector('#ke-log-console-root') as HTMLElement;
     this.logConsole = new LogConsole(consoleHost);
+    this.bindConsoleControls();
+    this.bindScheduleControls();
+  }
+
+  private bindScheduleControls(): void {
+    this.overlay.querySelectorAll<HTMLElement>('.ke-workbench-tab').forEach((button) => {
+      button.addEventListener('click', () => {
+        const tab = button.getAttribute('data-tab');
+        if (tab === 'usecases' || tab === 'schedule') this.setTab(tab);
+      });
+    });
+
+    this.overlay.querySelector('#ke-schedule-refresh')?.addEventListener('click', () => {
+      void this.refreshSchedule();
+    });
+  }
+
+  /**
+   * Console controls mirror the file sidebar in MainLayout: a persistent small
+   * toggle hides/shows the panel and a drag handle resizes it. Both height and
+   * collapsed state survive closing and reopening the Workbench.
+   */
+  private bindConsoleControls(): void {
+    const resizer = this.overlay.querySelector('#ke-console-resizer') as HTMLElement;
+    const panel = this.overlay.querySelector('#ke-console-panel') as HTMLElement;
+    const rightPane = this.overlay.querySelector('#ke-right-pane') as HTMLElement;
+    const toggle = this.overlay.querySelector('#ke-console-toggle') as HTMLElement;
+    if (!resizer || !panel || !rightPane || !toggle) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!this.isResizingConsole) return;
+      const rect = rightPane.getBoundingClientRect();
+      this.consoleHeight = clampConsoleHeight(rect.bottom - e.clientY, rect.height);
+      panel.style.height = `${this.consoleHeight}px`;
+      toggle.style.bottom = `${this.consoleHeight + 8}px`;
+    };
+
+    const onMouseUp = () => {
+      if (!this.isResizingConsole) return;
+      this.isResizingConsole = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      resizer.style.background = 'transparent';
+      this.saveConsolePrefs();
+    };
+
+    resizer.addEventListener('mousedown', (e) => {
+      if (this.consoleCollapsed) return;
+      e.preventDefault();
+      this.isResizingConsole = true;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+      resizer.style.background = '#6366f1';
+    });
+
+    resizer.addEventListener('mouseenter', () => {
+      if (!this.isResizingConsole && !this.consoleCollapsed) resizer.style.background = '#818cf8';
+    });
+    resizer.addEventListener('mouseleave', () => {
+      if (!this.isResizingConsole) resizer.style.background = 'transparent';
+    });
+
+    toggle.addEventListener('click', () => this.toggleConsole());
+    toggle.addEventListener('mouseenter', () => {
+      toggle.style.color = '#c7d2fe';
+      toggle.style.background = '#312e81';
+    });
+    toggle.addEventListener('mouseleave', () => {
+      toggle.style.color = '#94a3b8';
+      toggle.style.background = '#1e293b';
+    });
+
+    window.addEventListener('resize', () => this.applyConsoleState());
+    this.applyConsoleState();
+  }
+
+  public toggleConsole(): void {
+    this.consoleCollapsed = !this.consoleCollapsed;
+    this.applyConsoleState();
+    this.saveConsolePrefs();
+  }
+
+  private applyConsoleState(): void {
+    const resizer = this.overlay.querySelector('#ke-console-resizer') as HTMLElement;
+    const panel = this.overlay.querySelector('#ke-console-panel') as HTMLElement;
+    const rightPane = this.overlay.querySelector('#ke-right-pane') as HTMLElement;
+    const toggle = this.overlay.querySelector('#ke-console-toggle') as HTMLElement;
+    if (!resizer || !panel || !rightPane || !toggle) return;
+
+    // A height saved in a tall window must not starve the steps pane after the
+    // window shrinks. The overlay is hidden while constructed (rect = 0), so
+    // only clamp once it is actually laid out.
+    const rect = rightPane.getBoundingClientRect();
+    if (rect.height > 0) {
+      this.consoleHeight = clampConsoleHeight(this.consoleHeight, rect.height);
+    }
+
+    if (this.consoleCollapsed) {
+      panel.style.display = 'none';
+      resizer.style.display = 'none';
+      toggle.style.bottom = '8px';
+      toggle.textContent = '▴ Console';
+      toggle.title = 'Mostra Console Output';
+      toggle.setAttribute('aria-label', 'Mostra Console Output');
+    } else {
+      panel.style.display = 'block';
+      resizer.style.display = '';
+      panel.style.height = `${this.consoleHeight}px`;
+      toggle.style.bottom = `${this.consoleHeight + 8}px`;
+      toggle.textContent = '▾ Console';
+      toggle.title = 'Nascondi Console Output';
+      toggle.setAttribute('aria-label', 'Nascondi Console Output');
+    }
   }
 
   public async open(): Promise<void> {
     this.overlay.style.display = 'flex';
+    this.applyConsoleState();
     setHelpContext('ke-workbench');
     await this.fetchUseCases();
     this.renderUseCaseList();
     if (this.useCases.length > 0 && !this.selectedUseCase) {
       this.selectUseCase(this.useCases[0]);
     }
+    // Load the agent status in the background so the tab badge is ready even
+    // if the user never opens it. Reopen the live stream if the user had left
+    // the Workbench on the schedule tab.
+    void this.refreshSchedule();
+    if (this.activeTab === 'schedule') this.openScheduleEvents();
   }
 
   public close(): void {
+    this.closeScheduleEvents();
+    this.scheduleRunAbort?.abort();
+    this.scheduleRunAbort = undefined;
     this.overlay.style.display = 'none';
     clearHelpContext('ke-workbench');
   }
@@ -353,5 +553,360 @@ export class KEWorkbenchModal {
       if (runAllBtn) runAllBtn.disabled = false;
       this.logConsole.setAbortController(null);
     }
+  }
+
+  // ------------------------------------------------------------ F4 schedule tab
+
+  public setTab(tab: 'usecases' | 'schedule'): void {
+    this.activeTab = tab;
+    this.applyTabState();
+    if (tab === 'schedule') {
+      void this.refreshSchedule();
+      this.openScheduleEvents();
+    } else {
+      this.closeScheduleEvents();
+    }
+  }
+
+  public getActiveTab(): 'usecases' | 'schedule' {
+    return this.activeTab;
+  }
+
+  private applyTabState(): void {
+    this.overlay.querySelectorAll<HTMLElement>('.ke-workbench-tab').forEach((button) => {
+      const active = button.getAttribute('data-tab') === this.activeTab;
+      button.style.borderBottomColor = active ? '#6366f1' : 'transparent';
+      button.style.color = active ? '#ffffff' : '#94a3b8';
+      button.setAttribute('aria-selected', String(active));
+    });
+    const showSchedule = this.activeTab === 'schedule';
+    const ucPane = this.overlay.querySelector('#ke-usecase-container') as HTMLElement | null;
+    const schedPane = this.overlay.querySelector('#ke-schedule-container') as HTMLElement | null;
+    const ucSide = this.overlay.querySelector('#ke-usecase-sidebar') as HTMLElement | null;
+    const schedSide = this.overlay.querySelector('#ke-schedule-sidebar') as HTMLElement | null;
+    if (ucPane) ucPane.style.display = showSchedule ? 'none' : 'block';
+    if (schedPane) schedPane.style.display = showSchedule ? 'block' : 'none';
+    if (ucSide) ucSide.style.display = showSchedule ? 'none' : 'flex';
+    if (schedSide) schedSide.style.display = showSchedule ? 'flex' : 'none';
+  }
+
+  /** GET /api/ke/schedule — refresh cards, health badge and run history. */
+  public async refreshSchedule(): Promise<void> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule`);
+      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      this.scheduleSnapshot = toScheduleSnapshotView(data.snapshot);
+      this.scheduleErrors = Array.isArray(data.errors)
+        ? data.errors.filter((error: unknown): error is string => typeof error === 'string')
+        : [];
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.scheduleSnapshot = null;
+      this.scheduleErrors = [`Impossibile contattare lo scheduler: ${detail}`];
+    }
+    this.renderSchedule();
+    await this.fetchScheduleRuns();
+  }
+
+  private renderSchedule(): void {
+    const pane = this.overlay.querySelector('#ke-schedule-container') as HTMLElement | null;
+    const health = this.overlay.querySelector('#ke-schedule-health') as HTMLElement | null;
+    const summary = this.overlay.querySelector('#ke-schedule-summary') as HTMLElement | null;
+    if (!pane) return;
+
+    const snapshot = this.scheduleSnapshot;
+    if (health) {
+      health.textContent = snapshot
+        ? `${snapshot.running ? '🟢 Attivo' : '🔴 Fermo'} · ${snapshot.jobs.length} job · ${snapshot.jobs.filter(j => j.enabled).length} abilitati`
+        : '⚪ Scheduler non disponibile';
+      health.style.color = snapshot?.running ? '#34d399' : '#f87171';
+    }
+    if (summary) {
+      summary.innerHTML = snapshot
+        ? `<div>Lock: <strong>${snapshot.lockHeld ? 'attivo' : 'libero'}</strong></div>
+           <div>Attivi: <strong>${snapshot.activeJobs.length}</strong></div>
+           <div>Stato: <strong>${snapshot.enabled ? 'abilitato' : 'disabilitato'}</strong></div>`
+        : '<div style="color:#f87171;">Nessuno snapshot disponibile.</div>';
+    }
+
+    const errorsHtml = this.scheduleErrors.length > 0
+      ? `<div style="background:#742a2a; border:1px solid #9b2c2c; color:#fed7d7; padding:10px 12px; border-radius:6px; margin-bottom:12px; font-size:12px; line-height:1.5;">
+           <strong>Configurazione scheduler</strong>
+           ${this.scheduleErrors.map(e => `<div style="font-family:monospace; font-size:11px;">${escapeHtml(e)}</div>`).join('')}
+         </div>`
+      : '';
+
+    if (!snapshot) {
+      pane.innerHTML = `${errorsHtml}<div style="color:#f87171; font-size:13px;">Lo scheduler non è raggiungibile. Verifica che il server API sia in esecuzione.</div>`;
+      return;
+    }
+    if (snapshot.jobs.length === 0) {
+      pane.innerHTML = `${errorsHtml}<div style="color:#94a3b8; font-size:13px;">Nessun job schedulato configurato.</div>`;
+      return;
+    }
+
+    pane.innerHTML = `${errorsHtml}
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        ${snapshot.jobs.map(job => this.renderJobCard(job)).join('')}
+      </div>`;
+
+    snapshot.jobs.forEach((job) => {
+      pane.querySelector(`#ke-job-toggle-${this.cssId(job.id)}`)?.addEventListener('click', () => {
+        void this.toggleJob(job, !job.enabled);
+      });
+      pane.querySelector(`#ke-job-run-${this.cssId(job.id)}`)?.addEventListener('click', () => {
+        void this.runJobNow(job.id);
+      });
+      pane.querySelector(`#ke-job-cancel-${this.cssId(job.id)}`)?.addEventListener('click', () => {
+        void this.cancelJob(job.id);
+      });
+      pane.querySelector(`#ke-job-cron-${this.cssId(job.id)}`)?.addEventListener('click', () => {
+        const input = pane.querySelector(`#ke-job-cron-input-${this.cssId(job.id)}`) as HTMLInputElement | null;
+        if (input?.value) void this.saveJobSchedule(job, input.value.trim());
+      });
+    });
+  }
+
+  private cssId(id: string): string {
+    return id.replace(/[^A-Za-z0-9_-]/g, '_');
+  }
+
+  private renderJobCard(job: ScheduleJobView): string {
+    const status = statusLabel(job.lastStatus);
+    const busy = this.scheduleBusy.has(job.id) || job.active;
+    const steps = job.steps && job.steps.length > 0 ? ` · step ${job.steps.join(', ')}` : '';
+    return `
+      <div class="ke-sched-card" data-job-id="${escapeHtml(job.id)}" style="background:#020617; border:1px solid #334155; border-radius:8px; padding:14px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+          <div>
+            <div style="font-weight:700; font-size:14px; color:#f8fafc;">${escapeHtml(job.role)}</div>
+            <div style="font-size:11px; color:#a5b4fc; font-family:monospace;">${escapeHtml(job.useCaseId)}</div>
+          </div>
+          <span style="font-size:11px; font-weight:700; color:${status.color}; background:#1e293b; border-radius:12px; padding:3px 10px; white-space:nowrap;">${status.icon} ${status.label}</span>
+        </div>
+        <div style="font-size:12px; color:#94a3b8; margin-top:8px;">${escapeHtml(job.description)}${steps}</div>
+        <div style="font-size:11px; color:#64748b; margin-top:4px;">Prossima corsa: <strong style="color:#cbd5e1;">${escapeHtml(formatScheduleTime(job.nextRunAt))}</strong> · Ultimo run: ${escapeHtml(formatScheduleTime(job.lastRunAt))}</div>
+        ${job.lastError ? `<div style="font-size:11px; color:#f87171; margin-top:6px; font-family:monospace;">${escapeHtml(job.lastError)}</div>` : ''}
+        ${job.consecutiveFailures > 0 ? `<div style="font-size:11px; color:#fbbf24; margin-top:4px;">${job.consecutiveFailures} fallimenti consecutivi</div>` : ''}
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px;">
+          <button id="ke-job-toggle-${this.cssId(job.id)}" type="button" style="background:${job.enabled ? '#312e81' : '#1e293b'}; color:#c7d2fe; border:1px solid #4338ca; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">${job.enabled ? '⏸ Disabilita' : '▶ Abilita'}</button>
+          <button id="ke-job-run-${this.cssId(job.id)}" type="button" style="background:#4f46e5; color:#ffffff; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;" ${busy ? 'disabled' : ''}>⚡ Esegui ora</button>
+          <button id="ke-job-cancel-${this.cssId(job.id)}" type="button" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;" ${job.active ? '' : 'disabled'}>⏹ Annulla</button>
+          <input id="ke-job-cron-input-${this.cssId(job.id)}" type="text" value="${escapeHtml(job.expression)}" aria-label="Cron di ${escapeHtml(job.id)}" style="background:#0f172a; color:#e2e8f0; border:1px solid #334155; border-radius:4px; padding:4px 6px; font-family:monospace; font-size:11px; width:120px;" />
+          <button id="ke-job-cron-${this.cssId(job.id)}" type="button" title="Salva orario (cron o every=...)" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer;">Salva orario</button>
+        </div>
+      </div>`;
+  }
+
+  private async fetchScheduleRuns(): Promise<void> {
+    const host = this.overlay.querySelector('#ke-schedule-history') as HTMLElement | null;
+    if (!host) return;
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/runs?limit=8`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      this.scheduleRuns = toScheduleRunViews(await response.json());
+    } catch {
+      this.scheduleRuns = [];
+    }
+    host.innerHTML = this.scheduleRuns.length === 0
+      ? '<div style="font-size:11px; color:#64748b;">Nessun run registrato.</div>'
+      : this.scheduleRuns.map(run => {
+          const status = statusLabel(run.status);
+          return `<div style="background:#1e293b; border-radius:4px; padding:6px 8px; font-size:11px; color:#cbd5e1;">
+            <span style="color:${status.color}; font-weight:700;">${status.icon}</span>
+            ${escapeHtml(run.job)}<br/>
+            <span style="color:#64748b;">${escapeHtml(formatScheduleTime(run.startedAt))}</span>
+          </div>`;
+        }).join('');
+  }
+
+  private async toggleJob(job: ScheduleJobView, enabled: boolean): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled }),
+        }
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      await this.refreshSchedule();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Aggiornamento job '${job.id}' non riuscito: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
+  }
+
+  private async saveJobSchedule(job: ScheduleJobView, expression: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule: expression }),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+      await this.refreshSchedule();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Orario di '${job.id}' non valido: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
+  }
+
+  /** POST /api/ke/schedule/:id/run — stream scheduler + Use Case events to the shared console. */
+  private async runJobNow(jobId: string): Promise<void> {
+    if (this.scheduleBusy.has(jobId)) return;
+    const controller = new AbortController();
+    this.scheduleRunAbort = controller;
+    this.scheduleBusy.add(jobId);
+    this.renderSchedule();
+    this.logConsole.setStatus('Running', '#818cf8');
+    this.logConsole.appendLine({
+      type: 'start',
+      text: `▶ Avvio job schedulato: ${jobId}`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    this.logConsole.setAbortController(controller, () => {
+      void this.cancelJob(jobId);
+    });
+
+    let finalStatus = 'cancelled';
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/run`,
+        { method: 'POST', signal: controller.signal }
+      );
+      if (!response.ok || !response.body) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? `HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let ended = false;
+      while (!ended) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const parsed = parseSseEvents(decoder.decode(value, { stream: true }), buffer);
+        buffer = parsed.rest;
+        for (const rawEvent of parsed.events) {
+          const event = rawEvent as { type?: string; jobId?: string; status?: string };
+          const line = schedulerEventToLogLine(rawEvent, new Date().toLocaleTimeString());
+          if (line) this.logConsole.appendLine(line);
+          if (event.type === 'job_finished' && event.jobId === jobId) {
+            finalStatus = event.status ?? 'cancelled';
+            ended = true;
+          }
+        }
+      }
+      const meta = statusLabel(finalStatus as any);
+      this.logConsole.setStatus(meta.label, meta.color);
+    } catch (err) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
+        const detail = err instanceof Error ? err.message : String(err);
+        this.logConsole.appendLine({
+          type: 'stderr',
+          text: `Esecuzione job '${jobId}' non riuscita: ${detail}`,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        this.logConsole.setStatus('Error', '#ef4444');
+      }
+    } finally {
+      this.scheduleBusy.delete(jobId);
+      if (this.scheduleRunAbort === controller) {
+        this.scheduleRunAbort = undefined;
+        this.logConsole.setAbortController(null);
+      }
+      await this.refreshSchedule();
+    }
+  }
+
+  private async cancelJob(jobId: string): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/cancel`,
+        { method: 'POST' }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+      this.logConsole.appendLine({
+        type: 'info',
+        text: `⏹ Annullamento richiesto per '${jobId}'`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Annullamento di '${jobId}' non riuscito: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
+    await this.refreshSchedule();
+  }
+
+  /** GET /api/ke/schedule/events — live status for the job cards. */
+  private openScheduleEvents(): void {
+    this.closeScheduleEvents();
+    const controller = new AbortController();
+    this.scheduleEventsAbort = controller;
+
+    void (async () => {
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/events`, {
+          signal: controller.signal,
+        });
+        if (!response.ok || !response.body) return;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const parsed = parseSseEvents(decoder.decode(value, { stream: true }), buffer);
+          buffer = parsed.rest;
+          for (const rawEvent of parsed.events) {
+            const event = rawEvent as { type?: string; snapshot?: unknown };
+            if (event.type === 'snapshot') {
+              const view = toScheduleSnapshotView(event.snapshot);
+              if (view) {
+                this.scheduleSnapshot = view;
+                this.renderSchedule();
+              }
+            } else if (
+              event.type === 'job_started' ||
+              event.type === 'job_finished' ||
+              event.type === 'job_retry'
+            ) {
+              await this.refreshSchedule();
+            }
+          }
+        }
+      } catch (err) {
+        // Closing the tab or the modal aborts this stream on purpose.
+        if (!(err instanceof Error && err.name === 'AbortError')) {
+          console.warn('KE schedule events stream ended:', err);
+        }
+      }
+    })();
+  }
+
+  private closeScheduleEvents(): void {
+    this.scheduleEventsAbort?.abort();
+    this.scheduleEventsAbort = undefined;
   }
 }

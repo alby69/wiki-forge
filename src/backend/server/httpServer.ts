@@ -26,14 +26,31 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`[Wiki-Forge API] Server running on http://0.0.0.0:${PORT}`);
 });
 
-process.on('SIGTERM', () => {
-  server.close(() => {
-    process.exit(0);
-  });
+// The scheduler lives in the API process, not in the browser: it keeps
+// running when the Workbench UI (or the Tauri shell) is closed. Configuration
+// problems are reported through `/api/ke/schedule` and never stop the server.
+void agentServer.startScheduler().then(() => {
+  if (agentServer.getScheduler()) {
+    console.log('[Wiki-Forge API] KE scheduler started');
+  } else {
+    console.warn('[Wiki-Forge API] KE scheduler idle: no valid jobs configured (see /api/ke/schedule)');
+  }
+}).catch((err) => {
+  console.error('[Wiki-Forge API] Failed to start KE scheduler:', err);
 });
 
-process.on('SIGINT', () => {
-  server.close(() => {
-    process.exit(0);
-  });
-});
+let shuttingDown = false;
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[Wiki-Forge API] ${signal} received: stopping scheduler and server`);
+  try {
+    await agentServer.stopScheduler({ cancelActive: true });
+  } catch (err) {
+    console.error('[Wiki-Forge API] Error while stopping scheduler:', err);
+  }
+  server.close(() => process.exit(0));
+}
+
+process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+process.on('SIGINT', () => { void shutdown('SIGINT'); });

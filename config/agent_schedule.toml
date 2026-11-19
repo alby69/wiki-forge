@@ -1,0 +1,77 @@
+# Agenti schedulati per il KE Workbench (F1: validazione, F2/F3: esecuzione).
+# Gli orari sono stati confermati; tutti i job hanno auto_apply = false.
+# I job non toccano la wiki: scrivono solo in output/ o in docs/METRICS.md.
+
+[agent.scheduler]
+enabled = true
+timezone = "Europe/Rome"
+max_concurrency = 1
+default_timeout_seconds = 900
+log_dir = "output/scheduler"
+
+[[agent.scheduler.jobs]]
+id = "nightly-validation"
+role = "Ontology Guardian"
+use_case = "ke_ontological_validation"
+schedule = "0 2 * * *"
+enabled = true
+project = "default"
+args = { wiki_dir = "wiki" }
+auto_apply = false
+max_retries = 2
+
+[[agent.scheduler.jobs]]
+id = "daily-cq-coverage"
+role = "Knowledge Auditor"
+use_case = "ke_cq_assessment"
+schedule = "20 2 * * *"
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 1
+
+[[agent.scheduler.jobs]]
+id = "weekly-neuro-symbolic"
+role = "Pattern Reasoner"
+use_case = "ke_neuro_symbolic"
+schedule = "0 3 * * 0"
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 1
+
+# Solo lo step 1 (export_semantic): okf_reindex riscrive wiki/index.md.
+[[agent.scheduler.jobs]]
+id = "weekly-rdf-export"
+role = "Semantic Publisher"
+use_case = "ke_semantic_export"
+steps = [0]
+schedule = "0 4 * * 0"
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 1
+
+# Solo lo step 2 (ke_maturity -> output/): maturity_calculator scrive il frontmatter.
+[[agent.scheduler.jobs]]
+id = "monthly-maturity"
+role = "Governance Analyst"
+use_case = "ke_maturity_eval"
+steps = [1]
+schedule = "0 3 1 * *"
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 1
+
+# UC1 resta manuale di default: gli step di inferenza/lint sono in sola lettura.
+[[agent.scheduler.jobs]]
+id = "weekly-schema-review"
+role = "Schema Modeler"
+use_case = "ke_schema_modeling"
+steps = [0, 1]
+schedule = "30 4 * * 0"
+enabled = false
+project = "default"
+auto_apply = false
+max_retries = 1

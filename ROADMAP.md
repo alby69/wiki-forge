@@ -79,6 +79,8 @@
 | 64 | Review Studio (Unified Review UI) | ✅ Done | Four-tab review modal (`ReviewStudio.ts`), `/api/notes/review/*` endpoints, local snapshot store (`.wiki-forge/snapshots/`, 25 per note), context menu + `Ctrl+Alt+R/C/D/F`, and design previews in `docs/mockups/`. |
 | 65 | Research Studio (Query & Research UI) | ✅ Done | Six-tab query modal (`ResearchStudio.ts`), `/api/notes/research/*` endpoints, deterministic query helpers (`researchHelpers.ts`), LLM consult/deep research with fallback, `Ctrl+Alt+Q/S/B/L/T/H`, chat-command hand-off, and help topic `research-studio`. |
 | 66 | Study Studio (Study & Synthesis UI) | ✅ Done | Seven-tab study modal (`StudyStudio.ts`), `/api/notes/study/*` endpoints, deterministic study helpers (`studyHelpers.ts`), `Ctrl+Alt+G/K/M/A`, chat-command parity, canonical thesis draft refresh, and help topic `study-studio`. |
+| 67 | KE Workbench: Console Output nascondibile e ridimensionabile | ✅ Done | Toggle `▾/▴ Console`, drag handle con clamp, preferenze in `localStorage` |
+| 68 | Agenti schedulati per i 6 Use Case KE (F0–F4) | ✅ Done | **F0** runner condiviso, **F1** validazione cron/config, **F2** motore di scheduling (loop 30s, lock PID, single-flight, retry/backoff 1m+5m, timeout con abort, stato persistente, audit log), **F3** (API REST/SSE, adapter a `runUseCase()`, avvio in `httpServer.ts` con `SIGINT`/`SIGTERM`, override runtime e annullamento) e **F4** (tab 🤖 Agenti & Schedule nel Workbench: card job, toggle, cambio orario, Esegui ora con log SSE, annulla, stream live e storico). F5/F6 rimangono sospese. Piano e avanzamento in `docs/KE_AGENT_SCHEDULER_PLAN.md` |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 

@@ -39,6 +39,9 @@ import {
   StudyThesisChapter,
   StudyThesisSynthesis,
 } from './studyHelpers';
+import { runUseCase, UseCaseEvent } from './useCaseRunner';
+import { JobExecutionContext, JobExecutionResult, Scheduler, SchedulerEvent } from './scheduler/scheduler';
+import { loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
 
 export interface ResearchConsultCitation {
   id: string;
@@ -901,10 +904,130 @@ export class AgentServer {
   private rootDir: string;
   private llmClient?: LlmClient;
   private systemPromptCache?: string;
+  private scheduler?: Scheduler;
+  private schedulerConfig?: SchedulerConfig;
+  private scheduleConfigErrors: string[] = [];
+  private readonly scheduleClients = new Set<http.ServerResponse>();
+  private scheduleHeartbeat?: NodeJS.Timeout;
 
   constructor(rootDir: string = process.cwd(), llmClient?: LlmClient) {
     this.rootDir = rootDir;
     this.llmClient = llmClient;
+  }
+
+  // ---------------------------------------------------------------- scheduler
+
+  public getScheduler(): Scheduler | undefined {
+    return this.scheduler;
+  }
+
+  /** Load `config/agent_schedule.toml` and start the KE scheduler. Idempotent. */
+  public async startScheduler(): Promise<void> {
+    if (this.scheduler) return;
+    const useCases = Object.fromEntries(
+      Object.values(KE_USE_CASES).map((useCase) => [
+        useCase.id,
+        { id: useCase.id, title: useCase.title, steps: useCase.steps },
+      ])
+    );
+    const loaded = await loadScheduleConfig(this.rootDir, useCases);
+    this.schedulerConfig = loaded.config;
+    this.scheduleConfigErrors = loaded.errors;
+    if (loaded.jobs.length === 0) return;
+
+    this.scheduler = new Scheduler({
+      config: loaded.config,
+      jobs: loaded.jobs,
+      useCases,
+      rootDir: this.rootDir,
+      executeJob: (ctx) => this.executeScheduledJob(ctx),
+      onEvent: (event) => this.broadcastScheduleEvent(event),
+    });
+    await this.scheduler.start();
+  }
+
+  /** Stop the tick loop, close SSE clients and release the PID lock. */
+  public async stopScheduler(options: { cancelActive?: boolean } = {}): Promise<void> {
+    if (this.scheduleHeartbeat) {
+      clearInterval(this.scheduleHeartbeat);
+      this.scheduleHeartbeat = undefined;
+    }
+    for (const client of this.scheduleClients) client.end();
+    this.scheduleClients.clear();
+    if (this.scheduler) {
+      await this.scheduler.stop(options);
+      this.scheduler = undefined;
+    }
+  }
+
+  /** Adapter between the scheduler engine and the shared Use Case runner. */
+  private async executeScheduledJob(ctx: JobExecutionContext): Promise<JobExecutionResult> {
+    const useCase = KE_USE_CASES[ctx.job.useCaseId];
+    if (!useCase) throw new Error(`Unknown Use Case '${ctx.job.useCaseId}'`);
+    const projectRoot = await this.resolveProjectRoot(ctx.job.project);
+
+    const result = await runUseCase({
+      useCase,
+      stepIndices: ctx.job.steps,
+      args: ctx.job.args as Record<string, any>,
+      signal: ctx.signal,
+      onEvent: (event) => {
+        ctx.onRunnerEvent(event);
+        if (event.type === 'stdout' || event.type === 'stderr') {
+          ctx.onOutput(event.text);
+        } else if (event.type === 'step_start') {
+          ctx.onOutput(
+            `\n[step ${event.stepNumber}] ${event.title} (${event.script})\n$ ${event.cmd}\n`
+          );
+        }
+      },
+      rootDir: this.rootDir,
+      projectRoot,
+      projectId: ctx.job.project,
+      pythonCmd: PYTHON_CMD,
+      scriptRegistry: SCRIPT_REGISTRY,
+      buildCliArgs,
+    });
+
+    return {
+      failedSteps: result.failedSteps,
+      exitCodes: result.failedSteps.length > 0 ? [1] : [0],
+    };
+  }
+
+  private broadcastScheduleEvent(event: SchedulerEvent): void {
+    const payload = `data: ${JSON.stringify(event)}\n\n`;
+    for (const client of this.scheduleClients) {
+      try {
+        client.write(payload);
+      } catch {
+        this.scheduleClients.delete(client);
+      }
+    }
+  }
+
+  /** Register an SSE client and keep a single shared keepalive timer. */
+  private addScheduleClient(res: http.ServerResponse): () => void {
+    this.scheduleClients.add(res);
+    if (!this.scheduleHeartbeat) {
+      this.scheduleHeartbeat = setInterval(() => {
+        for (const client of this.scheduleClients) {
+          try {
+            client.write(': keepalive\n\n');
+          } catch {
+            this.scheduleClients.delete(client);
+          }
+        }
+        if (this.scheduleClients.size === 0 && this.scheduleHeartbeat) {
+          clearInterval(this.scheduleHeartbeat);
+          this.scheduleHeartbeat = undefined;
+        }
+      }, 15_000);
+      this.scheduleHeartbeat.unref?.();
+    }
+    return () => {
+      this.scheduleClients.delete(res);
+    };
   }
 
   public getConfigPath(dir: string): string {
@@ -1257,7 +1380,7 @@ export class AgentServer {
     }
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Project-Id, X-WikiForge-Token, Authorization');
 
     if (req.method === 'OPTIONS') {
@@ -1555,52 +1678,21 @@ export class AgentServer {
           'Access-Control-Allow-Origin': '*',
         });
 
-        res.write(`data: ${JSON.stringify({ type: 'start', useCase: useCase.title, objective: useCase.objective })}\n\n`);
+        await runUseCase({
+          useCase,
+          stepIndex: body.stepIndex,
+          args: body.args,
+          onEvent: (event: UseCaseEvent) => {
+            res.write(`data: ${JSON.stringify(event)}\n\n`);
+          },
+          rootDir: this.rootDir,
+          projectRoot: projRoot,
+          projectId,
+          pythonCmd: PYTHON_CMD,
+          scriptRegistry: SCRIPT_REGISTRY,
+          buildCliArgs,
+        });
 
-        const stepsToRun = typeof body.stepIndex === 'number' && body.stepIndex >= 0 && body.stepIndex < useCase.steps.length
-          ? [useCase.steps[body.stepIndex]]
-          : useCase.steps;
-
-        for (const step of stepsToRun) {
-          const scriptDef = SCRIPT_REGISTRY[step.scriptId];
-          if (!scriptDef) {
-            res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Script '${step.scriptId}' for step ${step.stepNumber} not found.` })}\n\n`);
-            continue;
-          }
-
-          const userArgs = { ...(projectId !== 'default' ? { project: projectId } : {}), ...step.defaultArgs, ...(body.args || {}) };
-          const cliArgs = buildCliArgs(scriptDef, userArgs);
-          const scriptPath = path.resolve(this.rootDir, scriptDef.path);
-
-          res.write(`data: ${JSON.stringify({ type: 'step_start', stepNumber: step.stepNumber, title: step.title, script: scriptDef.displayName, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
-
-          await new Promise<void>((resolveStep) => {
-            const child = spawn(PYTHON_CMD, [scriptPath, ...cliArgs], {
-              cwd: projRoot,
-              env: { ...process.env, PYTHONUNBUFFERED: '1' },
-            });
-
-            child.stdout.on('data', (data: Buffer) => {
-              res.write(`data: ${JSON.stringify({ type: 'stdout', stepNumber: step.stepNumber, text: data.toString('utf-8') })}\n\n`);
-            });
-
-            child.stderr.on('data', (data: Buffer) => {
-              res.write(`data: ${JSON.stringify({ type: 'stderr', stepNumber: step.stepNumber, text: data.toString('utf-8') })}\n\n`);
-            });
-
-            child.on('error', (err: Error) => {
-              res.write(`data: ${JSON.stringify({ type: 'stderr', stepNumber: step.stepNumber, text: `Failed to start process: ${err.message}` })}\n\n`);
-              resolveStep();
-            });
-
-            child.on('close', (code: number | null) => {
-              res.write(`data: ${JSON.stringify({ type: 'step_end', stepNumber: step.stepNumber, code: code ?? 0 })}\n\n`);
-              resolveStep();
-            });
-          });
-        }
-
-        res.write(`data: ${JSON.stringify({ type: 'exit', code: 0, message: `Use Case '${useCase.title}' execution finished.` })}\n\n`);
         res.write('data: [DONE]\n\n');
         res.end();
       } catch (err) {
@@ -1608,6 +1700,158 @@ export class AgentServer {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, error: String(err) }));
         }
+      }
+      return true;
+    }
+
+    // ---- KE Agent Schedule Endpoints (F3) ----
+    if (pathname === '/api/ke/schedule' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        config: this.schedulerConfig ?? null,
+        errors: this.scheduleConfigErrors,
+        snapshot: this.scheduler?.getStatus() ?? null,
+      }));
+      return true;
+    }
+
+    if (pathname === '/api/ke/schedule/events' && req.method === 'GET') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+      const removeClient = this.addScheduleClient(res);
+      req.on('close', removeClient);
+      res.write(`data: ${JSON.stringify({ type: 'snapshot', snapshot: this.scheduler?.getStatus() ?? null })}\n\n`);
+      return true;
+    }
+
+    if (pathname === '/api/ke/schedule/runs' && req.method === 'GET') {
+      const logDir = path.resolve(this.rootDir, this.schedulerConfig?.logDir ?? 'output/scheduler');
+      try {
+        const text = await fs.readFile(path.join(logDir, 'audit.jsonl'), 'utf-8');
+        const jobId = url.searchParams.get('jobId');
+        const requestedLimit = Number(url.searchParams.get('limit') ?? 100);
+        const limit = Number.isFinite(requestedLimit)
+          ? Math.max(1, Math.min(Math.floor(requestedLimit), 1_000))
+          : 100;
+        let runs = text.split('\n').filter(Boolean).map((line) => JSON.parse(line));
+        if (jobId) runs = runs.filter((run) => run.job === jobId);
+        runs = runs.slice(-limit).reverse();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, runs }));
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, runs: [] }));
+        } else {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: String(err) }));
+        }
+      }
+      return true;
+    }
+
+    const scheduleRunMatch = /^\/api\/ke\/schedule\/([^/]+)\/run$/.exec(pathname);
+    if (scheduleRunMatch && req.method === 'POST') {
+      const jobId = decodeURIComponent(scheduleRunMatch[1]);
+      const scheduler = this.scheduler;
+      if (!scheduler) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Scheduler is not running' }));
+        return true;
+      }
+      if (!scheduler.getStatus().jobs.some((entry) => entry.job.id === jobId)) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: `Unknown scheduler job '${jobId}'` }));
+        return true;
+      }
+      if (scheduler.getStatus().activeJobs.includes(jobId)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: `Job '${jobId}' is already running` }));
+        return true;
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+      let finished = false;
+      const closeRun = (): void => {
+        if (finished) return;
+        finished = true;
+        unsubscribe();
+      };
+      const unsubscribe = scheduler.subscribe((event) => {
+        if (finished || !('jobId' in event) || event.jobId !== jobId) return;
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+        if (event.type === 'job_finished') {
+          res.write('data: [DONE]\n\n');
+          res.end();
+          unsubscribe();
+          finished = true;
+        }
+      });
+      req.on('close', closeRun);
+
+      try {
+        await scheduler.runJobNow(jobId);
+      } catch (err) {
+        if (!finished) {
+          res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+          closeRun();
+        }
+      }
+      return true;
+    }
+
+    const scheduleCancelMatch = /^\/api\/ke\/schedule\/([^/]+)\/cancel$/.exec(pathname);
+    if (scheduleCancelMatch && req.method === 'POST') {
+      const jobId = decodeURIComponent(scheduleCancelMatch[1]);
+      const cancelled = this.scheduler?.cancelJob(jobId) ?? false;
+      res.writeHead(cancelled ? 200 : 409, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: cancelled,
+        error: cancelled ? undefined : `No active run for job '${jobId}'`,
+      }));
+      return true;
+    }
+
+    const schedulePatchMatch = /^\/api\/ke\/schedule\/([^/]+)$/.exec(pathname);
+    if (schedulePatchMatch && req.method === 'PATCH') {
+      const jobId = decodeURIComponent(schedulePatchMatch[1]);
+      const scheduler = this.scheduler;
+      if (!scheduler) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Scheduler is not running' }));
+        return true;
+      }
+      try {
+        const body = await this.parseJsonBody<{ enabled?: boolean; schedule?: string }>(req);
+        if (!scheduler.getStatus().jobs.some((entry) => entry.job.id === jobId)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Unknown scheduler job '${jobId}'` }));
+          return true;
+        }
+        if (typeof body.enabled === 'boolean') {
+          await scheduler.setJobEnabled(jobId, body.enabled);
+        }
+        if (typeof body.schedule === 'string') {
+          await scheduler.setJobSchedule(jobId, body.schedule);
+        }
+        const job = scheduler.getStatus().jobs.find((entry) => entry.job.id === jobId)!;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, job }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
     }

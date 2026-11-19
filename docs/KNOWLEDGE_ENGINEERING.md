@@ -51,6 +51,12 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
+Il Workbench offre due tab: **🧩 Use Case** (i 6 workflow guidati) e **🤖 Agenti & Schedule** (F4). Quest'ultima mostra una card per ogni job schedulato con ruolo, Use Case, cron leggibile, prossima corsa e ultimo esito; permette di abilitare/disabilitare il job, cambiare orario, avviarlo subito (**Esegui ora**) o annullare la corsa attiva. I log dell'esecuzione manuale appaiono nella Console Output con gli stessi eventi dell'endpoint SSE, mentre lo stream live aggiorna le card e la sidebar mostra gli ultimi run.
+
+La **Console Output** può essere nascosta con il pulsante **▾ / ▴ Console** (come per la barra laterale dei file) e ridimensionata trascinando il separatore sopra di essa: altezza e stato di chiusura vengono conservati in `localStorage` tra un'apertura e l'altra.
+
+> **Manutenzione autonoma**: il piano per eseguire i 6 Use Case in automatico tramite agenti schedulati è descritto in `docs/KE_AGENT_SCHEDULER_PLAN.md`. Sono completate **F0** (runner condiviso), **F1** (configurazione `config/agent_schedule.toml` con sei job sicuri, tutti `auto_apply = false`), **F2** (motore `scheduler/scheduler.ts`: tick unico, lock PID, single-flight, retry con backoff 1m/5m, timeout con abort, stato atomico in `.wiki-forge/scheduler-state.json`, audit redatto in `output/scheduler/audit.jsonl`) e **F3**: lo scheduler è **attivo** nel processo API (`httpServer.ts`), collegato a `runUseCase()` tramite adapter e controllabile via `GET/PATCH /api/ke/schedule`, `POST /:id/run` (SSE con gli stessi eventi del Workbench), `POST /:id/cancel`, `GET /api/ke/schedule/runs` e `GET /api/ke/schedule/events`. I toggle runtime vengono salvati come override senza riscrivere il TOML. La tab **🤖 Agenti & Schedule** (F4) rende visibili job, esiti, log live e storico senza usare la riga di comando.
+
 ### Review Studio per la governance della conoscenza
 La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🧐 Revisione**) offre al Knowledge Engineer un punto unico per:
 
