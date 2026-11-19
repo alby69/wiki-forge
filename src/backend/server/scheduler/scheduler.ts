@@ -20,15 +20,39 @@ export const DEFAULT_RETRY_BACKOFF_MS = [60_000, 300_000];
 type TimerFn = (fn: () => void, ms: number) => unknown;
 type ClearTimerFn = (handle: unknown) => void;
 
+export type JobTrigger = 'cron' | 'manual' | 'event';
+
+/** F6 — normalised event published by the webhook or the in-app note watcher. */
+export interface TriggerEvent {
+  type: string;
+  project: string;
+  path?: string;
+  source: 'webhook' | 'watcher' | 'api';
+  at?: string;
+}
+
 export interface JobExecutionContext {
   job: JobDef;
   useCase: UseCaseRegistryEntry;
   /** 1-based: 1 is the first attempt, 2 the first retry. */
   attempt: number;
+  trigger: JobTrigger;
+  event?: TriggerEvent;
+  /** F5 preflight can narrow the step list before the runner is invoked. */
+  steps?: number[];
   signal: AbortSignal;
   onOutput: (chunk: string) => void;
   /** Forward the original UseCaseEvent stream (used by the manual-run SSE). */
   onRunnerEvent: (event: UseCaseEvent) => void;
+  /** Let F5/F6 preflight emit status events to SSE subscribers. */
+  notify: (event: SchedulerEvent) => void;
+}
+
+/** F5 — advisory preflight result; it can only narrow the step set. */
+export interface PreflightResult {
+  run: boolean;
+  steps?: number[];
+  reason?: string;
 }
 
 export interface JobExecutionResult {
@@ -43,6 +67,26 @@ export type SchedulerEvent =
   | { type: 'job_started'; jobId: string; attempt: number; at: string }
   | { type: 'job_output'; jobId: string; text: string }
   | { type: 'use_case_event'; jobId: string; event: UseCaseEvent }
+  | { type: 'job_skipped'; jobId: string; reason: string; at: string }
+  | {
+      type: 'policy_decision';
+      jobId: string;
+      action: 'allow' | 'skip' | 'require_approval';
+      rationale: string;
+      sources: string[];
+      at: string;
+    }
+  | {
+      type: 'approval_required';
+      jobId: string;
+      approvalIds: string[];
+      steps: number[];
+      rationale: string;
+      sources: string[];
+      at: string;
+    }
+  | { type: 'event_queued'; jobId: string; event: TriggerEvent; fireAt: string }
+  | { type: 'event_triggered'; jobId: string; event: TriggerEvent; at: string }
   | {
       type: 'job_retry';
       jobId: string;
@@ -65,6 +109,8 @@ export interface SchedulerOptions {
   useCases: Record<string, UseCaseRegistryEntry>;
   /** Production adapter calls `runUseCase()`; tests inject a fake runner. */
   executeJob: (ctx: JobExecutionContext) => Promise<JobExecutionResult>;
+  /** F5/F6: optional advisory gate, invoked after `job_started`. */
+  preflight?: (ctx: JobExecutionContext) => Promise<PreflightResult>;
   rootDir: string;
   now?: () => Date;
   stateStore?: RuntimeStateStore;
@@ -100,7 +146,13 @@ export interface AuditEntry {
   failedSteps: number[];
   error?: string;
   logFile?: string;
-  actor: 'scheduler';
+  actor: 'scheduler' | 'human';
+  trigger?: JobTrigger;
+  triggerEvent?: TriggerEvent;
+  policyDecisionId?: string;
+  approvalId?: string;
+  approvedBy?: string;
+  steps?: number[];
 }
 
 /** Remove API keys and tokens from anything written to disk. */
@@ -135,6 +187,7 @@ export class Scheduler {
   private readonly jobs: JobDef[];
   private readonly useCases: Record<string, UseCaseRegistryEntry>;
   private readonly executeJob: (ctx: JobExecutionContext) => Promise<JobExecutionResult>;
+  private readonly preflight?: (ctx: JobExecutionContext) => Promise<PreflightResult>;
   private readonly now: () => Date;
   private readonly stateStore: RuntimeStateStore;
   private readonly lock: ProcessLock;
@@ -162,6 +215,7 @@ export class Scheduler {
     this.jobs = options.jobs;
     this.useCases = options.useCases;
     this.executeJob = options.executeJob;
+    this.preflight = options.preflight;
     this.now = options.now ?? (() => new Date());
     this.stateStore = options.stateStore ?? createFileRuntimeStateStore(
       path.join(options.rootDir, '.wiki-forge', 'scheduler-state.json')
@@ -303,22 +357,36 @@ export class Scheduler {
 
       // `runJob` registers the job in `runningJobs` synchronously, before its
       // first await, so the concurrency cap is enforced across this loop.
-      started.push(this.runJob(job, (state.retry_count ?? 0) + 1));
+      started.push(this.runJob(job, (state.retry_count ?? 0) + 1, 'cron'));
     }
 
     await Promise.all(started);
     if (hasSkips) await this.persist();
   }
 
-  /** Run a job immediately (F3 `POST /api/ke/schedule/:id/run`). */
-  async runJobNow(jobId: string): Promise<void> {
+  /** Run a job immediately: F3 manual run or F6 debounced event trigger. */
+  async runJobNow(
+    jobId: string,
+    trigger: JobTrigger = 'manual',
+    event?: TriggerEvent
+  ): Promise<void> {
     const job = this.jobs.find((candidate) => candidate.id === jobId);
     if (!job) throw new Error(`Unknown scheduler job '${jobId}'`);
     if (this.runningJobs.has(jobId)) {
       throw new Error(`Job '${jobId}' is already running`);
     }
     this.updateState(job.id, (state) => ({ ...state, retry_count: 0 }));
-    await this.runJob(job, 1);
+    await this.runJob(job, 1, trigger, event);
+  }
+
+  /** F6: expose the active job set so the event bus can avoid overlapping runs. */
+  public isRunning(jobId: string): boolean {
+    return this.runningJobs.has(jobId);
+  }
+
+  /** F6: audit a mutating step executed after explicit human approval. */
+  public async recordApprovalRun(entry: AuditEntry): Promise<void> {
+    await this.appendAudit({ ...entry, actor: 'human' });
   }
 
   /** `PATCH /api/ke/schedule/:id` — enable/disable a job at runtime. */
@@ -438,7 +506,12 @@ export class Scheduler {
     for (const listener of this.listeners) listener(event);
   }
 
-  private async runJob(job: JobDef, attempt: number): Promise<void> {
+  private async runJob(
+    job: JobDef,
+    attempt: number,
+    trigger: JobTrigger = 'cron',
+    event?: TriggerEvent
+  ): Promise<void> {
     const useCase = this.useCases[job.useCaseId];
     if (!useCase) return; // Validated at config load; defensive for hand-built jobs.
 
@@ -475,25 +548,48 @@ export class Scheduler {
       let result: JobExecutionResult = { failedSteps: [], exitCodes: [] };
 
       try {
-        result = await this.executeJob({
+        const ctx: JobExecutionContext = {
           job,
           useCase,
           attempt,
+          trigger,
+          event,
           signal: controller.signal,
           onOutput: (chunk) => {
             chunks.push(chunk);
             this.emit({ type: 'job_output', jobId: job.id, text: chunk });
           },
-          onRunnerEvent: (event) => {
-            this.emit({ type: 'use_case_event', jobId: job.id, event });
+          onRunnerEvent: (runnerEvent) => {
+            this.emit({ type: 'use_case_event', jobId: job.id, event: runnerEvent });
           },
-        });
-        if (controller.signal.aborted) {
-          status = 'cancelled';
-          error = 'aborted (timeout, cancel or shutdown)';
-        } else if (result.failedSteps.length > 0) {
-          status = 'failed';
-          error = `failed steps: ${result.failedSteps.join(', ')}`;
+          notify: (schedulerEvent) => this.emit(schedulerEvent),
+        };
+        let steps = job.steps;
+        if (this.preflight) {
+          const decision = await this.preflight(ctx);
+          if (!decision.run) {
+            status = 'skipped';
+            error = decision.reason ?? 'skipped by policy';
+            chunks.push(`[policy] ${error}\n`);
+            this.emit({
+              type: 'job_skipped',
+              jobId: job.id,
+              reason: error,
+              at: this.now().toISOString(),
+            });
+          } else if (Array.isArray(decision.steps) && decision.steps.length > 0) {
+            steps = decision.steps;
+          }
+        }
+        if (status === 'success') {
+          result = await this.executeJob({ ...ctx, steps });
+          if (controller.signal.aborted) {
+            status = 'cancelled';
+            error = 'aborted (timeout, cancel or shutdown)';
+          } else if (result.failedSteps.length > 0) {
+            status = 'failed';
+            error = `failed steps: ${result.failedSteps.join(', ')}`;
+          }
         }
       } catch (err) {
         status = 'failed';
@@ -551,6 +647,8 @@ export class Scheduler {
         error,
         logFile,
         actor: 'scheduler',
+        trigger,
+        triggerEvent: event,
       });
 
       if (canRetry) {

@@ -6,10 +6,15 @@ import { escapeHtml } from '@frontend/core/utils/html';
 import {
   formatScheduleTime,
   parseSseEvents,
+  POLICY_ACTION_META,
   schedulerEventToLogLine,
   statusLabel,
+  toApprovalViews,
+  toPolicyDecisionViews,
   toScheduleRunViews,
   toScheduleSnapshotView,
+  ApprovalView,
+  PolicyDecisionView,
   ScheduleJobView,
   ScheduleRunView,
   ScheduleSnapshotView,
@@ -32,6 +37,9 @@ export class KEWorkbenchModal {
   private scheduleSnapshot: ScheduleSnapshotView | null = null;
   private scheduleErrors: string[] = [];
   private scheduleRuns: ScheduleRunView[] = [];
+  // F5/F6 — policy decisions and the human approval queue
+  private scheduleDecisions: PolicyDecisionView[] = [];
+  private scheduleApprovals: ApprovalView[] = [];
   private readonly scheduleBusy = new Set<string>();
   private scheduleEventsAbort?: AbortController;
   private scheduleRunAbort?: AbortController;
@@ -605,8 +613,12 @@ export class KEWorkbenchModal {
       this.scheduleSnapshot = null;
       this.scheduleErrors = [`Impossibile contattare lo scheduler: ${detail}`];
     }
+    await Promise.all([
+      this.fetchScheduleRuns(),
+      this.fetchScheduleDecisions(),
+      this.fetchScheduleApprovals(),
+    ]);
     this.renderSchedule();
-    await this.fetchScheduleRuns();
   }
 
   private renderSchedule(): void {
@@ -647,9 +659,20 @@ export class KEWorkbenchModal {
     }
 
     pane.innerHTML = `${errorsHtml}
+      ${this.renderPolicySection()}
       <div style="display:flex; flex-direction:column; gap:12px;">
         ${snapshot.jobs.map(job => this.renderJobCard(job)).join('')}
       </div>`;
+
+    for (const approval of this.scheduleApprovals.filter(item => item.status === 'pending')) {
+      const key = this.cssId(approval.id);
+      pane.querySelector(`#ke-approve-${key}`)?.addEventListener('click', () => {
+        void this.decideApproval(approval.id, 'approve');
+      });
+      pane.querySelector(`#ke-reject-${key}`)?.addEventListener('click', () => {
+        void this.decideApproval(approval.id, 'reject');
+      });
+    }
 
     snapshot.jobs.forEach((job) => {
       pane.querySelector(`#ke-job-toggle-${this.cssId(job.id)}`)?.addEventListener('click', () => {
@@ -670,6 +693,104 @@ export class KEWorkbenchModal {
 
   private cssId(id: string): string {
     return id.replace(/[^A-Za-z0-9_-]/g, '_');
+  }
+
+  /** F5/F6 — grounded policy decisions and mutating steps awaiting a human. */
+  private renderPolicySection(): string {
+    const pending = this.scheduleApprovals.filter(item => item.status === 'pending');
+    const decisions = this.scheduleDecisions.slice(0, 3);
+
+    const approvalsHtml = pending.length === 0
+      ? '<div style="font-size:11px; color:#64748b;">Nessuna approvazione in attesa.</div>'
+      : `<div style="display:flex; flex-direction:column; gap:8px;">
+           ${pending.map((item) => {
+             const step = item.title || item.scriptId || `step ${item.stepIndex}`;
+             return `<div class="ke-approval-card" data-approval-id="${escapeHtml(item.id)}" style="background:#1e1b4b; border:1px solid #4338ca; border-radius:6px; padding:10px 12px;">
+               <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                 <div style="font-size:12px; font-weight:700; color:#e0e7ff;">⏸ ${escapeHtml(item.jobId)} · ${escapeHtml(step)}</div>
+                 <div style="display:flex; gap:6px;">
+                   <button id="ke-approve-${this.cssId(item.id)}" type="button" title="Esegui lo step mutante" style="background:#14532d; color:#bbf7d0; border:1px solid #166534; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">✅ Approva</button>
+                   <button id="ke-reject-${this.cssId(item.id)}" type="button" title="Rifiuta lo step mutante" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">❌ Rifiuta</button>
+                 </div>
+               </div>
+               <div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Motivazione:</strong> ${escapeHtml(item.rationale || '—')}</div>
+               <div style="font-size:11px; color:#94a3b8; margin-top:4px;"><strong>Fonti:</strong> ${item.sources.length ? item.sources.map(source => `<code style="color:#a5b4fc;">${escapeHtml(source)}</code>`).join(', ') : '—'}</div>
+             </div>`;
+           }).join('')}
+         </div>`;
+
+    const decisionsHtml = decisions.length === 0
+      ? '<div style="font-size:11px; color:#64748b;">Nessuna decisione di policy registrata.</div>'
+      : `<div style="display:flex; flex-direction:column; gap:6px;">
+           ${decisions.map((item) => {
+             const meta = POLICY_ACTION_META[item.action] ?? POLICY_ACTION_META.allow;
+             return `<div class="ke-policy-decision" style="background:#0f172a; border-left:3px solid ${meta.color}; border-radius:4px; padding:6px 10px;">
+               <div style="font-size:11px; font-weight:700; color:${meta.color};">${meta.icon} ${meta.label} · ${escapeHtml(item.jobId)} <span style="color:#64748b; font-weight:400;">(${item.origin === 'llm' ? 'LLM' : 'fallback'} · ${escapeHtml(formatScheduleTime(item.at))})</span></div>
+               <div style="font-size:11px; color:#cbd5e1; margin-top:3px;">${escapeHtml(item.rationale || '—')}</div>
+               <div style="font-size:10px; color:#64748b; margin-top:3px;">Fonti: ${item.sources.length ? item.sources.map(source => escapeHtml(source)).join(', ') : '—'}</div>
+             </div>`;
+           }).join('')}
+         </div>`;
+
+    return `<div class="ke-policy-section" style="background:#020617; border:1px solid #312e81; border-radius:8px; padding:12px 14px; margin-bottom:14px; display:flex; flex-direction:column; gap:12px;">
+      <div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:#a5b4fc; letter-spacing:0.5px; margin-bottom:6px;">⏸ Approvazioni in attesa (${pending.length})</div>
+        ${approvalsHtml}
+      </div>
+      <div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:#a5b4fc; letter-spacing:0.5px; margin-bottom:6px;">🧠 Decisioni Policy Agent</div>
+        ${decisionsHtml}
+      </div>
+    </div>`;
+  }
+
+  private async fetchScheduleDecisions(): Promise<void> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/decisions?limit=5`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      this.scheduleDecisions = toPolicyDecisionViews(await response.json());
+    } catch {
+      this.scheduleDecisions = [];
+    }
+  }
+
+  private async fetchScheduleApprovals(): Promise<void> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/approvals?status=pending`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      this.scheduleApprovals = toApprovalViews(await response.json());
+    } catch {
+      this.scheduleApprovals = [];
+    }
+  }
+
+  /** F6 — a mutating step runs only after this explicit human decision. */
+  private async decideApproval(id: string, action: 'approve' | 'reject'): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/api/ke/schedule/approvals/${encodeURIComponent(id)}/${action}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewer: 'utente workbench' }),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) throw new Error(data.error ?? `HTTP ${response.status}`);
+      this.logConsole.appendLine({
+        type: 'info',
+        text: `${action === 'approve' ? '✅ Approvato' : '❌ Rifiutato'} step mutante '${id}'`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Decisione su '${id}' non riuscita: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
+    await this.refreshSchedule();
   }
 
   private renderJobCard(job: ScheduleJobView): string {
@@ -890,7 +1011,11 @@ export class KEWorkbenchModal {
             } else if (
               event.type === 'job_started' ||
               event.type === 'job_finished' ||
-              event.type === 'job_retry'
+              event.type === 'job_retry' ||
+              event.type === 'job_skipped' ||
+              event.type === 'policy_decision' ||
+              event.type === 'approval_required' ||
+              event.type === 'event_triggered'
             ) {
               await this.refreshSchedule();
             }

@@ -28,9 +28,10 @@ Thumbs.db
 # ----- Excluded data -----
 # Local note history for the Review Studio "Confronta versioni" tab.
 .wiki-forge/snapshots/
-# Scheduler runtime state and PID lock (F2): machine-local, never versioned.
+# Scheduler runtime state, PID lock and approval queue (F2/F6): machine-local, never versioned.
 .wiki-forge/scheduler-state.json
 .wiki-forge/scheduler.lock
+.wiki-forge/scheduler-approvals.json
 # `backup/` holds the ORIGINAL source files (e.g. copyrighted books/EPUBs).
 #   Do not publish them. Keep them only on your local disk.
 # `raw/`, `output/` are regenerable/ephemeral (rebuild with conv2md / the agent).

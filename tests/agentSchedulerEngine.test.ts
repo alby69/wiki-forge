@@ -21,6 +21,7 @@ const baseConfig: SchedulerConfig = {
   maxConcurrency: 1,
   defaultTimeoutSeconds: 0,
   logDir: 'output/scheduler',
+  policyEnabled: false,
 };
 
 let tmpDir: string;
@@ -37,6 +38,7 @@ function makeJob(overrides: Partial<JobDef> = {}): JobDef {
     args: {},
     autoApply: false,
     maxRetries: 0,
+    debounceSeconds: 300,
     ...overrides,
   };
 }

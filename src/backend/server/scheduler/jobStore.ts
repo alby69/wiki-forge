@@ -9,6 +9,8 @@ export interface SchedulerConfig {
   maxConcurrency: number;
   defaultTimeoutSeconds: number;
   logDir: string;
+  /** F5: run the advisory LLM policy layer before every job. */
+  policyEnabled: boolean;
 }
 
 export interface UseCaseRegistryEntry {
@@ -29,6 +31,10 @@ export interface JobDef {
   steps?: number[];
   autoApply: boolean;
   maxRetries: number;
+  /** F6: event type (e.g. `note.created`) that can trigger this job. */
+  eventTrigger?: string;
+  /** F6: quiet-period in seconds before an event-triggered run. */
+  debounceSeconds: number;
 }
 
 export interface ScheduleConfigResult {
@@ -43,7 +49,10 @@ export const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
   maxConcurrency: 1,
   defaultTimeoutSeconds: 900,
   logDir: 'output/scheduler',
+  policyEnabled: false,
 };
+
+export const DEFAULT_EVENT_DEBOUNCE_SECONDS = 300;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value) || value instanceof Date) {
@@ -93,6 +102,7 @@ export function parseScheduleConfig(
     maxConcurrency: asInteger(section.max_concurrency, 1, 1, 10),
     defaultTimeoutSeconds: asInteger(section.default_timeout_seconds, 900, 1, 86_400),
     logDir: asString(section.log_dir, DEFAULT_SCHEDULER_CONFIG.logDir),
+    policyEnabled: asBoolean(agent && asRecord(agent.policy)?.enabled, false),
   };
   if (!isValidTimezone(config.timezone)) {
     errors.push(`Invalid timezone '${config.timezone}': falling back to UTC`);
@@ -164,6 +174,13 @@ export function parseScheduleConfig(
       return;
     }
 
+    const eventTriggerValue = asString(job.event_trigger, '');
+    const eventTrigger = eventTriggerValue || undefined;
+    if (eventTrigger && !/^[a-z][a-z0-9._-]*$/i.test(eventTrigger)) {
+      errors.push(`Job '${id}': invalid event_trigger '${eventTrigger}'`);
+      return;
+    }
+
     let autoApply = asBoolean(job.auto_apply, false);
     if (autoApply) {
       errors.push(`Job '${id}': auto_apply=true is not supported; forcing false`);
@@ -181,6 +198,13 @@ export function parseScheduleConfig(
       steps,
       autoApply,
       maxRetries: asInteger(job.max_retries, 2, 0, 5),
+      eventTrigger,
+      debounceSeconds: asInteger(
+        job.debounce_seconds,
+        DEFAULT_EVENT_DEBOUNCE_SECONDS,
+        1,
+        3_600
+      ),
     });
   });
 

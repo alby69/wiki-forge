@@ -230,6 +230,7 @@ La distinzione decisiva è **chi scrive**: `output/` è sicuro, `wiki/` no.
 | 04:00 domenica | `weekly-rdf-export` | UC5 (solo `export_semantic`, step 1) |
 | 03:00 il 1° del mese | `monthly-maturity` | UC6 (step 2, report) |
 | — | UC1 | manuale o settimanale in sola lettura |
+| su `note.created` (debounce 5m, disabilitato) | `note-created-review` (F6) | UC1 (step 0 in sola lettura; step 2 in approvazione) |
 
 ---
 
@@ -295,8 +296,12 @@ annullamento per shutdown viene recuperato subito al riavvio.
   a `buildCliArgs()` esattamente come nel percorso manuale.
 - **RBAC**: se `[enterprise].enable_rbac = true`, run manuali e toggle richiedono
   il ruolo KE; i job schedulati girano con il ruolo di sistema.
-- **Nessuna autorità sull'LLM**: nella F1–F4 lo scheduler non chiama l'LLM;
-  decisioni e output sono deterministici e verificabili.
+- **Autorità sull'LLM**: nella F1–F4 lo scheduler non chiama l'LLM; decisioni e
+  output sono deterministici e verificabili. In F5 l'LLM è **consultivo** e non
+  può autorizzare mutazioni: restituisce al massimo una scelta tra gli step in
+  sola lettura. Una risposta non valida o un LLM assente fa scattare la regola
+  deterministica (fail-closed) e la decisione viene comunque registrata con
+  rationale e fonti. Ogni step mutante resta soggetto ad approvazione umana.
 
 ---
 
@@ -310,11 +315,16 @@ annullamento per shutdown viene recuperato subito al riavvio.
 | `/api/ke/schedule/:id/cancel` | POST | Annulla il job in corso |
 | `/api/ke/schedule/runs` | GET | Storico con filtro per job |
 | `/api/ke/schedule/events` | GET (SSE) | Stato live per la UI |
+| `/api/ke/schedule/decisions` | GET (F5) | Decision log con rationale e fonti, filtrabile per job |
+| `/api/ke/schedule/approvals` | GET (F6) | Coda approvazioni, filtrabile per job/stato |
+| `/api/ke/schedule/trigger` | POST (F6) | Webhook evento (`note.created`/`modified`/`deleted`) |
+| `/api/ke/schedule/approvals/:id/approve` | POST (F6) | Esegue lo step mutante dopo approvazione umana |
+| `/api/ke/schedule/approvals/:id/reject` | POST (F6) | Rifiuta lo step mutante senza eseguirlo |
 
-Tutti gli endpoint sono implementati in F3 e protetti dallo stesso token API
-(`WIKIFORGE_API_TOKEN`) del resto del server; RBAC per ruolo (§7) resta
-un'estensione futura. L'health check è `GET /api/ke/schedule`: `errors` segnala i
-job invalidi senza bloccare l'avvio del server.
+Tutti gli endpoint sono protetti dallo stesso token API (`WIKIFORGE_API_TOKEN`)
+del resto del server; RBAC per ruolo (§7) resta un'estensione futura. L'health
+check è `GET /api/ke/schedule`: `errors` segnala i job invalidi senza bloccare
+l'avvio del server.
 
 La tab **🤖 Agenti & Schedule** è implementata in F4 nel KE Workbench: una card
 per job con ruolo, Use Case, cron leggibile ("ogni giorno alle 02:00"), prossima
@@ -323,6 +333,12 @@ per cambiare l'orario (sempre via `PATCH`). La sidebar mostra lo stato del lock
 e gli ultimi run; il `LogConsole` esistente riceve gli eventi del run manuale
 (scheduler + `use_case_event`) e lo stream live aggiorna le card. La console
 resta nascondibile/ridimensionabile come richiesto per il Workbench.
+
+F5/F6 aggiungono nella stessa tab una sezione **Policy & Approvazioni**: le
+decisioni recenti mostrano azione, origine (LLM/fallback), rationale e fonti,
+mentre gli step mutanti in attesa mostrano job, step e pulsanti espliciti
+**✅ Approva** / **❌ Rifiuta**. Lo stream live aggiorna la sezione quando arriva
+una `policy_decision`, un'`approval_required` o un `event_triggered`.
 
 ---
 
@@ -335,12 +351,12 @@ resta nascondibile/ridimensionabile come richiesto per il Workbench.
 | **F2** ✅ | Scheduler loop, lock, retry, timeout, stato su disco | 2 giorni | ✅ Verificato: 3 slot consecutivi senza duplicazioni, single-flight, restart con recupero di run interrotti, backoff 1m/5m, timeout con abort, audit redatto — 11 test in `tests/agentSchedulerEngine.test.ts` (uno aggiunto in F3 per le due politiche di annullamento) |
 | **F3** ✅ | API REST/SSE + avvio in `httpServer.ts` | 1 giorno | ✅ Verificato: snapshot con errori di config, PATCH con override persistenti e cron invalido respinto, run manuale SSE con eventi del runner, audit filtrabile, stream live, annullamento e shutdown — 8 test in `tests/agentScheduleApi.test.ts` |
 | **F4** ✅ | Tab UI nel Workbench | 1½ giorno | ✅ Verificato: tab con card per job, toggle e cambio orario persistenti, "Esegui ora" con log SSE, annulla, stream live e storico esiti — 10 test in `tests/schedulePanel.test.ts` e `tests/keWorkbenchSchedule.test.ts` |
-| **F5** | Policy Agent (LLM) con decision log | 1–2 giorni | Ogni decisione ha rationale e fonti; nessuna mutazione automatica |
-| **F6** | Trigger da eventi (watcher/webhook) + approvazione mutanti | 1 giorno | Nuova nota → job dopo debounce; step mutante resta in attesa di approvazione |
+| **F5** ✅ | Policy Agent (LLM) con decision log | 1–2 giorni | ✅ Verificato: 7 test in `tests/policyAgent.test.ts`; ogni decisione ha rationale e fonti, gli step mutanti sono hard-blocked anche se l'LLM li richiede, l'LLM assente/invalido usa il fallback deterministico registrato, i segreti sono redatti |
+| **F6** ✅ | Trigger da eventi (watcher/webhook) + approvazione mutanti | 1 giorno | ✅ Verificato: 5 test in `tests/eventTriggers.test.ts` e 5 in `tests/agentScheduleF5F6.test.ts`; `note.created` → job dopo debounce, step mutante accodato ed eseguito solo dopo `POST .../approve` con snapshot e audit `actor: human` |
 
-**Sequenza consigliata**: F0 → F1 → F2 → F3 → F4 → collaudo → (F5/F6 solo su
-richiesta). Il primo rilascio utile è F4: la wiki si auto-aggiorna con report
-senza toccare le note.
+**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6. La wiki
+si auto-aggiorna con report in sola lettura; gli step che scrivono restano
+sottoposti a decisione umana esplicita.
 
 ---
 
@@ -367,9 +383,22 @@ senza toccare le note.
   caricamento dello snapshot, l'apertura dello stream live e le card job.
   `tests/schedulePanel.test.ts` (8 test) copre view model, formattazione UTC,
   parsing SSE a chunk e mapping degli eventi nel LogConsole.
+  F5/F6 aggiungono due test in `tests/schedulePanel.test.ts` (view model e
+  nuovi eventi SSE) e estendono il mock API in `tests/keWorkbenchSchedule.test.ts`.
+- **Integrazione F5** (`tests/policyAgent.test.ts`, 7 test): decisione LLM valida
+  con rationale/fonti, guardia anti-mutazione, fallback deterministico e
+  redazione dei segreti, lettura del log newest-first con filtro e righe corrotte.
+- **Integrazione F6** (`tests/eventTriggers.test.ts`, 5 test e
+  `tests/agentScheduleF5F6.test.ts`, 5 test): debounce con timer iniettati,
+  deduplicazione per percorso, filtro per job/evento/progetto, validazione del
+  webhook, coda di approvazione, rifiuto senza esecuzione e approvazione con
+  audit umano e snapshot.
+- **Totale**: 229 test, 228 superati, 1 saltato.
 - **Regressone**: i test correnti `tests/keUseCases.test.ts` devono passare
   identici dopo F0.
-- **Python**: `pytest tests/test_*.py` invariato; gli script non cambiano.
+- **Python**: `pytest tests/test_*.py` invariato; gli script non cambiano
+  (F6 imposta solo `PYTHONIOENCODING=utf-8` per evitare errori `charmap` su
+  Windows).
 
 ---
 
@@ -378,7 +407,7 @@ senza toccare le note.
 | Rischio | Mitigazione |
 | :--- | :--- |
 | Due istanze scrivono la stessa wiki | Lock con PID + `max_concurrency = 1` |
-| Job mutante danneggia note | `auto_apply = false`, snapshot, Review Studio, rollback |
+| Job mutante danneggia note | `auto_apply = false`, guardia F5 sugli script mutanti, snapshot, Review Studio, rollback, approvazione umana F6 |
 | Ore/DST sbagliate | Salvataggio UTC, conversione solo in UI |
 | Processo API chiuso durante il job | Timer nel server, non nel browser; retry al riavvio |
 | Log con segreti | Redazione di token/api key prima di scrivere su disco |
@@ -396,9 +425,21 @@ senza toccare le note.
 3. **Parser cron**: libreria leggera **`cron-parser`** (CommonJS, già
    dipendenza di `package.json`); il modulo `scheduler/cron.ts` aggiunge solo
    il formato `every=<n>m|h|d` e la descrizione leggibile per la UI.
-4. **Policy Agent LLM (F5)**: rimandata dopo F1–F4. F2–F4 restano
-   deterministici e senza chiamate LLM.
+4. **Policy Agent LLM (F5)**: F2–F4 restano deterministici e senza chiamate LLM.
+   F5 aggiunge un livello consultivo e fail-closed: l'LLM può soltanto restringere
+   gli step in sola lettura; rationale e fonti sono obbligatori per ogni
+   decisione, l'output non valido ricade sulla regola deterministica e nulla
+   viene mutato automaticamente.
+5. **Mutazioni (F5/F6)**: `suggest_tags`, `okf_reindex` e `maturity_calculator`
+   sono hard-blocked dall'esecuzione automatica. Vengono accodati in
+   `.wiki-forge/scheduler-approvals.json` ed eseguiti solo dopo una POST umana,
+   con snapshot preventivi e audit separato (`actor: human`).
+6. **Trigger F6**: il trigger sopravvive al riavvio solo come configurazione;
+   la coda di debounce è in memoria e viene annullata allo shutdown. Il webhook
+   accoda solo job abilitati; il job di esempio `note-created-review` resta
+   disabilitato (`enabled = false`) per evitare corse non richieste.
 
-> F0, F1, F2, F3 e F4 sono completati: lo scheduler è attivo nel processo API,
-> con API REST/SSE, adapter a `runUseCase()` e tab **🤖 Agenti & Schedule** nel
-> KE Workbench. F5 e F6 restano sospesi fino a una richiesta esplicita.
+> F0–F6 sono completati: lo scheduler è attivo nel processo API, con API
+> REST/SSE, adapter a `runUseCase()`, tab **🤖 Agenti & Schedule**, Policy Agent
+> con decision log, trigger da eventi e approvazione umana degli step mutanti
+> nel KE Workbench.

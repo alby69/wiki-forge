@@ -4,8 +4,11 @@ import {
   formatDuration,
   formatScheduleTime,
   parseSseEvents,
+  POLICY_ACTION_META,
   schedulerEventToLogLine,
   statusLabel,
+  toApprovalViews,
+  toPolicyDecisionViews,
   toScheduleRunViews,
   toScheduleSnapshotView,
 } from '@frontend/core/utils/schedulePanel';
@@ -144,5 +147,91 @@ describe('KE Workbench schedule panel helpers (F4)', () => {
     assert.ok(finished?.text.includes('1.5 s'));
 
     assert.strictEqual(schedulerEventToLogLine({ type: 'tick' }, '10:00:00'), null);
+  });
+
+  it('maps F5 decisions and F6 approvals into render-ready view models', () => {
+    const decisions = toPolicyDecisionViews({
+      decisions: [
+        {
+          id: 'dec-1',
+          jobId: 'nightly',
+          action: 'require_approval',
+          origin: 'llm',
+          rationale: 'Step mutante rimandato.',
+          sources: ['config/agent_schedule.toml'],
+          steps: [0],
+          mutatingSteps: [1],
+          at: '2026-11-19T02:00:00.000Z',
+        },
+        { jobId: 'fallback', action: 'unknown' },
+      ],
+    });
+    assert.strictEqual(decisions.length, 2);
+    assert.strictEqual(decisions[0].action, 'require_approval');
+    assert.deepStrictEqual(decisions[0].mutatingSteps, [1]);
+    assert.strictEqual(decisions[1].action, 'allow', 'unknown actions default to allow');
+    assert.strictEqual(decisions[1].origin, 'fallback');
+    assert.deepStrictEqual(toPolicyDecisionViews({}), []);
+    assert.strictEqual(toPolicyDecisionViews({ decisions: [decisions[0], decisions[1]] }, 1).length, 1);
+    assert.strictEqual(POLICY_ACTION_META.require_approval.label, 'Approvazione richiesta');
+
+    const approvals = toApprovalViews({
+      approvals: [
+        {
+          id: 'appr-1',
+          jobId: 'nightly',
+          stepIndex: 1,
+          scriptId: 'okf_reindex',
+          status: 'pending',
+          rationale: 'Richiede approvazione.',
+          sources: ['output/scheduler/audit.jsonl'],
+          createdAt: '2026-11-19T02:00:00.000Z',
+        },
+        { id: 'appr-2', status: 'weird', sources: 'not-an-array' },
+      ],
+    });
+    assert.strictEqual(approvals.length, 2);
+    assert.strictEqual(approvals[0].scriptId, 'okf_reindex');
+    assert.strictEqual(approvals[0].status, 'pending');
+    assert.strictEqual(approvals[1].status, 'pending', 'unknown status defaults to pending');
+    assert.deepStrictEqual(approvals[1].sources, []);
+    assert.deepStrictEqual(toApprovalViews({}), []);
+  });
+
+  it('maps policy, approval and event SSE events to console lines', () => {
+    const policy = schedulerEventToLogLine(
+      { type: 'policy_decision', jobId: 'j1', action: 'require_approval', rationale: 'Servono fonti.' },
+      '10:00:01'
+    );
+    assert.strictEqual(policy?.type, 'info');
+    assert.ok(policy?.text.includes('Approvazione richiesta'));
+    assert.ok(policy?.text.includes('Servono fonti.'));
+
+    const approval = schedulerEventToLogLine(
+      { type: 'approval_required', jobId: 'j1', steps: [1], rationale: 'Step mutante.' },
+      '10:00:02'
+    );
+    assert.ok(approval?.text.includes('step 1'));
+
+    const queued = schedulerEventToLogLine(
+      { type: 'event_queued', jobId: 'j1', event: { type: 'note.created' }, fireAt: '2026-11-19T10:05:00.000Z' },
+      '10:00:03'
+    );
+    assert.ok(queued?.text.includes('note.created'));
+    assert.ok(queued?.text.includes('10:05:00 UTC'));
+
+    const triggered = schedulerEventToLogLine(
+      { type: 'event_triggered', jobId: 'j1', event: { type: 'note.created', path: 'wiki/a.md' } },
+      '10:05:00'
+    );
+    assert.strictEqual(triggered?.type, 'start');
+    assert.ok(triggered?.text.includes('wiki/a.md'));
+
+    const skipped = schedulerEventToLogLine(
+      { type: 'job_skipped', jobId: 'j1', reason: 'policy skip' },
+      '10:05:01'
+    );
+    assert.strictEqual(skipped?.type, 'stderr');
+    assert.ok(skipped?.text.includes('policy skip'));
   });
 });

@@ -162,7 +162,9 @@ export async function runUseCase(
 
       child = spawn(pythonCmd, [scriptPath, ...cliArgs], {
         cwd: projectRoot,
-        env: { ...process.env, PYTHONUNBUFFERED: '1' },
+        // Force UTF-8 so script output containing emoji/accents never hits a
+        // Windows `charmap` UnicodeEncodeError and fails an otherwise valid step.
+        env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
         stdio: 'pipe',
       });
 

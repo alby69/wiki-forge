@@ -46,6 +46,34 @@ export interface ScheduleRunView {
   error?: string;
 }
 
+/** F5 — a grounded policy decision shown with its rationale and sources. */
+export interface PolicyDecisionView {
+  id: string;
+  jobId: string;
+  action: 'allow' | 'skip' | 'require_approval';
+  origin: 'llm' | 'fallback';
+  rationale: string;
+  sources: string[];
+  steps: number[];
+  mutatingSteps: number[];
+  at: string;
+}
+
+/** F6 — a mutating step withheld until a human decides. */
+export interface ApprovalView {
+  id: string;
+  jobId: string;
+  stepIndex: number;
+  scriptId?: string;
+  title?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'failed';
+  rationale: string;
+  sources: string[];
+  createdAt: string;
+  decidedBy?: string;
+  error?: string;
+}
+
 export interface ScheduleLogLine {
   type: 'start' | 'stdout' | 'stderr' | 'exit' | 'info';
   text: string;
@@ -131,6 +159,71 @@ export function toScheduleRunViews(raw: unknown): ScheduleRunView[] {
     };
   });
 }
+
+const POLICY_ACTIONS = ['allow', 'skip', 'require_approval'] as const;
+const APPROVAL_STATUSES = ['pending', 'approved', 'rejected', 'failed'] as const;
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+}
+
+function numberList(value: unknown): number[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is number => typeof item === 'number' && Number.isInteger(item))
+    : [];
+}
+
+/** Convert `GET /api/ke/schedule/decisions` into render-ready policy cards. */
+export function toPolicyDecisionViews(raw: unknown, limit = 5): PolicyDecisionView[] {
+  const payload = asRecord(raw);
+  if (!Array.isArray(payload.decisions)) return [];
+  return payload.decisions.slice(0, Math.max(limit, 0)).map((entry: unknown) => {
+    const item = asRecord(entry);
+    const action = POLICY_ACTIONS.find(candidate => candidate === item.action) ?? 'allow';
+    return {
+      id: typeof item.id === 'string' ? item.id : '',
+      jobId: typeof item.jobId === 'string' ? item.jobId : '',
+      action,
+      origin: item.origin === 'llm' ? 'llm' : 'fallback',
+      rationale: typeof item.rationale === 'string' ? item.rationale : '',
+      sources: stringList(item.sources),
+      steps: numberList(item.steps),
+      mutatingSteps: numberList(item.mutatingSteps),
+      at: typeof item.at === 'string' ? item.at : '',
+    };
+  });
+}
+
+/** Convert `GET /api/ke/schedule/approvals` into render-ready approval cards. */
+export function toApprovalViews(raw: unknown): ApprovalView[] {
+  const payload = asRecord(raw);
+  if (!Array.isArray(payload.approvals)) return [];
+  return payload.approvals.map((entry: unknown) => {
+    const item = asRecord(entry);
+    const status = APPROVAL_STATUSES.find(candidate => candidate === item.status) ?? 'pending';
+    return {
+      id: typeof item.id === 'string' ? item.id : '',
+      jobId: typeof item.jobId === 'string' ? item.jobId : '',
+      stepIndex: typeof item.stepIndex === 'number' ? item.stepIndex : -1,
+      scriptId: typeof item.scriptId === 'string' ? item.scriptId : undefined,
+      title: typeof item.title === 'string' ? item.title : undefined,
+      status,
+      rationale: typeof item.rationale === 'string' ? item.rationale : '',
+      sources: stringList(item.sources),
+      createdAt: typeof item.createdAt === 'string' ? item.createdAt : '',
+      decidedBy: typeof item.decidedBy === 'string' ? item.decidedBy : undefined,
+      error: typeof item.error === 'string' ? item.error : undefined,
+    };
+  });
+}
+
+export const POLICY_ACTION_META: Record<PolicyDecisionView['action'], { label: string; color: string; icon: string }> = {
+  allow: { label: 'Consentito', color: '#34d399', icon: '✓' },
+  skip: { label: 'Saltato', color: '#fbbf24', icon: '⏭' },
+  require_approval: { label: 'Approvazione richiesta', color: '#a5b4fc', icon: '⏸' },
+};
 
 export function statusLabel(status: ScheduleJobStatus): { label: string; color: string; icon: string } {
   return STATUS_META[status] ?? STATUS_META.idle;
@@ -239,6 +332,42 @@ export function schedulerEventToLogLine(event: unknown, timestamp: string): Sche
         text: `⚠ Job '${item.jobId}' riproverà (tentativo ${item.attempt}): ${item.reason ?? ''}`,
         timestamp,
       };
+    case 'job_skipped':
+      return {
+        type: 'stderr',
+        text: `⏭ Job '${item.jobId}' saltato: ${item.reason ?? ''}`,
+        timestamp,
+      };
+    case 'policy_decision': {
+      const meta = POLICY_ACTION_META[item.action as PolicyDecisionView['action']] ?? POLICY_ACTION_META.allow;
+      return {
+        type: 'info',
+        text: `🧠 Policy ${meta.icon} ${meta.label} per '${item.jobId}': ${item.rationale ?? ''}`,
+        timestamp,
+      };
+    }
+    case 'approval_required':
+      return {
+        type: 'info',
+        text: `⏸ Approvazione richiesta per '${item.jobId}' (step ${numberList(item.steps).join(', ')}): ${item.rationale ?? ''}`,
+        timestamp,
+      };
+    case 'event_queued': {
+      const event = asRecord(item.event);
+      return {
+        type: 'info',
+        text: `📥 Evento '${event.type ?? ''}' accodato per '${item.jobId}' → esecuzione ${formatScheduleTime(typeof item.fireAt === 'string' ? item.fireAt : undefined)}`,
+        timestamp,
+      };
+    }
+    case 'event_triggered': {
+      const event = asRecord(item.event);
+      return {
+        type: 'start',
+        text: `⚡ Job '${item.jobId}' attivato da '${event.type ?? ''}'${event.path ? ` (${event.path})` : ''}`,
+        timestamp,
+      };
+    }
     case 'job_finished': {
       const status = asStatus(item.status);
       const meta = statusLabel(status);

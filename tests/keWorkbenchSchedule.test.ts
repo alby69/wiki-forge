@@ -127,6 +127,42 @@ describe('KE Workbench schedule tab (F4)', () => {
       if (url.includes('/api/ke/schedule/runs')) {
         return jsonResponse({ success: true, runs: [] });
       }
+      if (url.includes('/api/ke/schedule/decisions')) {
+        return jsonResponse({
+          success: true,
+          decisions: [
+            {
+              id: 'dec-1',
+              jobId: 'nightly-validation',
+              action: 'require_approval',
+              origin: 'llm',
+              rationale: 'Indice rimandato all’approvazione umana.',
+              sources: ['config/agent_schedule.toml'],
+              steps: [0],
+              mutatingSteps: [1],
+              at: '2026-11-19T02:00:00.000Z',
+            },
+          ],
+        });
+      }
+      if (url.includes('/api/ke/schedule/approvals')) {
+        return jsonResponse({
+          success: true,
+          approvals: [
+            {
+              id: 'appr-1',
+              jobId: 'nightly-validation',
+              stepIndex: 1,
+              scriptId: 'okf_reindex',
+              status: 'pending',
+              rationale: 'Step mutante richiede approvazione.',
+              sources: ['output/scheduler/audit.jsonl'],
+              createdAt: '2026-11-19T02:00:00.000Z',
+            },
+          ],
+          pending: [],
+        });
+      }
       if (url.includes('/api/ke/schedule')) {
         return jsonResponse({ success: true, config: null, errors: [], snapshot: SNAPSHOT });
       }
@@ -159,6 +195,8 @@ describe('KE Workbench schedule tab (F4)', () => {
 
     assert.ok(calls.some((url) => url.endsWith('/api/ke/schedule')), 'snapshot refreshed');
     assert.ok(calls.some((url) => url.includes('/api/ke/schedule/runs')), 'history refreshed');
+    assert.ok(calls.some((url) => url.includes('/api/ke/schedule/decisions')), 'decisions fetched');
+    assert.ok(calls.some((url) => url.includes('/api/ke/schedule/approvals')), 'approvals fetched');
     assert.ok(calls.some((url) => url.includes('/api/ke/schedule/events')), 'live SSE opened');
 
     const root = document.getElementById('ke-workbench-modal-root') as unknown as MockElement;
@@ -167,6 +205,15 @@ describe('KE Workbench schedule tab (F4)', () => {
     assert.match(pane.innerHTML, /ke_ontological_validation/);
     assert.match(pane.innerHTML, /Esegui ora/);
     assert.match(pane.innerHTML, /20\/11\/2026, 02:00:00 UTC/);
+    // F5: rationale and sources are always visible for each decision.
+    assert.match(pane.innerHTML, /ke-policy-section/);
+    assert.match(pane.innerHTML, /Indice rimandato all’approvazione umana\./);
+    assert.match(pane.innerHTML, /config\/agent_schedule\.toml/);
+    // F6: the mutating step is shown with explicit approve/reject controls.
+    assert.match(pane.innerHTML, /ke-approval-card/);
+    assert.match(pane.innerHTML, /okf_reindex/);
+    assert.match(pane.innerHTML, /ke-approve-appr-1/);
+    assert.match(pane.innerHTML, /ke-reject-appr-1/);
     modal.close();
   });
 });

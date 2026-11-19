@@ -1,6 +1,16 @@
-# Agenti schedulati per il KE Workbench (F1: validazione, F2/F3: esecuzione).
+# Agenti schedulati per il KE Workbench (F1: validazione, F2/F3: esecuzione,
+# F5: policy LLM consultiva, F6: trigger da eventi con approvazione umana).
 # Gli orari sono stati confermati; tutti i job hanno auto_apply = false.
-# I job non toccano la wiki: scrivono solo in output/ o in docs/METRICS.md.
+# I job cron non toccano la wiki: scrivono solo in output/ o in docs/METRICS.md.
+# F5/F6: ogni decisione è registrata con rationale e fonti in
+# output/scheduler/decisions.jsonl; gli step mutanti non vengono mai eseguiti
+# automaticamente, ma accodati in .wiki-forge/scheduler-approvals.json.
+
+# Il Policy Agent è consultivo e fail-closed: se l'LLM non è disponibile o
+# restituisce una risposta non valida, vale la regola deterministica
+# "sola lettura + approvazione umana" e la decisione viene comunque loggata.
+[agent.policy]
+enabled = true
 
 [agent.scheduler]
 enabled = true
@@ -71,6 +81,25 @@ role = "Schema Modeler"
 use_case = "ke_schema_modeling"
 steps = [0, 1]
 schedule = "30 4 * * 0"
+enabled = false
+project = "default"
+auto_apply = false
+max_retries = 1
+
+# F6 — trigger da evento "nuova nota": dopo 5 minuti di quiete viene eseguito
+# lo step 0 (schema_infer, sola lettura). Lo step 2 (suggest_tags) scrive il
+# frontmatter: il Policy Agent lo sottrae all'esecuzione e lo accoda per
+# l'approvazione umana nel Workbench. Disabilitato di default: abilitarlo con
+# PATCH /api/ke/schedule/note-created-review {"enabled": true}. Il webhook
+# POST /api/ke/schedule/trigger accoda solo i job abilitati.
+[[agent.scheduler.jobs]]
+id = "note-created-review"
+role = "Schema Modeler"
+use_case = "ke_schema_modeling"
+steps = [0, 2]
+schedule = "30 4 * * 0"
+event_trigger = "note.created"
+debounce_seconds = 300
 enabled = false
 project = "default"
 auto_apply = false

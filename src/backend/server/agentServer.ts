@@ -40,8 +40,18 @@ import {
   StudyThesisSynthesis,
 } from './studyHelpers';
 import { runUseCase, UseCaseEvent } from './useCaseRunner';
-import { JobExecutionContext, JobExecutionResult, Scheduler, SchedulerEvent } from './scheduler/scheduler';
+import {
+  JobExecutionContext,
+  JobExecutionResult,
+  PreflightResult,
+  Scheduler,
+  SchedulerEvent,
+  TriggerEvent,
+} from './scheduler/scheduler';
 import { loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
+import { isMutatingScript, PolicyAgent, PolicyStep } from './scheduler/policyAgent';
+import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
+import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
 
 export interface ResearchConsultCitation {
   id: string;
@@ -906,6 +916,9 @@ export class AgentServer {
   private systemPromptCache?: string;
   private scheduler?: Scheduler;
   private schedulerConfig?: SchedulerConfig;
+  private policyAgent?: PolicyAgent;
+  private approvalStore?: ApprovalStore;
+  private eventBus?: EventTriggerBus;
   private scheduleConfigErrors: string[] = [];
   private readonly scheduleClients = new Set<http.ServerResponse>();
   private scheduleHeartbeat?: NodeJS.Timeout;
@@ -935,19 +948,240 @@ export class AgentServer {
     this.scheduleConfigErrors = loaded.errors;
     if (loaded.jobs.length === 0) return;
 
-    this.scheduler = new Scheduler({
+    this.approvalStore = new ApprovalStore({
+      filePath: path.join(this.rootDir, '.wiki-forge', 'scheduler-approvals.json'),
+    });
+    if (loaded.config.policyEnabled) {
+      this.policyAgent = new PolicyAgent({
+        getClient: () => this.getOrInitLlmClient(),
+        logPath: path.join(this.rootDir, loaded.config.logDir, 'decisions.jsonl'),
+      });
+    }
+
+    const scheduler = new Scheduler({
       config: loaded.config,
       jobs: loaded.jobs,
       useCases,
       rootDir: this.rootDir,
       executeJob: (ctx) => this.executeScheduledJob(ctx),
+      preflight: this.policyAgent ? (ctx) => this.runPolicy(ctx) : undefined,
       onEvent: (event) => this.broadcastScheduleEvent(event),
     });
-    await this.scheduler.start();
+    this.scheduler = scheduler;
+    this.eventBus = new EventTriggerBus({
+      jobs: loaded.jobs,
+      onTrigger: async (jobId, event) => {
+        if (scheduler.isRunning(jobId)) return;
+        await scheduler.runJobNow(jobId, 'event', event);
+        this.broadcastScheduleEvent({ type: 'event_triggered', jobId, event, at: new Date().toISOString() });
+      },
+      onEvent: (event) => this.broadcastScheduleEvent(event),
+    });
+    await scheduler.start();
+  }
+
+  /**
+   * F5 preflight — the LLM policy is advisory and can only narrow the step set.
+   * Mutating steps are staged as approval requests instead of being executed.
+   */
+  private async runPolicy(ctx: JobExecutionContext): Promise<PreflightResult> {
+    if (!this.policyAgent || !this.approvalStore) return { run: true };
+
+    const stepIndices = ctx.job.steps ?? ctx.useCase.steps.map((_step, index) => index);
+    const stepDetails: PolicyStep[] = stepIndices.map((index) => {
+      const def = ctx.useCase.steps[index] as { scriptId?: string; title?: string } | undefined;
+      return {
+        index,
+        scriptId: def?.scriptId,
+        title: def?.title,
+        mutating: isMutatingScript(def?.scriptId),
+      };
+    });
+    const decision = await this.policyAgent.decide({
+      jobId: ctx.job.id,
+      role: ctx.job.role,
+      useCaseId: ctx.job.useCaseId,
+      project: ctx.job.project,
+      trigger: ctx.trigger,
+      steps: stepDetails,
+      lastStatus: this.scheduler?.getStatus().jobs.find(job => job.job.id === ctx.job.id)?.state.last_status,
+      lastError: this.scheduler?.getStatus().jobs.find(job => job.job.id === ctx.job.id)?.state.last_error,
+      consecutiveFailures:
+        this.scheduler?.getStatus().jobs.find(job => job.job.id === ctx.job.id)?.state.consecutive_failures ?? 0,
+      event: ctx.event?.type,
+    });
+    ctx.notify({
+      type: 'policy_decision',
+      jobId: ctx.job.id,
+      action: decision.action,
+      rationale: decision.rationale,
+      sources: decision.sources,
+      at: decision.at,
+    });
+
+    if (decision.action !== 'skip' && decision.mutatingSteps.length > 0) {
+      const approvalIds: string[] = [];
+      for (const stepIndex of decision.mutatingSteps) {
+        const def = ctx.useCase.steps[stepIndex] as { scriptId?: string; title?: string } | undefined;
+        const request = await this.approvalStore.stage({
+          jobId: ctx.job.id,
+          useCaseId: ctx.job.useCaseId,
+          project: ctx.job.project,
+          stepIndex,
+          scriptId: def?.scriptId,
+          title: def?.title,
+          trigger: ctx.trigger,
+          event: ctx.event?.type,
+          rationale: decision.rationale,
+          sources: decision.sources,
+        });
+        approvalIds.push(request.id);
+      }
+      ctx.notify({
+        type: 'approval_required',
+        jobId: ctx.job.id,
+        approvalIds,
+        steps: decision.mutatingSteps,
+        rationale: decision.rationale,
+        sources: decision.sources,
+        at: new Date().toISOString(),
+      });
+    }
+
+    return {
+      run: decision.steps.length > 0,
+      steps: decision.steps,
+      reason: decision.steps.length > 0 ? undefined : decision.rationale,
+    };
+  }
+
+  /** F5: decisions remain readable even after the scheduler/policy is stopped. */
+  private async readDecisionLog(options: { jobId?: string; limit?: number } = {}): Promise<unknown[]> {
+    if (this.policyAgent) return this.policyAgent.readDecisions(options);
+    const logPath = path.join(
+      this.rootDir,
+      this.schedulerConfig?.logDir ?? 'output/scheduler',
+      'decisions.jsonl'
+    );
+    try {
+      const lines = (await fs.readFile(logPath, 'utf-8')).split(/\r?\n/).filter(Boolean);
+      const entries = lines
+        .map((line) => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            return null;
+          }
+        })
+        .filter((entry) => entry !== null)
+        .filter((entry) => !options.jobId || (entry as any).jobId === options.jobId)
+        .reverse();
+      return entries.slice(0, Math.min(Math.max(options.limit ?? 50, 1), 500));
+    } catch {
+      return [];
+    }
+  }
+
+  /** F6 watcher hook: called after a note is created through the API. */
+  private publishNoteCreated(projectId: string, notePath: string): void {
+    this.eventBus?.publish({
+      type: 'note.created',
+      project: projectId,
+      path: notePath,
+      source: 'watcher',
+    });
+  }
+
+  /** F6: execute a withheld mutating step only after explicit human approval. */
+  public async decideApproval(
+    approvalId: string,
+    decision: 'approved' | 'rejected',
+    reviewer: string = 'human',
+    reason?: string
+  ): Promise<{ approval: ApprovalRequest | undefined; error?: string }> {
+    const store = this.approvalStore;
+    if (!store) return { approval: undefined, error: 'Scheduler non avviato' };
+    const request = await store.get(approvalId);
+    if (!request) return { approval: undefined, error: `Unknown approval '${approvalId}'` };
+    if (request.status !== 'pending' && request.status !== 'failed') {
+      return { approval: request, error: `Approval '${approvalId}' is ${request.status}` };
+    }
+    if (decision === 'rejected') {
+      return { approval: await store.update(approvalId, { status: 'rejected', decidedBy: reviewer, reason }) };
+    }
+
+    const useCase = KE_USE_CASES[request.useCaseId];
+    const job = this.scheduler?.getStatus().jobs.find(item => item.job.id === request.jobId)?.job;
+    if (!useCase || !job) {
+      return { approval: undefined, error: `Use Case or job not available for '${approvalId}'` };
+    }
+    const stepDef = useCase.steps[request.stepIndex];
+    if (!stepDef) return { approval: undefined, error: `Unknown step ${request.stepIndex}` };
+
+    try {
+      // Snapshot every wiki note before a human-authorised mutation.
+      const projectRoot = await this.resolveProjectRoot(request.project);
+      const wikiDir = path.join(projectRoot, 'wiki');
+      for (const file of await this.listWikiMarkdownFiles(wikiDir)) {
+        const rel = path.relative(projectRoot, file).replace(/\\/g, '/');
+        const content = await fs.readFile(file, 'utf-8');
+        await this.writeReviewSnapshot(request.project, rel, content, `approvazione ${approvalId}`);
+      }
+
+      const startedAt = new Date();
+      const chunks: string[] = [];
+      const result = await runUseCase({
+        useCase,
+        stepIndices: [request.stepIndex],
+        args: job.args as Record<string, any>,
+        onEvent: (event) => {
+          if (event.type === 'stdout' || event.type === 'stderr') chunks.push(event.text);
+        },
+        rootDir: this.rootDir,
+        projectRoot,
+        projectId: request.project,
+        pythonCmd: PYTHON_CMD,
+        scriptRegistry: SCRIPT_REGISTRY,
+        buildCliArgs,
+      });
+      const endedAt = new Date();
+      const failed = result.failedSteps.length > 0;
+      const approval = await store.update(approvalId, {
+        status: failed ? 'failed' : 'approved',
+        decidedBy: reviewer,
+        error: failed ? `failed steps: ${result.failedSteps.join(', ')}` : undefined,
+      });
+      await this.scheduler?.recordApprovalRun({
+        job: request.jobId,
+        useCase: request.useCaseId,
+        attempt: 1,
+        startedAt: startedAt.toISOString(),
+        endedAt: endedAt.toISOString(),
+        status: failed ? 'failed' : 'success',
+        exitCodes: failed ? [1] : [0],
+        failedSteps: result.failedSteps,
+        error: failed ? `failed steps: ${result.failedSteps.join(', ')}` : undefined,
+        actor: 'human',
+        approvalId,
+        approvedBy: reviewer,
+        steps: [request.stepIndex],
+      });
+      return failed
+        ? { approval, error: `failed steps: ${result.failedSteps.join(', ')}` }
+        : { approval };
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      return {
+        approval: await store.update(approvalId, { status: 'failed', decidedBy: reviewer, error }),
+        error,
+      };
+    }
   }
 
   /** Stop the tick loop, close SSE clients and release the PID lock. */
   public async stopScheduler(options: { cancelActive?: boolean } = {}): Promise<void> {
+    this.eventBus?.stop();
+    this.eventBus = undefined;
     if (this.scheduleHeartbeat) {
       clearInterval(this.scheduleHeartbeat);
       this.scheduleHeartbeat = undefined;
@@ -958,6 +1192,7 @@ export class AgentServer {
       await this.scheduler.stop(options);
       this.scheduler = undefined;
     }
+    this.policyAgent = undefined;
   }
 
   /** Adapter between the scheduler engine and the shared Use Case runner. */
@@ -1853,6 +2088,76 @@ export class AgentServer {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
+      return true;
+    }
+
+    // ---- F5/F6: policy decisions, event triggers and approval queue ----
+
+    if (pathname === '/api/ke/schedule/decisions' && req.method === 'GET') {
+      const limit = Number.parseInt(url.searchParams.get('limit') || '50', 10);
+      const decisions = await this.readDecisionLog({
+        jobId: url.searchParams.get('jobId') || undefined,
+        limit: Number.isFinite(limit) ? limit : 50,
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, decisions }));
+      return true;
+    }
+
+    if (pathname === '/api/ke/schedule/approvals' && req.method === 'GET') {
+      const status = url.searchParams.get('status') as ApprovalRequest['status'] | null;
+      const approvals = this.approvalStore
+        ? await this.approvalStore.list({
+            jobId: url.searchParams.get('jobId') || undefined,
+            status: status && ['pending', 'approved', 'rejected', 'failed'].includes(status)
+              ? status
+              : undefined,
+          })
+        : [];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, approvals, pending: this.eventBus?.getPending() ?? [] }));
+      return true;
+    }
+
+    if (pathname === '/api/ke/schedule/trigger' && req.method === 'POST') {
+      const body = await this.parseJsonBody<{ event?: string; project?: string; path?: string }>(req);
+      if (!isSupportedTriggerEvent(body.event)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: `event must be one of: ${['note.created', 'note.modified', 'note.deleted'].join(', ')}`,
+        }));
+        return true;
+      }
+      const event: TriggerEvent = {
+        type: body.event,
+        project: typeof body.project === 'string' && body.project ? body.project : 'default',
+        path: typeof body.path === 'string' ? body.path : undefined,
+        source: 'webhook',
+      };
+      const queued = this.eventBus?.publish(event) ?? [];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, queued, pending: this.eventBus?.getPending() ?? [] }));
+      return true;
+    }
+
+    const approvalMatch = pathname.match(/^\/api\/ke\/schedule\/approvals\/([^/]+)\/(approve|reject)$/);
+    if (approvalMatch && req.method === 'POST') {
+      const approvalId = decodeURIComponent(approvalMatch[1]);
+      const action = approvalMatch[2];
+      const body = await this.parseJsonBody<{ reviewer?: string; reason?: string }>(req);
+      const reviewer = typeof body.reviewer === 'string' && body.reviewer.trim()
+        ? body.reviewer.trim()
+        : 'human';
+      const result = await this.decideApproval(
+        approvalId,
+        action === 'approve' ? 'approved' : 'rejected',
+        reviewer,
+        typeof body.reason === 'string' ? body.reason : undefined
+      );
+      const status = result.error && !result.approval ? 404 : result.error ? 500 : 200;
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: !result.error, ...result }));
       return true;
     }
 
@@ -3138,6 +3443,7 @@ export class AgentServer {
     const id = path.basename(target, '.md');
     const relativePath = path.relative(projRoot, target).replace(/\\/g, '/');
     const folderName = path.relative(wikiDir, path.dirname(target)).replace(/\\/g, '/') || 'wiki';
+    this.publishNoteCreated(projectId, relativePath);
 
     return this.parser.parseNote(id, id.replace(/[-_]/g, ' '), defaultContent, folderName === '.' ? 'wiki' : folderName, relativePath);
   }
@@ -3580,6 +3886,10 @@ export class AgentServer {
       await fs.writeFile(target, buffer);
     } else {
       await fs.writeFile(target, data.content, 'utf-8');
+    }
+    if (/\.md$/i.test(data.fileName)) {
+      const projectRoot = await this.resolveProjectRoot(projectId);
+      this.publishNoteCreated(projectId, path.relative(projectRoot, target).replace(/\\/g, '/'));
     }
   }
 
@@ -4106,6 +4416,7 @@ export class AgentServer {
     const message = compiled
       ? `Importato e compilato in ${notePath}`
       : `File copiato in raw/${fileName}: compilazione differita (agente/LLM non disponibile). Usa "Compila" per completare.`;
+    if (compiled && note) this.publishNoteCreated(projectId, note.path);
 
     return { note, compiled, targetFolder, message };
   }
