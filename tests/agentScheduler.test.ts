@@ -75,7 +75,7 @@ describe('Schedule configuration validation (F1)', () => {
     assert.deepStrictEqual(result.errors, []);
     assert.strictEqual(result.config.timezone, 'Europe/Rome');
     assert.strictEqual(result.config.maxConcurrency, 1);
-    assert.strictEqual(result.jobs.length, 8);
+    assert.strictEqual(result.jobs.length, 9);
     assert.ok(result.jobs.every((job) => job.autoApply === false));
     assert.ok(result.jobs.filter((job) => job.enabled).length === 6);
     assert.strictEqual(result.config.policyEnabled, true, 'F5 policy is active by default');

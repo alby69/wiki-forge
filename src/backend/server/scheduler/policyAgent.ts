@@ -74,6 +74,7 @@ export const MUTATING_SCRIPT_IDS = new Set([
   'okf_reindex',
   'maturity_calculator',
   'promote_doc_answer',
+  'wiki_program_change_apply',
 ]);
 
 export function isMutatingScript(scriptId: string | undefined): boolean {

@@ -65,11 +65,12 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 | `ke_semantic_export` | **UC5: Enterprise Semantic Graph & RDF Export** | Interoperability & Graph | `export_semantic`, `okf_reindex` | `output/wiki_export.ttl` / `.jsonld` |
 | `ke_maturity_eval` | **UC6: KE Platform Maturity Evaluation** | Platform Governance | `maturity_calculator`, `ke_maturity` | `output/ke_maturity_report.md` |
 | `ke_docs_wiki_drift` | **UC7: Self-Documentation Wiki Drift** | Documentation Governance | `docs_wiki_drift` (read-only) | report consultivo con rationale e fonti |
+| `ke_wiki_program_change` | **UC8: Wiki-to-Program Change** | Documentation Governance | `wiki_program_change_propose` (read-only), `wiki_program_change_apply` (mutante, F6-only) | proposta in `output/program-changes/`; apply solo dopo approvazione umana |
 
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
-Il Workbench offre due tab: **🧩 Use Case** (i 7 workflow guidati) e **🤖 Agenti & Schedule** (F4). Quest'ultima mostra una card per ogni job schedulato con ruolo, Use Case, cron leggibile, prossima corsa e ultimo esito; permette di abilitare/disabilitare il job, cambiare orario, avviarlo subito (**Esegui ora**) o annullare la corsa attiva. I log dell'esecuzione manuale appaiono nella Console Output con gli stessi eventi dell'endpoint SSE, mentre lo stream live aggiorna le card e la sidebar mostra gli ultimi run.
+Il Workbench offre due tab: **🧩 Use Case** (gli 8 workflow guidati) e **🤖 Agenti & Schedule** (F4). Quest'ultima mostra una card per ogni job schedulato con ruolo, Use Case, cron leggibile, prossima corsa e ultimo esito; permette di abilitare/disabilitare il job, cambiare orario, avviarlo subito (**Esegui ora**) o annullare la corsa attiva. I log dell'esecuzione manuale appaiono nella Console Output con gli stessi eventi dell'endpoint SSE, mentre lo stream live aggiorna le card e la sidebar mostra gli ultimi run.
 
 La sezione **Policy & Approvazioni** (F5/F6) della stessa tab mostra le decisioni recenti del Policy Agent con azione, origine (LLM o fallback), rationale e fonti, e gli step mutanti in attesa con pulsanti **✅ Approva** / **❌ Rifiuta**. Nessuno step che scrive nella wiki viene eseguito in automatico: dopo la creazione di una nota può partire un job dopo 5 minuti di debounce, ma lo step mutante resta in coda finché una persona non lo approva (con snapshot preventivi e audit dedicato).
 

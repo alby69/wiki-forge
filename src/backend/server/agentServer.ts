@@ -207,6 +207,22 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
   return buildCliArgsFromSchema(scriptDef, userArgs);
 }
 
+/**
+ * Fase 76: `--confirm` and `--reviewer` are F6-only flags. Generic execution
+ * endpoints (Use Case SSE and Script Panel) must never supply them, otherwise
+ * the mutating program-change apply step could bypass the approval queue.
+ * They are injected solely by `decideApproval()` after a human decision.
+ */
+export function withoutApprovalFlags(args?: Record<string, any>): Record<string, any> | undefined {
+  if (!args) return args;
+  const safe: Record<string, any> = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (key === 'confirm' || key === 'reviewer') continue;
+    safe[key] = value;
+  }
+  return safe;
+}
+
 export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
   conv2md: {
     id: 'conv2md',
@@ -284,6 +300,32 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     parameters: [
       { name: 'docs_dir', label: 'Docs Directory', type: 'text', default: 'docs', cliFlag: '--docs-dir', description: 'Documentation source directory.' },
       { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'projects/wikiforge/wiki', cliFlag: '--wiki-dir', description: 'Generated OKF wiki directory.' },
+    ],
+  },
+  wiki_program_change_propose: {
+    id: 'wiki_program_change_propose',
+    path: 'scripts/wiki_program_change_propose.py',
+    displayName: 'Stage Program Change Proposal',
+    category: 'Knowledge Engineering',
+    description: 'Fase 76 (read-only): validate a wiki-grounded program change proposal and stage it for F6 approval. Never writes program files.',
+    parameters: [
+      { name: 'proposal', label: 'Proposal File', type: 'text', default: 'output/program-changes/proposal.json', cliFlag: '--proposal', description: 'JSON proposal with rationale, sources and wiki-edit style edits.' },
+      { name: 'stage_dir', label: 'Stage Directory', type: 'text', default: 'output/program-changes', cliFlag: '--stage-dir', description: 'Directory for pending proposal records.' },
+      { name: 'project', label: 'Project', type: 'text', default: 'wikiforge', cliFlag: '--project', description: 'Project recorded in the proposal provenance.' },
+    ],
+  },
+  wiki_program_change_apply: {
+    id: 'wiki_program_change_apply',
+    path: 'scripts/wiki_program_change_apply.py',
+    displayName: 'Apply Approved Program Change',
+    category: 'Knowledge Engineering',
+    description: 'Fase 76 (mutating, F6-only): apply a staged program change with snapshots, human reviewer and audit. Hard-blocked from automatic execution.',
+    parameters: [
+      { name: 'proposal', label: 'Proposal File', type: 'text', default: 'output/program-changes/proposal.json', cliFlag: '--proposal', description: 'JSON proposal previously staged by the propose step.' },
+      { name: 'reviewer', label: 'Human Reviewer', type: 'text', default: 'human:alby69', cliFlag: '--reviewer', description: 'Human actor authorising the change (human:<id>).' },
+      { name: 'confirm', label: 'Confirm Human Approval (F6)', type: 'boolean', default: false, cliFlag: '--confirm', description: 'Required explicit confirmation; injected only after F6 approval.' },
+      { name: 'stage_dir', label: 'Stage Directory', type: 'text', default: 'output/program-changes', cliFlag: '--stage-dir', description: 'Directory containing the staged proposal records.' },
+      { name: 'project', label: 'Project', type: 'text', default: 'wikiforge', cliFlag: '--project', description: 'Project scope (accepted for provenance compatibility).' },
     ],
   },
   okf_log: {
@@ -923,6 +965,30 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
       },
     ],
   },
+  ke_wiki_program_change: {
+    id: 'ke_wiki_program_change',
+    title: 'Use Case 8: Wiki-to-Program Change',
+    role: 'Knowledge Engineer',
+    category: 'Documentation Governance',
+    summary: 'Ponte Fase 76: trasforma una risposta approvata nella wiki in una proposta di modifica al programma, applicabile solo dopo approvazione umana F6.',
+    objective: 'Collegare la wiki di wiki-forge alle modifiche di docs/ e del codice senza mutazioni automatiche: lo step di staging è in sola lettura, quello di apply viene sottratto dal Policy Agent F5 e richiede approvazione F6.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Stage Program Change Proposal',
+        description: 'Convalida la proposta (percorso ammesso, find univoco, rationale e fonti) e la accoda in output/program-changes/ senza toccare i file del programma.',
+        scriptId: 'wiki_program_change_propose',
+        defaultArgs: { proposal: 'output/program-changes/proposal.json', stage_dir: 'output/program-changes', project: 'wikiforge' },
+      },
+      {
+        stepNumber: 2,
+        title: 'Apply Approved Program Change',
+        description: 'Applica la proposta accodata con snapshot e audit. step mutante: il Policy Agent F5 lo sottrae all’esecuzione automatica e richiede approvazione F6.',
+        scriptId: 'wiki_program_change_apply',
+        defaultArgs: { proposal: 'output/program-changes/proposal.json', stage_dir: 'output/program-changes', project: 'wikiforge' },
+      },
+    ],
+  },
 };
 
 function formatWizardList(): string {
@@ -1156,12 +1222,22 @@ export class AgentServer {
         await this.writeReviewSnapshot(request.project, rel, content, `approvazione ${approvalId}`);
       }
 
+      // Fase 76: the program-change apply step is mutating and can only run
+      // with an explicit human actor. `decideApproval` is reached exclusively
+      // from the F6 endpoint, so inject the reviewer and the confirmation flag
+      // here; a direct run of the Use Case cannot supply them.
+      const isProgramApply = stepDef.scriptId === 'wiki_program_change_apply';
+      const humanActor = /^human:/.test(reviewer) ? reviewer : `human:${reviewer}`;
+      const approvedArgs: Record<string, any> = isProgramApply
+        ? { ...(job.args as Record<string, any>), reviewer: humanActor, confirm: true }
+        : (job.args as Record<string, any>);
+
       const startedAt = new Date();
       const chunks: string[] = [];
       const result = await runUseCase({
         useCase,
         stepIndices: [request.stepIndex],
-        args: job.args as Record<string, any>,
+        args: approvedArgs,
         onEvent: (event) => {
           if (event.type === 'stdout' || event.type === 'stderr') chunks.push(event.text);
         },
@@ -1933,6 +2009,8 @@ export class AgentServer {
 
         const useCase = KE_USE_CASES[useCaseId];
         const projRoot = await this.resolveProjectRoot(projectId);
+        const needsF6 = useCase.steps.some(step => step.scriptId === 'wiki_program_change_apply');
+        const safeArgs = needsF6 ? withoutApprovalFlags(body.args) : body.args;
 
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
@@ -1944,7 +2022,7 @@ export class AgentServer {
         await runUseCase({
           useCase,
           stepIndex: body.stepIndex,
-          args: body.args,
+          args: safeArgs,
           onEvent: (event: UseCaseEvent) => {
             res.write(`data: ${JSON.stringify(event)}\n\n`);
           },
@@ -2209,7 +2287,10 @@ export class AgentServer {
 
         const scriptDef = SCRIPT_REGISTRY[scriptId];
         const supportsProject = scriptDef.parameters.some(p => p.name === 'project');
-        const userArgs = { ...(projectId !== 'default' && supportsProject ? { project: projectId } : {}), ...(body.args || {}) };
+        const safeArgs = scriptId === 'wiki_program_change_apply'
+          ? withoutApprovalFlags(body.args)
+          : body.args;
+        const userArgs = { ...(projectId !== 'default' && supportsProject ? { project: projectId } : {}), ...(safeArgs || {}) };
         const cliArgs = buildCliArgs(scriptDef, userArgs);
         const projRoot = await this.resolveProjectRoot(projectId);
         const scriptPath = path.resolve(this.rootDir, scriptDef.path);

@@ -41,14 +41,14 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('GET /api/ke/use-cases returns all 7 registered KE Use Cases', async () => {
+  it('GET /api/ke/use-cases returns all 8 registered KE Use Cases', async () => {
     const res = await fetch(`${baseUrl}/api/ke/use-cases`);
     assert.strictEqual(res.status, 200);
 
     const data = (await res.json()) as { success: boolean; useCases: any[] };
     assert.strictEqual(data.success, true);
     assert.ok(Array.isArray(data.useCases));
-    assert.strictEqual(data.useCases.length, 7);
+    assert.strictEqual(data.useCases.length, 8);
 
     const ids = data.useCases.map(u => u.id);
     assert.ok(ids.includes('ke_schema_modeling'));
@@ -58,6 +58,15 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
     assert.ok(ids.includes('ke_semantic_export'));
     assert.ok(ids.includes('ke_maturity_eval'));
     assert.ok(ids.includes('ke_docs_wiki_drift'));
+    assert.ok(ids.includes('ke_wiki_program_change'));
+  });
+
+  it('ke_wiki_program_change has a read-only stage step and an F6-only apply step', () => {
+    const useCase = KE_USE_CASES['ke_wiki_program_change'];
+    assert.strictEqual(useCase.steps.length, 2);
+    assert.strictEqual(useCase.steps[0].scriptId, 'wiki_program_change_propose');
+    assert.strictEqual(useCase.steps[1].scriptId, 'wiki_program_change_apply');
+    assert.strictEqual(useCase.steps[1].defaultArgs?.confirm, undefined, 'no implicit confirmation');
   });
 
   it('POST /api/ke/use-cases/execute rejects unknown Use Case IDs with 400', async () => {

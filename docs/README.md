@@ -42,7 +42,7 @@ Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in
 | [`MIGRATION.md`](MIGRATION.md) | Flusso Plan-Review-Apply: proposte `wiki-edit` + **Applica modifica**, changeset backend, soft delete. |
 | [`mockups/`](mockups/README.md) | Review Studio: prototipo HTML interattivo e 5 anteprime (Verifica, Critica, Digest, Diff, menu contestuale). |
 | [`AUDIT_BASELINE.md`](AUDIT_BASELINE.md) | Baseline audit del repository (fase 0). |
-| [`SELF_WIKI_PLAN.md`](SELF_WIKI_PLAN.md) | Piano di self-documentazione: `docs/` proiettato nella wiki OKF di `wikiforge` (fasi 70-75). |
+| [`SELF_WIKI_PLAN.md`](SELF_WIKI_PLAN.md) | Piano di self-documentazione: `docs/` proiettato nella wiki OKF di `wikiforge` (fasi 70-76). |
 | [`CHANGELOG.md`](CHANGELOG.md) | Storico delle release. |
 
 ## 🤖 Operatività dell'agente
@@ -73,7 +73,7 @@ Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in
 | `progetti-config` | `TUTORIAL.md` FASE 1, `STARTUP.md` |
 | `modalita-dev` | `TUTORIAL.md` §3 (KE Workbench), `KE_PLAYBOOK.md` |
 | `maturita-metriche` | `TUTORIAL.md` FASE 4, `METRICS.md`, `KE_PLAYBOOK.md` |
-| `wiki-di-wiki-forge` | `SELF_WIKI_PLAN.md`, `docs_to_wiki.py`, `TUTORIAL.md` §5 |
+| `wiki-di-wiki-forge` | `SELF_WIKI_PLAN.md` (fasi 70-76), `docs_to_wiki.py`, `KNOWLEDGE_ENGINEERING.md` (UC8), `TUTORIAL.md` §5 |
 
 ## Verifica di coerenza
 

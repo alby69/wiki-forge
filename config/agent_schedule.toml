@@ -119,3 +119,20 @@ project = "default"
 args = { docs_dir = "docs", wiki_dir = "projects/wikiforge/wiki" }
 auto_apply = false
 max_retries = 1
+
+# Fase 76 — ponte wiki -> modifiche al programma. Lo step 0 (propose) è in
+# sola lettura e accoda la proposta; lo step 1 (apply) è mutante e viene
+# sempre sottratto dal Policy Agent F5, accodato per l'approvazione F6 e
+# applicato solo da POST /api/ke/schedule/approvals/:id/approve. Disabilitato
+# di default: va innescato a mano con una proposta già presente.
+[[agent.scheduler.jobs]]
+id = "wiki-program-change"
+role = "Documentation Auditor"
+use_case = "ke_wiki_program_change"
+steps = [0, 1]
+schedule = "0 7 * * 1"
+enabled = false
+project = "wikiforge"
+args = { proposal = "output/program-changes/proposal.json", stage_dir = "output/program-changes" }
+auto_apply = false
+max_retries = 1
