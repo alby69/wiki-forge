@@ -73,6 +73,7 @@ export const MUTATING_SCRIPT_IDS = new Set([
   'suggest_tags',
   'okf_reindex',
   'maturity_calculator',
+  'promote_doc_answer',
 ]);
 
 export function isMutatingScript(scriptId: string | undefined): boolean {

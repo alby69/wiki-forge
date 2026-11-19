@@ -82,6 +82,7 @@
 | 67 | KE Workbench: Console Output nascondibile e ridimensionabile | ✅ Done | Toggle `▾/▴ Console`, drag handle con clamp, preferenze in `localStorage` |
 | 68 | Agenti schedulati per i 6 Use Case KE (F0–F4) | ✅ Done | **F0** runner condiviso, **F1** validazione cron/config, **F2** motore di scheduling (loop 30s, lock PID, single-flight, retry/backoff 1m+5m, timeout con abort, stato persistente, audit log), **F3** (API REST/SSE, adapter a `runUseCase()`, avvio in `httpServer.ts` con `SIGINT`/`SIGTERM`, override runtime e annullamento) e **F4** (tab 🤖 Agenti & Schedule nel Workbench: card job, toggle, cambio orario, Esegui ora con log SSE, annulla, stream live e storico). Piano e avanzamento in `docs/KE_AGENT_SCHEDULER_PLAN.md` |
 | 69 | Policy Agent LLM e trigger da eventi con approvazione umana (F5–F6) | ✅ Done | **F5** Policy Agent consultivo e fail-closed: ogni decisione ha rationale e fonti in `output/scheduler/decisions.jsonl`; risposte LLM invalide o LLM assente ricadono sulla regola deterministica “sola lettura + approvazione”, gli step mutanti (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. **F6** trigger `note.created`/`note.modified`/`note.deleted` via webhook (`POST /api/ke/schedule/trigger`) o hook alla creazione note API, con debounce a 5 minuti; gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` e partono solo dopo `POST /approvals/:id/approve` con snapshot e audit `actor: human`. Nuove API decisioni/approvazioni/trigger e sezione Policy & Approvazioni nel Workbench con pulsanti ✅/❌ |
+| 70-75 | Wiki di self-documentazione da `docs/` | ✅ Done | **F70** piano e mapping completo (`docs/SELF_WIKI_PLAN.md`); **F71** generatore OKF deterministico (`scripts/docs_to_wiki.py`, 43 sorgenti → 51 file, `--check`); **F72** progetto dedicato `wikiforge` con bundle commitato; **F73** drift check in `check_docs_sync.py` + `okf_lint.py`; **F74** bottone **📚 Wiki Docs**, `Ctrl+Alt+D`, Research Studio con `projectId=wikiforge` (query + header), scope badge e help topic `wiki-di-wiki-forge`; **F75** note `sintesi/` con `verified: human:<id>` via `promote_doc_answer.py` e job consultivo `weekly-docs-wiki-drift` con rationale/fonti. Nessuna mutazione automatica; Fase 76 non implementata. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -275,3 +276,15 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Deterministic helpers (`src/backend/server/studyHelpers.ts`)**: pure builders for study guides, exact-count quizzes (1–25), heading/wikilink mind maps, Host A / Host B audio scripts, and maturity-filtered thesis chapters, with unit tests in `tests/studyHelpers.test.ts`.
 - **Command parity**: the chat workflows call the same builders, including the new TypeScript `executeThesisChapterWorkflow`; `/thesis-chapter` writes both `output/thesis-<slug>.md` and the canonical `output/thesis_compiled.md`.
 - **Docs**: in-app help topic `study-studio`, plus updates to README, docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.13), AGENT, WORKFLOW and CHANGELOG.
+
+## Phase 70-75 — Self-Documentation Wiki ✅ Done
+
+**Goal:** Make `docs/` queryable from the LLM/Research Studio as an OKF v0.2 wiki about wiki-forge itself, accumulating approved answers without ever letting scheduled jobs modify the wiki or the program.
+
+**Deliverables:**
+- **Plan (`docs/SELF_WIKI_PLAN.md`)**: source + projection architecture, full document→note mapping, taxonomy and safeguards; `docs/` stays canonical, `docs/help/*.md` keeps its `/api/help` frontmatter, `docs/METRICS.md` is excluded.
+- **Generator (`scripts/docs_to_wiki.py`)**: deterministic projection into `projects/wikiforge/wiki/` (6 areas + curated `sintesi/`), fixed `BUILD_STAMP`, `--check`/`--json`/`--dry-run`, provenance and source-language tags; committed bundle verified by `scripts/check_docs_sync.py` and `scripts/okf_lint.py`.
+- **Dedicated project (`config/projects.json`, `projects/wikiforge/config.toml`)**: separate `wikiforge` vault registered alongside `default` and `tesi`.
+- **Research UX (Fase 74)**: **📚 Wiki Docs** button and `Ctrl+Alt+D` open the Research Studio scoped to `wikiforge` (both `projectId=` and `X-Project-Id`) without switching the active vault; scope badge, source-note activation and help topic `wiki-di-wiki-forge`.
+- **Curated synthesis (Fase 75)**: human-only `scripts/promote_doc_answer.py` writes `sintesi/*.md` with `verified: human:<id>` and is a blocked mutating script; read-only `scripts/docs_wiki_drift.py` runs as advisory Use Case 7 (`weekly-docs-wiki-drift`, `auto_apply = false`). Fase 76 (automatic program modification) is intentionally out of scope.
+- **Tests**: `tests/python/test_docs_to_wiki.py` (9) and `tests/docsWikiScope.test.ts` (3).

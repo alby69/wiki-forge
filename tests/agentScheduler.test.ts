@@ -75,9 +75,9 @@ describe('Schedule configuration validation (F1)', () => {
     assert.deepStrictEqual(result.errors, []);
     assert.strictEqual(result.config.timezone, 'Europe/Rome');
     assert.strictEqual(result.config.maxConcurrency, 1);
-    assert.strictEqual(result.jobs.length, 7);
+    assert.strictEqual(result.jobs.length, 8);
     assert.ok(result.jobs.every((job) => job.autoApply === false));
-    assert.ok(result.jobs.filter((job) => job.enabled).length === 5);
+    assert.ok(result.jobs.filter((job) => job.enabled).length === 6);
     assert.strictEqual(result.config.policyEnabled, true, 'F5 policy is active by default');
 
     const exportJob = result.jobs.find((job) => job.id === 'weekly-rdf-export');
@@ -88,6 +88,12 @@ describe('Schedule configuration validation (F1)', () => {
     assert.strictEqual(eventJob?.eventTrigger, 'note.created', 'F6 event job is configured');
     assert.strictEqual(eventJob?.debounceSeconds, 300);
     assert.strictEqual(eventJob?.enabled, false, 'the event job is opt-in');
+
+    const driftJob = result.jobs.find((job) => job.id === 'weekly-docs-wiki-drift');
+    assert.strictEqual(driftJob?.useCaseId, 'ke_docs_wiki_drift', 'Fase 75 drift job is configured');
+    assert.deepStrictEqual(driftJob?.steps, [0], 'only the read-only drift step runs');
+    assert.strictEqual(driftJob?.enabled, true);
+    assert.strictEqual(driftJob?.autoApply, false);
   });
 
   it('skips invalid jobs but keeps the valid ones', () => {

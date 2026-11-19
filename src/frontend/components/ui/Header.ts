@@ -20,6 +20,7 @@ export interface HeaderOptions {
   onOpenWizard?: () => void;
   onOpenKEWorkbench?: () => void;
   onOpenResearch?: () => void;
+  onOpenDocsWiki?: () => void;
   onOpenStudy?: () => void;
   onOpenHelp?: () => void;
 }
@@ -34,6 +35,7 @@ export class Header {
   private onOpenWizardCb?: () => void;
   private onOpenKEWorkbenchCb?: () => void;
   private onOpenResearchCb?: () => void;
+  private onOpenDocsWikiCb?: () => void;
   private onOpenStudyCb?: () => void;
   private onOpenHelpCb?: () => void;
   private simpleDashboard?: SimpleModeDashboard;
@@ -52,6 +54,7 @@ export class Header {
     this.onOpenWizardCb = options.onOpenWizard;
     this.onOpenKEWorkbenchCb = options.onOpenKEWorkbench;
     this.onOpenResearchCb = options.onOpenResearch;
+    this.onOpenDocsWikiCb = options.onOpenDocsWiki;
     this.onOpenStudyCb = options.onOpenStudy;
     this.onOpenHelpCb = options.onOpenHelp;
 
@@ -156,6 +159,7 @@ export class Header {
                  </button>
                  <button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
                  <button id="header-research-btn" title="Research Studio: consult, ricerca, backlink, correlate, traccia, deep research" style="background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🔎 Research</button>
+                  <button id="header-docs-wiki-btn" title="Chiedi alla wiki di wiki-forge (documentazione, architettura, procedure)" style="background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">📚 Wiki Docs</button>
                  <button id="header-study-btn" title="Study Studio: guida, quiz, mindmap, audio, note veloci, promozione, capitolo di tesi" style="background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">📚 Studio</button>
                  <button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
                  <button id="header-config-btn" style="background: #334155; color: #ffffff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">⚙️ Config</button>`
@@ -173,6 +177,7 @@ export class Header {
     const wizardBtn = this.container.querySelector('#header-wizard-btn');
     const keBtn = this.container.querySelector('#header-ke-btn');
     const researchBtn = this.container.querySelector('#header-research-btn');
+    const docsWikiBtn = this.container.querySelector('#header-docs-wiki-btn');
     const studyBtn = this.container.querySelector('#header-study-btn');
     const toolsBtn = this.container.querySelector('#header-tools-btn');
     const configBtn = this.container.querySelector('#header-config-btn');
@@ -190,6 +195,7 @@ export class Header {
     if (wizardBtn) wizardBtn.addEventListener('click', () => this.onOpenWizardCb?.());
     if (keBtn) keBtn.addEventListener('click', () => this.onOpenKEWorkbenchCb?.());
     if (researchBtn) researchBtn.addEventListener('click', () => this.onOpenResearchCb?.());
+    if (docsWikiBtn) docsWikiBtn.addEventListener('click', () => this.onOpenDocsWikiCb?.());
     if (studyBtn) studyBtn.addEventListener('click', () => this.onOpenStudyCb?.());
     if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
     if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());

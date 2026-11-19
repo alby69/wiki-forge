@@ -199,10 +199,10 @@ export class ApiStorage implements IStorage {
     return false;
   }
 
-  public async getAllNotes(): Promise<WikiNote[]> {
+  public async getAllNotes(projectId?: string): Promise<WikiNote[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/notes`, {
-        headers: this.getHeaders(),
+      const res = await fetch(`${this.baseUrl}/api/wiki/notes${this.withProjectScope('', projectId)}`, {
+        headers: this.headersForProject(projectId),
       });
       if (res.ok) {
         const json = (await res.json()) as { success: boolean; notes?: WikiNote[] };
@@ -211,9 +211,9 @@ export class ApiStorage implements IStorage {
         }
       }
     } catch (_err) {
-      // Backend unavailable; fallback to static FileStorage
+      // Backend unavailable; fallback to static FileStorage only for the active project
     }
-    return this.fallback.getAllNotes();
+    return projectId ? [] : this.fallback.getAllNotes();
   }
 
   public async getScratchpad(): Promise<ScratchpadEntry[]> {
@@ -788,11 +788,28 @@ export class ApiStorage implements IStorage {
   // Research Studio
   // ---------------------------------------------------------------------------
 
-  public async researchSearch(query: string, limit: number = 30): Promise<ResearchSearchResponse> {
+  /**
+   * Research Studio can query a different project without switching the active
+   * vault. The backend gives the `X-Project-Id` header precedence over the
+   * query parameter, so both are set when an explicit scope is requested.
+   */
+  private withProjectScope(query: string, projectId?: string): string {
+    if (!projectId) return query;
+    const param = `projectId=${encodeURIComponent(projectId)}`;
+    return query ? `${query}&${param}` : `?${param}`;
+  }
+
+  private headersForProject(projectId?: string): Record<string, string> {
+    const headers = this.getHeaders();
+    if (projectId) headers['X-Project-Id'] = projectId;
+    return headers;
+  }
+
+  public async researchSearch(query: string, limit: number = 30, projectId?: string): Promise<ResearchSearchResponse> {
     try {
       const res = await fetch(
-        `${this.baseUrl}/api/notes/research/search${this.reviewQuery({ q: query, limit })}`,
-        { headers: this.getHeaders() }
+        `${this.baseUrl}/api/notes/research/search${this.withProjectScope(this.reviewQuery({ q: query, limit }), projectId)}`,
+        { headers: this.headersForProject(projectId) }
       );
       return (await res.json()) as ResearchSearchResponse;
     } catch (err) {
@@ -800,11 +817,11 @@ export class ApiStorage implements IStorage {
     }
   }
 
-  public async researchBacklinks(noteRef: string): Promise<ResearchBacklinksResponse> {
+  public async researchBacklinks(noteRef: string, projectId?: string): Promise<ResearchBacklinksResponse> {
     try {
       const res = await fetch(
-        `${this.baseUrl}/api/notes/research/backlinks${this.reviewQuery({ note: noteRef })}`,
-        { headers: this.getHeaders() }
+        `${this.baseUrl}/api/notes/research/backlinks${this.withProjectScope(this.reviewQuery({ note: noteRef }), projectId)}`,
+        { headers: this.headersForProject(projectId) }
       );
       return (await res.json()) as ResearchBacklinksResponse;
     } catch (err) {
@@ -812,11 +829,11 @@ export class ApiStorage implements IStorage {
     }
   }
 
-  public async researchRelated(noteRef: string, limit: number = 12): Promise<ResearchRelatedResponse> {
+  public async researchRelated(noteRef: string, limit: number = 12, projectId?: string): Promise<ResearchRelatedResponse> {
     try {
       const res = await fetch(
-        `${this.baseUrl}/api/notes/research/related${this.reviewQuery({ note: noteRef, limit })}`,
-        { headers: this.getHeaders() }
+        `${this.baseUrl}/api/notes/research/related${this.withProjectScope(this.reviewQuery({ note: noteRef, limit }), projectId)}`,
+        { headers: this.headersForProject(projectId) }
       );
       return (await res.json()) as ResearchRelatedResponse;
     } catch (err) {
@@ -824,11 +841,11 @@ export class ApiStorage implements IStorage {
     }
   }
 
-  public async researchTrace(query: string): Promise<ResearchTraceResponse> {
+  public async researchTrace(query: string, projectId?: string): Promise<ResearchTraceResponse> {
     try {
       const res = await fetch(
-        `${this.baseUrl}/api/notes/research/trace${this.reviewQuery({ q: query })}`,
-        { headers: this.getHeaders() }
+        `${this.baseUrl}/api/notes/research/trace${this.withProjectScope(this.reviewQuery({ q: query }), projectId)}`,
+        { headers: this.headersForProject(projectId) }
       );
       return (await res.json()) as ResearchTraceResponse;
     } catch (err) {
@@ -836,11 +853,11 @@ export class ApiStorage implements IStorage {
     }
   }
 
-  public async researchConsult(question: string): Promise<ResearchConsultResponse> {
+  public async researchConsult(question: string, projectId?: string): Promise<ResearchConsultResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/research/consult`, {
+      const res = await fetch(`${this.baseUrl}/api/notes/research/consult${this.withProjectScope('', projectId)}`, {
         method: 'POST',
-        headers: this.getHeaders(),
+        headers: this.headersForProject(projectId),
         body: JSON.stringify({ question }),
       });
       return (await res.json()) as ResearchConsultResponse;
@@ -849,11 +866,11 @@ export class ApiStorage implements IStorage {
     }
   }
 
-  public async researchDeepResearch(question: string): Promise<ResearchDeepResearchResponse> {
+  public async researchDeepResearch(question: string, projectId?: string): Promise<ResearchDeepResearchResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/research/deep-research`, {
+      const res = await fetch(`${this.baseUrl}/api/notes/research/deep-research${this.withProjectScope('', projectId)}`, {
         method: 'POST',
-        headers: this.getHeaders(),
+        headers: this.headersForProject(projectId),
         body: JSON.stringify({ question }),
       });
       return (await res.json()) as ResearchDeepResearchResponse;

@@ -41,14 +41,14 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('GET /api/ke/use-cases returns all 6 registered KE Use Cases', async () => {
+  it('GET /api/ke/use-cases returns all 7 registered KE Use Cases', async () => {
     const res = await fetch(`${baseUrl}/api/ke/use-cases`);
     assert.strictEqual(res.status, 200);
 
     const data = (await res.json()) as { success: boolean; useCases: any[] };
     assert.strictEqual(data.success, true);
     assert.ok(Array.isArray(data.useCases));
-    assert.strictEqual(data.useCases.length, 6);
+    assert.strictEqual(data.useCases.length, 7);
 
     const ids = data.useCases.map(u => u.id);
     assert.ok(ids.includes('ke_schema_modeling'));
@@ -57,6 +57,7 @@ describe('Knowledge Engineer Use Cases Test Suite', () => {
     assert.ok(ids.includes('ke_neuro_symbolic'));
     assert.ok(ids.includes('ke_semantic_export'));
     assert.ok(ids.includes('ke_maturity_eval'));
+    assert.ok(ids.includes('ke_docs_wiki_drift'));
   });
 
   it('POST /api/ke/use-cases/execute rejects unknown Use Case IDs with 400', async () => {

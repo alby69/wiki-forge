@@ -15,7 +15,7 @@ import { ApiStorage } from '@frontend/storage/ApiStorage';
 
 export interface ResearchStudioCallbacks {
   /** Opens a result note in the editor and closes the modal. */
-  onOpenNote?: (noteId: string) => void;
+  onOpenNote?: (noteId: string, projectId?: string) => void;
   /** Called after deep research wrote a new synthesis note. */
   onVaultChanged?: () => void;
 }
@@ -54,6 +54,8 @@ export class ResearchStudio {
 
   private noteId: string | null = null;
   private tab: ResearchTab = 'search';
+  private scopeProjectId: string | undefined;
+  private scopeLabel = '';
 
   private consultQuestion = '';
   private searchQuery = '';
@@ -106,6 +108,20 @@ export class ResearchStudio {
   }
 
   public open(options: ResearchOpenOptions = {}): void {
+    this.scopeProjectId = options.projectId;
+    this.scopeLabel = options.scopeLabel || '';
+    if (this.scopeProjectId) {
+      this.noteId = null;
+      this.notes = [];
+      void this.storage.getAllNotes(this.scopeProjectId).then(notes => {
+        if (this.scopeProjectId === options.projectId) {
+          this.notes = notes;
+          this.noteId = notes[0]?.id ?? null;
+          if (this.isOpen()) this.renderShell();
+        }
+      });
+    }
+
     const previousNote = this.noteId;
     if (options.noteId) this.noteId = options.noteId;
     if (options.noteRef) {
@@ -203,7 +219,7 @@ export class ResearchStudio {
     this.searchLoading = true;
     this.search = null;
     this.renderBody();
-    this.search = await this.storage.researchSearch(this.searchQuery.trim());
+    this.search = await this.storage.researchSearch(this.searchQuery.trim(), 30, this.scopeProjectId);
     this.searchLoading = false;
     this.renderBody();
   }
@@ -213,7 +229,7 @@ export class ResearchStudio {
     this.backlinksLoading = true;
     this.backlinks = null;
     this.renderBody();
-    this.backlinks = await this.storage.researchBacklinks(this.noteRef());
+    this.backlinks = await this.storage.researchBacklinks(this.noteRef(), this.scopeProjectId);
     this.backlinksLoading = false;
     this.renderBody();
   }
@@ -223,7 +239,7 @@ export class ResearchStudio {
     this.relatedLoading = true;
     this.related = null;
     this.renderBody();
-    this.related = await this.storage.researchRelated(this.noteRef());
+    this.related = await this.storage.researchRelated(this.noteRef(), 12, this.scopeProjectId);
     this.relatedLoading = false;
     this.renderBody();
   }
@@ -232,7 +248,7 @@ export class ResearchStudio {
     this.traceLoading = true;
     this.trace = null;
     this.renderBody();
-    this.trace = await this.storage.researchTrace(this.traceQuery.trim());
+    this.trace = await this.storage.researchTrace(this.traceQuery.trim(), this.scopeProjectId);
     this.traceLoading = false;
     this.renderBody();
   }
@@ -241,7 +257,7 @@ export class ResearchStudio {
     this.consultLoading = true;
     this.consult = null;
     this.renderBody();
-    this.consult = await this.storage.researchConsult(this.consultQuestion.trim());
+    this.consult = await this.storage.researchConsult(this.consultQuestion.trim(), this.scopeProjectId);
     this.consultLoading = false;
     this.renderBody();
   }
@@ -250,7 +266,7 @@ export class ResearchStudio {
     this.deepLoading = true;
     this.deep = null;
     this.renderBody();
-    this.deep = await this.storage.researchDeepResearch(this.deepQuestion.trim());
+    this.deep = await this.storage.researchDeepResearch(this.deepQuestion.trim(), this.scopeProjectId);
     this.deepLoading = false;
     this.renderBody();
     if (this.deep.success) this.callbacks.onVaultChanged?.();
@@ -270,7 +286,9 @@ export class ResearchStudio {
           <div>
             <h2><span class="dot"></span> Research Studio</h2>
             <div class="wf-rs-subtitle">
-              <strong>Knowledge base</strong>
+              ${this.scopeProjectId
+                ? `<span class="wf-rq-scope" title="Progetto interrogato: ${escapeHtml(this.scopeProjectId)}">📚 ${escapeHtml(this.scopeLabel || this.scopeProjectId)}</span>`
+                : '<strong>Knowledge base</strong>'}
               <code>${this.notes.length} note</code>
               <span>· interrogazione e ricerca</span>
               ${note ? `<span>· contesto: <strong>${escapeHtml(note.title)}</strong></span>` : ''}
@@ -675,7 +693,7 @@ export class ResearchStudio {
         const noteId = button.getAttribute('data-note-id');
         if (!noteId) return;
         this.close();
-        this.callbacks.onOpenNote?.(noteId);
+        this.callbacks.onOpenNote?.(noteId, this.scopeProjectId);
       });
     });
   }

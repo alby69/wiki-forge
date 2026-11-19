@@ -22,7 +22,7 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 
 ## 2. Gestione degli Use Case guidati per l'Ingegnere della Conoscenza (KE Workbench)
 
-`wiki-forge` offre un **Pannello di Controllo guidato per il Knowledge Engineer (KE Workbench)** e REST API dedicate (`/api/ke/use-cases` e `/api/ke/use-cases/execute`) che guidano l'Ingegnere della Conoscenza nell'esecuzione dei **6 Use Case professionali** fondamentali per la gestione del ciclo di vita della conoscenza:
+`wiki-forge` offre un **Pannello di Controllo guidato per il Knowledge Engineer (KE Workbench)** e REST API dedicate (`/api/ke/use-cases` e `/api/ke/use-cases/execute`) che guidano l'Ingegnere della Conoscenza nell'esecuzione dei **7 Use Case professionali** fondamentali per la gestione del ciclo di vita della conoscenza:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -34,6 +34,7 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 │ 4. Neuro-Symbolic & ODP          ──► odp_suggester, neuro_symbolic_check     │
 │ 5. Enterprise Semantic Export    ──► export_semantic (RDF/TTL/JSON-LD), MOCs │
 │ 6. KE Platform Maturity Eval     ──► maturity_calculator, ke_maturity        │
+│ 7. Self-Docs Wiki Drift          ──► docs_wiki_drift (read-only)             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,17 +48,21 @@ The Knowledge Engineering lifecycle comprises six primary dimensions:
 | `ke_neuro_symbolic` | **UC4: Neuro-Symbolic Reasoning & ODP** | Pattern Reasoning | `odp_suggester`, `neuro_symbolic_check` | `output/neuro_symbolic_report.md` |
 | `ke_semantic_export` | **UC5: Enterprise Semantic Graph & RDF Export** | Interoperability & Graph | `export_semantic`, `okf_reindex` | `output/wiki_export.ttl` / `.jsonld` |
 | `ke_maturity_eval` | **UC6: KE Platform Maturity Evaluation** | Platform Governance | `maturity_calculator`, `ke_maturity` | `output/ke_maturity_report.md` |
+| `ke_docs_wiki_drift` | **UC7: Self-Documentation Wiki Drift** | Documentation Governance | `docs_wiki_drift` (read-only) | report consultivo con rationale e fonti |
 
 ### Integrazione UI & SSE Streaming
 Nell'interfaccia Web in **👑 Developer Mode**, il pulsante **🧠 KE Workbench** apre la finestra modale guidata. È possibile eseguire l'intero workflow con un solo click (**▶ Esegui Tutti i Passaggi dell'Use Case**) oppure eseguire i singoli step con feedback in tempo reale via Server-Sent Events (SSE).
 
-Il Workbench offre due tab: **🧩 Use Case** (i 6 workflow guidati) e **🤖 Agenti & Schedule** (F4). Quest'ultima mostra una card per ogni job schedulato con ruolo, Use Case, cron leggibile, prossima corsa e ultimo esito; permette di abilitare/disabilitare il job, cambiare orario, avviarlo subito (**Esegui ora**) o annullare la corsa attiva. I log dell'esecuzione manuale appaiono nella Console Output con gli stessi eventi dell'endpoint SSE, mentre lo stream live aggiorna le card e la sidebar mostra gli ultimi run.
+Il Workbench offre due tab: **🧩 Use Case** (i 7 workflow guidati) e **🤖 Agenti & Schedule** (F4). Quest'ultima mostra una card per ogni job schedulato con ruolo, Use Case, cron leggibile, prossima corsa e ultimo esito; permette di abilitare/disabilitare il job, cambiare orario, avviarlo subito (**Esegui ora**) o annullare la corsa attiva. I log dell'esecuzione manuale appaiono nella Console Output con gli stessi eventi dell'endpoint SSE, mentre lo stream live aggiorna le card e la sidebar mostra gli ultimi run.
 
 La sezione **Policy & Approvazioni** (F5/F6) della stessa tab mostra le decisioni recenti del Policy Agent con azione, origine (LLM o fallback), rationale e fonti, e gli step mutanti in attesa con pulsanti **✅ Approva** / **❌ Rifiuta**. Nessuno step che scrive nella wiki viene eseguito in automatico: dopo la creazione di una nota può partire un job dopo 5 minuti di debounce, ma lo step mutante resta in coda finché una persona non lo approva (con snapshot preventivi e audit dedicato).
 
 La **Console Output** può essere nascosta con il pulsante **▾ / ▴ Console** (come per la barra laterale dei file) e ridimensionata trascinando il separatore sopra di essa: altezza e stato di chiusura vengono conservati in `localStorage` tra un'apertura e l'altra.
 
 > **Manutenzione autonoma**: il piano per eseguire i 6 Use Case in automatico tramite agenti schedulati è descritto in `docs/KE_AGENT_SCHEDULER_PLAN.md`. Sono completate **F0** (runner condiviso), **F1** (configurazione `config/agent_schedule.toml` con sei job sicuri, tutti `auto_apply = false`), **F2** (motore `scheduler/scheduler.ts`: tick unico, lock PID, single-flight, retry con backoff 1m/5m, timeout con abort, stato atomico in `.wiki-forge/scheduler-state.json`, audit redatto in `output/scheduler/audit.jsonl`) e **F3**: lo scheduler è **attivo** nel processo API (`httpServer.ts`), collegato a `runUseCase()` tramite adapter e controllabile via `GET/PATCH /api/ke/schedule`, `POST /:id/run` (SSE con gli stessi eventi del Workbench), `POST /:id/cancel`, `GET /api/ke/schedule/runs` e `GET /api/ke/schedule/events`. I toggle runtime vengono salvati come override senza riscrivere il TOML. La tab **🤖 Agenti & Schedule** (F4) rende visibili job, esiti, log live e storico senza usare la riga di comando. Con **F5** il Policy Agent LLM è consultivo e fail-closed: ogni decisione finisce in `output/scheduler/decisions.jsonl` con rationale e fonti obbligatorie; gli script che scrivono (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. Con **F6** eventi `note.created`/`note.modified`/`note.deleted` (webhook `POST /api/ke/schedule/trigger` o creazione note nell'UI) avviano un job dopo il debounce configurato (`debounce_seconds`, default 300) e gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` fino ad approvazione umana via Workbench o `POST /api/ke/schedule/approvals/:id/approve`.
+
+### Wiki di self-documentazione (Fase 70-75)
+La documentazione `docs/` è proiettata in una wiki OKF v0.2 dedicata (`projects/wikiforge/wiki/`) e consultabile dal Research Studio con il pulsante **📚 Wiki Docs** (`Ctrl+Alt+D`), senza cambiare il vault attivo. Ogni risposta approvata può essere promossa a nota curata in `sintesi/` con `scripts/promote_doc_answer.py`, che richiede un `reviewer` umano (`verified: human:<id>`) ed è registrato come script mutante: il Policy Agent F5 non lo esegue mai in automatico. Il job consultivo `weekly-docs-wiki-drift` (UC7) segnala il drift tra `docs/` e la proiezione con rationale e fonti, senza scrivere nulla. Il piano completo è in `docs/SELF_WIKI_PLAN.md`.
 
 ### Review Studio per la governance della conoscenza
 La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🧐 Revisione**) offre al Knowledge Engineer un punto unico per:

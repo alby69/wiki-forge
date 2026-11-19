@@ -1,0 +1,59 @@
+---
+type: Reference
+title: "Stati e livelli di fiducia (OKF)"
+description: "Argomenti: stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed, unverified, verify, verifica, stale, review, revisione, snapshot, diff"
+resource: docs/help/stati-okf.md
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+status: stable
+generated:
+  by: process:docs-to-wiki
+  at: "2026-11-19T00:00:00Z"
+sources:
+  - id: source-docs-help-stati-okf-md
+    resource: docs/help/stati-okf.md
+    title: "Stati e livelli di fiducia (OKF)"
+    author: human:alby69
+---
+## I tre livelli di fiducia
+
+Ogni nota ha un **livello di fiducia** (*trust tier*), visibile nella **barra in alto** accanto al badge di modalità quando la nota è aperta:
+
+| Livello | Sigla | Significato |
+|---|---|---|
+| **Human-Reviewed** | 🟢 | Verificata da un essere umano — il livello più alto |
+| **Machine-Confirmed** | 🔵 | Prodotta/confermata dall'agente, nessuna revisione umana |
+| **Unverified** | ⚪ | Ancora nessuna conferma |
+
+Il livello è **derivato solo dal campo `verified`** del frontmatter (non dallo `status`): se `verified` ha un autore (`human:...`) → 🟢, altrimenti → 🔵, se assente → ⚪.
+
+## Come segnare una nota come verificata
+
+Dalla chat:
+
+```
+/verify <nota> [reviewer=<id>] [stable]
+```
+
+- `<nota>` — id o titolo della nota.
+- `reviewer=<id>` — chi verifica (es. `reviewer=mario`).
+- `stable` — la revisione è considerata stabile (non scade).
+
+`/human-review` è un alias identico di `/verify`. La nota passa a 🟢 **Human-Reviewed** e così appare anche nell'header.
+
+In alternativa, senza scrivere comandi: apri la **Review Studio** con **tasto destro** sulla nota, col pulsante **🧐 Revisione** nell'editor o con `Ctrl+Alt+R`. Nella scheda **Verifica** trovi il quality gate, lo storico e il modulo con revisore, `stable` e commento; premi **Registra verifica** per lo stesso risultato di `/verify`.
+
+## Rivedere e confrontare le versioni
+
+La scheda **Confronta versioni** della Review Studio mostra il diff unificato tra la nota e uno snapshot precedente e permette di ripristinarlo. Gli snapshot sono locali, in `.wiki-forge/snapshots/`; non serve git. Per lo storico documentale resta disponibile il pulsante **🕐 Cronologia**.
+
+## Gli altri stati (frontmatter OKF)
+
+Oltre alla fiducia, le note OKF v0.2 portano nel frontmatter: `type` (tipo), `status` (es. draft/stable/deprecated), `version`, `maturity` e i **tag**. Lo **stato di obsolescenza** (`stale_after`) segnala quando una nota andrebbe riveduta.
+
+## Verificare in loto la tua busta
+
+- **`/lint-frontmatter`** (o script **Lint OKF Bundle** in 🛠️ Tools) — valida frontmatter e campi obbligatori.
+- **`/audit`** — controlla link rotti, note orfane e problemi strutturali.
+- **OKF Bundle Analytics** (🛠️ Tools) — report con conteggi per tipo, stato e trust tier.
+
+**Approfondisci:** `docs/OKF_SPEC.md` (specifica completa OKF v0.2), `docs/TUTORIAL.md` §5.1 (fiducia e stati).

@@ -275,6 +275,17 @@ export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
     ],
   },
+  docs_wiki_drift: {
+    id: 'docs_wiki_drift',
+    path: 'scripts/docs_wiki_drift.py',
+    displayName: 'Docs/Wiki Drift Report',
+    category: 'Knowledge Engineering',
+    description: 'Read-only comparison of docs/ with the committed OKF wiki projection; emits rationale and sources.',
+    parameters: [
+      { name: 'docs_dir', label: 'Docs Directory', type: 'text', default: 'docs', cliFlag: '--docs-dir', description: 'Documentation source directory.' },
+      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'projects/wikiforge/wiki', cliFlag: '--wiki-dir', description: 'Generated OKF wiki directory.' },
+    ],
+  },
   okf_log: {
     id: 'okf_log',
     path: 'scripts/okf_log.py',
@@ -892,6 +903,23 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
         description: 'Genera il report L1-L4 sulle 6 dimensioni dell\'Ingegneria della Conoscenza salvandolo in output/ke_maturity_report.md.',
         scriptId: 'ke_maturity',
         defaultArgs: { wiki_dir: 'wiki', output: 'output/ke_maturity_report.md' },
+      },
+    ],
+  },
+  ke_docs_wiki_drift: {
+    id: 'ke_docs_wiki_drift',
+    title: 'Use Case 7: Self-Documentation Wiki Drift',
+    role: 'Knowledge Engineer',
+    category: 'Documentation Governance',
+    summary: 'Confronta docs/ con la proiezione OKF della wiki di wiki-forge e produce un report consultivo, senza scrivere nella wiki.',
+    objective: 'Rilevare il drift della documentazione e fornire sempre motivazione e fonti, lasciando ogni modifica alla persona che approva.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Docs/Wiki Drift Report',
+        description: 'Verifica che il bundle generato corrisponda a docs/ e stampa motivazione e fonti del report.',
+        scriptId: 'docs_wiki_drift',
+        defaultArgs: { docs_dir: 'docs', wiki_dir: 'projects/wikiforge/wiki' },
       },
     ],
   },

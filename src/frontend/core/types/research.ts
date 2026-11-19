@@ -122,4 +122,8 @@ export interface ResearchOpenOptions {
   tab?: ResearchTab;
   query?: string;
   noteRef?: string;
+  /** Query a project other than the active vault (e.g. the wikiforge docs wiki). */
+  projectId?: string;
+  /** Human-readable label shown in the modal header for an explicit scope. */
+  scopeLabel?: string;
 }

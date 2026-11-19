@@ -192,7 +192,14 @@ Backlink to [[01-index]].
     });
 
     this.researchStudio = new ResearchStudio(this.storage, {
-      onOpenNote: noteId => this.selectNote(noteId),
+      onOpenNote: (noteId, projectId) => {
+        if (projectId && projectId !== this.storage.getActiveProjectId()) {
+          this.storage.setActiveProjectId(projectId);
+          void this.loadVault().then(() => this.selectNote(noteId));
+          return;
+        }
+        this.selectNote(noteId);
+      },
       onVaultChanged: () => {
         void this.loadVault(true);
         this.editor.showSaveStatus('Deep research salvato nella wiki');
@@ -238,7 +245,13 @@ Backlink to [[01-index]].
         t: 'trace',
         h: 'deep',
       };
-      const tab = tabByKey[event.key.toLowerCase()];
+      const key = event.key.toLowerCase();
+      if (key === 'd') {
+        event.preventDefault();
+        this.openDocsWiki();
+        return;
+      }
+      const tab = tabByKey[key];
       if (!tab) return;
       event.preventDefault();
       this.openResearchStudio({ tab });
@@ -282,6 +295,9 @@ Backlink to [[01-index]].
       },
       onOpenResearch: () => {
         this.openResearchStudio();
+      },
+      onOpenDocsWiki: () => {
+        this.openDocsWiki();
       },
       onOpenStudy: () => {
         this.openStudyStudio();
@@ -550,11 +566,26 @@ Backlink to [[01-index]].
    * backlinks and related default to the current note; consult and deep
    * research accept a question.
    */
-  public openResearchStudio(options: { noteId?: string; tab?: ResearchTab; query?: string } = {}): void {
+  public openResearchStudio(options: { noteId?: string; tab?: ResearchTab; query?: string; projectId?: string; scopeLabel?: string } = {}): void {
     this.researchStudio.open({
-      noteId: options.noteId || this.selectedNote?.id,
+      noteId: options.projectId ? undefined : (options.noteId || this.selectedNote?.id),
       tab: options.tab ?? 'search',
       query: options.query,
+      projectId: options.projectId,
+      scopeLabel: options.scopeLabel,
+    });
+  }
+
+  /**
+   * Opens the Research Studio scoped to the self-documentation wiki without
+   * changing the active project/vault. Ctrl+Alt+D is the keyboard shortcut.
+   */
+  public openDocsWiki(): void {
+    this.openResearchStudio({
+      tab: 'consult',
+      projectId: 'wikiforge',
+      scopeLabel: 'Wiki Docs · wiki-forge',
+      query: 'Come funziona l\'architettura di wiki-forge?',
     });
   }
 

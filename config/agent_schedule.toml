@@ -104,3 +104,18 @@ enabled = false
 project = "default"
 auto_apply = false
 max_retries = 1
+
+# Fase 75 — report consultivo sul drift tra docs/ e la wiki di wiki-forge.
+# Un solo step in sola lettura: nessuna scrittura nella wiki. Ogni decisione
+# del Policy Agent riporta rationale e fonti in output/scheduler/decisions.jsonl.
+[[agent.scheduler.jobs]]
+id = "weekly-docs-wiki-drift"
+role = "Documentation Auditor"
+use_case = "ke_docs_wiki_drift"
+steps = [0]
+schedule = "0 6 * * 1"
+enabled = true
+project = "default"
+args = { docs_dir = "docs", wiki_dir = "projects/wikiforge/wiki" }
+auto_apply = false
+max_retries = 1

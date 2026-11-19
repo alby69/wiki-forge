@@ -40,6 +40,7 @@ describe('F5 — Policy Agent decision log', () => {
     assert.strictEqual(isMutatingScript('okf_reindex'), true);
     assert.strictEqual(isMutatingScript('suggest_tags'), true);
     assert.strictEqual(isMutatingScript('maturity_calculator'), true);
+    assert.strictEqual(isMutatingScript('promote_doc_answer'), true);
     assert.strictEqual(isMutatingScript('export_semantic'), false);
     assert.strictEqual(isMutatingScript(undefined), false);
   });

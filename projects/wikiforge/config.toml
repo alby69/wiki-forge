@@ -1,0 +1,98 @@
+[project]
+name = "wikiforge"
+title = "Wiki-Forge Docs"
+context = "Self-documentation wiki for wiki-forge: user guides, architecture, standards, processes and approved synthesis notes. Generated from docs/ by scripts/docs_to_wiki.py."
+language = "it"
+
+[paths]
+sources = "sources"
+raw = "raw"
+wiki = "wiki"
+output = "output"
+notes = "notes"
+templates = "templates"
+
+[conversion]
+ocr = false
+
+[agent]
+confirm_destructive = true
+
+[agent.llm]
+provider = "opencode"
+opencode_command = ""
+opencode_args = [ "run", "--format", "json" ]
+api_base_url = ""
+api_key_env = "WIKIFORGE_LLM_API_KEY"
+model = "claude-sonnet-4-6"
+max_tokens = 4096
+timeout_seconds = 600
+
+[naming]
+article_case = "kebab-case"
+wiki_folder_case = "kebab-case"
+forbidden_chars = [ " ", "_", "/", "\\", ":", "*", "?", "\"", "<", ">", "|" ]
+
+[export]
+formats = [ "json", "html" ]
+include_raw = false
+include_sources = false
+
+[webclip]
+enabled = false
+folder = "sources/web-clips"
+format = "markdown"
+
+[audio]
+provider = "none"
+voice_host_a = "alloy"
+voice_host_b = "echo"
+output_folder = "output/audio"
+
+[i18n]
+default_language = "it"
+supported_languages = [ "en", "it" ]
+fallback_language = "en"
+
+[okf]
+version = "0.2"
+type_vocabulary = [ "Concept", "Paper", "Book", "Tool", "Process", "Playbook", "Reference", "StudyGuide", "Quiz" ]
+
+[okf.migration]
+default_type = "Reference"
+
+[[okf.migration.folder_type_map]]
+folder = "guida"
+type = "Playbook"
+
+[[okf.migration.folder_type_map]]
+folder = "architettura"
+type = "Concept"
+
+[[okf.migration.folder_type_map]]
+folder = "processi"
+type = "Process"
+
+[[okf.migration.folder_type_map]]
+folder = "standard"
+type = "Reference"
+
+[[okf.migration.folder_type_map]]
+folder = "riferimenti"
+type = "Reference"
+
+[[okf.migration.folder_type_map]]
+folder = "sintesi"
+type = "Reference"
+
+[tags]
+allowed = [ "scope/docs", "layer/generated", "layer/curated", "lang/it", "lang/en", "help" ]
+blocked = [ "the", "and", "of", "a", "to", "in", "on", "for", "is", "are" ]
+
+[versioning]
+enabled = true
+fields = [ "version", "parent_commit", "generated" ]
+
+[enterprise]
+enable_rbac = false
+cloud_backup_webdav = ""
