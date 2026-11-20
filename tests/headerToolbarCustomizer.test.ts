@@ -94,9 +94,10 @@ describe('Header toolbar customizer', () => {
 
     // The more button must stay visible even when many actions are pinned:
     // it sits outside the scrollable action strip and uses CSS dots.
-    const scrollMatch = markup.match(/<div class="wf-header__scroll">([\s\S]*)<\/div>\s*<div class="wf-header__menu">/);
-    assert.ok(scrollMatch, 'scrollable action strip is rendered');
-    assert.ok(!scrollMatch![1].includes('header-more-btn'), 'more button is outside the scrolling strip');
+    const actionsMatch = markup.match(/<div class="wf-header__actions">([\s\S]*)<\/div>\s*<div class="wf-header__menu">/);
+    assert.ok(actionsMatch, 'wrapping action strip is rendered');
+    assert.ok(!actionsMatch![1].includes('header-more-btn'), 'more button is outside the action strip');
+    assert.ok(!markup.includes('wf-header__scroll'), 'horizontal scrolling removed');
     assert.ok(markup.includes('class="wf-menu__dots"'), 'dots do not depend on a font glyph');
 
     header.destroy();

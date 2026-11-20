@@ -98,26 +98,38 @@
 }
 
 .wf-header {
-  height: 52px;
+  min-height: 52px;
+  height: auto;
   box-sizing: border-box;
   background: var(--wf-bg);
   border-bottom: 1px solid var(--wf-border);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--wf-space-3);
-  padding: 0 var(--wf-space-4);
+  row-gap: var(--wf-space-2);
+  column-gap: var(--wf-space-3);
+  padding: 6px var(--wf-space-4);
   color: var(--wf-text);
 }
 
 .wf-header__group { display: flex; align-items: center; gap: var(--wf-space-2); min-width: 0; }
-.wf-header__group--actions { flex: 1 1 auto; justify-content: flex-end; }
-/* Pinned buttons scroll instead of pushing the ⋯ button off screen. */
-.wf-header__scroll { display: flex; align-items: center; gap: var(--wf-space-2); min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.wf-header__scroll::-webkit-scrollbar { display: none; }
+/* When the actions don't fit beside the brand/selectors, the whole group
+   wraps to a second row and the header grows. */
+.wf-header__group--actions { flex: 1 0 auto; max-width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+.wf-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: var(--wf-space-2);
+}
 .wf-header__brand { font-weight: 700; font-size: 16px; letter-spacing: 0.5px; color: var(--wf-text-link); text-decoration: none; white-space: nowrap; }
 .wf-header__spacer { flex: 1; }
-.wf-header__menu { position: relative; flex-shrink: 0; }
+/* The ⋯ button never wraps below the actions and never overlaps them. */
+.wf-header__menu { position: relative; flex: 0 0 auto; margin-left: auto; }
 /* Three CSS dots: always visible, no dependency on a font glyph. */
 .wf-menu__dots { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 14px; }
 .wf-menu__dots i { display: block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }

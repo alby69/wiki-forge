@@ -194,7 +194,7 @@ export class Header {
         </div>
 
         <div class="wf-header__group wf-header__group--actions">
-          <div class="wf-header__scroll">
+          <div class="wf-header__actions">
             <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
               ${VIEW_MODES.map(m => {
                 const active = m.id === state.viewMode;
