@@ -47,6 +47,7 @@ DOC_MAP: dict[str, str] = {
     "docs/ARCHITECTURE.md": "architettura/architecture",
     "docs/TECHNICAL_ARCHITECTURE.md": "architettura/technical-architecture",
     "docs/EDITOR_MIGRATION.md": "architettura/editor-migration",
+    "docs/FRONTEND_UIUX_PLAN.md": "architettura/frontend-uiux-plan",
     "docs/GRAPH_RAG.md": "architettura/graph-rag",
     # processi
     "docs/AGENT.md": "processi/agent-manual",

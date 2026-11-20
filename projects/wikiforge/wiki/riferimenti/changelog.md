@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Frontend UI/UX & Project Lifecycle — studio e piano (Fase 78)
+
+- Aggiunto `docs/FRONTEND_UIUX_PLAN.md`: audit dettagliato del frontend (pulsanti Research/Studio duplicati in header globale e header nota, ~746 stili inline, 4 resizer duplicati, 3 listener `keydown` con collisione `Ctrl+Alt+D`, doppia source of truth del progetto attivo) e piano in 7 fasi KISS/DRY con catalogo azioni unico, design system a token, primitive UI, disaccoppiamento, accessibilità/i18n e ciclo di vita progetti completo lato backend/frontend.
+- `ROADMAP.md`: nuova fase 78 in stato Todo.
+
 ### Note Editor — migrazione a Milkdown/Crepe (WYSIWYG, disaccoppiato)
 
 - **Adapter seam**: `MarkdownEditor.ts` resta lo shell (header, Node Info, Review/Research/Studio/Cronologia, save lifecycle) e delega la superficie di editing a `NoteEditorAdapter` (`EditorAdapter.ts`). Due motori: `CodeMirrorAdapter` (fallback/source view) e `milkdown/MilkdownAdapter` (Crepe 7.23 WYSIWYG, TypeScript vanilla, nessun React). `resolveEngine()` sceglie automaticamente Milkdown nei browser reali e CodeMirror con DOM mock nei test. Le azioni della toolbar sono semantiche (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`, undo/redo); gli helper puri condivisi stanno in `editorMarkdownOps.ts`.
