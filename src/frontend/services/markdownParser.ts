@@ -48,14 +48,19 @@ export class MarkdownParser {
   /**
    * Simple YAML Frontmatter parser for Markdown strings
    */
-  public parseFrontmatter(rawContent: string): { frontmatter: Record<string, unknown>; content: string } {
+  public parseFrontmatter(rawContent: string): {
+    frontmatter: Record<string, unknown>;
+    content: string;
+    frontmatterRaw: string;
+  } {
     const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
     const match = frontmatterRegex.exec(rawContent);
 
     if (!match) {
-      return { frontmatter: {}, content: rawContent };
+      return { frontmatter: {}, content: rawContent, frontmatterRaw: '' };
     }
 
+    const frontmatterRaw = match[0];
     const yamlBlock = match[1];
     const content = rawContent.slice(match[0].length);
     const frontmatter: Record<string, unknown> = {};
@@ -112,7 +117,7 @@ export class MarkdownParser {
       }
     }
 
-    return { frontmatter, content };
+    return { frontmatter, content, frontmatterRaw };
   }
 
   /**
@@ -188,7 +193,7 @@ export class MarkdownParser {
     folder: string = '',
     notePath: string = ''
   ): WikiNote {
-    const { frontmatter, content } = this.parseFrontmatter(rawContent);
+    const { frontmatter, content, frontmatterRaw } = this.parseFrontmatter(rawContent);
     const fTags = Array.isArray(frontmatter.tags) ? (frontmatter.tags as string[]) : [];
     const tags = this.extractTags(content, fTags);
     const outboundLinks = this.extractWikiLinks(content);
@@ -218,6 +223,8 @@ export class MarkdownParser {
       id,
       title: (frontmatter.title as string) || title,
       content,
+      frontmatterRaw,
+      rawContent,
       folder,
       path: notePath,
       tags,

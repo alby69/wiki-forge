@@ -1,18 +1,25 @@
 ---
 type: Playbook
-title: "Knowledge Engineer (KE) Playbook"
-description: "Wiki-Forge classifies knowledge base maturity across four progressive levels:"
+title: Knowledge Engineer (KE) Playbook
+description: 'Wiki-Forge classifies knowledge base maturity across four progressive
+  levels:'
 resource: docs/KE_PLAYBOOK.md
-tags: [scope/docs, layer/generated, area/processi, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/processi
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-ke-playbook-md
-    resource: docs/KE_PLAYBOOK.md
-    title: "Knowledge Engineer (KE) Playbook"
-    author: human:alby69
+- id: source-docs-ke-playbook-md
+  resource: docs/KE_PLAYBOOK.md
+  title: Knowledge Engineer (KE) Playbook
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Knowledge Engineer (KE) Playbook
 

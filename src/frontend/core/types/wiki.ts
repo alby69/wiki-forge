@@ -32,7 +32,9 @@ export interface RenameResult {
 export interface WikiNote {
   id: string;               // Unique path or identifier (e.g. "wiki/c64_dev.md" or "c64_dev")
   title: string;            // Display title of the note
-  content: string;          // Raw Markdown content
+  content: string;          // Markdown body, with YAML frontmatter stripped
+  frontmatterRaw?: string;  // Exact YAML block including --- delimiters, when present
+  rawContent?: string;      // Exact full file content (frontmatter + body)
   folder?: string;          // Folder path within vault
   path: string;             // Full vault path, e.g. "wiki/ai/foo.md" (used by the explorer)
   tags: string[];           // Extracted tags (from YAML frontmatter or #tags)

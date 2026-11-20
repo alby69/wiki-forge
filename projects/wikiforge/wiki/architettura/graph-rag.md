@@ -1,18 +1,25 @@
 ---
 type: Concept
-title: "Enterprise Semantic Knowledge Graph & Stateful GraphRAG System"
-description: "This guide describes the Enterprise Semantic Knowledge Graph & Stateful GraphRAG System implemented in wiki-forge."
+title: Enterprise Semantic Knowledge Graph & Stateful GraphRAG System
+description: This guide describes the Enterprise Semantic Knowledge Graph & Stateful
+  GraphRAG System implemented in wiki-forge.
 resource: docs/GRAPH_RAG.md
-tags: [scope/docs, layer/generated, area/architettura, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/architettura
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-graph-rag-md
-    resource: docs/GRAPH_RAG.md
-    title: "Enterprise Semantic Knowledge Graph & Stateful GraphRAG System"
-    author: human:alby69
+- id: source-docs-graph-rag-md
+  resource: docs/GRAPH_RAG.md
+  title: Enterprise Semantic Knowledge Graph & Stateful GraphRAG System
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Enterprise Semantic Knowledge Graph & Stateful GraphRAG System
 

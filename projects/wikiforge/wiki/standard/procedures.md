@@ -1,18 +1,24 @@
 ---
 type: Reference
-title: "Procedure Engine Specification"
-description: "Procedures are TOML files located in config/procedures/."
+title: Procedure Engine Specification
+description: Procedures are TOML files located in config/procedures/.
 resource: docs/PROCEDURES.md
-tags: [scope/docs, layer/generated, area/standard, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/standard
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-procedures-md
-    resource: docs/PROCEDURES.md
-    title: "Procedure Engine Specification"
-    author: human:alby69
+- id: source-docs-procedures-md
+  resource: docs/PROCEDURES.md
+  title: Procedure Engine Specification
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Procedure Engine Specification
 

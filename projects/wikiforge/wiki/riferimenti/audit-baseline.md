@@ -1,18 +1,24 @@
 ---
 type: Reference
-title: "AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)"
-description: "├── .claude/ # Claude Code skills symbolic links (.claude/skills/)"
+title: AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)
+description: '├── .claude/ # Claude Code skills symbolic links (.claude/skills/)'
 resource: docs/AUDIT_BASELINE.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-audit-baseline-md
-    resource: docs/AUDIT_BASELINE.md
-    title: "AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)"
-    author: human:alby69
+- id: source-docs-audit-baseline-md
+  resource: docs/AUDIT_BASELINE.md
+  title: AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)
 

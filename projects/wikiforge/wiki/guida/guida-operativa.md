@@ -1,18 +1,25 @@
 ---
 type: Playbook
-title: "🧭 Wiki-Forge — Guida operativa"
-description: "A chi serve: a chi vuole usare Wiki-Forge senza occuparsi della parte tecnica."
+title: 🧭 Wiki-Forge — Guida operativa
+description: 'A chi serve: a chi vuole usare Wiki-Forge senza occuparsi della parte
+  tecnica.'
 resource: docs/GUIDA_OPERATIVA.md
-tags: [scope/docs, layer/generated, area/guida, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/guida
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-guida-operativa-md
-    resource: docs/GUIDA_OPERATIVA.md
-    title: "🧭 Wiki-Forge — Guida operativa"
-    author: human:alby69
+- id: source-docs-guida-operativa-md
+  resource: docs/GUIDA_OPERATIVA.md
+  title: 🧭 Wiki-Forge — Guida operativa
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # 🧭 Wiki-Forge — Guida operativa
 

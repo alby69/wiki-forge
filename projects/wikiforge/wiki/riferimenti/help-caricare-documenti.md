@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Caricare documenti"
-description: "Argomenti: carica, upload, importa, import, file, pdf, docx, drop, trascina, fonti, sorgenti, sources, web clipper, notebooklm"
+title: Caricare documenti
+description: 'Argomenti: carica, upload, importa, import, file, pdf, docx, drop, trascina,
+  fonti, sorgenti, sources, web clipper, notebooklm'
 resource: docs/help/caricare-documenti.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-caricare-documenti-md
-    resource: docs/help/caricare-documenti.md
-    title: "Caricare documenti"
-    author: human:alby69
+- id: source-docs-help-caricare-documenti-md
+  resource: docs/help/caricare-documenti.md
+  title: Caricare documenti
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 Hai tre modi per portare i tuoi documenti nella wiki.
 

@@ -1,18 +1,25 @@
 ---
 type: Process
-title: "Knowledge Engineering Operating Manual"
-description: "In wiki-forge, documents are not treated as passive text files, but as cognitive units (entities, relations, rules, situations) within a neuro-symbolic…"
+title: Knowledge Engineering Operating Manual
+description: In wiki-forge, documents are not treated as passive text files, but as
+  cognitive units (entities, relations, rules, situations) within a neuro-symbolic…
 resource: docs/KNOWLEDGE_ENGINEERING.md
-tags: [scope/docs, layer/generated, area/processi, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/processi
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-knowledge-engineering-md
-    resource: docs/KNOWLEDGE_ENGINEERING.md
-    title: "Knowledge Engineering Operating Manual"
-    author: human:alby69
+- id: source-docs-knowledge-engineering-md
+  resource: docs/KNOWLEDGE_ENGINEERING.md
+  title: Knowledge Engineering Operating Manual
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Knowledge Engineering Operating Manual
 

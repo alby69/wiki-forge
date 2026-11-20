@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Metriche e maturità"
-description: "Argomenti: metriche, metrics, maturità, maturity, stats, statistiche, audit, punteggio, score, ke-maturity, indicatore"
+title: Metriche e maturità
+description: 'Argomenti: metriche, metrics, maturità, maturity, stats, statistiche,
+  audit, punteggio, score, ke-maturity, indicatore'
 resource: docs/help/maturita-metriche.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-maturita-metriche-md
-    resource: docs/help/maturita-metriche.md
-    title: "Metriche e maturità"
-    author: human:alby69
+- id: source-docs-help-maturita-metriche-md
+  resource: docs/help/maturita-metriche.md
+  title: Metriche e maturità
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Perché misurare
 

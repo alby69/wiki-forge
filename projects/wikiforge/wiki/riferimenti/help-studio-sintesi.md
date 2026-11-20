@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Studio, quiz e sintesi"
-description: "Argomenti: studio, study, quiz, mindmap, mappa, sintesi, consult, approfondimento, riassunto, audio, capitolo, tesi"
+title: Studio, quiz e sintesi
+description: 'Argomenti: studio, study, quiz, mindmap, mappa, sintesi, consult, approfondimento,
+  riassunto, audio, capitolo, tesi'
 resource: docs/help/studio-sintesi.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-studio-sintesi-md
-    resource: docs/help/studio-sintesi.md
-    title: "Studio, quiz e sintesi"
-    author: human:alby69
+- id: source-docs-help-studio-sintesi-md
+  resource: docs/help/studio-sintesi.md
+  title: Studio, quiz e sintesi
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Studiare la tua wiki
 

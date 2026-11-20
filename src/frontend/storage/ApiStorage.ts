@@ -277,6 +277,7 @@ export class ApiStorage implements IStorage {
         body: JSON.stringify({
           id: note.id,
           content: note.content ?? '',
+          rawContent: note.rawContent,
           path: note.path,
           folder: note.folder,
           title: note.title,

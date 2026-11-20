@@ -1,18 +1,25 @@
 ---
 type: Playbook
-title: "Guida Operativa — Tesi Magistrale e Knowledge Base Dinamica"
-description: "Wiki-Forge trasforma la preparazione della tesi di laurea da un processo lineare e statico (lettura PDF → appunti sparsi → stesura capitoli) in un sistema…"
+title: Guida Operativa — Tesi Magistrale e Knowledge Base Dinamica
+description: Wiki-Forge trasforma la preparazione della tesi di laurea da un processo
+  lineare e statico (lettura PDF → appunti sparsi → stesura capitoli) in un sistema…
 resource: docs/THESIS_GUIDE.md
-tags: [scope/docs, layer/generated, area/guida, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/guida
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-thesis-guide-md
-    resource: docs/THESIS_GUIDE.md
-    title: "Guida Operativa — Tesi Magistrale e Knowledge Base Dinamica"
-    author: human:alby69
+- id: source-docs-thesis-guide-md
+  resource: docs/THESIS_GUIDE.md
+  title: Guida Operativa — Tesi Magistrale e Knowledge Base Dinamica
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Guida Operativa — Tesi Magistrale e Knowledge Base Dinamica
 

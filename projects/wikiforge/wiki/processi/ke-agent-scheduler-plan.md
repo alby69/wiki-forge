@@ -1,18 +1,25 @@
 ---
 type: Process
-title: "Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)"
-description: "Trasformare i 6 Guided Use Cases del KE Workbench, oggi eseguibili solo a"
+title: Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
+description: Trasformare i 6 Guided Use Cases del KE Workbench, oggi eseguibili solo
+  a
 resource: docs/KE_AGENT_SCHEDULER_PLAN.md
-tags: [scope/docs, layer/generated, area/processi, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/processi
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-ke-agent-scheduler-plan-md
-    resource: docs/KE_AGENT_SCHEDULER_PLAN.md
-    title: "Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)"
-    author: human:alby69
+- id: source-docs-ke-agent-scheduler-plan-md
+  resource: docs/KE_AGENT_SCHEDULER_PLAN.md
+  title: Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
 

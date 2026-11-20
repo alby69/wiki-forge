@@ -1,18 +1,25 @@
 ---
 type: Reference
-title: "Wiki-Forge Documentation Index"
-description: "Indice completo dei documenti in docs/ (24 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/."
+title: Wiki-Forge Documentation Index
+description: Indice completo dei documenti in docs/ (24 file), dei contenuti della
+  guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
 resource: docs/README.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/en]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/en
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-readme-md
-    resource: docs/README.md
-    title: "Wiki-Forge Documentation Index"
-    author: human:alby69
+- id: source-docs-readme-md
+  resource: docs/README.md
+  title: Wiki-Forge Documentation Index
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Wiki-Forge Documentation Index
 

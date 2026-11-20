@@ -1,18 +1,27 @@
 ---
 type: Concept
-title: "Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering"
-description: "This document provides a comprehensive technical breakdown of the wiki-forge architecture. It details the system design, the separation between parametric and…"
+title: 'Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and
+  Knowledge Engineering'
+description: This document provides a comprehensive technical breakdown of the wiki-forge
+  architecture. It details the system design, the separation between parametric and…
 resource: docs/TECHNICAL_ARCHITECTURE.md
-tags: [scope/docs, layer/generated, area/architettura, lang/it]
+tags:
+- scope/docs
+- layer/generated
+- area/architettura
+- lang/it
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-technical-architecture-md
-    resource: docs/TECHNICAL_ARCHITECTURE.md
-    title: "Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering"
-    author: human:alby69
+- id: source-docs-technical-architecture-md
+  resource: docs/TECHNICAL_ARCHITECTURE.md
+  title: 'Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and
+    Knowledge Engineering'
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering
 

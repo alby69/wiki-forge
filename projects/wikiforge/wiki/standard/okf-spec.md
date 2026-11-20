@@ -1,18 +1,24 @@
 ---
 type: Reference
-title: "Open Knowledge Format (OKF) Specification v0.2"
-description: "Repository: https://github.com/GoogleCloudPlatform/open-knowledge-format"
+title: Open Knowledge Format (OKF) Specification v0.2
+description: 'Repository: https://github.com/GoogleCloudPlatform/open-knowledge-format'
 resource: docs/OKF_SPEC.md
-tags: [scope/docs, layer/generated, area/standard, lang/en]
+tags:
+- scope/docs
+- layer/generated
+- area/standard
+- lang/en
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-okf-spec-md
-    resource: docs/OKF_SPEC.md
-    title: "Open Knowledge Format (OKF) Specification v0.2"
-    author: human:alby69
+- id: source-docs-okf-spec-md
+  resource: docs/OKF_SPEC.md
+  title: Open Knowledge Format (OKF) Specification v0.2
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Open Knowledge Format (OKF) Specification v0.2
 

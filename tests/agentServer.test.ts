@@ -86,6 +86,27 @@ Based on [[sample-note]].`,
     assert.ok(fileOnDisk.includes('Content saved from UI.'));
   });
 
+  await t.test('POST /api/wiki/save preserves exact frontmatter from rawContent', async () => {
+    const frontmatterRaw = '---\ntitle: Preserved\n# keep this comment\ntags: [alpha, beta]\n---\n';
+    const body = '# Preserved\n\nBody edited in the UI.\n';
+    const fullContent = `${frontmatterRaw}${body}`;
+
+    const saved = await apiStorage.saveNote({
+      id: 'preserved-note',
+      title: 'Preserved',
+      folder: 'wiki',
+      content: body,
+      rawContent: fullContent,
+    });
+
+    assert.equal(saved.frontmatterRaw, frontmatterRaw);
+    assert.equal(saved.rawContent, fullContent);
+    assert.equal(saved.content, body);
+
+    const fileOnDisk = await fs.readFile(path.join(wikiDir, 'preserved-note.md'), 'utf-8');
+    assert.equal(fileOnDisk, fullContent);
+  });
+
   await t.test('POST /api/wiki/attach appends response to note', async () => {
     const attached = await apiStorage.attachNote({
       noteId: 'sample-note',

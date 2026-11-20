@@ -1,18 +1,27 @@
 ---
 type: Reference
-title: "Study Studio"
-description: "Argomenti: study, studio, studio-studio, guida di studio, study-guide, quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast, note…"
+title: Study Studio
+description: 'Argomenti: study, studio, studio-studio, guida di studio, study-guide,
+  quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast,
+  note…'
 resource: docs/help/study-studio.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-study-studio-md
-    resource: docs/help/study-studio.md
-    title: "Study Studio"
-    author: human:alby69
+- id: source-docs-help-study-studio-md
+  resource: docs/help/study-studio.md
+  title: Study Studio
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Cos'è
 

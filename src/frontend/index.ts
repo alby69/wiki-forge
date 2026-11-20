@@ -414,8 +414,8 @@ Backlink to [[01-index]].
 
     this.editor = new MarkdownEditor(
       this.layout.editorContainer,
-      (noteId, content) => {
-        void this.updateAndSaveNote(noteId, content);
+      (noteId, content, fullContent) => {
+        void this.updateAndSaveNote(noteId, content, fullContent);
       },
       target => this.openWikilink(target),
       () => this.notes,
@@ -620,13 +620,14 @@ Backlink to [[01-index]].
     });
   }
 
-  private async updateAndSaveNote(noteId: string, newContent: string): Promise<void> {
+  private async updateAndSaveNote(noteId: string, newContent: string, fullContent?: string): Promise<void> {
     const target = this.notes.find(n => n.id === noteId);
     if (!target) return;
 
     const saved = await this.storage.saveNote({
       id: noteId,
       content: newContent,
+      rawContent: fullContent ?? `${target.frontmatterRaw ?? ''}${newContent}`,
       folder: target.folder,
       path: target.path,
       title: target.title,

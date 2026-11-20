@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Modificare le note"
-description: "Argomenti: modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot…"
+title: Modificare le note
+description: 'Argomenti: modifica, edit, editor, salva, save, toolbar, wikilink, versioni,
+  rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot…'
 resource: docs/help/modifica-note.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-modifica-note-md
-    resource: docs/help/modifica-note.md
-    title: "Modificare le note"
-    author: human:alby69
+- id: source-docs-help-modifica-note-md
+  resource: docs/help/modifica-note.md
+  title: Modificare le note
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Modificare una nota
 

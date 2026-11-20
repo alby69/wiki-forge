@@ -2,20 +2,22 @@
 okf_version: "0.2"
 ---
 
-# Wiki-Forge — Documentazione
+# Wiki Index — Knowledge Base
 
 ## Topics
 
-* [Guida operativa](guida/index.md) (6 note) — guida operativa di wiki-forge.
-* [Architettura](architettura/index.md) (3 note) — architettura di wiki-forge.
-* [Processi e agenti](processi/index.md) (6 note) — processi e agenti di wiki-forge.
-* [Standard e specifiche](standard/index.md) (4 note) — standard e specifiche di wiki-forge.
-* [Riferimenti](riferimenti/index.md) (24 note) — riferimenti di wiki-forge.
-
-## Sintesi curata
-
-* [Sintesi](sintesi/index.md) (0 note) — risposte e approfondimenti approvati da una persona.
+* [Architettura](architettura/index.md) (4 articles)
+* [Guida](guida/index.md) (6 articles)
+* [Processi](processi/index.md) (6 articles)
+* [Riferimenti](riferimenti/index.md) (24 articles)
+* [Sintesi](sintesi/index.md) (0 articles)
+* [Standard](standard/index.md) (4 articles)
 
 ## Recently Updated
 
-*Nessuna sintesi approvata finora.*
+* [Typed Schema Guide (`[schema]`)](standard/schema.md) — Wiki-forge provides an opt-in, enforceable type system configured via config.toml. When enabled, the schema linter (schemalint.py or make schema-lint) checks…
+* [Procedure Engine Specification](standard/procedures.md) — Procedures are TOML files located in config/procedures/.
+* [Open Knowledge Format (OKF) Specification v0.2](standard/okf-spec.md) — Repository: https://github.com/GoogleCloudPlatform/open-knowledge-format
+* [LLM Wiki — by Andrej Karpathy](standard/karpathy-llm-wiki.md) — A pattern for building personal knowledge bases using LLMs.
+* [Sources](riferimenti/sources.md) — Registry of all documentary sources ingested into the project (folder raw/,
+

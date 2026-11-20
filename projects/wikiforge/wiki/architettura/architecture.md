@@ -1,18 +1,25 @@
 ---
 type: Concept
-title: "Technical Architecture — Wiki-Forge v4.1"
-description: "Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only), a standalone Node.js API gateway, a standalone Python FastAPI service…"
+title: Technical Architecture — Wiki-Forge v4.1
+description: Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse
+  proxy only), a standalone Node.js API gateway, a standalone Python FastAPI service…
 resource: docs/ARCHITECTURE.md
-tags: [scope/docs, layer/generated, area/architettura, lang/en]
+tags:
+- scope/docs
+- layer/generated
+- area/architettura
+- lang/en
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-architecture-md
-    resource: docs/ARCHITECTURE.md
-    title: "Technical Architecture — Wiki-Forge v4.1"
-    author: human:alby69
+- id: source-docs-architecture-md
+  resource: docs/ARCHITECTURE.md
+  title: Technical Architecture — Wiki-Forge v4.1
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Technical Architecture — Wiki-Forge v4.1
 

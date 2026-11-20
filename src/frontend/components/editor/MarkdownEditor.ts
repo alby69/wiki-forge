@@ -14,7 +14,7 @@ export class MarkdownEditor {
   private currentNote: WikiNote | null = null;
   private mode: 'preview' | 'edit' = 'preview';
   private saveStatusMessage: string = '';
-  private onSaveCb?: (noteId: string, content: string) => void;
+  private onSaveCb?: (noteId: string, content: string, fullContent?: string) => void;
   private onOpenLinkCb?: (target: string) => void;
   private getNotesCb?: () => WikiNote[];
   private onToggleContextCb?: () => void;
@@ -27,7 +27,7 @@ export class MarkdownEditor {
 
   constructor(
     container: HTMLElement,
-    onSave?: (noteId: string, content: string) => void,
+    onSave?: (noteId: string, content: string, fullContent?: string) => void,
     onOpenLink?: (target: string) => void,
     getNotes?: () => WikiNote[],
     onToggleContext?: () => void,
@@ -91,7 +91,8 @@ export class MarkdownEditor {
   private saveCurrentContent(): void {
     if (!this.currentNote || !this.onSaveCb) return;
     const content = this.editorView ? this.editorView.state.doc.toString() : this.currentNote.content;
-    this.onSaveCb(this.currentNote.id, content);
+    const fullContent = `${this.currentNote.frontmatterRaw ?? ''}${content}`;
+    this.onSaveCb(this.currentNote.id, content, fullContent);
   }
 
   private updateUndoRedoState(): void {

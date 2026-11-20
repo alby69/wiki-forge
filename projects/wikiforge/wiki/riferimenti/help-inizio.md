@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Iniziare con Wiki-Forge"
-description: "Argomenti: inizio, benvenuto, primo passo, come funziona, cosa è, quickstart, aiuto, guida, intro, research, ricerca, study, studio"
+title: Iniziare con Wiki-Forge
+description: 'Argomenti: inizio, benvenuto, primo passo, come funziona, cosa è, quickstart,
+  aiuto, guida, intro, research, ricerca, study, studio'
 resource: docs/help/inizio.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-inizio-md
-    resource: docs/help/inizio.md
-    title: "Iniziare con Wiki-Forge"
-    author: human:alby69
+- id: source-docs-help-inizio-md
+  resource: docs/help/inizio.md
+  title: Iniziare con Wiki-Forge
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Cos'è Wiki-Forge
 

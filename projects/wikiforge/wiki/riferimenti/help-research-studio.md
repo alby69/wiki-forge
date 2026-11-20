@@ -1,18 +1,26 @@
 ---
 type: Reference
-title: "Research Studio"
-description: "Argomenti: research, ricerca, consult, search, backlink, backlinks, related, correlate, trace, traccia, deep research, deep-research, fonti, citazioni…"
+title: Research Studio
+description: 'Argomenti: research, ricerca, consult, search, backlink, backlinks,
+  related, correlate, trace, traccia, deep research, deep-research, fonti, citazioni…'
 resource: docs/help/research-studio.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/it
+- help
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-help-research-studio-md
-    resource: docs/help/research-studio.md
-    title: "Research Studio"
-    author: human:alby69
+- id: source-docs-help-research-studio-md
+  resource: docs/help/research-studio.md
+  title: Research Studio
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 ## Cos'è
 

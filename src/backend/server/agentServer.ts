@@ -256,6 +256,11 @@ export interface HelpTopicMeta {
 export interface SaveNoteRequest {
   id: string;
   content: string;
+  /**
+   * Exact full document to write (frontmatter + body). When omitted, `content`
+   * is used for backward compatibility with agent-generated notes.
+   */
+  rawContent?: string;
   path?: string;
   folder?: string;
   title?: string;
@@ -3113,14 +3118,18 @@ export class AgentServer {
 
     const relativePath = path.relative(projRoot, targetPath).replace(/\\/g, '/');
 
+    // `rawContent` carries the exact frontmatter + body produced by the editor.
+    // Fall back to `content` for legacy callers (agent workflows write full notes).
+    const contentToWrite = data.rawContent ?? data.content;
+
     // Keep a pre-write copy so the Review Studio "Confronta versioni" tab can
     // show what actually changed, even though the API container has no git.
     const previousContent = await fs.readFile(targetPath, 'utf-8').catch(() => '');
-    if (previousContent && previousContent !== data.content) {
+    if (previousContent && previousContent !== contentToWrite) {
       await this.writeReviewSnapshot(projectId, relativePath, previousContent, 'salvataggio');
     }
 
-    await atomicWriteFile(targetPath, data.content, 'utf-8');
+    await atomicWriteFile(targetPath, contentToWrite, 'utf-8');
 
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
@@ -3129,7 +3138,7 @@ export class AgentServer {
     return this.parser.parseNote(
       stem,
       data.title || titleFromName,
-      data.content,
+      contentToWrite,
       folderName === '.' ? 'wiki' : folderName,
       relativePath
     );

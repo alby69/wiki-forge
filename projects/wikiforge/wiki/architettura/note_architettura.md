@@ -1,3 +1,15 @@
+---
+type: Concept
+title: note architettura
+description: 'Wiki-Forge applica il pattern **LLM Wiki**: l''LLM non risponde solo
+  "al volo" sui PDF, ma costruisce e mantiene una wiki persistente di Mark...'
+status: stable
+generated:
+  by: process:migrate-script
+  at: '2026-11-20T09:35:27Z'
+verified: []
+sources: []
+---
 # note architettura
 
 ## Risposta

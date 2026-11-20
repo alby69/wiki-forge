@@ -1,18 +1,25 @@
 ---
 type: Reference
-title: "Changelog"
-description: "All notable changes to the wiki-forge template will be documented in this file."
+title: Changelog
+description: All notable changes to the wiki-forge template will be documented in
+  this file.
 resource: docs/CHANGELOG.md
-tags: [scope/docs, layer/generated, area/riferimenti, lang/en]
+tags:
+- scope/docs
+- layer/generated
+- area/riferimenti
+- lang/en
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: '2026-11-19T00:00:00Z'
 sources:
-  - id: source-docs-changelog-md
-    resource: docs/CHANGELOG.md
-    title: "Changelog"
-    author: human:alby69
+- id: source-docs-changelog-md
+  resource: docs/CHANGELOG.md
+  title: Changelog
+  author: human:alby69
+  last_modified: '2026-11-20T09:35:27Z'
+verified: []
 ---
 # Changelog
 
