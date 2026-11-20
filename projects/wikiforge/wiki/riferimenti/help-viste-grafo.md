@@ -14,9 +14,9 @@ sources:
     title: "Viste: File, Editor, Scratchpad, Graph, Split"
     author: human:alby69
 ---
-## Le 4 viste
+## Le viste in un unico riquadro
 
-In alto trovi il pulsante **🗂️ File** e, accanto, il selettore a 4 bottoni:
+In alto trovi un **unico riquadro segmentato** con cinque pulsanti, nell'ordine **🗂️ File · 📝 Editor · 📒 Note rapide · 🕸️ Grafo · ◧ Divisione**:
 
 | Vista | Cosa mostra |
 |---|---|

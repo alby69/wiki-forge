@@ -109,11 +109,17 @@ describe('Header toolbar customizer', () => {
     }
     assert.ok(markup.includes('<div class="wf-header__overflow" id="wf-header-overflow" hidden>'), 'centred overflow row is rendered');
 
-    // The File toggle is pinned in the same first row, immediately before Editor.
+    // File is the first segment of the same bordered control as Editor etc.
     assert.ok(beforeActions.includes('id="header-files-btn"'), 'File toggle stays in the fixed first-row group');
+    const segStart = markup.indexOf('<div class="seg-control"');
+    const editorStart = markup.indexOf('id="view-mode-editor"');
     assert.ok(
-      markup.indexOf('id="header-files-btn"') < markup.indexOf('id="view-mode-editor"'),
-      'File toggle is to the left of Editor'
+      !markup.slice(0, segStart).includes('id="header-files-btn"'),
+      'File toggle is not outside the segmented control'
+    );
+    assert.ok(
+      markup.slice(segStart, editorStart).includes('id="header-files-btn"'),
+      'File toggle is inside the bordered segmented control, before Editor'
     );
 
     // Template is a first-class entry in the "..." menu and can be pinned.

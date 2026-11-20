@@ -1,9 +1,5 @@
 /* Template manager and new-document dialog. Builds on the wf-* primitives. */
 
-.seg-btn--files {
-  border-color: var(--wf-accent-border, #2b6cb0);
-}
-
 .wf-template-field {
   gap: 4px;
 }

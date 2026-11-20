@@ -102,13 +102,13 @@ See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 ## Top bar, languages and keyboard shortcuts (Fase 78)
 
 - The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
-  a **🗂️ File** toggle **to the left of the view-mode pills**, the view-mode
-  pills (**Editor**, **Note rapide**, **Grafo**, **Divisione**), the global
-  **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus a `⋯`
-  overflow menu for the remaining actions. The File toggle, the four view-mode
-  pills and the `⋯` menu stay in the first row; the other pinned buttons stay
-  to their right as long as they fit and move to a **centred second row** when
-  the window gets narrow.
+  a single bordered **view control** whose segments are **🗂️ File**, **Editor**,
+  **Note rapide**, **Grafo**, **Divisione** (File is the first segment), the
+  global **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus a
+  `⋯` overflow menu for the remaining actions. This whole view control and the
+  `⋯` menu stay in the first row; the other pinned buttons stay to their right
+  as long as they fit and move to a **centred second row** when the window gets
+  narrow.
 - **🗂️ File** shows/hides the left file manager with the same toggle semantics as
   the other views: press once to reveal it, press again to close it. The old
   `◀`/`▶` grip on the pane border works too and stays in sync. The state is

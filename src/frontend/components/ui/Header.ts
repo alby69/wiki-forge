@@ -213,8 +213,8 @@ export class Header {
           </div>
 
           <div class="wf-header__view-group">
-            <button id="header-files-btn" class="seg-btn seg-btn--files ${state.filesVisible ? 'active' : ''}" role="tab" aria-selected="${state.filesVisible}" title="${escapeHtml(t('viewFiles'))}" aria-label="${escapeHtml(t('viewFiles'))}"><span aria-hidden="true">🗂️</span> ${escapeHtml(t('viewFiles'))}</button>
             <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
+              <button id="header-files-btn" class="seg-btn ${state.filesVisible ? 'active' : ''}" role="tab" aria-selected="${state.filesVisible}" title="${escapeHtml(t('viewFiles'))}" aria-label="${escapeHtml(t('viewFiles'))}"><span aria-hidden="true">🗂️</span> ${escapeHtml(t('viewFiles'))}</button>
               ${VIEW_MODES.map(m => {
                 const active = m.id === state.viewMode;
                 return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
