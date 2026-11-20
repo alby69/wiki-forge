@@ -178,7 +178,11 @@ def check_generated_wiki(repo_root: Path) -> list[str]:
     wiki_dir = repo_root / "projects" / "wikiforge" / "wiki"
     try:
         bundle, _warnings = docs_to_wiki.build_bundle(repo_root, docs_dir, wiki_dir)
-        return docs_to_wiki.check_bundle(bundle, wiki_dir, docs_dir)
+        problems = docs_to_wiki.check_bundle(bundle, wiki_dir, docs_dir)
+        # Human-owned notes in the wiki (e.g. notes saved from the UI) are not
+        # projections of docs/ and must not fail the sync check. Use the same
+        # policy as docs_wiki_drift and docs_to_wiki --check.
+        return docs_to_wiki.actionable_problems(problems, wiki_dir)
     except Exception as exc:  # pragma: no cover - defensive
         return [f"Failed to verify generated wiki bundle: {exc}"]
 

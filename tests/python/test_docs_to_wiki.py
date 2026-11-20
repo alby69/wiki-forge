@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import check_docs_sync
 import docs_to_wiki
 import docs_wiki_drift
 import promote_doc_answer
@@ -167,6 +168,36 @@ def test_preserved_user_note_is_not_drift(tmp_path: Path):
     assert result["status"] == "ok"
     assert result["drift"] == []
     assert result["preserved"] == ["unexpected: architettura/note_architettura.md"]
+
+
+def test_ci_docs_sync_accepts_preserved_user_note():
+    """The CI entry point must use the same preserved-note policy as the tests."""
+    assert check_docs_sync.check_generated_wiki(REPO_ROOT) == []
+
+
+def test_any_user_note_is_preserved_not_just_the_known_filename(tmp_path: Path):
+    wiki_dir, _ = _temp_bundle(tmp_path)
+    (wiki_dir / "guida" / "nota-dell-utente.md").write_text(
+        "# Nota scritta dall'utente\n", encoding="utf-8"
+    )
+    result = docs_wiki_drift.analyze(REPO_ROOT, DOCS_DIR, wiki_dir)
+    assert result["status"] == "ok"
+    assert result["drift"] == []
+    assert result["preserved"] == ["unexpected: guida/nota-dell-utente.md"]
+
+
+def test_stale_generated_note_is_still_reported_as_drift(tmp_path: Path):
+    wiki_dir, _ = _temp_bundle(tmp_path)
+    (wiki_dir / "architettura" / "stale.md").write_text(
+        "---\ntype: Concept\ntitle: Stale\ntags: [layer/generated]\n"
+        "generated:\n  by: process:docs-to-wiki\n  at: '2026-11-19T00:00:00Z'\n"
+        "---\n\n# Stale\n",
+        encoding="utf-8",
+    )
+    problems = docs_to_wiki.check_bundle(
+        docs_to_wiki.build_bundle(REPO_ROOT, DOCS_DIR, wiki_dir)[0], wiki_dir, DOCS_DIR
+    )
+    assert "unexpected: architettura/stale.md" in docs_to_wiki.actionable_problems(problems, wiki_dir)
 
 
 def test_promoted_answer_is_human_verified_and_okf_valid(tmp_path: Path):

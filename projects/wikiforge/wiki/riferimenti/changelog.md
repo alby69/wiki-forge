@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix CI: note utente preservate non più segnalate come drift
+
+- **CI Test Suite e OKF Validation tornano verdi**: `scripts/check_docs_sync.py` chiamava `docs_to_wiki.check_bundle()` senza il filtro che già usavano `docs_wiki_drift.py` e i test Python, quindi `architettura/note_architettura.md` (nota scritta dall'utente nella wiki, non proiezione di `docs/`) faceva fallire ogni push con `unexpected:`. La policy è ora centralizzata in `docs_to_wiki.actionable_problems()`: vengono ignorati solo gli `unexpected:` di note **senza** provenance `generated.by: process:docs-to-wiki` (o in `sintesi/`); un file generato rimasto orfano continua a essere segnalato. Lo stesso filtro vale per `check_docs_sync.py`, `docs_wiki_drift.py` e `docs_to_wiki.py --check`, quindi anche note utente create in futuro non rompono la CI.
+- Aggiunti test di regressione in `tests/python/test_docs_to_wiki.py` (entry point CI, nota utente con nome qualsiasi, file generato orfano ancora drift) e rafforzato `tests/test_standalone_scripts.py` per pretendere `status: success` dal check.
+
 ### Rinomina del pulsante Note rapide in Note
 
 - Il pulsante della vista Scratchpad nella barra in alto si chiama ora **📒 Note** (prima **Note rapide**). Cambia solo l'etichetta italiana (`viewScratchpad` in `core/i18n/strings.ts`): la vista, i pulsanti e i comandi `/note` / `/promote-note` restano invariati. L'etichetta inglese rimane **Scratchpad**.

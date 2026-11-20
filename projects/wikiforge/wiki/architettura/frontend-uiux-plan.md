@@ -391,7 +391,8 @@ priorità alle funzionalità progetto.
 - Non aggiungere i18n complete: un dizionario `strings.ts` con IT/EN è sufficiente.
 - Non spostare i progetti fuori da `projects/`: il containment è un'invariante.
 - Non toccare `projects/wikiforge/wiki/architettura/note_architettura.md` (file
-  utente preservato, unica differenza nota di `docs_to_wiki.py --check`).
+  utente preservato): le note senza provenance `process:docs-to-wiki` sono
+  escluse dal controllo di drift, che ora passa anche con `docs_to_wiki.py --check`.
 
 ---
 

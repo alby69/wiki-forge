@@ -52,9 +52,10 @@ class TestStandaloneScripts(unittest.TestCase):
 
     def test_check_docs_sync_json(self):
         code, out, err = self.run_script("check_docs_sync.py", ["--json"])
-        # Might return 0 if docs synced
+        self.assertEqual(code, 0, f"check_docs_sync failed with stderr: {err}")
         data = json.loads(out)
-        self.assertIn("status", data)
+        self.assertEqual(data.get("status"), "success")
+        self.assertEqual(data.get("errors"), [])
 
     def test_okf_reindex_json(self):
         code, out, err = self.run_script("okf_reindex.py", ["wiki", "--json"])

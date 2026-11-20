@@ -431,6 +431,37 @@ def check_bundle(bundle: dict[str, str], wiki_dir: Path, docs_dir: Path) -> list
     return problems
 
 
+def is_preserved_note(rel: str, wiki_dir: Path) -> bool:
+    """True for a human-owned wiki note that is not a docs/ projection.
+
+    ``sintesi/`` is curated by convention. Other extra files are preserved when
+    they have no ``generated.by: process:docs-to-wiki`` provenance (notes saved
+    from the UI or written by hand). A stale file that *does* carry that marker
+    is real drift and must still be reported.
+    """
+    if rel.startswith("sintesi/"):
+        return True
+    try:
+        content = (wiki_dir / rel).read_text(encoding="utf-8")
+    except OSError:
+        return False
+    match = FRONTMATTER_RE.match(content.lstrip("\ufeff\r\n\t "))
+    header = match.group(1) if match else ""
+    return CONVERTER_ID not in header
+
+
+def actionable_problems(problems: list[str], wiki_dir: Path) -> list[str]:
+    """Drop ``unexpected:`` problems caused by preserved human-owned notes."""
+    actionable: list[str] = []
+    for problem in problems:
+        if problem.startswith("unexpected: "):
+            rel = problem[len("unexpected: "):]
+            if is_preserved_note(rel, wiki_dir):
+                continue
+        actionable.append(problem)
+    return actionable
+
+
 def write_bundle(bundle: dict[str, str], wiki_dir: Path) -> int:
     written = 0
     for rel, content in bundle.items():
@@ -471,10 +502,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     bundle, warnings = build_bundle(root, docs_dir, wiki_dir)
-    problems = check_bundle(bundle, wiki_dir, docs_dir) if args.check else []
+    problems = actionable_problems(check_bundle(bundle, wiki_dir, docs_dir), wiki_dir) if args.check else []
     written = 0 if (args.check or args.dry_run) else write_bundle(bundle, wiki_dir)
     if args.dry_run:
-        problems = check_bundle(bundle, wiki_dir, docs_dir)
+        problems = actionable_problems(check_bundle(bundle, wiki_dir, docs_dir), wiki_dir)
 
     result = {
         "status": "error" if problems else "success",

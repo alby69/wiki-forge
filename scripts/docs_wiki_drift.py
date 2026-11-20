@@ -23,13 +23,14 @@ import sys
 from pathlib import Path
 
 from okf_common import repo_root
-from docs_to_wiki import build_bundle, check_bundle, write_bundle
+from docs_to_wiki import (
+    actionable_problems as filter_actionable_problems,
+    build_bundle,
+    check_bundle,
+    write_bundle,
+)
 
 BASELINE_SOURCES = ["docs/README.md", "config/projects.json", "projects/wikiforge/wiki/index.md"]
-
-# This curated note belongs to the user and is intentionally never written by
-# the projection. Its "unexpected" drift is expected and must not trigger a fix.
-PRESERVED_NOTES = {"unexpected: architettura/note_architettura.md"}
 
 
 def resolve_dir(root: Path, value: str | None, default: Path) -> Path:
@@ -38,21 +39,27 @@ def resolve_dir(root: Path, value: str | None, default: Path) -> Path:
     return (candidate if candidate.is_absolute() else root / candidate).resolve()
 
 
-def actionable_problems(problems: list[str]) -> list[str]:
-    return [problem for problem in problems if problem not in PRESERVED_NOTES]
+def actionable_problems(problems: list[str], wiki_dir: Path | None = None) -> list[str]:
+    """Filter drift using the shared docs_to_wiki policy.
+
+    The optional directory keeps older callers working; without it we inspect
+    the committed wikiforge projection, which is the one checked in CI.
+    """
+    target = wiki_dir or (repo_root() / "projects" / "wikiforge" / "wiki")
+    return filter_actionable_problems(problems, target)
 
 
 def analyze(root: Path, docs_dir: Path, wiki_dir: Path) -> dict:
     """Read-only comparison. Kept separate from repair() so it stays testable."""
     bundle, warnings = build_bundle(root, docs_dir, wiki_dir)
     problems = check_bundle(bundle, wiki_dir, docs_dir)
-    drift = actionable_problems(problems)
+    drift = actionable_problems(problems, wiki_dir)
     return {
         "status": "drift" if drift else "ok",
         "docs": len(bundle),
         "notes": len(bundle),
         "drift": drift,
-        "preserved": sorted(set(problems) & PRESERVED_NOTES),
+        "preserved": sorted(set(problems) - set(drift)),
         "warnings": warnings,
         "rationale": (
             "La proiezione OKF non corrisponde più a docs/: rigenerarla con "
@@ -68,7 +75,7 @@ def repair(root: Path, docs_dir: Path, wiki_dir: Path) -> dict:
     """Regenerate the docs/ projection inside wiki_dir. Returns a short report."""
     bundle, warnings = build_bundle(root, docs_dir, wiki_dir)
     written = write_bundle(bundle, wiki_dir)
-    remaining = actionable_problems(check_bundle(bundle, wiki_dir, docs_dir))
+    remaining = actionable_problems(check_bundle(bundle, wiki_dir, docs_dir), wiki_dir)
     return {"written": written, "remaining": remaining, "warnings": warnings}
 
 
