@@ -43,7 +43,15 @@ La **Research Studio** è un'unica finestra per interrogare la wiki. Riunisce in
 ## Le schede in dettaglio
 
 ### Consult
-Scrivi la domanda e premi **Chiedi alla wiki**. In alto nella risposta un badge indica se è arrivata dal modello (verde) o dal fallback (ambra). Sotto la risposta, **Note usate come contesto** elenca le note passate al modello; ogni voce apre la nota nell'editor. **Copia risposta** porta il Markdown negli appunti.
+Scrivi la domanda e premi **Chiedi alla wiki**. In alto nella risposta un badge indica se è arrivata dal modello (verde) o dal fallback (ambra). Sotto la risposta, **Note usate come contesto** elenca le note passate al modello; ogni voce apre la nota nell'editor.
+
+Le azioni sotto la domanda sono:
+
+- **Copia risposta** — porta il Markdown negli appunti.
+- **📄 Salva nella wiki (OKF)** — crea una nota `Reference` in `wiki/general/`, con frontmatter OKF v0.2 validato prima della scrittura (`type`, `status`, attori, timestamp ISO e fonti). Il titolo e l'id derivano dalla domanda; la nota resta in `draft` e le fonti consultate diventano voci in `sources[]`. Dopo il salvataggio gli indici della wiki vengono aggiornati.
+- **🗒️ Salva nello Scratchpad** — aggiunge domanda, risposta e fonti a `notes/quick-notes.md` come nota veloce. La voce appare nel pannello Scratchpad della sidebar ed è pronta per una successiva promozione con `/promote-note <id> <wiki-name>`.
+
+I due pulsanti di salvataggio sono abilitati solo dopo una consultazione riuscita e rispettano il progetto attivo (o l'ambito esplicito con cui è stata aperta la Research Studio).
 
 ### Ricerca
 La query viene confrontata con titolo, id, tag e corpo delle note. I risultati sono ordinati per rilevanza (un titolo che contiene la frase pesa più di una parola sparsa nel corpo) e mostrano:

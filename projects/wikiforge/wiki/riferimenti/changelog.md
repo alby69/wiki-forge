@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Research Studio — salvataggio delle risposte `/consult`
+
+- Aggiunti due pulsanti accanto a **Copia risposta** nella scheda Consult: **📄 Salva nella wiki (OKF)** e **🗒️ Salva nello Scratchpad**. Il primo crea una nota `Reference` OKF v0.2 in `wiki/general/` validando frontmatter, attori, timestamp e fonti **prima** della scrittura, poi aggiorna gli indici; il secondo scrive una normale quick note in `notes/quick-notes.md`, già gestita dal flusso `/promote-note` e dal pannello Scratchpad della sidebar.
+- Nuovo endpoint `POST /api/notes/research/promote-answer`, builder/validator deterministico in `researchAnswerNote.ts`, metodi `ApiStorage.researchPromoteAnswer` e callback `onScratchpadChanged` per aggiornare la sidebar dopo il salvataggio. Test dedicati in `tests/researchAnswerPromote.test.ts`; guida utente aggiornata in `docs/help/research-studio.md`.
+
 ### Rigenerazione wiki da `docs/` (script di drift)
 
 - `scripts/docs_wiki_drift.py` ora **rigenera effettivamente la proiezione OKF** nella wiki di wikiforge quando rileva un drift, invece di limitarsi a segnalarlo. `--check` mantiene il vecchio comportamento consultivo in sola lettura. Vengono scritti solo i file generati: le note curate di `sintesi/`, `architettura/note_architettura.md` e `.wiki-forge/` sono preservate.

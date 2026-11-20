@@ -12,6 +12,7 @@ import {
   ResearchBacklinksResponse,
   ResearchConsultResponse,
   ResearchDeepResearchResponse,
+  ResearchPromoteAnswerResponse,
   ResearchRelatedResponse,
   ResearchSearchResponse,
   ResearchTraceResponse,
@@ -913,6 +914,26 @@ export class ApiStorage implements IStorage {
       return (await res.json()) as ResearchConsultResponse;
     } catch (err) {
       return { success: false, markdown: '', fallback: true, citations: [], error: String(err) };
+    }
+  }
+
+  /** Write a `/consult` answer into the scoped vault as a validated OKF note. */
+  public async researchPromoteAnswer(
+    question: string,
+    markdown: string,
+    citations: Array<{ id: string; title: string; path: string }>,
+    fallback: boolean,
+    projectId?: string
+  ): Promise<ResearchPromoteAnswerResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/notes/research/promote-answer${this.withProjectScope('', projectId)}`, {
+        method: 'POST',
+        headers: this.headersForProject(projectId),
+        body: JSON.stringify({ question, markdown, citations, fallback }),
+      });
+      return (await res.json()) as ResearchPromoteAnswerResponse;
+    } catch (err) {
+      return { success: false, validation: [], error: String(err) };
     }
   }
 

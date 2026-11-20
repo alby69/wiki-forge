@@ -16,8 +16,10 @@ import { ApiStorage } from '@frontend/storage/ApiStorage';
 export interface ResearchStudioCallbacks {
   /** Opens a result note in the editor and closes the modal. */
   onOpenNote?: (noteId: string, projectId?: string) => void;
-  /** Called after deep research wrote a new synthesis note. */
+  /** Called after deep research or a promoted answer wrote to the vault. */
   onVaultChanged?: () => void;
+  /** Called after a consult answer was added to the scratchpad. */
+  onScratchpadChanged?: () => void;
 }
 
 const TABS: Array<{ id: ResearchTab; label: string; icon: string; hint: string; command: string }> = [
@@ -58,12 +60,16 @@ export class ResearchStudio {
   private scopeLabel = '';
 
   private consultQuestion = '';
+  /** Question that produced the current answer (the textarea may change later). */
+  private latestConsultQuestion = '';
   private searchQuery = '';
   private traceQuery = '';
   private deepQuestion = '';
 
   private consult: ResearchConsultResponse | null = null;
   private consultLoading = false;
+  private consultSavingWiki = false;
+  private consultSavingScratchpad = false;
 
   private search: ResearchSearchResponse | null = null;
   private searchLoading = false;
@@ -256,8 +262,9 @@ export class ResearchStudio {
   private async runConsult(): Promise<void> {
     this.consultLoading = true;
     this.consult = null;
+    this.latestConsultQuestion = this.consultQuestion.trim();
     this.renderBody();
-    this.consult = await this.storage.researchConsult(this.consultQuestion.trim(), this.scopeProjectId);
+    this.consult = await this.storage.researchConsult(this.latestConsultQuestion, this.scopeProjectId);
     this.consultLoading = false;
     this.renderBody();
   }
@@ -392,8 +399,10 @@ export class ResearchStudio {
           <textarea id="wf-rq-consult-question" placeholder="${escapeHtml(EXAMPLES.consult)}">${escapeHtml(this.consultQuestion)}</textarea>
         </div>
         <div class="wf-rs-actions">
-          <button class="wf-rs-btn primary" id="wf-rq-consult-btn">Chiedi alla wiki</button>
+          <button class="wf-rs-btn primary" id="wf-rq-consult-btn" ${this.consultLoading ? 'disabled' : ''}>Chiedi alla wiki</button>
           <button class="wf-rs-btn ghost" id="wf-rq-consult-copy" ${result?.success ? '' : 'disabled'}>Copia risposta</button>
+          <button class="wf-rs-btn ghost" id="wf-rq-consult-wiki" ${result?.success && !this.consultSavingWiki ? '' : 'disabled'} title="Crea una nota OKF v0.2 con validazione nella wiki di progetto">${this.consultSavingWiki ? 'Salvataggio…' : '📄 Salva nella wiki (OKF)'}</button>
+          <button class="wf-rs-btn ghost" id="wf-rq-consult-scratchpad" ${result?.success && !this.consultSavingScratchpad ? '' : 'disabled'} title="Aggiunge la risposta allo Scratchpad per una successiva promozione">${this.consultSavingScratchpad ? 'Salvataggio…' : '🗒️ Salva nello Scratchpad'}</button>
           <span class="wf-rq-hint">Usa il provider LLM configurato; in assenza risponde con le note più pertinenti.</span>
         </div>
       </div>
@@ -684,6 +693,12 @@ export class ResearchStudio {
     this.overlay.querySelector('#wf-rq-consult-copy')?.addEventListener('click', () => {
       if (this.consult?.markdown) void this.copy(this.consult.markdown, 'Risposta copiata');
     });
+    this.overlay.querySelector('#wf-rq-consult-wiki')?.addEventListener('click', () => {
+      void this.saveConsultToWiki();
+    });
+    this.overlay.querySelector('#wf-rq-consult-scratchpad')?.addEventListener('click', () => {
+      void this.saveConsultToScratchpad();
+    });
     this.overlay.querySelector('#wf-rq-deep-copy')?.addEventListener('click', () => {
       if (this.deep?.markdown) void this.copy(this.deep.markdown, 'Report copiato');
     });
@@ -696,6 +711,73 @@ export class ResearchStudio {
         this.callbacks.onOpenNote?.(noteId, this.scopeProjectId);
       });
     });
+  }
+
+  /** Build a deterministic scratchpad note from the current consult answer. */
+  private buildScratchpadText(): string {
+    const answer = this.consult?.markdown || '';
+    const question = (this.latestConsultQuestion || this.consultQuestion || '').trim()
+      || 'Domanda non specificata';
+    const sources = (this.consult?.citations || []).map(citation => `- [[${citation.id}]] — \`${citation.path}\``);
+    const lines = [
+      `**Domanda:** ${question.replace(/\s+/g, ' ')}`,
+      '',
+      '**Risposta:**',
+      answer,
+      '',
+      '**Fonti:**',
+      ...(sources.length > 0 ? sources : ['- Nessuna fonte pertinente.']),
+    ];
+    return lines.join('\n');
+  }
+
+  /** Save the current answer as a validated OKF note in the project vault. */
+  private async saveConsultToWiki(): Promise<void> {
+    if (this.consultSavingWiki || !this.consult?.success) return;
+    this.consultSavingWiki = true;
+    this.feedback = '';
+    this.renderBody();
+    try {
+      const response = await this.storage.researchPromoteAnswer(
+        this.latestConsultQuestion,
+        this.consult.markdown,
+        this.consult.citations,
+        Boolean(this.consult.fallback),
+        this.scopeProjectId
+      );
+      if (!response.success) {
+        const detail = response.validation.length
+          ? ` (${response.validation.join('; ')})`
+          : response.error ? ` (${response.error})` : '';
+        this.feedback = `Salvataggio nella wiki non riuscito${detail}`;
+        return;
+      }
+      this.feedback = `Risposta salvata nella wiki come nota OKF: ${response.path || 'nota creata'}`;
+      this.callbacks.onVaultChanged?.();
+    } finally {
+      this.consultSavingWiki = false;
+      this.renderBody();
+    }
+  }
+
+  /** Add the current answer to the scratchpad for a later `/promote-note`. */
+  private async saveConsultToScratchpad(): Promise<void> {
+    if (this.consultSavingScratchpad || !this.consult?.success) return;
+    this.consultSavingScratchpad = true;
+    this.feedback = '';
+    this.renderBody();
+    try {
+      const response = await this.storage.studyQuickNote(this.buildScratchpadText());
+      if (!response.success) {
+        this.feedback = `Salvataggio nello Scratchpad non riuscito${response.error ? ` (${response.error})` : ''}`;
+        return;
+      }
+      this.feedback = 'Risposta aggiunta allo Scratchpad; promuovila con /promote-note';
+      this.callbacks.onScratchpadChanged?.();
+    } finally {
+      this.consultSavingScratchpad = false;
+      this.renderBody();
+    }
   }
 
   private async copy(text: string, message: string): Promise<void> {

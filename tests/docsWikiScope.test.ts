@@ -53,6 +53,15 @@ test('ApiStorage scopes research requests to an explicit project', async () => {
   assert.equal(consult.init?.method, 'POST');
   assert.equal(headerOf(consult)['X-Project-Id'], 'wikiforge');
 
+  await storage.researchPromoteAnswer('Domanda?', 'Risposta', [], false, 'wikiforge');
+  const promote = calls[calls.length - 1];
+  assert.ok(promote.url.includes('/api/notes/research/promote-answer?projectId=wikiforge'));
+  assert.equal(promote.init?.method, 'POST');
+  assert.equal(headerOf(promote)['X-Project-Id'], 'wikiforge');
+  assert.deepEqual(JSON.parse(String(promote.init?.body)), {
+    question: 'Domanda?', markdown: 'Risposta', citations: [], fallback: false,
+  });
+
   await storage.researchDeepResearch('OKF v0.2', 'wikiforge');
   const deep = calls[calls.length - 1];
   assert.ok(deep.url.includes('/api/notes/research/deep-research?projectId=wikiforge'));

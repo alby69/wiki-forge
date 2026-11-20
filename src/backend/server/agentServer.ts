@@ -37,6 +37,11 @@ import {
   StudyThesisChapter,
   StudyThesisSynthesis,
 } from './studyHelpers';
+import {
+  buildConsultAnswerNote,
+  ConsultAnswerInput,
+  validateOkfNote,
+} from './researchAnswerNote';
 import { runUseCase, UseCaseEvent } from './useCaseRunner';
 import {
   JobExecutionContext,
@@ -76,6 +81,13 @@ export interface ResearchConsultResponse {
   markdown: string;
   fallback: boolean;
   citations: ResearchConsultCitation[];
+  error?: string;
+}
+
+export interface ResearchPromoteAnswerResponse {
+  success: boolean;
+  path?: string;
+  validation: string[];
   error?: string;
 }
 
@@ -2504,6 +2516,35 @@ export class AgentServer {
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, fallback: true, markdown: '', citations: [], error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/notes/research/promote-answer' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<Partial<ConsultAnswerInput> & { markdown?: string }>(req);
+        // The API contract uses `markdown` (same name as the consult response);
+        // accept `answer` too for direct callers of the builder.
+        const question = body.question?.trim();
+        const answer = (body.answer ?? body.markdown)?.trim();
+        if (!question || !answer) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false, validation: [], error: 'Campi "question" e "markdown" obbligatori',
+          }));
+          return true;
+        }
+        const result = await this.promoteConsultAnswer({
+          question,
+          answer,
+          citations: body.citations ?? [],
+          fallback: body.fallback ?? false,
+        }, projectId);
+        res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, validation: [], error: String(err) }));
       }
       return true;
     }
@@ -6008,6 +6049,31 @@ ${body}
       );
       return { success: true, markdown: lines.join('\n'), fallback: true, error: String(err), citations };
     }
+  }
+
+  /**
+   * Persist a `/consult` answer as an OKF v0.2 note in the scoped vault.
+   * The note is validated before writing; indexes are then regenerated so the
+   * new note is discoverable right away.
+   */
+  public async promoteConsultAnswer(
+    input: ConsultAnswerInput,
+    projectId: string = 'default'
+  ): Promise<ResearchPromoteAnswerResponse> {
+    const note = buildConsultAnswerNote(input);
+    const validation = validateOkfNote(note.markdown);
+    if (validation.length > 0) {
+      return { success: false, validation, error: 'Nota non conforme OKF v0.2.' };
+    }
+
+    const saved = await this.saveWikiNote({
+      id: note.id,
+      folder: 'general',
+      content: note.markdown,
+      title: note.title,
+    }, projectId);
+    await this.executeReindexWorkflow(projectId);
+    return { success: true, path: saved.path, validation: [] };
   }
 
   public async executeQuizWorkflow(topicAndCount: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {

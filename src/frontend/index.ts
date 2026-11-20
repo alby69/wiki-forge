@@ -245,6 +245,9 @@ Backlink to [[01-index]].
         eventBus.emit('vault:changed', {});
         this.editor.showSaveStatus(t('vaultUpdated'));
       },
+      onScratchpadChanged: () => {
+        void this.scratchpadPanel.load();
+      },
     });
 
     this.studyStudio = new StudyStudio(this.storage, {

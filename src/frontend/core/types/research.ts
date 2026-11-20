@@ -107,6 +107,15 @@ export interface ResearchConsultResponse {
   error?: string;
 }
 
+/** Result of promoting a `/consult` answer into an OKF wiki note. */
+export interface ResearchPromoteAnswerResponse {
+  success: boolean;
+  path?: string;
+  /** OKF validation problems; empty when the note was accepted. */
+  validation: string[];
+  error?: string;
+}
+
 export interface ResearchDeepResearchResponse {
   success: boolean;
   markdown: string;

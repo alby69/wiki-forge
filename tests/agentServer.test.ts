@@ -385,6 +385,25 @@ The governance board approved the protocol.
     assert.ok(consult.citations.some(citation => citation.id === 'sample-note'));
   });
 
+  await t.test('Research Studio: promoted consult answer is saved as an OKF note', async () => {
+    const promoted = await apiStorage.researchPromoteAnswer(
+      'Quali decisioni sono documentate?',
+      'Le decisioni sono registrate nel comitato etico.',
+      [{ id: 'sample-note', title: 'Sample Note', path: 'wiki/sample-note.md' }],
+      false
+    );
+    assert.equal(promoted.success, true);
+    assert.deepEqual(promoted.validation, []);
+    assert.ok(promoted.path?.includes('wiki/general/'));
+
+    const onDisk = await fs.readFile(path.join(tmpDir, promoted.path!), 'utf-8');
+    assert.match(onDisk, /^type: Reference$/m);
+    assert.match(onDisk, /^status: draft$/m);
+    assert.match(onDisk, /^  by: process:research-consult$/m);
+    assert.match(onDisk, /^  - id: source-1$/m);
+    assert.match(onDisk, /Le decisioni sono registrate/);
+  });
+
   await t.test('Research Studio: deep research writes report and synthesis files', async () => {
     const deep = await apiStorage.researchDeepResearch('sample note');
     assert.equal(deep.success, true);
