@@ -137,7 +137,7 @@ export class Header {
   private renderMenu(state: AppState): string {
     return `
       <div class="wf-header__menu">
-        <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}">⋯</button>
+        <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}"><span class="wf-menu__dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
         <div id="header-more-menu" class="wf-menu" role="menu" hidden>
           ${this.renderBarCustomizer(state)}
         </div>
@@ -193,18 +193,20 @@ export class Header {
           </select>
         </div>
 
-        <div class="wf-header__group">
-          <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
-            ${VIEW_MODES.map(m => {
-              const active = m.id === state.viewMode;
-              return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
-            }).join('')}
+        <div class="wf-header__group wf-header__group--actions">
+          <div class="wf-header__scroll">
+            <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
+              ${VIEW_MODES.map(m => {
+                const active = m.id === state.viewMode;
+                return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
+              }).join('')}
+            </div>
+            <div class="wf-divider"></div>
+            ${pinned}
+            ${docsButton}
+            ${chatButton}
+            ${helpButton}
           </div>
-          <div class="wf-divider"></div>
-          ${pinned}
-          ${docsButton}
-          ${chatButton}
-          ${helpButton}
           ${this.renderMenu(state)}
         </div>
       </header>`;

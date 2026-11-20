@@ -111,9 +111,16 @@
 }
 
 .wf-header__group { display: flex; align-items: center; gap: var(--wf-space-2); min-width: 0; }
+.wf-header__group--actions { flex: 1 1 auto; justify-content: flex-end; }
+/* Pinned buttons scroll instead of pushing the ⋯ button off screen. */
+.wf-header__scroll { display: flex; align-items: center; gap: var(--wf-space-2); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.wf-header__scroll::-webkit-scrollbar { display: none; }
 .wf-header__brand { font-weight: 700; font-size: 16px; letter-spacing: 0.5px; color: var(--wf-text-link); text-decoration: none; white-space: nowrap; }
 .wf-header__spacer { flex: 1; }
-.wf-header__menu { position: relative; }
+.wf-header__menu { position: relative; flex-shrink: 0; }
+/* Three CSS dots: always visible, no dependency on a font glyph. */
+.wf-menu__dots { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 14px; }
+.wf-menu__dots i { display: block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
 
 .wf-menu {
   position: absolute;
