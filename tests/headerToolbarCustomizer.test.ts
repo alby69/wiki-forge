@@ -100,6 +100,15 @@ describe('Header toolbar customizer', () => {
     assert.ok(!markup.includes('wf-header__scroll'), 'horizontal scrolling removed');
     assert.ok(markup.includes('class="wf-menu__dots"'), 'dots do not depend on a font glyph');
 
+    // Editor / Note rapide / Grafo / Divisione are fixed in the first row,
+    // before the customisable action strip. Overflow is a centred second row.
+    const beforeActions = markup.split('<div class="wf-header__group wf-header__group--actions">')[0];
+    for (const id of ['view-mode-editor', 'view-mode-scratchpad', 'view-mode-graph', 'view-mode-split']) {
+      assert.ok(beforeActions.includes(`id="${id}"`), `${id} stays in the fixed first-row group`);
+      assert.ok(!actionsMatch![1].includes(`id="${id}"`), `${id} is not in the overflowing action strip`);
+    }
+    assert.ok(markup.includes('<div class="wf-header__overflow" id="wf-header-overflow" hidden>'), 'centred overflow row is rendered');
+
     header.destroy();
   });
 
@@ -145,6 +154,80 @@ describe('Header toolbar customizer', () => {
     const markup = dom.html();
     assert.ok(!markup.includes('data-pin-action="global:docsWiki"'));
     assert.ok(!markup.includes('header-docs-wiki-btn'));
+
+    header.destroy();
+  });
+
+  it('keeps view pills on row one and moves overflowing actions to the centred row', () => {
+    const elements = new Map<string, any>();
+    const widths: Record<string, number> = {
+      '#header-projects-btn': 90,
+      '#header-research-btn': 80,
+      '#header-study-btn': 70,
+      '#header-docs-wiki-btn': 90,
+      '#chat-toggle-header-btn': 70,
+      '#header-help-btn': 30,
+    };
+    const makeEl = (selector: string): any => {
+      const existing = elements.get(selector);
+      if (existing) return existing;
+      const el: any = {
+        selector,
+        hidden: false,
+        checked: false,
+        value: 'default',
+        children: [],
+        _listeners: new Map<string, Array<() => void>>(),
+        addEventListener(type: string, cb: () => void) {
+          el._listeners.set(type, [...(el._listeners.get(type) ?? []), cb]);
+        },
+        setAttribute(key: string) { if (key === 'hidden') el.hidden = true; },
+        removeAttribute(key: string) { if (key === 'hidden') el.hidden = false; },
+        focus() {},
+        getBoundingClientRect: () => ({ width: widths[selector] ?? 0 }),
+        replaceChildren(...children: any[]) { el.children = children; },
+      };
+      if (selector === '.wf-header__actions') el.clientWidth = 180;
+      elements.set(selector, el);
+      return el;
+    };
+    const container = {
+      set innerHTML(_value: string) {},
+      querySelector: makeEl,
+      contains: () => true,
+    } as unknown as HTMLElement;
+
+    const windowListeners = new Map<string, Array<() => void>>();
+    (globalThis as any).window = {
+      addEventListener: (type: string, cb: () => void) => {
+        windowListeners.set(type, [...(windowListeners.get(type) ?? []), cb]);
+      },
+      removeEventListener: (type: string, cb: () => void) => {
+        windowListeners.set(type, (windowListeners.get(type) ?? []).filter(listener => listener !== cb));
+      },
+    };
+
+    const header = new Header({ container });
+    const actions = elements.get('.wf-header__actions');
+    const overflow = elements.get('#wf-header-overflow');
+    const selectors = (els: any[]) => els.map(el => el.selector);
+
+    // 90 + 8 + 80 = 178 fits; the next 70 does not.
+    assert.deepEqual(selectors(actions.children), ['#header-projects-btn', '#header-research-btn']);
+    assert.deepEqual(selectors(overflow.children), [
+      '#header-study-btn',
+      '#header-docs-wiki-btn',
+      '#chat-toggle-header-btn',
+      '#header-help-btn',
+    ]);
+    assert.equal(overflow.hidden, false, 'centred second row is visible');
+    assert.equal(elements.get('#header-actions-divider').hidden, false);
+
+    // Widening the window puts every action back in the first row.
+    actions.clientWidth = 600;
+    for (const cb of windowListeners.get('resize') ?? []) cb();
+    assert.equal(selectors(actions.children).length, 6);
+    assert.equal(overflow.hidden, true, 'empty second row is hidden');
 
     header.destroy();
   });

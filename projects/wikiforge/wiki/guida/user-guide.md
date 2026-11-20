@@ -102,8 +102,12 @@ See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 ## Top bar, languages and keyboard shortcuts (Fase 78)
 
 - The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
-  the view-mode pills, the global **Research**, **Studio**, **Docs Wiki** and
-  **Chat** buttons, plus a `⋯` overflow menu for the remaining actions.
+  the view-mode pills (**Editor**, **Note rapide**, **Grafo**, **Divisione**),
+  the global **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus
+  a `⋯` overflow menu for the remaining actions. The four view-mode pills and
+  the `⋯` menu stay in the first row; the other pinned buttons stay to their
+  right as long as they fit and move to a **centred second row** when the window
+  gets narrow.
 - The `⋯` menu contains a single **Personalizza barra / Customize toolbar**
   list, one row per global action: **click the row** to run the action, **tick
   its checkbox** to also show it as a button in the main bar (untick to hide it).

@@ -104,32 +104,54 @@
   background: var(--wf-bg);
   border-bottom: 1px solid var(--wf-border);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   row-gap: var(--wf-space-2);
-  column-gap: var(--wf-space-3);
   padding: 6px var(--wf-space-4);
   color: var(--wf-text);
 }
 
 .wf-header__group { display: flex; align-items: center; gap: var(--wf-space-2); min-width: 0; }
-/* When the actions don't fit beside the brand/selectors, the whole group
-   wraps to a second row and the header grows. */
-.wf-header__group--actions { flex: 1 0 auto; max-width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+/* The view-mode pills are fixed in the first row; only the action buttons to
+   their right are eligible for the centred overflow row. */
+.wf-header__primary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-space-3);
+  width: 100%;
+  min-width: 0;
+}
+.wf-header__primary > .wf-header__group:first-child { flex: 0 1 auto; overflow: hidden; }
+.wf-header__primary > .wf-header__group:first-child > * { min-width: 0; }
+.wf-header__view-group { display: flex; align-items: center; gap: var(--wf-space-2); flex: 0 0 auto; }
+.wf-header__view-group .seg-control { flex: 0 0 auto; }
+.wf-header__group--actions { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
 .wf-header__actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   gap: var(--wf-space-2);
 }
+.wf-header__actions > .wf-btn,
+.wf-header__actions > .wf-icon-btn { flex: 0 0 auto; white-space: nowrap; }
+/* Whatever no longer fits in the first row lands here, centred on the window. */
+.wf-header__overflow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--wf-space-2);
+  width: 100%;
+}
+.wf-header__overflow[hidden] { display: none; }
 .wf-header__brand { font-weight: 700; font-size: 16px; letter-spacing: 0.5px; color: var(--wf-text-link); text-decoration: none; white-space: nowrap; }
 .wf-header__spacer { flex: 1; }
 /* The ⋯ button never wraps below the actions and never overlaps them. */
-.wf-header__menu { position: relative; flex: 0 0 auto; margin-left: auto; }
+.wf-header__menu { position: relative; flex: 0 0 auto; }
 /* Three CSS dots: always visible, no dependency on a font glyph. */
 .wf-menu__dots { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 14px; }
 .wf-menu__dots i { display: block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }

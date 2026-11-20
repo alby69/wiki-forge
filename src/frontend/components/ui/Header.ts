@@ -60,9 +60,12 @@ export class Header {
   private unsubscribeLanguage?: () => void;
   private onOutsideClick?: (event: MouseEvent) => void;
   private renderedActionIds: string[] = [];
+  /** Buttons that may stay in the first row or move to the centred overflow row. */
+  private headerActionButtonIds: string[] = [];
   private lastRenderKey = '';
   private moreMenuOpen = false;
   private focusPinActionId?: string;
+  private readonly onWindowResize = (): void => this.layoutHeader();
 
   constructor(options: HeaderOptions) {
     this.container = options.container;
@@ -76,6 +79,7 @@ export class Header {
       if (key !== this.lastRenderKey) this.render();
     });
     this.unsubscribeLanguage = subscribeLanguage(() => this.render());
+    if (typeof window !== 'undefined') window.addEventListener('resize', this.onWindowResize);
     this.render();
   }
 
@@ -101,6 +105,7 @@ export class Header {
 
   private renderActionButton(action: ActionDefinition, id: string, extraClass = ''): string {
     this.renderedActionIds.push(id);
+    this.headerActionButtonIds.push(id);
     const title = escapeHtml(actionTitle(action));
     return `<button id="${id}" class="wf-btn wf-btn--sm ${extraClass}" data-action-id="${id}" data-action-key="${action.id}" title="${title}" aria-label="${title}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}</button>`;
   }
@@ -148,6 +153,7 @@ export class Header {
     const state: AppState = appStore.getState();
     this.lastRenderKey = this.renderKey(state);
     this.renderedActionIds = [];
+    this.headerActionButtonIds = [];
 
     const projOptions = this.projects.length > 0
       ? this.projects.map(p => `<option value="${escapeHtml(p.id)}" ${p.id === this.activeProjectId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')
@@ -168,55 +174,121 @@ export class Header {
     const docsButton = state.isAdvancedMode && pinnedIds.has('global:docsWiki') && docsAction
       ? `<button id="${headerButtonId('global:docsWiki')}" class="wf-btn wf-btn--sm wf-btn--success" data-action-id="${headerButtonId('global:docsWiki')}" data-action-key="global:docsWiki" title="${escapeHtml(t('docsWiki'))}" aria-label="${escapeHtml(t('docsWiki'))}">${docsAction.icon} ${escapeHtml(actionLabel(docsAction))}</button>`
       : '';
-    if (docsButton) this.renderedActionIds.push(headerButtonId('global:docsWiki'));
+    if (docsButton) {
+      this.renderedActionIds.push(headerButtonId('global:docsWiki'));
+      this.headerActionButtonIds.push(headerButtonId('global:docsWiki'));
+    }
 
     const chatButton = pinnedIds.has('global:chat')
       ? `<button id="${headerButtonId('global:chat')}" class="wf-btn wf-btn--primary" title="${escapeHtml(t('chat'))}" aria-label="${escapeHtml(t('chat'))}"><span aria-hidden="true">💬</span> ${escapeHtml(t('chat'))}</button>`
       : '';
+    if (chatButton) this.headerActionButtonIds.push(headerButtonId('global:chat'));
+
     const helpButton = pinnedIds.has('global:help')
       ? `<button id="${headerButtonId('global:help')}" class="wf-icon-btn" title="${escapeHtml(t('help'))} (F1)" aria-label="${escapeHtml(t('help'))}">?</button>`
       : '';
+    if (helpButton) this.headerActionButtonIds.push(headerButtonId('global:help'));
 
     this.container.innerHTML = `
       <header class="wf-header">
-        <div class="wf-header__group">
-          <a href="https://github.com/alby69/wiki-forge" target="_blank" rel="noopener noreferrer" class="wf-header__brand" id="header-brand">${escapeHtml(t('appName'))}</a>
-          ${modeBadge}
+        <div class="wf-header__primary">
           <div class="wf-header__group">
-            <label class="wf-label" for="header-project-select">${escapeHtml(t('project'))}:</label>
-            <select id="header-project-select" class="wf-field" aria-label="${escapeHtml(t('project'))}">${projOptions}</select>
+            <a href="https://github.com/alby69/wiki-forge" target="_blank" rel="noopener noreferrer" class="wf-header__brand" id="header-brand">${escapeHtml(t('appName'))}</a>
+            ${modeBadge}
+            <div class="wf-header__group">
+              <label class="wf-label" for="header-project-select">${escapeHtml(t('project'))}:</label>
+              <select id="header-project-select" class="wf-field" aria-label="${escapeHtml(t('project'))}">${projOptions}</select>
+            </div>
+            <label class="wf-label" for="header-language-select">${escapeHtml(t('language'))}:</label>
+            <select id="header-language-select" class="wf-field" aria-label="${escapeHtml(t('language'))}">
+              <option value="it" ${getLanguage() === 'it' ? 'selected' : ''}>🇮🇹 IT</option>
+              <option value="en" ${getLanguage() === 'en' ? 'selected' : ''}>🇬🇧 EN</option>
+            </select>
           </div>
-          <label class="wf-label" for="header-language-select">${escapeHtml(t('language'))}:</label>
-          <select id="header-language-select" class="wf-field" aria-label="${escapeHtml(t('language'))}">
-            <option value="it" ${getLanguage() === 'it' ? 'selected' : ''}>🇮🇹 IT</option>
-            <option value="en" ${getLanguage() === 'en' ? 'selected' : ''}>🇬🇧 EN</option>
-          </select>
-        </div>
 
-        <div class="wf-header__group wf-header__group--actions">
-          <div class="wf-header__actions">
+          <div class="wf-header__view-group">
             <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
               ${VIEW_MODES.map(m => {
                 const active = m.id === state.viewMode;
                 return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
               }).join('')}
             </div>
-            <div class="wf-divider"></div>
-            ${pinned}
-            ${docsButton}
-            ${chatButton}
-            ${helpButton}
+            <div class="wf-divider" id="header-actions-divider"></div>
           </div>
-          ${this.renderMenu(state)}
+
+          <div class="wf-header__group wf-header__group--actions">
+            <div class="wf-header__actions">
+              ${pinned}
+              ${docsButton}
+              ${chatButton}
+              ${helpButton}
+            </div>
+            ${this.renderMenu(state)}
+          </div>
         </div>
+        <div class="wf-header__overflow" id="wf-header-overflow" hidden></div>
       </header>`;
 
     this.bindEvents();
+    this.layoutHeader();
     this.toggleMoreMenu(this.moreMenuOpen);
     if (this.focusPinActionId) {
       const checkbox = this.container.querySelector(`#${this.focusPinActionId}`) as HTMLInputElement | null;
       checkbox?.focus?.();
       this.focusPinActionId = undefined;
+    }
+  }
+
+  /**
+   * Keep the view-mode pills in the first row and move the actions that no
+   * longer fit to a full-width, centred second row. Buttons are reparented (not
+   * recreated), so their listeners survive resize/render cycles.
+   */
+  private layoutHeader(): void {
+    const actions = this.container.querySelector<HTMLElement>('.wf-header__actions');
+    const overflow = this.container.querySelector<HTMLElement>('#wf-header-overflow');
+    if (!actions || !overflow) return;
+    // Mock/test DOMs have no layout engine; leave the static markup untouched.
+    if (typeof actions.clientWidth !== 'number' || typeof actions.replaceChildren !== 'function') return;
+
+    const buttons = this.headerActionButtonIds
+      .map(id => this.container.querySelector<HTMLElement>(`#${id}`))
+      .filter((el): el is HTMLElement => Boolean(el));
+    const divider = this.container.querySelector('#header-actions-divider');
+
+    if (buttons.length === 0) {
+      overflow.replaceChildren();
+      overflow.hidden = true;
+      divider?.setAttribute('hidden', '');
+      return;
+    }
+
+    const gapStyle = typeof getComputedStyle === 'function'
+      ? parseFloat(getComputedStyle(actions).columnGap)
+      : NaN;
+    const gap = Number.isFinite(gapStyle) ? gapStyle : 8;
+    const available = actions.clientWidth;
+
+    const firstRow: HTMLElement[] = [];
+    const secondRow: HTMLElement[] = [];
+    let used = 0;
+    for (const button of buttons) {
+      const width = button.getBoundingClientRect().width;
+      const needed = used + (firstRow.length > 0 ? gap : 0) + width;
+      if (needed <= available) {
+        used = needed;
+        firstRow.push(button);
+      } else {
+        secondRow.push(button);
+      }
+    }
+
+    actions.replaceChildren(...firstRow);
+    overflow.replaceChildren(...secondRow);
+    overflow.hidden = secondRow.length === 0;
+    if (divider) {
+      if (firstRow.length === 0) divider.setAttribute('hidden', '');
+      else divider.removeAttribute('hidden');
     }
   }
 
@@ -308,6 +380,7 @@ export class Header {
   public destroy(): void {
     this.unsubscribeStore?.();
     this.unsubscribeLanguage?.();
+    if (typeof window !== 'undefined') window.removeEventListener?.('resize', this.onWindowResize);
     if (this.onOutsideClick && typeof document !== 'undefined') {
       document.removeEventListener('mousedown', this.onOutsideClick);
       this.onOutsideClick = undefined;

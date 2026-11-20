@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Header personalizzabile
 
 - Il menu `⋯` della barra in alto ora contiene **solo** l'elenco **Personalizza barra**, una riga per ogni azione globale: cliccare la riga esegue l'azione, spuntare la checkbox la mostra anche come pulsante nella barra (disattivandola il pulsante scompare). Nessuna seconda lista duplicata. La scelta è persistita in `localStorage` tramite `appStore.pinnedActionIds`; i valori iniziali riproducono il layout storico. La riga di **Wiki Docs** è disponibile solo in Developer Mode. Aggiunti test dedicati (`tests/headerToolbarCustomizer.test.ts`).
-- Il pulsante `⋯` resta sempre visibile in fondo a destra anche con molte azioni pinnate: se le voci non entrano nella prima riga, **tutto il gruppo azioni passa a una nuova riga** e l'altezza dell'header si adatta (niente scorrimento orizzontale). I tre punti sono disegnati in CSS (nessuna dipendenza dal glifo del font).
+- **Editor / Note rapide / Grafo / Divisione restano sempre nella prima riga** della barra. Le altre voci pinnate stanno alla loro destra e, quando non c'è spazio, passano in una **seconda riga centrata rispetto alla finestra** (ridimensionamento gestito senza scorrimento orizzontale). Il pulsante `⋯` resta sempre visibile in fondo alla prima riga; i tre punti sono disegnati in CSS (nessuna dipendenza dal glifo del font).
 
 ### Frontend UI/UX & Project Lifecycle — implementazione (Fase 78, fasi 1–7)
 
