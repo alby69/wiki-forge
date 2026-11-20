@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Header personalizzabile
 
-- Il menu `⋯` della barra in alto ora contiene una sezione **Personalizza barra** con un flag per ogni azione globale: spuntandola l'azione compare anche come pulsante nella barra, disattivandola il pulsante scompare (l'azione resta sempre nel menu). La scelta è persistita in `localStorage` tramite `appStore.pinnedActionIds`; i valori iniziali riproducono il layout storico. Il flag di **Wiki Docs** è disponibile solo in Developer Mode. Aggiunti test dedicati (`tests/headerToolbarCustomizer.test.ts`).
+- Il menu `⋯` della barra in alto ora contiene **solo** l'elenco **Personalizza barra**, una riga per ogni azione globale: cliccare la riga esegue l'azione, spuntare la checkbox la mostra anche come pulsante nella barra (disattivandola il pulsante scompare). Nessuna seconda lista duplicata. La scelta è persistita in `localStorage` tramite `appStore.pinnedActionIds`; i valori iniziali riproducono il layout storico. La riga di **Wiki Docs** è disponibile solo in Developer Mode. Aggiunti test dedicati (`tests/headerToolbarCustomizer.test.ts`).
 
 ### Frontend UI/UX & Project Lifecycle — implementazione (Fase 78, fasi 1–7)
 

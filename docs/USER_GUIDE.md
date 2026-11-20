@@ -88,11 +88,12 @@ See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 - The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
   the view-mode pills, the global **Research**, **Studio**, **Docs Wiki** and
   **Chat** buttons, plus a `⋯` overflow menu for the remaining actions.
-- The `⋯` menu starts with a **Personalizza barra / Customize toolbar** section:
-  one flag per global action. Tick a flag to show that action as a button in the
-  main bar, untick it to hide the button. The action always stays in the menu,
-  the choice is remembered across restarts, and the default layout is unchanged.
-  The **Docs Wiki** flag appears only in Developer Mode.
+- The `⋯` menu contains a single **Personalizza barra / Customize toolbar**
+  list, one row per global action: **click the row** to run the action, **tick
+  its checkbox** to also show it as a button in the main bar (untick to hide it).
+  There is no second duplicate list. The choice is remembered across restarts
+  and the default layout is unchanged. The **Docs Wiki** row appears only in
+  Developer Mode.
 - Research and Studio are **global only**: the duplicated buttons were removed
   from the note header, which now shows only Node Info, Review, History and
   Save/Edit.

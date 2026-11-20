@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Header } from '@frontend/components/ui/Header';
+import { getActions } from '@frontend/core/actions';
 import { appStore, DEFAULT_PINNED_ACTION_IDS } from '@frontend/store/appStore';
 
 type MockEl = {
@@ -82,6 +83,14 @@ describe('Header toolbar customizer', () => {
     assert.ok(markup.includes('header-docs-wiki-btn'), 'docs wiki pinned in Developer Mode');
     assert.ok(markup.includes('chat-toggle-header-btn'), 'chat pinned by default');
     assert.ok(!markup.includes('header-review-btn'), 'review not pinned by default');
+
+    // A single row per action: the old second, duplicated button list is gone.
+    for (const action of getActions({ group: 'global', menu: true })) {
+      const needle = `<button id="menu-item-${action.id.replace(':', '-')}"`;
+      assert.equal(markup.split(needle).length - 1, 1, `${action.id} appears once in the menu`);
+      assert.ok(markup.includes(`data-pin-action="${action.id}"`), `${action.id} has a flag`);
+    }
+    assert.ok(!markup.includes('wf-menu__toggle'), 'legacy duplicate list removed');
 
     header.destroy();
   });

@@ -113,37 +113,33 @@ export class Header {
       .filter(action => action.id !== 'global:docsWiki' || state.isAdvancedMode);
   }
 
-  /** Section of the ⋯ menu with one flag per pinnable action. */
+  /** The only list in the ⋯ menu: tick the flag to pin, click the row to run. */
   private renderBarCustomizer(state: AppState): string {
     const pinned = new Set(state.pinnedActionIds);
     const rows = this.pinnableActions(state).map(action => {
-      const id = `pin-${action.id.replace(':', '-')}`;
+      const pinId = `pin-${action.id.replace(':', '-')}`;
+      const actionId = `menu-item-${action.id.replace(':', '-')}`;
+      this.renderedActionIds.push(actionId);
       const checked = pinned.has(action.id);
-      return `<label class="wf-menu__item wf-menu__toggle" for="${id}" title="${escapeHtml(t('showInBar'))}">
-        <input type="checkbox" id="${id}" data-pin-action="${action.id}" ${checked ? 'checked' : ''} />
-        <span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}
-      </label>`;
+      const shortcut = action.shortcut ? `<span class="wf-menu__shortcut">${escapeHtml(action.shortcut)}</span>` : '';
+      return `<div class="wf-menu__row" role="none">
+        <input type="checkbox" id="${pinId}" class="wf-menu__pin" data-pin-action="${action.id}" aria-label="${escapeHtml(t('showInBar'))}: ${escapeHtml(actionLabel(action))}" ${checked ? 'checked' : ''} />
+        <button id="${actionId}" class="wf-menu__item" role="menuitem" data-action-id="${actionId}" data-action-key="${action.id}" title="${escapeHtml(actionTitle(action))}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}${shortcut}</button>
+      </div>`;
     }).join('');
 
     return `<div class="wf-menu__section" role="group" aria-label="${escapeHtml(t('customizeBar'))}">
-      <div class="wf-menu__label">${escapeHtml(t('customizeBar'))}</div>
+      <div class="wf-menu__label">${escapeHtml(t('customizeBar'))} <span class="wf-menu__hint">· ${escapeHtml(t('showInBar'))}</span></div>
       ${rows}
     </div>`;
   }
 
   private renderMenu(state: AppState): string {
-    const actions = getActions({ group: 'global', menu: true });
     return `
       <div class="wf-header__menu">
         <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}">⋯</button>
         <div id="header-more-menu" class="wf-menu" role="menu" hidden>
           ${this.renderBarCustomizer(state)}
-          ${actions.map(action => {
-            const id = `menu-item-${action.id.replace(':', '-')}`;
-            this.renderedActionIds.push(id);
-            const shortcut = action.shortcut ? `<span class="wf-menu__shortcut">${escapeHtml(action.shortcut)}</span>` : '';
-            return `<button id="${id}" class="wf-menu__item" role="menuitem" data-action-id="${id}" data-action-key="${action.id}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}${shortcut}</button>`;
-          }).join('')}
         </div>
       </div>`;
   }
