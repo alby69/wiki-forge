@@ -1,5 +1,5 @@
 import { ScriptDef, ScriptParamDef } from '@backend/server/agentServer';
-import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { getActiveProjectId, resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { LogConsole } from './LogConsole';
 
@@ -11,9 +11,12 @@ export class ToolsModal {
   private onVaultRefreshCb?: () => void;
   private activeCategory: string = 'Ingestion';
   private apiBaseUrl: string = resolveApiBaseUrl();
+  /** Reads the project selected in the header picker at execution time. */
+  private projectIdProvider: () => string;
 
-  constructor(onVaultRefresh?: () => void) {
+  constructor(onVaultRefresh?: () => void, projectIdProvider: () => string = getActiveProjectId) {
     this.onVaultRefreshCb = onVaultRefresh;
+    this.projectIdProvider = projectIdProvider;
     this.overlay = document.createElement('div');
     this.overlay.id = 'tools-modal-root';
     this.overlay.style.position = 'fixed';
@@ -39,6 +42,7 @@ export class ToolsModal {
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">🛠️</span>
             <span style="font-weight: 700; font-size: 16px; color: #64b5f6;">Wiki-Forge Script Control Panel</span>
+            <span id="tools-active-project" title="Wiki selezionata nel selettore progetti" style="font-size: 11px; font-family: monospace; background: #2d3748; color: #68d391; padding: 3px 8px; border-radius: 10px;">project: …</span>
           </div>
           <button id="tools-modal-close" style="background: none; border: none; color: #a0aec0; font-size: 20px; cursor: pointer;">✕</button>
         </div>
@@ -78,6 +82,7 @@ export class ToolsModal {
   public async open(): Promise<void> {
     this.overlay.style.display = 'flex';
     setHelpContext('tools');
+    this.renderActiveProjectBadge();
     await this.fetchScriptRegistry();
     this.renderCategoriesList();
     if (this.scripts.length > 0 && !this.selectedScript) {
@@ -90,10 +95,23 @@ export class ToolsModal {
     clearHelpContext('tools');
   }
 
+  /** The active project is read on every action, not cached on open. */
+  private getProjectId(): string {
+    const id = this.projectIdProvider().trim();
+    return id || 'default';
+  }
+
+  private renderActiveProjectBadge(): void {
+    const badge = this.overlay.querySelector('#tools-active-project');
+    if (badge) badge.textContent = `project: ${this.getProjectId()}`;
+  }
+
   private async fetchScriptRegistry(): Promise<void> {
     const url = `${this.apiBaseUrl}/api/scripts/registry`;
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'X-Project-Id': this.getProjectId() },
+      });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
@@ -259,6 +277,10 @@ export class ToolsModal {
   }
 
   private async executeTool(script: ScriptDef, form: HTMLFormElement): Promise<void> {
+    // Resolve the selected wiki when Run is pressed, not when the modal opened.
+    const projectId = this.getProjectId();
+    this.renderActiveProjectBadge();
+
     const formData = new FormData(form);
     const args: Record<string, any> = {};
 
@@ -289,7 +311,7 @@ export class ToolsModal {
     this.logConsole.setStatus('Running', '#64b5f6');
     this.logConsole.appendLine({
       type: 'start',
-      text: `▶ Launching ${script.displayName} (${script.path})...`,
+      text: `▶ Launching ${script.displayName} on project '${projectId}' (${script.path})...`,
       timestamp: new Date().toLocaleTimeString(),
     });
 
@@ -308,8 +330,12 @@ export class ToolsModal {
     try {
       const response = await fetch(`${this.apiBaseUrl}/api/scripts/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scriptId: script.id, args }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Project-Id': projectId,
+        },
+        // projectId is also in the body as a fallback for proxies that strip headers.
+        body: JSON.stringify({ scriptId: script.id, projectId, args }),
         signal: abortController.signal,
       });
 
@@ -343,6 +369,15 @@ export class ToolsModal {
                   text: `$ ${event.cmd}`,
                   timestamp: new Date().toLocaleTimeString(),
                 });
+                // Backend reports the resolved project root: makes it obvious
+                // which wiki the script is actually operating on.
+                if (event.cwd) {
+                  this.logConsole.appendLine({
+                    type: 'stdout',
+                    text: `cwd: ${event.cwd}${event.projectId ? `  (project: ${event.projectId})` : ''}`,
+                    timestamp: new Date().toLocaleTimeString(),
+                  });
+                }
               } else if (event.type === 'stdout') {
                 this.logConsole.appendLine({
                   type: 'stdout',

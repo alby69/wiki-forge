@@ -52,6 +52,10 @@ import { loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
 import { isMutatingScript, PolicyAgent, PolicyStep } from './scheduler/policyAgent';
 import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
+import { GENERATED_SCRIPT_REGISTRY } from './generated/scriptRegistry.generated';
+import { resolveToolScript } from './toolPaths';
+import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from './safeFs';
+import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
 
 export interface ResearchConsultCitation {
   id: string;
@@ -223,339 +227,7 @@ export function withoutApprovalFlags(args?: Record<string, any>): Record<string,
   return safe;
 }
 
-export const SCRIPT_REGISTRY: Record<string, ScriptDef> = {
-  conv2md: {
-    id: 'conv2md',
-    path: 'scripts/conv2md.py',
-    displayName: 'Convert Sources to Markdown',
-    category: 'Ingestion',
-    description: 'Converts PDF, EPUB, DOCX, MD, and TXT sources from input directory into raw/ Markdown notes.',
-    parameters: [
-      { name: 'input', label: 'Input Directory', type: 'text', default: 'backup', cliFlag: '--input', description: 'Source directory containing documents.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output', description: 'Destination directory for Markdown notes.' },
-      { name: 'ocr', label: 'Use OCR Flag', type: 'boolean', default: false, cliFlag: '--ocr', description: 'Note scanned PDFs for OCR extraction.' },
-    ],
-  },
-  enrich_cot: {
-    id: 'enrich_cot',
-    path: 'scripts/enrich_cot.py',
-    displayName: 'Two-Step CoT Enrichment',
-    category: 'Ingestion',
-    description: 'Applies Two-Step Chain-of-Thought (Analysis -> Generation) enrichment on Markdown notes.',
-    parameters: [
-      { name: 'input', label: 'Input Directory', type: 'text', default: 'raw', cliFlag: '--input', description: 'Source directory containing Markdown notes.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'wiki', cliFlag: '--output', description: 'Destination directory for enriched notes.' },
-    ],
-  },
-  clip2md: {
-    id: 'clip2md',
-    path: 'scripts/clip2md.py',
-    displayName: 'Web Clipper',
-    category: 'Ingestion',
-    description: 'Fetches HTML from a target web URL and saves clean Markdown to sources/web-clips/.',
-    parameters: [
-      { name: 'url', label: 'URL to Clip', type: 'text', required: true, positional: true, placeholder: 'https://example.com/article', description: 'Target webpage URL.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'sources/web-clips', cliFlag: '--output', description: 'Destination folder for web clips.' },
-    ],
-  },
-  notebooklm_import: {
-    id: 'notebooklm_import',
-    path: 'scripts/notebooklm_import.py',
-    displayName: 'Import NotebookLM Export',
-    category: 'Ingestion',
-    description: 'Imports NotebookLM Markdown export files with OKF v0.2 frontmatter metadata.',
-    parameters: [
-      { name: 'input_file', label: 'Export File Path', type: 'text', required: true, positional: true, placeholder: 'sources/notebooklm-export.md', description: 'Path to exported .md file.' },
-      { name: 'source', label: 'Source Name', type: 'text', default: 'NotebookLM Session', cliFlag: '--source', description: 'Descriptive title for the source.' },
-      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output-dir', description: 'Destination folder for imported note.' },
-    ],
-  },
-  migrate_to_okf: {
-    id: 'migrate_to_okf',
-    path: 'scripts/migrate_to_okf.py',
-    displayName: 'Migrate to OKF v0.2',
-    category: 'OKF Maintenance',
-    description: 'One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter.',
-    parameters: [
-      { name: 'confirm', label: 'Confirm Migration (Danger / Backup first)', type: 'boolean', default: false, required: true, cliFlag: '--confirm', description: 'Check to acknowledge irreversible frontmatter migration.' },
-      { name: 'wiki_dir', label: 'Wiki Directory (optional)', type: 'text', default: '', cliFlag: '--wiki-dir', placeholder: 'auto → projects/tesi/wiki', description: 'Target wiki dir.' },
-    ],
-  },
-  okf_lint: {
-    id: 'okf_lint',
-    path: 'scripts/okf_lint.py',
-    displayName: 'Lint OKF Bundle',
-    category: 'OKF Maintenance',
-    description: 'Validates frontmatter structure, required fields, and index compliance across all notes.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
-    ],
-  },
-  docs_wiki_drift: {
-    id: 'docs_wiki_drift',
-    path: 'scripts/docs_wiki_drift.py',
-    displayName: 'Docs/Wiki Drift Report',
-    category: 'Knowledge Engineering',
-    description: 'Read-only comparison of docs/ with the committed OKF wiki projection; emits rationale and sources.',
-    parameters: [
-      { name: 'docs_dir', label: 'Docs Directory', type: 'text', default: 'docs', cliFlag: '--docs-dir', description: 'Documentation source directory.' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'projects/wikiforge/wiki', cliFlag: '--wiki-dir', description: 'Generated OKF wiki directory.' },
-    ],
-  },
-  wiki_program_change_propose: {
-    id: 'wiki_program_change_propose',
-    path: 'scripts/wiki_program_change_propose.py',
-    displayName: 'Stage Program Change Proposal',
-    category: 'Knowledge Engineering',
-    description: 'Fase 76 (read-only): validate a wiki-grounded program change proposal and stage it for F6 approval. Never writes program files.',
-    parameters: [
-      { name: 'proposal', label: 'Proposal File', type: 'text', default: 'output/program-changes/proposal.json', cliFlag: '--proposal', description: 'JSON proposal with rationale, sources and wiki-edit style edits.' },
-      { name: 'stage_dir', label: 'Stage Directory', type: 'text', default: 'output/program-changes', cliFlag: '--stage-dir', description: 'Directory for pending proposal records.' },
-      { name: 'project', label: 'Project', type: 'text', default: 'wikiforge', cliFlag: '--project', description: 'Project recorded in the proposal provenance.' },
-    ],
-  },
-  wiki_program_change_apply: {
-    id: 'wiki_program_change_apply',
-    path: 'scripts/wiki_program_change_apply.py',
-    displayName: 'Apply Approved Program Change',
-    category: 'Knowledge Engineering',
-    description: 'Fase 76 (mutating, F6-only): apply a staged program change with snapshots, human reviewer and audit. Hard-blocked from automatic execution.',
-    parameters: [
-      { name: 'proposal', label: 'Proposal File', type: 'text', default: 'output/program-changes/proposal.json', cliFlag: '--proposal', description: 'JSON proposal previously staged by the propose step.' },
-      { name: 'reviewer', label: 'Human Reviewer', type: 'text', default: 'human:alby69', cliFlag: '--reviewer', description: 'Human actor authorising the change (human:<id>).' },
-      { name: 'confirm', label: 'Confirm Human Approval (F6)', type: 'boolean', default: false, cliFlag: '--confirm', description: 'Required explicit confirmation; injected only after F6 approval.' },
-      { name: 'stage_dir', label: 'Stage Directory', type: 'text', default: 'output/program-changes', cliFlag: '--stage-dir', description: 'Directory containing the staged proposal records.' },
-      { name: 'project', label: 'Project', type: 'text', default: 'wikiforge', cliFlag: '--project', description: 'Project scope (accepted for provenance compatibility).' },
-    ],
-  },
-  okf_log: {
-    id: 'okf_log',
-    path: 'scripts/okf_log.py',
-    displayName: 'Append OKF Log Entry',
-    category: 'OKF Maintenance',
-    description: 'Appends a new entry to the OKF wiki update log (wiki/log.md).',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
-      { name: 'message', label: 'Log Message', type: 'text', required: true, positional: true, placeholder: 'Descriptive summary of changes', description: 'Details of the update.' },
-      { name: 'type', label: 'Log Type', type: 'select', default: 'Update', cliFlag: '--type', options: ['Update', 'Creation', 'Deprecation', 'Initialization'], description: 'Category keyword for the log entry.' },
-      { name: 'date', label: 'Date (YYYY-MM-DD)', type: 'text', cliFlag: '--date', placeholder: 'Today (UTC)', description: 'Optional override date.' },
-    ],
-  },
-  okf_reindex: {
-    id: 'okf_reindex',
-    path: 'scripts/okf_reindex.py',
-    displayName: 'Regenerate OKF Indexes',
-    category: 'OKF Maintenance',
-    description: 'Regenerates master index.md and thematic folder indexes according to OKF §8.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
-    ],
-  },
-  okf_stats: {
-    id: 'okf_stats',
-    path: 'scripts/okf_stats.py',
-    displayName: 'OKF Bundle Analytics',
-    category: 'OKF Maintenance',
-    description: 'Generates OKF bundle analytics report covering note types, statuses, and trust tiers.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki directory.' },
-    ],
-  },
-  wiki_stats: {
-    id: 'wiki_stats',
-    path: 'scripts/wiki_stats.py',
-    displayName: 'Global Wiki Statistics',
-    category: 'Analysis & Metrics',
-    description: 'Calculates global wiki statistics and updates docs/METRICS.md.',
-    parameters: [],
-  },
-  maturity_calculator: {
-    id: 'maturity_calculator',
-    path: 'scripts/maturity_calculator.py',
-    displayName: 'Calculate Maturity Score',
-    category: 'Analysis & Metrics',
-    description: 'Calculates and updates Maturity Index scores (0-100) for wiki notes.',
-    parameters: [
-      { name: 'path', label: 'Target Path', type: 'text', default: 'wiki', positional: true, description: 'Path to note file or wiki directory.' },
-      { name: 'write', label: 'Write to Frontmatter', type: 'boolean', default: false, cliFlag: '--write', description: 'Persist maturity scores directly into Markdown YAML.' },
-      { name: 'dry_run', label: 'Dry Run Mode', type: 'boolean', default: false, cliFlag: '--dry-run', description: 'Display calculation preview without writing.' },
-      { name: 'min_score', label: 'Min Score Filter', type: 'number', default: 0, cliFlag: '--min-score', description: 'Filter output by minimum maturity score.' },
-    ],
-  },
-  check_docs_sync: {
-    id: 'check_docs_sync',
-    path: 'scripts/check_docs_sync.py',
-    displayName: 'Verify Docs & Skills Sync',
-    category: 'Analysis & Metrics',
-    description: 'Verifies consistency between agent skills, README, TUTORIAL, and CHANGELOG.',
-    parameters: [],
-  },
-  suggest_tags: {
-    id: 'suggest_tags',
-    path: 'scripts/suggest_tags.py',
-    displayName: 'Suggest Taxonomy Tags',
-    category: 'Taxonomy',
-    description: 'Suggests taxonomy tags for notes using controlled vocabulary (RAKE / KeyBERT).',
-    parameters: [
-      { name: 'all', label: 'Process Entire Wiki', type: 'boolean', default: true, cliFlag: '--all', description: 'Batch process all notes in wiki directory.' },
-      { name: 'file', label: 'Single Note Path', type: 'text', positional: true, placeholder: 'wiki/concept.md', description: 'Single note file path.' },
-      { name: 'wiki', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki', description: 'Path to wiki folder.' },
-      { name: 'write', label: 'Write Frontmatter', type: 'boolean', default: false, cliFlag: '--write', description: 'Write suggested tags into Markdown frontmatter.' },
-      { name: 'top', label: 'Max Tags', type: 'number', default: 6, cliFlag: '--top', description: 'Maximum number of tags to retain.' },
-      { name: 'semantic', label: 'Semantic Mode (KeyBERT)', type: 'boolean', default: false, cliFlag: '--semantic', description: 'Use KeyBERT semantic embeddings if installed.' },
-    ],
-  },
-  schema_infer: {
-    id: 'schema_infer',
-    path: 'scripts/schema_infer.py',
-    displayName: 'Infer Domain Schema',
-    category: 'Knowledge Engineering',
-    description: 'Scans wiki pages and proposes a [schema] TOML block of types, fields, and relations.',
-    parameters: [
-      { name: 'project', label: 'Project ID', type: 'text', cliFlag: '--project', description: 'Project ID.' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Override wiki directory path.' },
-    ],
-  },
-  schema_lint: {
-    id: 'schema_lint',
-    path: 'scripts/schema_lint.py',
-    displayName: 'Lint Schema Constraints',
-    category: 'Knowledge Engineering',
-    description: 'Validates wiki pages against the [schema] defined in config.toml.',
-    parameters: [
-      { name: 'project', label: 'Project ID', type: 'text', cliFlag: '--project', description: 'Project ID.' },
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Override wiki directory path.' },
-      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, cliFlag: '--strict', description: 'Treat violations as errors.' },
-      { name: 'path', label: 'Path Pattern Filter', type: 'text', cliFlag: '--path', description: 'Filter pages by path pattern.' },
-      { name: 'config', label: 'Config Path', type: 'text', cliFlag: '--config', description: 'Override config.toml path.' },
-    ],
-  },
-  generate_thesis: {
-    id: 'generate_thesis',
-    path: 'scripts/generate_thesis.py',
-    displayName: 'Compile Thesis Draft',
-    category: 'Thesis & Study',
-    description: 'Aggregates wiki notes and chapter syntheses into a single compiled thesis draft.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki directory.' },
-      { name: 'output', label: 'Output Path', type: 'text', default: 'output/thesis_compiled.md', cliFlag: '--output', description: 'Destination path for compiled Markdown.' },
-      { name: 'min_maturity', label: 'Min Maturity Score', type: 'number', default: 0, cliFlag: '--min-maturity', description: 'Filter included notes by minimum maturity.' },
-      { name: 'title', label: 'Thesis Title', type: 'text', default: 'Thesis Draft', cliFlag: '--title', description: 'Title header for the compiled document.' },
-    ],
-  },
-  export_thesis_pdf: {
-    id: 'export_thesis_pdf',
-    path: 'scripts/export_thesis_pdf.py',
-    displayName: 'Export Thesis to PDF',
-    category: 'Thesis & Study',
-    description: 'Exports compiled thesis Markdown to PDF format via Pandoc.',
-    parameters: [
-      { name: 'input', label: 'Input Markdown Path', type: 'text', default: 'output/thesis_compiled.md', cliFlag: '--input', description: 'Source compiled thesis Markdown file.' },
-      { name: 'output', label: 'Output PDF Path', type: 'text', default: 'output/thesis_final.pdf', cliFlag: '--output', description: 'Destination PDF file path.' },
-      { name: 'engine', label: 'PDF Engine', type: 'select', default: 'xelatex', cliFlag: '--engine', options: ['xelatex', 'pdflatex', 'wkhtmltopdf', 'weasyprint'], description: 'Pandoc PDF rendering engine.' },
-      { name: 'no_toc', label: 'Disable TOC', type: 'boolean', default: false, cliFlag: '--no-toc', description: 'Disable automatic Table of Contents generation.' },
-    ],
-  },
-  wizard: {
-    id: 'wizard',
-    path: 'scripts/wizard.py',
-    displayName: 'Domain Setup Wizard',
-    category: 'Wizard',
-    description: 'Interactive domain setup wizard for academic, business, research, creative, or thesis workflows.',
-    parameters: [
-      { name: 'preset', label: 'Domain Preset', type: 'select', default: 'academic', cliFlag: '--preset', options: ['academic', 'business', 'research', 'creative', 'existing', 'thesis'], description: 'Scenario preset configuration.' },
-    ],
-  },
-  voice_ingest: {
-    id: 'voice_ingest',
-    path: 'scripts/voice_ingest.py',
-    displayName: 'Voice & Multimedia Ingest',
-    category: 'Ingestion',
-    description: 'Converts audio dictations or text transcriptions into structured OKF v0.2 notes.',
-    parameters: [
-      { name: 'file', label: 'Audio / Transcript File Path', type: 'text', required: true, positional: true, placeholder: 'sources/dictation.mp3', description: 'Path to audio or transcript file.' },
-      { name: 'output', label: 'Output Directory', type: 'text', default: 'raw', cliFlag: '--output', description: 'Destination directory for generated Markdown note.' },
-      { name: 'title', label: 'Note Title', type: 'text', cliFlag: '--title', placeholder: 'Voice Note Title', description: 'Optional custom title.' },
-    ],
-  },
-  export_semantic: {
-    id: 'export_semantic',
-    path: 'scripts/export_semantic.py',
-    displayName: 'Semantic RDF Exporter (JSON-LD/TTL)',
-    category: 'Knowledge Engineering',
-    description: 'Exports OKF v0.2 knowledge base notes into W3C standard RDF formats (JSON-LD and Turtle).',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
-      { name: 'output_dir', label: 'Output Directory', type: 'text', default: 'output', cliFlag: '--output-dir', description: 'Destination folder for JSON-LD and TTL files.' },
-    ],
-  },
-  ontology_rules: {
-    id: 'ontology_rules',
-    path: 'scripts/ontology_rules.py',
-    displayName: 'Ontology Rule Engine',
-    category: 'Knowledge Engineering',
-    description: 'Validates logical ontology constraints.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', positional: true, description: 'Path to target wiki folder.' },
-      { name: 'strict', label: 'Strict Mode Flag', type: 'boolean', default: false, cliFlag: '--strict', description: 'Return error code if rule violations are found.' },
-    ],
-  },
-  cq_validator: {
-    id: 'cq_validator',
-    path: 'scripts/cq_validator.py',
-    displayName: 'Competency Questions Engine',
-    category: 'Knowledge Engineering',
-    description: 'Validates knowledge base coverage against natural language Competency Questions (CQ).',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
-      { name: 'cq_file', label: 'CQ File Path', type: 'text', default: 'wiki/competency_questions.md', cliFlag: '--cq-file', description: 'Path to Markdown competency questions file.' },
-      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/cq_validation_report.md', cliFlag: '--output', description: 'Destination path for markdown report.' },
-    ],
-  },
-  odp_suggester: {
-    id: 'odp_suggester',
-    path: 'scripts/odp_suggester.py',
-    displayName: 'ODP Pattern Suggester',
-    category: 'Knowledge Engineering',
-    description: 'Scans informal note properties and suggests formal Ontology Design Patterns (ODP).',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
-      { name: 'catalog', label: 'ODP Catalog Path', type: 'text', default: 'config/odp_catalog.json', cliFlag: '--catalog', description: 'Path to JSON ODP catalog.' },
-    ],
-  },
-  neuro_symbolic_check: {
-    id: 'neuro_symbolic_check',
-    path: 'scripts/neuro_symbolic_check.py',
-    displayName: 'Neuro-Symbolic Consistency Check',
-    category: 'Knowledge Engineering',
-    description: 'Checks logical contradictions and infers missing semantic links across the knowledge graph.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
-      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/neuro_symbolic_report.md', cliFlag: '--output', description: 'Destination path for markdown report.' },
-    ],
-  },
-  ke_maturity: {
-    id: 'ke_maturity',
-    path: 'scripts/ke_maturity.py',
-    displayName: 'KE Maturity Assessment',
-    category: 'Knowledge Engineering',
-    description: 'Assesses knowledge base platform maturity across 6 dimensions (L1-L4).',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki folder.' },
-      { name: 'output', label: 'Report Output Path', type: 'text', default: 'output/ke_maturity_report.md', description: 'Destination path for markdown report.' },
-    ],
-  },
-  graph_analytics: {
-    id: 'graph_analytics',
-    path: 'scripts/graph_analytics.py',
-    displayName: 'Graph Louvain Analytics & Insights',
-    category: 'Analysis & Metrics',
-    description: 'Performs Louvain community detection, surfaces surprising cross-community links, and identifies knowledge gaps.',
-    parameters: [
-      { name: 'wiki_dir', label: 'Wiki Directory', type: 'text', default: 'wiki', cliFlag: '--wiki-dir', description: 'Path to target wiki directory.' },
-    ],
-  },
-};
+export const SCRIPT_REGISTRY: Record<string, ScriptDef> = GENERATED_SCRIPT_REGISTRY;
 
 export interface ProjectEntry {
   id: string;
@@ -1307,7 +979,9 @@ export class AgentServer {
 
     const result = await runUseCase({
       useCase,
-      stepIndices: ctx.job.steps,
+      // Honour the steps narrowed by the F5 policy preflight. Using ctx.job.steps
+      // here would silently re-run a mutating step the policy withheld.
+      stepIndices: ctx.steps ?? ctx.job.steps,
       args: ctx.job.args as Record<string, any>,
       signal: ctx.signal,
       onEvent: (event) => {
@@ -1403,33 +1077,15 @@ export class AgentServer {
     return path.join(projRoot, 'raw');
   }
 
-  private dynamicRegistryCache?: Record<string, ScriptDef>;
-
+  /**
+   * Returns the single script registry, generated from the Python SSOT by
+   * `scripts/gen_script_registry.py`. Keeping the method async preserves the
+   * existing call sites; there is no longer a per-script `--json-schema`
+   * probe (29 subprocesses on first request) nor a second hand-written copy
+   * that could drift from `SCRIPT_SCHEMAS`.
+   */
   public async fetchDynamicScriptRegistry(): Promise<Record<string, ScriptDef>> {
-    if (this.dynamicRegistryCache) {
-      return this.dynamicRegistryCache;
-    }
-    const updatedRegistry: Record<string, ScriptDef> = { ...SCRIPT_REGISTRY };
-    for (const [id, scriptDef] of Object.entries(updatedRegistry)) {
-      try {
-        const absPath = path.resolve(this.rootDir, scriptDef.path);
-        const res = spawnSync(PYTHON_CMD, [absPath, '--json-schema'], {
-          cwd: this.rootDir,
-          encoding: 'utf-8',
-          timeout: 1000,
-        });
-        if (res.status === 0 && res.stdout && res.stdout.trim()) {
-          const parsed = JSON.parse(res.stdout.trim()) as ScriptDef;
-          if (parsed && parsed.id && Array.isArray(parsed.parameters)) {
-            updatedRegistry[id] = parsed;
-          }
-        }
-      } catch (_e) {
-        // Fall back to built-in SCRIPT_REGISTRY entry
-      }
-    }
-    this.dynamicRegistryCache = updatedRegistry;
-    return updatedRegistry;
+    return SCRIPT_REGISTRY;
   }
 
   public setLlmClient(client: LlmClient): void {
@@ -1578,7 +1234,7 @@ export class AgentServer {
   public async saveProjects(projects: ProjectEntry[]): Promise<void> {
     const registryPath = this.getProjectsJsonPath();
     await fs.mkdir(path.dirname(registryPath), { recursive: true });
-    await fs.writeFile(registryPath, JSON.stringify(projects, null, 2), 'utf-8');
+    await atomicWriteFile(registryPath, JSON.stringify(projects, null, 2), 'utf-8');
   }
 
   public async resolveProjectRoot(projectId: string = 'default'): Promise<string> {
@@ -1632,10 +1288,10 @@ export class AgentServer {
       if (!parsed.project) parsed.project = {};
       (parsed.project as Record<string, unknown>).name = cleanId;
       (parsed.project as Record<string, unknown>).title = name || `${cleanId} Wiki`;
-      await fs.writeFile(configPath, toml.stringify(parsed), 'utf-8');
+      await atomicWriteFile(configPath, toml.stringify(parsed), 'utf-8');
     } catch (_e) {
       const initialConfig = `[project]\nname = "${cleanId}"\ntitle = "${name || cleanId}"\ncontext = ""\nlanguage = "en"\n\n[paths]\nsources = "sources"\nraw = "raw"\nwiki = "wiki"\noutput = "output"\nnotes = "notes"\n`;
-      await fs.writeFile(configPath, initialConfig, 'utf-8');
+      await atomicWriteFile(configPath, initialConfig, 'utf-8');
     }
 
     const newProject: ProjectEntry = { id: cleanId, name: name || cleanId, path: projectRelPath };
@@ -1843,7 +1499,7 @@ export class AgentServer {
         };
 
         reviews.push(newItem);
-        await fs.writeFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
+        await atomicWriteFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, review: newItem }));
@@ -1869,7 +1525,7 @@ export class AgentServer {
         }
 
         reviews = reviews.filter((r: { id: string }) => r.id !== body.id);
-        await fs.writeFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
+        await atomicWriteFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
@@ -1884,7 +1540,7 @@ export class AgentServer {
     if (pathname === '/api/ingest/queue' && req.method === 'GET') {
       try {
         const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, 'scripts/ingest_queue.py');
+        const scriptPath = resolveToolScript(this.rootDir, 'scripts/ingest_queue.py');
         const child = spawn(PYTHON_CMD, [scriptPath, 'list', '--json'], { cwd: projRoot });
         let out = '';
         child.stdout.on('data', d => { out += d.toString('utf-8'); });
@@ -1902,7 +1558,7 @@ export class AgentServer {
       try {
         const body = await this.parseJsonBody<{ filePath: string }>(req);
         const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, 'scripts/ingest_queue.py');
+        const scriptPath = resolveToolScript(this.rootDir, 'scripts/ingest_queue.py');
         const child = spawn(PYTHON_CMD, [scriptPath, 'enqueue', '--file', body.filePath, '--json'], { cwd: projRoot });
         let out = '';
         child.stdout.on('data', d => { out += d.toString('utf-8'); });
@@ -1919,7 +1575,7 @@ export class AgentServer {
     if (pathname === '/api/ingest/queue/process' && req.method === 'POST') {
       try {
         const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, 'scripts/conv2md.py');
+        const scriptPath = resolveToolScript(this.rootDir, 'scripts/conv2md.py');
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -1954,7 +1610,7 @@ export class AgentServer {
     if (pathname === '/api/v1/graph/clusters' && req.method === 'GET') {
       try {
         const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, 'scripts/graph_analytics.py');
+        const scriptPath = resolveToolScript(this.rootDir, 'scripts/graph_analytics.py');
         const child = spawn(PYTHON_CMD, [scriptPath, '--json'], { cwd: projRoot });
         let out = '';
         child.stdout.on('data', d => { out += d.toString('utf-8'); });
@@ -1971,7 +1627,7 @@ export class AgentServer {
     if (pathname === '/api/v1/graph/insights' && req.method === 'GET') {
       try {
         const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, 'scripts/graph_analytics.py');
+        const scriptPath = resolveToolScript(this.rootDir, 'scripts/graph_analytics.py');
         const child = spawn(PYTHON_CMD, [scriptPath, '--json'], { cwd: projRoot });
         let out = '';
         child.stdout.on('data', d => { out += d.toString('utf-8'); });
@@ -1999,7 +1655,7 @@ export class AgentServer {
 
     if (pathname === '/api/ke/use-cases/execute' && req.method === 'POST') {
       try {
-        const body = await this.parseJsonBody<{ useCaseId?: string; stepIndex?: number; args?: Record<string, any> }>(req);
+        const body = await this.parseJsonBody<{ useCaseId?: string; stepIndex?: number; args?: Record<string, any>; projectId?: string }>(req);
         const useCaseId = body.useCaseId;
         if (!useCaseId || !KE_USE_CASES[useCaseId]) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -2008,7 +1664,9 @@ export class AgentServer {
         }
 
         const useCase = KE_USE_CASES[useCaseId];
-        const projRoot = await this.resolveProjectRoot(projectId);
+        const bodyProjectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
+        const effectiveProjectId = projectId !== 'default' ? projectId : (bodyProjectId || 'default');
+        const projRoot = await this.resolveProjectRoot(effectiveProjectId);
         const needsF6 = useCase.steps.some(step => step.scriptId === 'wiki_program_change_apply');
         const safeArgs = needsF6 ? withoutApprovalFlags(body.args) : body.args;
 
@@ -2028,7 +1686,7 @@ export class AgentServer {
           },
           rootDir: this.rootDir,
           projectRoot: projRoot,
-          projectId,
+          projectId: effectiveProjectId,
           pythonCmd: PYTHON_CMD,
           scriptRegistry: SCRIPT_REGISTRY,
           buildCliArgs,
@@ -2267,6 +1925,73 @@ export class AgentServer {
       return true;
     }
 
+    // ---- A7: changesets (Plan -> Review -> Apply) -------------------------
+    // LLM/programmatic writes are staged here; only a human review applies
+    // them. The store reuses safeFs so durability is defined in one place.
+    const changesetMatch = /^\/api\/v1\/changesets\/([^/]+)\/(apply|reject)$/.exec(pathname);
+    const changesetGetMatch = /^\/api\/v1\/changesets\/([^/]+)$/.exec(pathname);
+
+    if (pathname === '/api/v1/changesets' && req.method === 'GET') {
+      try {
+        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
+        const status = url.searchParams.get('status') as ChangesetStatus | null;
+        const valid = status && ['pending', 'applied', 'rejected'].includes(status) ? status : undefined;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, changesets: await store.list(valid ?? undefined) }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/v1/changesets' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<StageChangesetInput>(req);
+        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
+        const changeset = await store.stage(body);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, changeset }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (changesetGetMatch && req.method === 'GET') {
+      try {
+        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, changeset: await store.get(changesetGetMatch[1]) }));
+      } catch (err) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (changesetMatch && req.method === 'POST') {
+      try {
+        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
+        const id = changesetMatch[1];
+        if (changesetMatch[2] === 'apply') {
+          const result = await store.apply(id);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, ...result }));
+        } else {
+          const body = await this.parseJsonBody<{ reason?: string }>(req);
+          const changeset = await store.reject(id, body.reason || '');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, changeset }));
+        }
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     // Script Control Panel Endpoints
     if ((pathname === '/api/scripts/list' || pathname === '/api/scripts/registry') && req.method === 'GET') {
       const registry = await this.fetchDynamicScriptRegistry();
@@ -2277,23 +2002,35 @@ export class AgentServer {
 
     if (pathname === '/api/scripts/execute' && req.method === 'POST') {
       try {
-        const body = await this.parseJsonBody<{ scriptId?: string; script?: string; args?: Record<string, any> }>(req);
+        const registry = await this.fetchDynamicScriptRegistry();
+        const body = await this.parseJsonBody<{ scriptId?: string; script?: string; args?: Record<string, any>; projectId?: string }>(req);
         const scriptId = body.scriptId || body.script;
-        if (!scriptId || !SCRIPT_REGISTRY[scriptId]) {
+        if (!scriptId || !registry[scriptId]) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, error: `Invalid or unregistered script ID '${scriptId}'` }));
           return true;
         }
 
-        const scriptDef = SCRIPT_REGISTRY[scriptId];
+        const scriptDef = registry[scriptId];
         const supportsProject = scriptDef.parameters.some(p => p.name === 'project');
         const safeArgs = scriptId === 'wiki_program_change_apply'
           ? withoutApprovalFlags(body.args)
           : body.args;
-        const userArgs = { ...(projectId !== 'default' && supportsProject ? { project: projectId } : {}), ...(safeArgs || {}) };
+
+        // The header/query is authoritative; the body is a fallback for
+        // clients that cannot set X-Project-Id. Never silently fall back to
+        // the repo-root "default" project when the caller sent a project.
+        const bodyProjectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
+        const effectiveProjectId = projectId !== 'default' ? projectId : (bodyProjectId || 'default');
+
+        // The selected project wins over form defaults: a stale `project: ''`
+        // (or `project: 'tesi'`) in the panel form must not re-scope the run.
+        const projectArgs: Record<string, any> =
+          effectiveProjectId !== 'default' && supportsProject ? { project: effectiveProjectId } : {};
+        const userArgs = { ...(safeArgs || {}), ...projectArgs };
         const cliArgs = buildCliArgs(scriptDef, userArgs);
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = path.resolve(this.rootDir, scriptDef.path);
+        const projRoot = await this.resolveProjectRoot(effectiveProjectId);
+        const scriptPath = resolveToolScript(this.rootDir, scriptDef.path);
 
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
@@ -2302,11 +2039,22 @@ export class AgentServer {
           'Access-Control-Allow-Origin': '*',
         });
 
-        res.write(`data: ${JSON.stringify({ type: 'start', script: scriptDef.displayName, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'start', script: scriptDef.displayName, projectId: effectiveProjectId, cwd: projRoot, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
 
+        const scriptEnv: NodeJS.ProcessEnv = {
+          ...process.env,
+          PYTHONUNBUFFERED: '1',
+          PYTHONIOENCODING: 'utf-8',
+        };
+        if (effectiveProjectId !== 'default') {
+          // Python helpers use these to resolve bare paths such as `wiki` to
+          // the selected project even when they do not rely on cwd.
+          scriptEnv.WIKIFORGE_PROJECT_ID = effectiveProjectId;
+          scriptEnv.WIKI_FORGE_WIKI_DIR = path.join(projRoot, 'wiki');
+        }
         const child = spawn(PYTHON_CMD, [scriptPath, ...cliArgs], {
           cwd: projRoot,
-          env: { ...process.env, PYTHONUNBUFFERED: '1' },
+          env: scriptEnv,
         });
 
         child.stdout.on('data', (data: Buffer) => {
@@ -2427,7 +2175,7 @@ export class AgentServer {
           const projectRoot = await this.resolveProjectRoot(pId);
           const configPath = this.getConfigPath(projectRoot);
           const tomlContent = toml.stringify(body);
-          await fs.writeFile(configPath, tomlContent, 'utf-8');
+          await atomicWriteFile(configPath, tomlContent, 'utf-8');
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true }));
         } catch (err) {
@@ -3036,12 +2784,39 @@ export class AgentServer {
     if (pathname === '/api/wiki/delete' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<DeleteRequest>(req);
-        await this.deleteHandler(body, projectId);
+        const entry = await this.deleteHandler(body, projectId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify({ success: true, trashed: entry }));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/trash' && req.method === 'GET') {
+      try {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, entries: await listTrash(projRoot) }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/wiki/trash/restore' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ id?: string }>(req);
+        const projRoot = await this.resolveProjectRoot(projectId);
+        if (!body.id) throw new Error('A trash entry id is required');
+        const originalPath = await restoreFromTrash(projRoot, body.id);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, originalPath }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: String(err) }));
       }
       return true;
@@ -3193,34 +2968,6 @@ export class AgentServer {
       return true;
     }
 
-    if (pathname === '/api/wiki/delete' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<DeleteRequest>(req);
-        await this.deleteHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/upload' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<UploadRequest>(req);
-        await this.uploadHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
     if (pathname === '/api/wiki/folders' && req.method === 'GET') {
       try {
         const folders = await this.getAllFolders(projectId);
@@ -3309,7 +3056,7 @@ export class AgentServer {
     if (kept.length === entries.length) return false;
 
     const body = kept.map(entry => `## [${entry.timestamp}]\n${entry.text}\n\n`).join('');
-    await fs.writeFile(notesFilePath, SCRATCHPAD_INTRO + body, 'utf-8');
+    await atomicWriteFile(notesFilePath, SCRATCHPAD_INTRO + body, 'utf-8');
     return true;
   }
 
@@ -3373,7 +3120,7 @@ export class AgentServer {
       await this.writeReviewSnapshot(projectId, relativePath, previousContent, 'salvataggio');
     }
 
-    await fs.writeFile(targetPath, data.content, 'utf-8');
+    await atomicWriteFile(targetPath, data.content, 'utf-8');
 
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
@@ -3495,7 +3242,7 @@ export class AgentServer {
     }
 
     const updated = haystack.replace(needle, replacement);
-    await fs.writeFile(targetPath, updated, 'utf-8');
+    await atomicWriteFile(targetPath, updated, 'utf-8');
 
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
@@ -3547,7 +3294,7 @@ export class AgentServer {
 
     const defaultContent = data.content ?? `# ${data.fileName.replace(/\.md$/i, '').replace(/[-_]/g, ' ')}\n\n`;
     await fs.mkdir(path.dirname(target), { recursive: true });
-    await fs.writeFile(target, defaultContent, 'utf-8');
+    await atomicWriteFile(target, defaultContent, 'utf-8');
 
     const id = path.basename(target, '.md');
     const relativePath = path.relative(projRoot, target).replace(/\\/g, '/');
@@ -3712,7 +3459,7 @@ export class AgentServer {
     for (const update of pending) {
       const targetAbs = pathMap.get(path.resolve(update.absPath)) ?? update.absPath;
       await fs.mkdir(path.dirname(targetAbs), { recursive: true });
-      await fs.writeFile(targetAbs, update.content, 'utf-8');
+      await atomicWriteFile(targetAbs, update.content, 'utf-8');
     }
 
     return {
@@ -3969,17 +3716,16 @@ export class AgentServer {
     );
   }
 
-  public async deleteHandler(data: DeleteRequest, projectId: string = 'default'): Promise<void> {
+  /**
+   * A11: deletions are recoverable. The file is moved to
+   * `<project>/.wiki-forge/trash/` with an auditable manifest entry instead of
+   * being unlinked, so an accidental UI/LLM delete is never data loss.
+   */
+  public async deleteHandler(data: DeleteRequest, projectId: string = 'default'): Promise<TrashEntry> {
     const projRoot = await this.resolveProjectRoot(projectId);
     const absTarget = path.isAbsolute(data.targetPath) ? path.resolve(data.targetPath) : path.resolve(projRoot, data.targetPath);
     await this.validateSafePath(absTarget, projectId);
-
-    const stat = await fs.stat(absTarget);
-    if (stat.isDirectory()) {
-      await fs.rm(absTarget, { recursive: true, force: true });
-    } else {
-      await fs.unlink(absTarget);
-    }
+    return softDelete(absTarget, projRoot);
   }
 
   public async uploadHandler(data: UploadRequest, projectId: string = 'default'): Promise<void> {
@@ -3992,9 +3738,9 @@ export class AgentServer {
 
     if (data.isBase64) {
       const buffer = Buffer.from(data.content, 'base64');
-      await fs.writeFile(target, buffer);
+      await atomicWriteFile(target, buffer);
     } else {
-      await fs.writeFile(target, data.content, 'utf-8');
+      await atomicWriteFile(target, data.content, 'utf-8');
     }
     if (/\.md$/i.test(data.fileName)) {
       const projectRoot = await this.resolveProjectRoot(projectId);
@@ -4488,7 +4234,7 @@ export class AgentServer {
 
     // Step 1 — stage in raw/ (same as conv2md.py's Markdown passthrough).
     await fs.mkdir(rawDir, { recursive: true });
-    await fs.writeFile(rawPath, content, 'utf-8');
+    await atomicWriteFile(rawPath, content, 'utf-8');
 
     // Step 2 — compile through the exact `/compile` code path.
     try {
@@ -4694,7 +4440,7 @@ export class AgentServer {
     const outputDir = path.resolve(projRoot, 'output');
     await fs.mkdir(outputDir, { recursive: true });
     const filePath = path.join(outputDir, fileName);
-    await fs.writeFile(filePath, markdown, 'utf-8');
+    await atomicWriteFile(filePath, markdown, 'utf-8');
     return path.relative(projRoot, filePath).replace(/\\/g, '/');
   }
 
@@ -4917,7 +4663,7 @@ ${bodyText.slice(0, 500)}
     const prefix = base ? `${base}\n\n` : SCRATCHPAD_INTRO;
 
     const entry = `## [${timestamp}]\n${text}\n\n`;
-    await fs.writeFile(notesFilePath, prefix + entry, 'utf-8');
+    await atomicWriteFile(notesFilePath, prefix + entry, 'utf-8');
 
     return `### 📝 Quick Note Saved\n\n- **Stored in**: \`notes/quick-notes.md\`\n- **Status**: Saved in scratchpad (excluded from \`wiki/index.md\`). Use \`/promote-note <id> <wiki-name>\` to convert to a formal article.`;
   }
@@ -5126,7 +4872,7 @@ ${bodyText.slice(0, 500)}
     if (changed) {
       await this.writeReviewSnapshot(projectId, target.path, raw, 'verifica');
     }
-    await fs.writeFile(absPath, content, 'utf-8');
+    await atomicWriteFile(absPath, content, 'utf-8');
 
     let logUpdated = false;
     if (changed) {
@@ -5294,7 +5040,7 @@ ${bodyText.slice(0, 500)}
       lines.splice(insertAt, 0, '', header, '', entry);
     }
 
-    await fs.writeFile(logPath, lines.join(newline), 'utf-8');
+    await atomicWriteFile(logPath, lines.join(newline), 'utf-8');
   }
 
   // ---------------------------------------------------------------------------
@@ -5329,8 +5075,8 @@ ${bodyText.slice(0, 500)}
       const now = new Date();
       const stamp = now.toISOString().replace(/[:.]/g, '-');
       const base = path.join(dir, stamp);
-      await fs.writeFile(`${base}.md`, content, 'utf-8');
-      await fs.writeFile(
+      await atomicWriteFile(`${base}.md`, content, 'utf-8');
+      await atomicWriteFile(
         `${base}.json`,
         JSON.stringify({ at: now.toISOString(), reason, path: noteRelPath }, null, 2),
         'utf-8'
@@ -6129,7 +5875,7 @@ ${bodyText.slice(0, 500)}
     await this.validateSafePath(absPath, projectId);
     const current = await fs.readFile(absPath, 'utf-8').catch(() => '');
     if (current) await this.writeReviewSnapshot(projectId, target.path, current, 'pre-ripristino');
-    await fs.writeFile(absPath, snapshotContent, 'utf-8');
+    await atomicWriteFile(absPath, snapshotContent, 'utf-8');
 
     const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     const wikiDir = await this.getWikiDir(projectId);
@@ -6263,8 +6009,8 @@ ${sources.map(n => `  - wiki/${n.id}.md`).join('\n')}
 ${body}
 `;
 
-    await fs.writeFile(filePath, content, 'utf-8');
-    await fs.writeFile(synthesisPath, content, 'utf-8');
+    await atomicWriteFile(filePath, content, 'utf-8');
+    await atomicWriteFile(synthesisPath, content, 'utf-8');
 
     const relPath = path.relative(this.rootDir, filePath).replace(/\\/g, '/');
     const relSynthesis = path.relative(this.rootDir, synthesisPath).replace(/\\/g, '/');
@@ -6517,67 +6263,31 @@ ${body}
     return `### 🕸️ Connection & Passage Trace for "${target}"\n\n${traceEntries.join('\n\n')}`;
   }
 
+  /**
+   * A1/A6 de-duplication: index generation has exactly ONE implementation —
+   * the OKF v0.2 Python script. The former inline TypeScript writer emitted a
+   * non-conformant index and silently masked script failures, so failures are
+   * now surfaced instead of being papered over by a second writer.
+   */
   private async executeReindexWorkflow(projectId: string = 'default'): Promise<string> {
     const projRoot = await this.resolveProjectRoot(projectId);
     const wikiDir = await this.getWikiDir(projectId);
     const notes = await this.readAllWikiNotes(projectId);
 
-    // Single source of truth for index generation: the OKF v0.2 Python script.
-    // The legacy inline writer below emits a non-conformant "# Wiki Master
-    // Index" (no okf_version, no Topics/Recently Updated) and used to break
-    // `make okf-lint` after every /compile.
-    const scriptPath = path.resolve(this.rootDir, 'scripts/okf_reindex.py');
+    const scriptPath = resolveToolScript(this.rootDir, 'scripts/okf_reindex.py');
     const relWiki = path.relative(projRoot, wikiDir).replace(/\\/g, '/') || 'wiki';
-    try {
-      const res = spawnSync(PYTHON_CMD, [scriptPath, relWiki], { cwd: projRoot, encoding: 'utf-8' });
-      if (res.status === 0) {
-        return `### 🔄 Reindex Complete\n\n- **OKF v0.2 indexes regenerated** via \`scripts/okf_reindex.py\`\n- **Indexed Notes**: ${notes.length}\n- **Bundle root**: \`${relWiki}/index.md\``;
-      }
-    } catch (_e) {
-      // Fall through to the inline writer below.
+    const res = spawnSync(PYTHON_CMD, [scriptPath, relWiki], {
+      cwd: projRoot,
+      encoding: 'utf-8',
+    });
+    if (res.error) {
+      throw new Error(`Reindex script failed to start: ${res.error.message}`);
+    }
+    if (res.status !== 0) {
+      const detail = (res.stderr || res.stdout || '').trim();
+      throw new Error(`Reindex script failed (exit ${res.status}): ${detail}`);
     }
 
-    // Group notes by folder
-    const folderMap = new Map<string, WikiNote[]>();
-    for (const note of notes) {
-      const folder = note.folder || 'wiki';
-      if (!folderMap.has(folder)) {
-        folderMap.set(folder, []);
-      }
-      folderMap.get(folder)!.push(note);
-    }
-
-    let thematicIndexesCount = 0;
-
-    // Write thematic index files
-    for (const [folder, folderNotes] of folderMap.entries()) {
-      if (folder === 'wiki' || folder === '.') continue;
-
-      const subIndexDir = path.join(wikiDir, folder);
-      const subIndexPath = path.join(subIndexDir, 'index.md');
-
-      const nonIndexNotes = folderNotes.filter(n => n.id !== `${folder}/index` && !n.path.endsWith('index.md'));
-      const articleList = nonIndexNotes
-        .map(n => `- [[${n.id}]] — ${n.title}`)
-        .join('\n');
-
-      const indexContent = `# ${folder.replace(/[-_]/g, ' ').toUpperCase()} Index\n\nThematic index for **${folder}**.\n\n## Articles\n\n${articleList || 'No articles yet.'}\n`;
-
-      await fs.mkdir(subIndexDir, { recursive: true });
-      await fs.writeFile(subIndexPath, indexContent, 'utf-8');
-      thematicIndexesCount++;
-    }
-
-    // Write master index wiki/index.md
-    const folderList = Array.from(folderMap.keys())
-      .filter(f => f !== 'wiki' && f !== '.')
-      .map(f => `- [[${f}/index|${f.replace(/[-_]/g, ' ')}]]`)
-      .join('\n');
-
-    const masterIndexContent = `# Wiki Master Index\n\nWelcome to the knowledge base.\n\n## Thematic Wikis\n\n${folderList || 'No thematic folders yet.'}\n\n## All Notes\n\n${notes.map(n => `- [[${n.id}]]`).join('\n')}\n`;
-
-    await fs.writeFile(path.join(wikiDir, 'index.md'), masterIndexContent, 'utf-8');
-
-    return `### 🔄 Reindex Complete\n\n- **Master Index Written**: \`wiki/index.md\`\n- **Thematic Indexes Updated**: ${thematicIndexesCount}\n- **Indexed Notes**: ${notes.length}\n- **Backlinks Re-evaluated**: Done.`;
+    return `### 🔄 Reindex Complete\n\n- **OKF v0.2 indexes regenerated** via \`scripts/okf_reindex.py\`\n- **Indexed Notes**: ${notes.length}\n- **Bundle root**: \`${relWiki}/index.md\``;
   }
 }

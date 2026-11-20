@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Architettura coerente — Fase 77 (KISS/DRY, addio duplicazioni)
+
+**Scopo originale — selezione del progetto.** Script Control Panel e KE Workbench inviano ora
+`X-Project-Id` + `projectId` nel body; il backend sovrascrive gli argomenti `project` obsoleti
+inviati dai form e passa `WIKIFORGE_PROJECT_ID` / `WIKI_FORGE_WIKI_DIR` ai processi Python.
+Prima, senza header, il backend ricadeva su `default` e un path `wiki` veniva risolto a
+`projects/tesi/wiki` anche con `wikiforge` selezionato. `okf_common.py` risolve ora il primo
+candidato esistente nella direzione `<cwd> → projects/<selezionato> → <repo root>`.
+
+- **Governance scheduler (A1/F5)**: `executeScheduledJob()` usa `ctx.steps ?? ctx.job.steps`.
+  Prime della fix, uno step mutante trattenuto dal Policy Agent veniva rieseguito dal job
+  schedulato. Test di regressione in `tests/agentScheduleF5F6.test.ts` (5/5).
+- **Validazione config (A8)**: nuovo `src/backend/wikiforge/core/config_schema.py` con schema
+  dichiarativo unico; `get_project_config()` fallisce con `ConfigError` su tipi errati; CLI
+  `python -m src.backend.wikiforge.core.config_schema [file...]` stampa JSON. 12 test in
+  `tests/python/test_config_schema.py`.
+- **Registry script come Single Source of Truth (A1/A6)**: `SCRIPT_SCHEMAS` (Python) copre
+  29 script (aggiunti `docs_wiki_drift`, `wiki_program_change_propose`,
+  `wiki_program_change_apply`). `scripts/gen_script_registry.py` genera
+  `src/backend/server/generated/scriptRegistry.generated.ts`; `--check` verifica la sincronía.
+  Rimosso il registry duplicato in `agentServer.ts` e il probe a 29 subprocess `--json-schema`
+  (endpoint `/api/scripts/list`: ~9,3 s → ~74 ms). 6 test in
+  `tests/python/test_script_registry_ssot.py`.
+- **Reindex senza fallback duplicato (A1)**: `executeReindexWorkflow()` invoca solo
+  `scripts/okf_reindex.py` e propaga errori di avvio/uscita. Nuovo
+  `src/backend/server/toolPaths.ts::resolveToolScript()` separa la root degli strumenti dalla
+  root dati del progetto ed è usato da tutti i siti di spawn. 42 test workflows/agentServer.
+- **Filesystem sicuro (A5/A11)**: nuovo `src/backend/server/safeFs.ts` con `atomicWriteFile`,
+  `softDelete`, `listTrash`, `restoreFromTrash`. 23 scritture convertite; `deleteHandler` ora
+  sposta nel cestino invece di `unlink`; nuove route `/api/wiki/trash` e
+  `/api/wiki/trash/restore`; rimosse le route duplicate `/api/wiki/delete` e `/api/wiki/upload`.
+  3 test in `tests/safeFs.test.ts`.
+- **Changeset vivi (A7)**: `src/backend/server/changesetStore.ts` implementa
+  Plan→Review→Apply sopra `safeFs`, con `/api/v1/changesets`, `/:id`, `/:id/apply`, `/:id/reject`.
+  Il pulsante **📋 Proponi changeset** in `ChatDrawer.ts` accoda le proposte LLM senza scrivere
+  i file; la coda **📋 Changesets** in `Header.ts` apre `ChangesetReviewModal`, ora project-scoped.
+  Il vecchio `src/backend/wikiforge/vault.py` (orfano, nessun chiamante) è stato eliminato: la
+  sua funzionalità è ora nel layer Node live. 5 test in `tests/changesets.test.ts`.
+  *Correzione storica alla v4.1.0*: la voce "Safe Vault & Changeset Manager (`vault.py`)"
+  descriveva un modulo che non è mai stato collegato al server; l'implementazione effettiva è
+  quella sopra.
+- **Confine runtime esplicito (A2/A3)**: `vite.config.ts` non istanzia più `AgentServer`; Vite
+  è solo server statico + reverse proxy, con un unico `apiProxy` condiviso da dev e preview
+  che pipes la risposta (SSE incluso). `npm run api` avvia il gateway standalone,
+  `npm run dev:all` avvia gateway + UI; `docker-compose.yml` aggiunge il servizio FastAPI
+  `kg-api` (:8000, interno) e imposta `FASTAPI_SERVER_URL=http://kg-api:8000` sul gateway.
+  Nuovi target Makefile `api`, `kg-api`, `dev-all`. 5 test in `tests/runtimeBoundary.test.ts`.
+- **Validazione**: `npx tsc --noEmit` OK; `npm test` 254 pass / 1 skipped;
+  `PYTHONPATH=.:scripts pytest tests/python/` 44 pass (1 test fallisce solo perché il bundle
+  contiene `projects/wikiforge/wiki/architettura/note_architettura.md`, file locale non
+  tracciato dell'utente, da preservare).
+
 ### Self-Documentation Wiki — Fase 70-75
 
 - **Plan & mapping (`docs/SELF_WIKI_PLAN.md`)**: `docs/` becomes the self-documentation wiki of wiki-forge. Source stays canonical; a deterministic OKF v0.2 projection is committed in `projects/wikiforge/wiki/` (source + projection, no in-place conversion, so `docs/help/*.md` frontmatter keeps working with `/api/help` and `check_docs_sync.py`). `docs/METRICS.md` is excluded because `npm test` regenerates it. Source language is preserved via `lang/it` / `lang/en` tags.

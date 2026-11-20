@@ -139,8 +139,19 @@ thesis-pdf:
 mcp-serve:
 	python3 src/backend/server/mcp_server.py --http --port 8080
 
+# A2/A3 — explicit runtime boundary. The Node API and the Python KG API are
+# separate processes; Vite only proxies to the Node API.
+api:
+	npm run api
+
+kg-api:
+	python3 -m uvicorn src.backend.wikiforge.api.api_server:app --host 0.0.0.0 --port 8000
+
+dev-all:
+	npm run dev:all
+
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, api, kg-api, dev-all, help"
 
 ui:
 	npm run dev
@@ -177,4 +188,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve api kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link

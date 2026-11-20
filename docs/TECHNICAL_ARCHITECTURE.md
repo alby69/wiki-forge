@@ -20,16 +20,20 @@ A fundamental principle of `wiki-forge` is the distinction between **Parametric 
 
 ```mermaid
 graph TD
-    UI[wikiforge-ui: Frontend SPA] -->|REST / SSE / Dynamic Forms| GW[wikiforge-api-gateway: AgentServer Node.js]
-    GW -->|Reverse Proxy /api/v1/graph/*| KG[wikiforge-kg: FastAPI Graph & GraphRAG]
-    GW -->|Executes scripts with --json-schema| INGEST[wikiforge-ingest: Ingestion & Queue Engine]
+    UI[wikiforge-ui: Vite static + /api proxy only] -->|REST / SSE / Dynamic Forms| GW[wikiforge-api-gateway: standalone Node.js :3001]
+    GW -->|Reverse Proxy /api/v1/graph/*| KG[wikiforge-kg: standalone FastAPI :8000]
+    GW -->|spawn python3, project-scoped| INGEST[wikiforge-ingest: Ingestion & Queue Engine]
 
+    GW --> SAFE[src/backend/server/safeFs.ts: atomic writes + trash]
+    GW --> CS[src/backend/server/changesetStore.ts: Plan/Review/Apply]
+    SAFE --> STATE[.wiki-forge/: trash, changesets, snapshots, scheduler state]
+    CS --> STATE
     INGEST -->|State & SHA256 Tracking| DB[(SQLite Ingest Queue .wiki-forge/ingest_queue.db)]
 
     subgraph Core[wikiforge-core: Shared Core Library]
-        CFG[config.py: get_project_config]
+        CFG[config.py + config_schema.py: validated get_project_config]
         EXC[exceptions.py: WikiForgeError Hierarchy]
-        SCHEMA[script_schema.py: Script Schema Registry]
+        SCHEMA[script_schema.py: 29 SCRIPT_SCHEMAS -> generated TS registry]
     end
 
     INGEST --> Core
@@ -37,15 +41,19 @@ graph TD
     GW --> Core
 ```
 
+I tre processi (`ui`, `api`, `kg-api`) sono servizi separati in `docker-compose.yml`.
+`vite.config.ts` non importa il backend: in locale `npm run dev:all` avvia insieme gateway e UI.
+
 ---
 
 ## 2. Implemented Subsystems & Technical Details
 
 ### 2.0 Centralized Core & Exceptions (`wikiforge-core`)
-Implemented in `src/backend/wikiforge/core/config.py`, `exceptions.py`, and `script_schema.py`:
+Implemented in `src/backend/wikiforge/core/config.py`, `config_schema.py`, `exceptions.py`, and `script_schema.py`:
 - **Centralized Config (`config.py`)**: `get_project_config()` serves as the Single Source of Truth for loading `config.toml` with absolute path resolution relative to project or repository roots, eliminating path manipulation hacks.
+- **Declarative Config Validation (`config_schema.py`)**: one `CONFIG_SCHEMA` validates the shape of known sections (types, list item types, nested tables; unknown keys tolerated for forward compatibility). `get_project_config()` raises `ConfigError` listing every problem; the CLI `python -m src.backend.wikiforge.core.config_schema` emits the same result as JSON for external callers.
 - **Standardized Exception Hierarchy (`exceptions.py`)**: Base `WikiForgeError` with specialized domain exceptions (`ConfigError`, `ConversionError`, `IngestionError`, `GraphValidationError`, `QueryExecutionError`) enforcing clean error propagation.
-- **Dynamic Script Schema Contract (`script_schema.py`)**: Defines `--json-schema` CLI flag contract across Python tools. Calling `python3 script.py --json-schema` outputs JSON parameter metadata (labels, types, defaults, positional flags, descriptions) used by `AgentServer` to dynamically construct `SCRIPT_REGISTRY` and render UI forms without hardcoded switch blocks.
+- **Single Source of Truth for script metadata (`script_schema.py` → generated registry)**: the 29 `SCRIPT_SCHEMAS` entries are the only definition of script id, path and CLI parameters. `scripts/gen_script_registry.py` emits `src/backend/server/generated/scriptRegistry.generated.ts` (verified by `--check` in CI-style tests); `AgentServer.SCRIPT_REGISTRY` is an alias of that generated object. UI forms and `buildCliArgs()` consume the same metadata. Scripts still answer `python3 script.py --json-schema` for CLI diagnostics, but the backend no longer spawns 29 subprocesses to discover the registry.
 
 ### 2.0.1 Unified Ingestion Engine (`wikiforge-ingest`)
 Implemented in `scripts/conv2md.py` and `scripts/ingest_queue.py`:
@@ -109,8 +117,10 @@ Implemented in `projects/` and `src/frontend/components/ConfigManager.ts`:
 ### 2.10 HTTP API Server Routing & Operations
 Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpServer.ts`:
 - **Route Dispatch**: `AgentServer.handleRequest()` dispatches every request and returns `true` once it has written a response, or `false` when no route matches. `httpServer.ts` inspects this value and answers `404` (JSON) for unmatched paths and `500` for uncaught handler errors when headers have not yet been sent. Previously the return value was ignored, leaving unknown paths (including routes missing from a stale process) unanswered and hanging the client.
+- **Explicit runtime boundary (A2/A3)**: `AgentServer` lives **only** in the standalone process `src/backend/server/httpServer.ts` (`:3001`), started by `npm run api` or the compose `api` service. `vite.config.ts` is a pure static server + reverse proxy: one shared `apiProxy()` is registered on both `configureServer` and `configurePreviewServer`, and it pipes the upstream body so SSE streams are not buffered. On proxy failure the client receives a JSON 502 that suggests `npm run api` / `npm run dev:all`.
 - **Dual Base URL Resolution**: The browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service.
-- **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts.
+- **Standalone Python API (A2)**: `src/backend/wikiforge/api/api_server.py` (`/api/v1/health`, `/api/v1/graph/sync|validate|rag`) runs as the compose service `kg-api` on internal port `:8000`; the Node gateway sets `FASTAPI_SERVER_URL=http://kg-api:8000` and proxies `/api/v1/graph/*` there, preserving a single public API surface.
+- **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts. `scripts/devAll.mjs` provides the equivalent two-process launcher for local `npm run dev:all`.
 
 ### 2.11 Review Studio API & Local Snapshot Store
 Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextMenu.ts`, `src/frontend/core/types/review.ts`, `src/frontend/storage/ApiStorage.ts`, `src/frontend/styles/review-studio.css`, and `src/backend/server/agentServer.ts`.
@@ -200,6 +210,27 @@ Implemented in `src/frontend/components/study/StudyStudio.ts`, `src/frontend/cor
 - `/promote-note` uses the selected entry text when `noteId` matches a parsed scratchpad entry; a timestamp id (`YYYY-MM-DD...`) derives the article title from the note text, while a plain slug keeps the legacy `/promote-note <slug> <folder>` behaviour.
 - Promotion and note creation trigger `executeReindexWorkflow`, so the modal refreshes the vault and the scratchpad panel after a successful run.
 
+### 2.14 Safe Filesystem Layer, Changesets & Project Scoping
+
+Implemented in `src/backend/server/safeFs.ts`, `src/backend/server/changesetStore.ts`, `src/backend/server/toolPaths.ts`, `scripts/okf_common.py` and `src/frontend/storage/ApiStorage.ts`.
+
+**Safe filesystem (A5/A11)**
+- `atomicWriteFile()` writes to a temp file in the same directory and renames it over the target; a failed write leaves the previous content intact. All 23 note/config write sites in `agentServer.ts` use it.
+- `softDelete()` moves a file/directory to `<project>/.wiki-forge/trash/<id>` and appends a JSONL manifest entry. `listTrash()` / `restoreFromTrash()` expose undo. `DELETE`-like API operations never call `unlink`.
+- REST: `POST /api/wiki/delete` returns the trash entry; `GET /api/wiki/trash` lists it; `POST /api/wiki/trash/restore` with `{ id }` restores it.
+
+**Changesets (A7)**
+- `ChangesetStore` stages `{ description, rationale, sources, edits[] }` as `<project>/.wiki-forge/changesets/cs-*.json`, capturing the original bytes. Staging never writes to `wiki/`.
+- `POST /api/v1/changesets` (stage), `GET /api/v1/changesets?status=pending` (review queue), `GET /api/v1/changesets/:id`, `POST /:id/apply`, `POST /:id/reject`. All endpoints are project-scoped via `X-Project-Id`.
+- Edits use either an exact `find`/`replace` pair (single occurrence) or full `proposed_content`; a stale `find` aborts the whole apply. `delete` edits go through `softDelete`, so even an applied changeset is reversible.
+- UI: **📋 Proponi changeset** next to the LLM edit button in `ChatDrawer.ts` stages the proposal, and the **📋 Changesets** header button opens `ChangesetReviewModal`. `ChangesetReviewModal` sends `X-Project-Id` on list/apply/reject like the other modals.
+- The F5/F6 approval queue remains the gate for *scheduled* mutating steps; changesets are the gate for *interactive LLM* writes. Both now persist under the same `.wiki-forge/` state root.
+
+**Project scoping & tooling paths**
+- The header picker value is sent as `X-Project-Id` (and `projectId` in bodies) by Script Control Panel, KE Workbench and Changeset review. The backend treats the header as authoritative over stale form arguments, and exports `WIKIFORGE_PROJECT_ID` + `WIKI_FORGE_WIKI_DIR` to spawned Python processes.
+- `scripts/okf_common.py::resolve_dir()` resolves a bare `wiki` to `<cwd>/wiki` → `projects/<selected>/wiki` → repo root, so scripts behave identically when launched from the repo root or a project root.
+- `resolveToolScript(rootDir, relativePath)` in `toolPaths.ts` keeps tool sources in the installation root even when `AgentServer` is constructed with a project-only data root (the reason the old inline reindex writer existed).
+
 ---
 
 ## 3. Comparative Matrix: `wiki-forge` Local RAG vs. From-Scratch Training (`nanochat`)
@@ -222,7 +253,7 @@ Per mantenere il codice pulito e manutenibile, tutti i contributori (umani e AI)
 
 1. **Singola Responsabilità (KISS)**: Uno script Python in `scripts/` non deve mai mischiare la conversione di formato con la generazione/arricchimento LLM. La conversione di formato (`conv2md.py`) è separata dall'arricchimento semantico (`enrich_cot.py`).
 2. **Niente `except Exception:` generici**: Utilizzare sempre eccezioni specifiche oppure la gerarchia di eccezioni definita in `src/backend/wikiforge/core/exceptions.py` (`WikiForgeError`, `ConfigError`, `ConversionError`, `GraphValidationError`).
-3. **DRY nei Form UI**: Non hardcodedare mai i parametri di uno script nel frontend. La UI deve generare i form dinamicamente consumando `GET /api/scripts/registry`.
+3. **DRY nei Form UI**: Non hardcodedare mai i parametri di uno script nel frontend. La UI genera i form dinamicamente consumando `GET /api/scripts/registry`, che ora è generato da `SCRIPT_SCHEMAS` in Python. Aggiungere uno script significa aggiungere **una sola** voce Python e rigenerare con `python scripts/gen_script_registry.py` (`--check` in CI). Nessun probe `--json-schema` a runtime e nessuna seconda copia TypeScript da mantenere.
 4. **Ereditarietà per i Grafi**: Qualsiasi nuovo esportatore di grafi (es. Gremlin, SQL, Cypher, RDF) deve ereditare da `BaseGraphExporter` in `src/backend/wikiforge/semantics/base_parser.py` per riutilizzare la logica di parsing del frontmatter OKF e dei wikilink.
 
 ---
@@ -230,7 +261,7 @@ Per mantenere il codice pulito e manutenibile, tutti i contributori (umani e AI)
 ## 5. Final Recommendation
 
 1. **For Production Knowledge Base Management**:
-   Use `wiki-forge` with your preferred LLM provider (`ollama`, `anthropic`, `openai_compatible`, or `opencode`). Run `make ui-docker` or `npm run dev` to interact via the Web UI or CLI.
+   Use `wiki-forge` with your preferred LLM provider (`ollama`, `anthropic`, `openai_compatible`, or `opencode`). Run `docker compose up` (UI + API + FastAPI), `make dev-all` / `npm run dev:all` in locale, or `make ui-docker` for the UI container alone. `npm run dev` starts Vite only: keep `npm run api` running alongside it.
 
 2. **For Thesis & Academic Research**:
    Follow the 5-phase chronological workflow (Ingestion -> Incremental KB Compilation -> Study & Maturity Analysis -> Dynamic Interrogation -> PDF Export via Pandoc).

@@ -72,6 +72,13 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(scriptIds.includes('ke_maturity'));
     assert.ok(scriptIds.includes('schema_infer'));
     assert.ok(scriptIds.includes('schema_lint'));
+
+    // The TS registry is generated from the Python SSOT (SCRIPT_SCHEMAS).
+    // A count drift here means someone edited one copy without the other.
+    assert.equal(scriptIds.length, 29);
+    for (const generated of ['docs_wiki_drift', 'wiki_program_change_propose', 'wiki_program_change_apply']) {
+      assert.ok(scriptIds.includes(generated), `missing generated schema ${generated}`);
+    }
   });
 
   test('buildCliArgs builds expected command arguments for script definitions', () => {
@@ -118,6 +125,99 @@ describe('Script Control Panel Test Suite', () => {
     assert.ok(text.includes('data: {"type":"start"'));
     assert.ok(text.includes('data: {"type":"exit"'));
     assert.ok(text.includes('data: [DONE]'));
+  });
+
+  async function runScript(
+    body: Record<string, unknown>,
+    headers: Record<string, string> = {}
+  ): Promise<string> {
+    const res = await fetch(`${baseUrl}/api/scripts/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+    assert.equal(res.status, 200);
+    return res.text();
+  }
+
+  function parseEvents(sse: string): Array<{ type: string; text?: string; cmd?: string; [key: string]: unknown }> {
+    return sse
+      .split('\n')
+      .filter(l => l.startsWith('data: ') && l !== 'data: [DONE]')
+      .map(l => JSON.parse(l.slice('data: '.length)));
+  }
+
+  async function runAndReadStartEvent(
+    body: Record<string, unknown>,
+    headers: Record<string, string> = {}
+  ): Promise<{ projectId?: string; cwd?: string; cmd?: string; [key: string]: unknown }> {
+    const start = parseEvents(await runScript(body, headers)).find(e => e.type === 'start');
+    assert.ok(start, 'expected a start SSE event');
+    return start!;
+  }
+
+  test('execute scopes the script cwd to the project selected via X-Project-Id', async () => {
+    const sse = await runScript(
+      { scriptId: 'okf_stats', args: {} },
+      { 'X-Project-Id': 'wikiforge' }
+    );
+    const events = parseEvents(sse);
+    const start = events.find(e => e.type === 'start')!;
+    assert.equal(start.projectId, 'wikiforge');
+    assert.equal(start.cwd, path.resolve(process.cwd(), 'projects', 'wikiforge'));
+
+    // End-to-end: the Python script must actually report the selected wiki.
+    const stdout = events.filter(e => e.type === 'stdout').map(e => e.text || '').join('\n');
+    assert.ok(stdout.includes(path.join('projects', 'wikiforge', 'wiki')), stdout);
+    assert.ok(!stdout.includes(path.join('projects', 'tesi', 'wiki')), stdout);
+  });
+
+  test('execute accepts projectId in the body when no project header is present', async () => {
+    const start = await runAndReadStartEvent({
+      scriptId: 'okf_stats',
+      projectId: 'wikiforge',
+      args: {},
+    });
+    assert.equal(start.projectId, 'wikiforge');
+    assert.equal(start.cwd, path.resolve(process.cwd(), 'projects', 'wikiforge'));
+  });
+
+  test('execute ignores stale/empty project args sent by the panel form', async () => {
+    const emptyProject = await runAndReadStartEvent(
+      { scriptId: 'schema_infer', args: { project: '', wiki_dir: 'wiki' } },
+      { 'X-Project-Id': 'wikiforge' }
+    );
+    assert.ok(emptyProject.cmd!.includes('--project wikiforge'));
+
+    const staleProject = await runAndReadStartEvent(
+      { scriptId: 'schema_infer', args: { project: 'tesi', wiki_dir: 'wiki' } },
+      { 'X-Project-Id': 'wikiforge' }
+    );
+    assert.ok(staleProject.cmd!.includes('--project wikiforge'));
+    assert.ok(!staleProject.cmd!.includes('--project tesi'));
+  });
+
+  test('project header takes precedence over a conflicting body projectId', async () => {
+    const start = await runAndReadStartEvent(
+      { scriptId: 'okf_stats', projectId: 'tesi', args: {} },
+      { 'X-Project-Id': 'wikiforge' }
+    );
+    assert.equal(start.projectId, 'wikiforge');
+  });
+
+  test('KE use-case execution is scoped to the selected project', async () => {
+    const res = await fetch(`${baseUrl}/api/ke/use-cases/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Project-Id': 'wikiforge' },
+      // Conflicting body id must not win over the header.
+      body: JSON.stringify({ useCaseId: 'ke_schema_modeling', stepIndex: 0, projectId: 'tesi' }),
+    });
+    assert.equal(res.status, 200);
+    const events = parseEvents(await res.text());
+    const stepStart = events.find(e => e.type === 'step_start');
+    assert.ok(stepStart, 'expected a step_start SSE event');
+    assert.ok(stepStart!.cmd!.includes('--project wikiforge'), String(stepStart!.cmd));
+    assert.ok(!stepStart!.cmd!.includes('--project tesi'), String(stepStart!.cmd));
   });
 
   test('POST /api/scripts/execute rejects unknown script IDs with 400', async () => {

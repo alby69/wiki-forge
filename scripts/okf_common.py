@@ -8,7 +8,11 @@ a single `wiki/` folder. With the multi-project layout (projects/<id>/wiki)
 and runners that may chdir to either the repo root or a project root, a bare
 relative path like "wiki" must resolve to the first *existing* candidate:
 
-    <cwd>/<value> -> <repo_root>/<value> -> projects/<id>/<value>
+    <cwd>/<value> -> projects/<selected>/<value> -> <repo_root>/<value> -> projects/<id>/<value>
+
+The selected project comes from WIKIFORGE_PROJECT_ID, exported by the Script
+Control Panel for the wiki chosen in the header picker. Without it the legacy
+behaviour is preserved.
 
 If no candidate exists (e.g. report files that are about to be created) the
 cwd candidate is used, preserving legacy behaviour.
@@ -40,8 +44,23 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+ACTIVE_PROJECT_ENV = "WIKIFORGE_PROJECT_ID"
+
+
 def detect_project_id() -> str | None:
-    """Return the id of the first project whose wiki/ folder exists."""
+    """Return the id of the wiki project targeted by the current runner.
+
+    The Script Control Panel exports WIKIFORGE_PROJECT_ID for the project
+    selected in the header picker. When present (and valid) it takes priority
+    over the legacy scan, which used to always return the first project with a
+    wiki/ folder -- i.e. `tesi` even while the user was on `wikiforge`.
+    Direct CLI invocations without the env var keep the legacy behaviour.
+    """
+    env_id = os.environ.get(ACTIVE_PROJECT_ENV, "").strip()
+    if env_id:
+        scoped = repo_root() / "projects" / env_id
+        if (scoped / "wiki").is_dir():
+            return env_id
     for proj in _project_roots():
         if (proj / "wiki").is_dir():
             return proj.name
@@ -56,7 +75,13 @@ def _project_roots() -> list[Path]:
 
 
 def _candidates(value: str) -> list[Path]:
-    return [Path.cwd(), repo_root()] + _project_roots()
+    bases = [Path.cwd(), repo_root()]
+    project_id = detect_project_id()
+    if project_id:
+        scoped = repo_root() / "projects" / project_id
+        if scoped not in bases:
+            bases.insert(1, scoped)
+    return bases + _project_roots()
 
 
 def resolve_path(value: str | None, default: str = "") -> Path:

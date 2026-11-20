@@ -18,6 +18,20 @@ services:
     working_dir: /wiki
     command: ["shell"]
 
+  # A2/A3: the Python domain API is a standalone service, not a Vite plugin
+  # and not an in-process library inside the Node gateway.
+  kg-api:
+    image: ghcr.io/alby69/wiki-forge:latest
+    build: .
+    volumes:
+      - .:/wiki
+    working_dir: /wiki
+    # Internal only: all browser traffic goes through the Node gateway proxy
+    # (/api/v1/graph/*), keeping one public API surface.
+    expose:
+      - "8000"
+    command: ["python3", "-m", "uvicorn", "src.backend.wikiforge.api.api_server:app", "--host", "0.0.0.0", "--port", "8000"]
+
   api:
     image: ghcr.io/alby69/wiki-forge-ui:latest
     build:
@@ -29,10 +43,15 @@ services:
     environment:
       - OPENCODE_BIN=/usr/local/bin/opencode
       - PORT=3001
+      # Compose DNS name of the standalone FastAPI service. The Node gateway
+      # proxies /api/v1/graph/* here instead of expecting localhost:8000.
+      - FASTAPI_SERVER_URL=http://kg-api:8000
     working_dir: /app
     ports:
       - "3001:3001"
     command: sh -c "npm install && npx tsx watch src/backend/server/httpServer.ts"
+    depends_on:
+      - kg-api
 
   ui:
     image: ghcr.io/alby69/wiki-forge-ui:latest

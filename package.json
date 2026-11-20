@@ -5,6 +5,8 @@
   "description": "Decoupled Web User Interface & Obsidian-style Graph Viewer for Wiki-Forge",
   "scripts": {
     "dev": "vite",
+    "api": "node --import tsx src/backend/server/httpServer.ts",
+    "dev:all": "node scripts/devAll.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

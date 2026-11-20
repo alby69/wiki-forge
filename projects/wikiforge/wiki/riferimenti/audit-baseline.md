@@ -255,23 +255,36 @@ The entire test suite was executed to establish the baseline metrics:
 
 ## 6. Verification of §2.2 Architecture Risks
 
-| Risk ID | Title | Status | Evidence & Code References |
-|---------|-------|--------|----------------------------|
-| **A1** | Triple implementation of same logic | **Confirmed** | Audit and reindex logic exist in prose in `AGENT.md` §5.3, TS workflow engine `src/backend/server/services/workflowEngine.ts`, and Python scripts `scripts/wiki_stats.py` & `scripts/okf_lint.py`. |
-| **A2** | Two runtimes (Python + Node) without explicit boundary | **Confirmed** | Node runs `AgentServer` (`src/backend/server/agentServer.ts`), Vite UI, and TS workflow engine; Python runs domain logic (`src/backend/wikiforge/`) and CLI tools (`scripts/`). |
-| **A3** | Server lives as Vite dev/preview middleware | **Confirmed** | `src/backend/server/agentServer.ts` is embedded as a Vite plugin (`agentServerPlugin`) in `vite.config.ts` or executed via `tsx src/backend/server/httpServer.ts`. |
-| **A4** | State encoded in filenames (`_COMPILED.md`) | **Confirmed** | Ingestion renames raw sources to `_COMPILED.md` in `src/backend/server/services/workflowEngine.ts` line 140 and `scripts/conv2md.py`. |
-| **A5** | No persistent KB state / history across sessions | **Confirmed** | KB status and procedure progress reside in agent chat memory and browser `localStorage`. While `.llm-wiki/reviews.json` and `wiki/versions/` exist, a central structured `.wikiforge/` state engine is missing. |
-| **A6** | Command definitions duplicated | **Confirmed** | Commands are defined separately across `AGENT.md`, `TUTORIAL.md`, `Makefile`, `skills/*/SKILL.md`, and `src/frontend/components/tools/ToolsModal.ts`. |
-| **A7** | LLM output written to disk without plan/review step | **Confirmed** | `/compile` writes Markdown files directly to `wiki/` and renames raw sources without staging a structured review changeset. |
-| **A8** | Config not schema-validated | **Confirmed** | `config/config.toml` is loaded via `smol-toml` or Python `tomllib` without a strict runtime Zod/JSON-Schema validator enforcing types or failing fast on unknown keys. |
-| **A9** | Security surface of local server | **Confirmed** | `src/backend/server/agentServer.ts` exposes raw file creation, mutation, and deletion endpoints; token authentication is optional (`X-WikiForge-Token`), and Origin/Host headers are not strictly validated against DNS-rebinding on loopback. |
-| **A10** | CI covers Python / basic Node tests | **Confirmed** | `.github/workflows/test.yml` runs python pytest and Node unit tests, but lacks E2E Playwright smoke testing and comprehensive coverage checks. |
-| **A11** | Non-atomic writes and no undo/trash | **Confirmed** | `fs.writeFileSync` in `src/backend/server/agentServer.ts` writes directly to note paths, and `fs.unlinkSync` performs immediate unrecoverable deletions rather than soft-deleting to `.wikiforge/trash/`. |
-| **A12** | `AGENT.md` growing prose contract | **Confirmed** | `AGENT.md` is ~450+ lines of prose contract that increases token overhead and risks drift across agent models. |
+> **Aggiornamento (Fase 77):** la tabella sotto è il *baseline* storico del Phase 0. La
+> colonna "Status" riporta ora l'esito **verificato dopo il refactoring succesivo**, non
+> più il verdetto originale. I numeri citati sono ricavati dal codice e dai test presenti
+> nel repository (`npx tsc --noEmit`, `npm test` → 254 pass / 1 skipped,
+> `PYTHONPATH=.:scripts pytest tests/python/` → 44 pass).
+
+| Risk ID | Title | Status (verificato) | Evidence & Code References |
+|---------|-------|---------------------|----------------------------|
+| **A1** | Triple implementation of same logic | **Parzialmente risolto** | Il reindex ha **un solo writer**: `executeReindexWorkflow()` in `agentServer.ts` chiama `scripts/okf_reindex.py` e propaga gli errori (il writer TypeScript non conforme è stato rimosso). Restano diverse l'audit (prosa in `AGENT.md`, `wiki_stats.py`, `okf_lint.py`). |
+| **A2** | Two runtimes (Python + Node) without explicit boundary | **Risolto** | Confine esplicito: gateway Node standalone `:3001` (`httpServer.ts`), FastAPI `kg-api` `:8000` (`api_server.py`) come servizio compose separato con `FASTAPI_SERVER_URL=http://kg-api:8000`, Vite solo proxy. Target Makefile `api` / `kg-api` / `dev-all`. |
+| **A3** | Server lives as Vite dev/preview middleware | **Risolto** | `vite.config.ts` non importa più `AgentServer`: registra un unico `apiProxy` streamante in `configureServer` e `configurePreviewServer`. API avviata da `npm run api`; `npm run dev:all` (`scripts/devAll.mjs`) avvia entrambi i processi in locale. |
+| **A4** | State encoded in filenames (`_COMPILED.md`) | **Accettato (invariante)** | Invariante deliberato del contratto di ingestione in `scripts/conv2md.py` e nella workflow `/compile`. Nessuna modifica: renamare il file richiederebbe una migrazione dei vault esistenti. |
+| **A5** | No persistent KB state / history across sessions | **Mitigato** | Stato strutturato persistente in `.wiki-forge/`: `changesets/`, `trash/`, `snapshots/`, `scheduler-state.json`, `scheduler-approvals.json`, `ingest_queue.db`. Resta fuori dal codice lo STATUS/metrics engine storico documentato in `docs/ARCHITECTURE.md`. |
+| **A6** | Command definitions duplicated | **Parzialmente risolto** | Eliminata la duplicazione dei *parametri script*: `SCRIPT_SCHEMAS` (Python) → `src/backend/server/generated/scriptRegistry.generated.ts` (`scripts/gen_script_registry.py --check`), 29 script, zero probe `--json-schema` a runtime. Restano le definizioni dei comandi in prosa (`AGENT.md`, `Makefile`, `skills/*`). |
+| **A7** | LLM output written to disk without plan/review step | **Risolto** | Plan→Review→Apply: `src/backend/server/changesetStore.ts` + `/api/v1/changesets*`, pulsante **📋 Proponi changeset** in `ChatDrawer.ts`, coda **📋 Changesets** in `Header.ts`, `ChangesetReviewModal` scoped al progetto. Il vecchio `wikiforge/vault.py` orfano è stato rimosso. F5/F6 restano il gate per gli step schedulati mutanti. |
+| **A8** | Config not schema-validated | **Risolto** | `src/backend/wikiforge/core/config_schema.py` valida la forma di `config.toml` con uno schema dichiarativo; `get_project_config()` solleva `ConfigError` su errori di tipo, CLI `python -m src.backend.wikiforge.core.config_schema` con contratto JSON. 12 test dedicati. |
+| **A9** | Security surface of local server | **APERTO** | `AgentServer` espone ancora creazione/modifica/cancellazione file; token opzionale e nessuna difesa DNS-rebinding. Non affrontato in questa fase: richiede una decisione di prodotto su auth obbligatoria. |
+| **A10** | CI covers Python / basic Node tests | **APERTO** | `.github/workflows/test.yml` esegue pytest + test Node, ma restano assenti E2E Playwright e soglie di copertura. |
+| **A11** | Non-atomic writes and no undo/trash | **Risolto** | `src/backend/server/safeFs.ts`: `atomicWriteFile` usato in 23 siti di scrittura, `softDelete` + `listTrash` + `restoreFromTrash`, endpoint `GET /api/wiki/trash` e `POST /api/wiki/trash/restore`. Le vecchie route duplicate `/api/wiki/delete` e `/api/wiki/upload` sono state rimosse. |
+| **A12** | `AGENT.md` growing prose contract | **Stale / non applicabile** | Il `AGENT.md` radice è un puntatore a `docs/AGENT.md`, che ora è di **150 righe**, non 450+. Il rischio sollevato nel baseline non sussiste più nella forma descritta. |
 
 ---
 
 ## 7. Conclusion
 
-Phase 0 Reality Check confirms that the repository is in a healthy, fully-tested state with all 62 roadmap phases passing. The §2.2 architecture risks have been verified with explicit file path references. The codebase is fully ready for Phase 1 refactoring (extracting `kb-core`, safe filesystem layer, standalone server, changesets, and procedure engine).
+Il Phase 0 Reality Check ha confermato uno stato sano del repository e ha fornito le evidenze
+dei rischi architetturali. Il refactoring successivo (Fase 77) ha chiuso A2, A3, A7, A8 e A11,
+ha mitigato A1, A5 e A6, e ha accertato che A12 era una misurazione obsoleta. Restano aperti,
+per scelta di prodotto, A9 (autenticazione obbligatoria del server locale) e A10 (E2E/copertura
+CI), mentre A4 è stato accettato come invariante del formato di ingestione.
+
+Vedi `docs/CHANGELOG.md` (sezione "Architettura coerente — Fase 77") per l'elenco dei file
+toccati e dei test di validazione.

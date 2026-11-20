@@ -46,6 +46,7 @@ interface MockElement {
 
 describe('KE Workbench schedule tab (F4)', () => {
   let calls: string[];
+  let fetchInits: Array<RequestInit | undefined>;
 
   beforeEach(() => {
     const registry = new Map<string, MockElement>();
@@ -104,9 +105,11 @@ describe('KE Workbench schedule tab (F4)', () => {
     (global as any).HTMLElement = class {};
 
     calls = [];
-    (global as any).fetch = async (input: string | URL) => {
+    fetchInits = [];
+    (global as any).fetch = async (input: string | URL, init?: RequestInit) => {
       const url = String(input);
       calls.push(url);
+      fetchInits.push(init);
       const jsonResponse = (payload: unknown) => ({
         ok: true,
         status: 200,
@@ -179,6 +182,23 @@ describe('KE Workbench schedule tab (F4)', () => {
     assert.match(root.innerHTML, /id="ke-schedule-container"/);
     assert.match(root.innerHTML, /id="ke-schedule-history"/);
     assert.strictEqual(modal.getActiveTab(), 'usecases');
+    modal.close();
+  });
+
+  it('sends the selected wiki on every KE request', async () => {
+    (global as any).localStorage = {
+      getItem: () => 'wikiforge',
+      setItem: () => {},
+    };
+    const modal = new KEWorkbenchModal();
+    await modal.open();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.ok(fetchInits.length > 0, 'expected at least one KE request');
+    for (const init of fetchInits) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.strictEqual(headers?.['X-Project-Id'], 'wikiforge');
+    }
     modal.close();
   });
 

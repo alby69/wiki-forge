@@ -355,7 +355,8 @@ export class ChatDrawer {
         const align = isUser ? 'flex-end' : 'flex-start';
         const pendingEdits = isUser ? [] : parseWikiEdits(msg.text);
         const applyBtnHtml = pendingEdits.length > 0
-          ? `<button class="apply-edit-btn" data-msg-id="${msg.id}" title="Applica la modifica proposta al file (find/replace deterministico)" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">✅ Applica modifica${pendingEdits.length > 1 ? ` (${pendingEdits.length})` : ''}</button>`
+          ? `<button class="apply-edit-btn" data-msg-id="${msg.id}" title="Applica la modifica proposta al file (find/replace deterministico)" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">✅ Applica modifica${pendingEdits.length > 1 ? ` (${pendingEdits.length})` : ''}</button>
+             <button class="propose-changeset-btn" data-msg-id="${msg.id}" title="Accoda la modifica LLM in un changeset da revisionare prima dell'applicazione" style="background: #4338ca; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">📋 Proponi changeset</button>`
           : '';
 
         const actionChipsHtml = !isUser
@@ -488,6 +489,18 @@ export class ChatDrawer {
         const edits = parseWikiEdits(msg.text);
         if (edits.length > 0) {
           void this.applyWikiEdits(edits);
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.propose-changeset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msgId = btn.getAttribute('data-msg-id');
+        const msg = this.messages.find(m => m.id === msgId);
+        if (!msg) return;
+        const edits = parseWikiEdits(msg.text);
+        if (edits.length > 0) {
+          void this.proposeWikiEdits(edits);
         }
       });
     });
@@ -666,5 +679,28 @@ export class ChatDrawer {
     this.render();
 
     if (this.onVaultUpdatedCb) this.onVaultUpdatedCb();
+  }
+
+  /**
+   * A7: stage LLM-authored edits as a changeset instead of writing them.
+   * A human reviews and applies it from the Changeset Review queue.
+   */
+  public async proposeWikiEdits(edits: WikiEdit[]): Promise<void> {
+    const result = await this.apiStorage.proposeChangeset(
+      edits,
+      `Proposta LLM — ${edits.length} modifica/e su ${new Set(edits.map(e => e.file)).size} file`
+    );
+
+    this.messages.push({
+      id: `msg-${Date.now()}-propose`,
+      sender: 'assistant',
+      text: result.success
+        ? `### 📋 Changeset in attesa di revisione\n\n\`${result.changesetId}\` — applica il changeset dalla coda *Review* per scrivere i file.`
+        : `### ⚠️ Proposta non accodata\n\n${result.error || 'errore sconosciuto'}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    });
+
+    this.saveHistory();
+    this.render();
   }
 }

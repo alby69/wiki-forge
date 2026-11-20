@@ -1,7 +1,7 @@
 ---
 type: Concept
 title: "Technical Architecture — Wiki-Forge v4.1"
-description: "Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, Review and Research Studio…"
+description: "Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only), a standalone Node.js API gateway, a standalone Python FastAPI service…"
 resource: docs/ARCHITECTURE.md
 tags: [scope/docs, layer/generated, area/architettura, lang/en]
 status: stable
@@ -18,39 +18,37 @@ sources:
 
 ## Overview & Unified System Diagram
 
-Wiki-Forge integrates a TypeScript/Vite frontend with a Python FastAPI backend, stateful Procedure Engine, Vault Changeset Manager, Review and Research Studio APIs, and W3C SHACL/RDF semantics.
+Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only), a standalone Node.js API gateway, a standalone Python FastAPI service, the stateful Procedure Engine, a live Plan/Review/Apply changeset store, and W3C SHACL/RDF semantics.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Web UI (TypeScript / Vite)                      │
 │  [Focus Mode: Guided Pills] [KE Workbench & Chat] [Review Studio]       │
+│  Vite = static server + one shared /api proxy (no AgentServer in-process)│
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ HTTP / SSE (Server-Sent Events)
 ┌───────────────────────────────▼─────────────────────────────────────────┐
-│              FastAPI & Node Gateway (src/backend/)                      │
+│          Node API Gateway — standalone AgentServer (port 3001)          │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 1. Unified Health Engine (health.py)                              │  │
+│  │ 1. Health Engine — proxied /api/v1/health                        │  │
 │  │    - Aggregates: okf_stats, shacl_validator, ke_maturity, cq      │  │
-│  │    - Outputs: .wikiforge/STATUS.md & /api/v1/health (JSON)        │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 2. Procedure Engine Core (procedures.py)                          │  │
-│  │    - Parses: config/procedures/*.toml (KE & User Wizards)         │  │
-│  │    - State: .wikiforge/state/<run_id>.json                         │  │
+│  │ 2. Safe FS + Changesets (safeFs.ts, changesetStore.ts)            │  │
+│  │    - atomic writes, .wiki-forge/trash/, .wiki-forge/changesets/   │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 3. Safe Vault & Changeset Manager (vault.py)                      │  │
-│  │    - Atomic writes, .wikiforge/trash/, staged changesets          │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 4. Review Studio API & Snapshot Store (agentServer.ts)            │  │
+│  │ 3. Review Studio API & Snapshot Store (agentServer.ts)            │  │
 │  │    - /api/notes/review/*, .wiki-forge/snapshots/ (25 per note)    │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
-└───────────────────────────────┬─────────────────────────────────────────┘
-                                │ Subprocess / MCP
-┌───────────────────────────────▼─────────────────────────────────────────┐
-│  Existing Domain Modules: LangGraph GraphRAG, SHACL, RDF/Cypher Export  │
-└─────────────────────────────────────────────────────────────────────────┘
+└───────────────┬──────────────────────────────────────┬──────────────────┘
+                │ proxy /api/v1/graph/*                │ spawn python3
+                │ (FASTAPI_SERVER_URL)                 │ (project-scoped env)
+┌───────────────▼────────────────────┐   ┌─────────────▼──────────────────┐
+│ FastAPI kg-api — standalone :8000  │   │ Scripts + domain modules      │
+│  - api_server.py, health.py        │   │  - LangGraph GraphRAG, SHACL  │
+│  - procedures.py                   │   │  - RDF/Cypher export          │
+└────────────────────────────────────┘   └────────────────────────────────┘
 ```
 
 ## Key Backend Components
@@ -61,8 +59,8 @@ Aggregates health indicators (SHACL violations, CQ gaps, orphan ratio, broken li
 ### 2. Procedure Engine (`src/backend/wikiforge/procedures.py`)
 Executes declarative TOML workflows (`config/procedures/*.toml`). Features DAG prerequisite checking, automatic script invocation, human review pauses, exit criteria validation, and persistent state in `.wikiforge/state/`.
 
-### 3. Safe Vault Manager (`src/backend/wikiforge/vault.py`)
-Enforces atomic writes via temporary files and `os.replace`, soft deletes files to `.wikiforge/trash/` with timestamping, and stages AI proposed file changes into `.wikiforge/changesets/` for review before applying.
+### 3. Safe Filesystem & Changeset Store (`src/backend/server/safeFs.ts`, `src/backend/server/changesetStore.ts`)
+Enforces atomic writes via a temp file + rename, soft-deletes files to `<project>/.wiki-forge/trash/` with a JSONL manifest and restore endpoint, and stages AI-proposed edits into `<project>/.wiki-forge/changesets/` for human review before applying. This is the live implementation that replaces the old, never-wired `wikiforge/vault.py` (removed). Note the active state root is `.wiki-forge/`; the older `.wikiforge/` paths in sections 1–2 are historical documentation from v4.1.0.
 
 ### 4. Review Studio API & Snapshot Store (`src/backend/server/agentServer.ts`)
 Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critique|snapshots|diff|restore`). The quality gate, digest, diff and human verification are deterministic; the critique tab uses the configured LLM with a deterministic fallback. Before every save, verification or restore the previous note content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a JSON sidecar (reason and timestamp); the latest 25 snapshots per note are retained. The folder is gitignored and independent of the git-based `VersionTimeline` history.

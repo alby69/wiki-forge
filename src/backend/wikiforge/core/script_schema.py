@@ -69,7 +69,7 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         "description": "One-shot migration converting existing wiki Markdown files to OKF v0.2 compliant frontmatter.",
         "parameters": [
             {"name": "confirm", "label": "Confirm Migration (Danger / Backup first)", "type": "boolean", "default": False, "required": True, "cliFlag": "--confirm", "description": "Check to acknowledge irreversible frontmatter migration."},
-            {"name": "wiki_dir", "label": "Wiki Directory (optional)", "type": "text", "default": "", "cliFlag": "--wiki-dir", "placeholder": "auto → projects/tesi/wiki", "description": "Target wiki dir."},
+            {"name": "wiki_dir", "label": "Wiki Directory (optional)", "type": "text", "default": "", "cliFlag": "--wiki-dir", "placeholder": "auto → wiki del progetto selezionato", "description": "Target wiki dir."},
         ],
     },
     "okf_lint": {
@@ -307,6 +307,43 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         "description": "Performs Louvain community detection and surfaces surprising links.",
         "parameters": [
             {"name": "wiki_dir", "label": "Wiki Directory", "type": "text", "default": "wiki", "cliFlag": "--wiki-dir", "description": "Path to target wiki directory."},
+        ],
+    },
+    "docs_wiki_drift": {
+        "id": "docs_wiki_drift",
+        "path": "scripts/docs_wiki_drift.py",
+        "displayName": "Docs/Wiki Drift Report",
+        "category": "Knowledge Engineering",
+        "description": "Read-only comparison of docs/ with the committed OKF wiki projection; emits rationale and sources.",
+        "parameters": [
+            {"name": "docs_dir", "label": "Docs Directory", "type": "text", "default": "docs", "cliFlag": "--docs-dir", "description": "Documentation source directory."},
+            {"name": "wiki_dir", "label": "Wiki Directory", "type": "text", "default": "projects/wikiforge/wiki", "cliFlag": "--wiki-dir", "description": "Generated OKF wiki directory."},
+        ],
+    },
+    "wiki_program_change_propose": {
+        "id": "wiki_program_change_propose",
+        "path": "scripts/wiki_program_change_propose.py",
+        "displayName": "Stage Program Change Proposal",
+        "category": "Knowledge Engineering",
+        "description": "Fase 76 (read-only): validate a wiki-grounded program change proposal and stage it for F6 approval. Never writes program files.",
+        "parameters": [
+            {"name": "proposal", "label": "Proposal File", "type": "text", "default": "output/program-changes/proposal.json", "cliFlag": "--proposal", "description": "JSON proposal with rationale, sources and wiki-edit style edits."},
+            {"name": "stage_dir", "label": "Stage Directory", "type": "text", "default": "output/program-changes", "cliFlag": "--stage-dir", "description": "Directory for pending proposal records."},
+            {"name": "project", "label": "Project", "type": "text", "default": "wikiforge", "cliFlag": "--project", "description": "Project recorded in the proposal provenance."},
+        ],
+    },
+    "wiki_program_change_apply": {
+        "id": "wiki_program_change_apply",
+        "path": "scripts/wiki_program_change_apply.py",
+        "displayName": "Apply Approved Program Change",
+        "category": "Knowledge Engineering",
+        "description": "Fase 76 (mutating, F6-only): apply a staged program change with snapshots, human reviewer and audit. Hard-blocked from automatic execution.",
+        "parameters": [
+            {"name": "proposal", "label": "Proposal File", "type": "text", "default": "output/program-changes/proposal.json", "cliFlag": "--proposal", "description": "JSON proposal previously staged by the propose step."},
+            {"name": "reviewer", "label": "Human Reviewer", "type": "text", "default": "human:alby69", "cliFlag": "--reviewer", "description": "Human actor authorising the change (human:<id>)."},
+            {"name": "confirm", "label": "Confirm Human Approval (F6)", "type": "boolean", "default": False, "cliFlag": "--confirm", "description": "Required explicit confirmation; injected only after F6 approval."},
+            {"name": "stage_dir", "label": "Stage Directory", "type": "text", "default": "output/program-changes", "cliFlag": "--stage-dir", "description": "Directory containing the staged proposal records."},
+            {"name": "project", "label": "Project", "type": "text", "default": "wikiforge", "cliFlag": "--project", "description": "Project scope (accepted for provenance compatibility)."},
         ],
     },
 }

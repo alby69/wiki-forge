@@ -48,6 +48,20 @@ export interface ProjectInfo {
   path: string;
 }
 
+/** Shared key for the wiki currently selected in the header project picker. */
+export const ACTIVE_PROJECT_KEY = 'wiki-forge:active-project';
+
+/** Read the active project id outside of an ApiStorage instance.
+ *
+ * Script launchers (Script Control Panel, KE workbench, ...) must use this so
+ * every API call is scoped to the wiki the user actually selected. */
+export function getActiveProjectId(fallback: string = 'default'): string {
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem(ACTIVE_PROJECT_KEY) || fallback;
+  }
+  return fallback;
+}
+
 export interface ScratchpadEntry {
   id: string;
   timestamp: string;
@@ -91,16 +105,13 @@ export class ApiStorage implements IStorage {
   }
 
   public getActiveProjectId(): string {
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('wiki-forge:active-project') || this.activeProjectIdMemory || 'default';
-    }
-    return this.activeProjectIdMemory || 'default';
+    return getActiveProjectId(this.activeProjectIdMemory || 'default');
   }
 
   public setActiveProjectId(id: string): void {
     this.activeProjectIdMemory = id;
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('wiki-forge:active-project', id);
+      localStorage.setItem(ACTIVE_PROJECT_KEY, id);
     }
   }
 
@@ -318,6 +329,38 @@ export class ApiStorage implements IStorage {
       const json = (await res.json()) as { success: boolean; note?: WikiNote; error?: string };
       if (res.ok && json.success && json.note) {
         return { success: true, note: json.note };
+      }
+      return { success: false, error: json.error || `HTTP ${res.status}` };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  }
+
+  /** A7: stage an LLM edit proposal; the wiki is untouched until human apply. */
+  public async proposeChangeset(
+    edits: WikiEdit[],
+    description: string
+  ): Promise<{ success: boolean; changesetId?: string; error?: string }> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/v1/changesets`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          description,
+          author: 'agent:chat',
+          rationale: 'Proposta generata dall’agente, in attesa di revisione umana.',
+          sources: ['chat'],
+          edits: edits.map(edit => ({
+            file: edit.file,
+            action: 'modify',
+            find: edit.find,
+            replace: edit.replace,
+          })),
+        }),
+      });
+      const json = await res.json() as { success: boolean; changeset?: { id: string }; error?: string };
+      if (res.ok && json.success && json.changeset) {
+        return { success: true, changesetId: json.changeset.id };
       }
       return { success: false, error: json.error || `HTTP ${res.status}` };
     } catch (err) {

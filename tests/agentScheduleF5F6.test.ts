@@ -139,6 +139,15 @@ describe('KE scheduler F5/F6 — policy, events and approvals', () => {
         : undefined;
     }, 'first pending approval and audited run');
 
+    // Regression: the policy withheld step 1 (okf_reindex). The scheduler must
+    // honour the narrowed step set — the mutating step may not run before a
+    // human approves it, otherwise wiki/index.md would already exist here.
+    await assert.rejects(
+      () => fs.access(path.join(h.tmpDir, 'wiki', 'index.md')),
+      /ENOENT/,
+      'withheld mutating step must not run during the scheduled job'
+    );
+
     const decisions = await json(`${h.baseUrl}/api/ke/schedule/decisions`);
     assert.strictEqual(decisions.status, 200);
     assert.strictEqual(decisions.body.decisions.length, 1);

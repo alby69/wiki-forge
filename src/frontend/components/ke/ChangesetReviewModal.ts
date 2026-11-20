@@ -1,4 +1,4 @@
-import { resolveApiBaseUrl } from '../../storage/ApiStorage';
+import { getActiveProjectId, resolveApiBaseUrl } from '../../storage/ApiStorage';
 
 export interface ChangesetData {
   id: string;
@@ -17,12 +17,14 @@ export interface ChangesetData {
 export class ChangesetReviewModal {
   private overlay: HTMLElement;
   private apiBaseUrl: string = resolveApiBaseUrl();
+  private projectIdProvider: () => string;
   private changesets: ChangesetData[] = [];
   private selectedChangeset: ChangesetData | null = null;
   private onAppliedCb?: () => void;
 
-  constructor(onApplied?: () => void) {
+  constructor(onApplied?: () => void, projectIdProvider: () => string = getActiveProjectId) {
     this.onAppliedCb = onApplied;
+    this.projectIdProvider = projectIdProvider;
     this.overlay = document.createElement('div');
     this.overlay.id = 'changeset-review-modal-root';
     this.overlay.style.cssText = `
@@ -81,9 +83,15 @@ export class ChangesetReviewModal {
     this.overlay.style.display = 'none';
   }
 
+  private projectHeaders(extra: Record<string, string> = {}): Record<string, string> {
+    return { ...extra, 'X-Project-Id': this.projectIdProvider().trim() || 'default' };
+  }
+
   private async fetchChangesets(): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets?status=pending`);
+      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets?status=pending`, {
+        headers: this.projectHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         this.changesets = data.changesets || [];
@@ -184,7 +192,10 @@ export class ChangesetReviewModal {
 
   private async applyChangeset(csId: string): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/apply`, { method: 'POST' });
+      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/apply`, {
+        method: 'POST',
+        headers: this.projectHeaders(),
+      });
       if (res.ok) {
         alert('Changeset applied successfully!');
         if (this.onAppliedCb) this.onAppliedCb();
@@ -197,7 +208,11 @@ export class ChangesetReviewModal {
 
   private async rejectChangeset(csId: string): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/reject`, { method: 'POST' });
+      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/reject`, {
+        method: 'POST',
+        headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ reason: 'rejected from review queue' }),
+      });
       if (res.ok) {
         alert('Changeset rejected.');
         await this.open();

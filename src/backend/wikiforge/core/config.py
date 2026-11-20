@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from src.backend.wikiforge.core.config_schema import validate_config_shape
 from src.backend.wikiforge.core.exceptions import ConfigError
 
 
@@ -93,6 +94,12 @@ def get_project_config(target_dir: str | Path | None = None) -> dict[str, Any]:
                 data = tomllib.load(fh)
         except Exception as exc:
             raise ConfigError(f"Failed to parse configuration file at {cfg_file}: {exc}") from exc
+
+        problems = validate_config_shape(data, source=str(cfg_file))
+        if problems:
+            raise ConfigError(
+                f"Invalid configuration in {cfg_file}:\n  - " + "\n  - ".join(problems)
+            )
 
     merged: dict[str, Any] = {
         "project": {**defaults["project"], **data.get("project", {})},

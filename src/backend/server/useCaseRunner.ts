@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { KEUseCaseDef, ScriptDef } from './agentServer';
+import { resolveToolScript } from './toolPaths';
 
 /**
  * Events emitted while a KE Use Case runs. The SSE endpoint and the future
@@ -116,7 +117,7 @@ export async function runUseCase(
       ...(args || {}),
     };
     const cliArgs = buildCliArgs(scriptDef, userArgs);
-    const scriptPath = path.resolve(rootDir, scriptDef.path);
+    const scriptPath = resolveToolScript(rootDir, scriptDef.path);
 
     onEvent({
       type: 'step_start',
@@ -160,11 +161,15 @@ export async function runUseCase(
         abortFallback.unref?.();
       }
 
+      const projectEnv: NodeJS.ProcessEnv =
+        projectId && projectId !== 'default'
+          ? { WIKIFORGE_PROJECT_ID: projectId, WIKI_FORGE_WIKI_DIR: path.join(projectRoot, 'wiki') }
+          : {};
       child = spawn(pythonCmd, [scriptPath, ...cliArgs], {
         cwd: projectRoot,
         // Force UTF-8 so script output containing emoji/accents never hits a
         // Windows `charmap` UnicodeEncodeError and fails an otherwise valid step.
-        env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
+        env: { ...process.env, ...projectEnv, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
         stdio: 'pipe',
       });
 

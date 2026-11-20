@@ -28,6 +28,7 @@ import { ScratchpadPanel } from '@frontend/components/scratchpad/ScratchpadPanel
 import { ConfigManager } from '@frontend/components/ConfigManager';
 import { ToolsModal } from '@frontend/components/tools/ToolsModal';
 import { KEWorkbenchModal } from '@frontend/components/ke/KEWorkbenchModal';
+import { ChangesetReviewModal } from '@frontend/components/ke/ChangesetReviewModal';
 import { OnboardingWizard } from '@frontend/components/simple-mode/OnboardingWizard';
 import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
 import { VersionTimeline } from '@frontend/components/advanced-mode/VersionTimeline';
@@ -61,6 +62,7 @@ export class WikiForgeApp {
   private configManager!: ConfigManager;
   private toolsModal!: ToolsModal;
   private keWorkbenchModal!: KEWorkbenchModal;
+  private changesetReviewModal!: ChangesetReviewModal;
   private onboardingWizard!: OnboardingWizard;
   private simpleDashboard!: SimpleModeDashboard;
   private versionTimeline!: VersionTimeline;
@@ -163,13 +165,26 @@ Backlink to [[01-index]].
       void this.loadVault();
     });
 
-    this.toolsModal = new ToolsModal(() => {
-      void this.loadVault();
-    });
+    this.toolsModal = new ToolsModal(
+      () => {
+        void this.loadVault();
+      },
+      () => this.storage.getActiveProjectId()
+    );
 
-    this.keWorkbenchModal = new KEWorkbenchModal(() => {
-      void this.loadVault();
-    });
+    this.keWorkbenchModal = new KEWorkbenchModal(
+      () => {
+        void this.loadVault();
+      },
+      () => this.storage.getActiveProjectId()
+    );
+
+    this.changesetReviewModal = new ChangesetReviewModal(
+      () => {
+        void this.loadVault();
+      },
+      () => this.storage.getActiveProjectId()
+    );
 
     this.onboardingWizard = new OnboardingWizard({
       storage: this.storage,
@@ -292,6 +307,9 @@ Backlink to [[01-index]].
       },
       onOpenKEWorkbench: () => {
         void this.keWorkbenchModal.open();
+      },
+      onOpenChangesets: () => {
+        void this.changesetReviewModal.open();
       },
       onOpenResearch: () => {
         this.openResearchStudio();

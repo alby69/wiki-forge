@@ -485,13 +485,13 @@ def main(argv: list[str] | None = None) -> int:
             for warning in warnings:
                 print(f"WARNING: {warning}", file=sys.stderr)
         if problems:
-            print(f"❌ docs_to_wiki: {len(problems)} problem(s):", file=sys.stderr)
+            print(f"[ERROR] docs_to_wiki: {len(problems)} problem(s):", file=sys.stderr)
             for problem in problems:
                 print(f"  - {problem}", file=sys.stderr)
         elif args.dry_run:
-            print(f"ℹ️ docs_to_wiki: would write {len(problems)} file(s) into {wiki_dir}")
+            print(f"[INFO] docs_to_wiki: would write {len(problems)} file(s) into {wiki_dir}")
         else:
-            print(f"✅ docs_to_wiki: {written} file(s) written, {len(bundle)} expected, {len(DOC_MAP)} sources.")
+            print(f"[OK] docs_to_wiki: {written} file(s) written, {len(bundle)} expected, {len(DOC_MAP)} sources.")
     return 1 if problems else 0
 
 

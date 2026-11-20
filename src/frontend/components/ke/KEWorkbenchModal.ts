@@ -1,5 +1,5 @@
 import { KEUseCaseDef, KEUseCaseStep } from '@backend/server/agentServer';
-import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { getActiveProjectId, resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
 import { escapeHtml } from '@frontend/core/utils/html';
@@ -28,6 +28,8 @@ export class KEWorkbenchModal {
   private logConsole!: LogConsole;
   private onVaultRefreshCb?: () => void;
   private apiBaseUrl: string = resolveApiBaseUrl();
+  /** Reads the project selected in the header picker at request time. */
+  private projectIdProvider: () => string;
   private consoleHeight = 280;
   private consoleCollapsed = false;
   private isResizingConsole = false;
@@ -44,8 +46,9 @@ export class KEWorkbenchModal {
   private scheduleEventsAbort?: AbortController;
   private scheduleRunAbort?: AbortController;
 
-  constructor(onVaultRefresh?: () => void) {
+  constructor(onVaultRefresh?: () => void, projectIdProvider: () => string = getActiveProjectId) {
     this.onVaultRefreshCb = onVaultRefresh;
+    this.projectIdProvider = projectIdProvider;
     this.overlay = document.createElement('div');
     this.overlay.id = 'ke-workbench-modal-root';
     this.overlay.style.position = 'fixed';
@@ -95,6 +98,7 @@ export class KEWorkbenchModal {
             <div>
               <span style="font-weight: 700; font-size: 16px; color: #a5b4fc; letter-spacing: 0.5px;">Knowledge Engineer Workbench</span>
               <span style="font-size: 11px; background: #1e1b4b; color: #c7d2fe; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600;">KE Guided Wizard Mode</span>
+              <span id="ke-active-project" title="Wiki selezionata nel selettore progetti" style="font-size: 11px; font-family: monospace; background: #1e293b; color: #68d391; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">project: …</span>
             </div>
           </div>
           <button id="ke-modal-close" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
@@ -280,6 +284,7 @@ export class KEWorkbenchModal {
   public async open(): Promise<void> {
     this.overlay.style.display = 'flex';
     this.applyConsoleState();
+    this.renderActiveProjectBadge();
     setHelpContext('ke-workbench');
     await this.fetchUseCases();
     this.renderUseCaseList();
@@ -301,10 +306,26 @@ export class KEWorkbenchModal {
     clearHelpContext('ke-workbench');
   }
 
+  /** The active project is read per request, not cached when the modal opens. */
+  private getProjectId(): string {
+    const id = this.projectIdProvider().trim();
+    return id || 'default';
+  }
+
+  /** Every KE request must carry the selected wiki, including use-case runs. */
+  private projectHeaders(extra: Record<string, string> = {}): Record<string, string> {
+    return { ...extra, 'X-Project-Id': this.getProjectId() };
+  }
+
+  private renderActiveProjectBadge(): void {
+    const badge = this.overlay.querySelector('#ke-active-project');
+    if (badge) badge.textContent = `project: ${this.getProjectId()}`;
+  }
+
   private async fetchUseCases(): Promise<void> {
     const url = `${this.apiBaseUrl}/api/ke/use-cases`;
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: this.projectHeaders() });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText}`);
       }
@@ -440,6 +461,8 @@ export class KEWorkbenchModal {
   }
 
   private async executeUseCase(useCase: KEUseCaseDef, stepIndex?: number): Promise<void> {
+    const projectId = this.getProjectId();
+    this.renderActiveProjectBadge();
     const statusInd = this.overlay.querySelector('#ke-exec-status') as HTMLElement | null;
     const runAllBtn = this.overlay.querySelector('#run-all-steps-btn') as HTMLButtonElement | null;
 
@@ -452,7 +475,7 @@ export class KEWorkbenchModal {
     this.logConsole.setStatus('Running', '#818cf8');
     this.logConsole.appendLine({
       type: 'start',
-      text: `▶ Launching KE Use Case: ${useCase.title}...`,
+      text: `▶ Launching KE Use Case: ${useCase.title} on project '${projectId}'...`,
       timestamp: new Date().toLocaleTimeString(),
     });
 
@@ -468,8 +491,9 @@ export class KEWorkbenchModal {
     try {
       const response = await fetch(`${this.apiBaseUrl}/api/ke/use-cases/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ useCaseId: useCase.id, stepIndex }),
+        headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
+        // projectId is repeated in the body for proxies that strip headers.
+        body: JSON.stringify({ useCaseId: useCase.id, stepIndex, projectId }),
         signal: abortController.signal,
       });
 
@@ -601,7 +625,7 @@ export class KEWorkbenchModal {
   /** GET /api/ke/schedule — refresh cards, health badge and run history. */
   public async refreshSchedule(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule`);
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule`, { headers: this.projectHeaders() });
       if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
       const data = await response.json();
       this.scheduleSnapshot = toScheduleSnapshotView(data.snapshot);
@@ -746,7 +770,9 @@ export class KEWorkbenchModal {
 
   private async fetchScheduleDecisions(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/decisions?limit=5`);
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/decisions?limit=5`, {
+        headers: this.projectHeaders(),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.scheduleDecisions = toPolicyDecisionViews(await response.json());
     } catch {
@@ -756,7 +782,9 @@ export class KEWorkbenchModal {
 
   private async fetchScheduleApprovals(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/approvals?status=pending`);
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/approvals?status=pending`, {
+        headers: this.projectHeaders(),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.scheduleApprovals = toApprovalViews(await response.json());
     } catch {
@@ -771,7 +799,7 @@ export class KEWorkbenchModal {
         `${this.apiBaseUrl}/api/ke/schedule/approvals/${encodeURIComponent(id)}/${action}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ reviewer: 'utente workbench' }),
         }
       );
@@ -824,7 +852,9 @@ export class KEWorkbenchModal {
     const host = this.overlay.querySelector('#ke-schedule-history') as HTMLElement | null;
     if (!host) return;
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/runs?limit=8`);
+      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/runs?limit=8`, {
+        headers: this.projectHeaders(),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.scheduleRuns = toScheduleRunViews(await response.json());
     } catch {
@@ -848,7 +878,7 @@ export class KEWorkbenchModal {
         `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ enabled }),
         }
       );
@@ -870,7 +900,7 @@ export class KEWorkbenchModal {
         `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ schedule: expression }),
         }
       );
@@ -908,7 +938,7 @@ export class KEWorkbenchModal {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/run`,
-        { method: 'POST', signal: controller.signal }
+        { method: 'POST', headers: this.projectHeaders(), signal: controller.signal }
       );
       if (!response.ok || !response.body) {
         const data = await response.json().catch(() => ({}));
@@ -960,7 +990,7 @@ export class KEWorkbenchModal {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/cancel`,
-        { method: 'POST' }
+        { method: 'POST', headers: this.projectHeaders() }
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
@@ -989,6 +1019,7 @@ export class KEWorkbenchModal {
     void (async () => {
       try {
         const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/events`, {
+          headers: this.projectHeaders(),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) return;
