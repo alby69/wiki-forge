@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "Progetti e configurazione"
-description: "Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle"
+description: "Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle, clone, archivia, cestino, esporta, importa"
 resource: docs/help/progetti-config.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
@@ -16,13 +16,28 @@ sources:
 ---
 ## Cambiare progetto
 
-Nella barra in alto il menu **Project** elenca i progetti disponibili. Selezionandone uno:
+Nella barra in alto il selettore **Progetto** elenca i progetti disponibili. Selezionandone uno:
 
-- la busta si ricarica (note, grafo, file);
+- la vault si ricarica (note, grafo, file);
 - la scelta viene **ricordata** al prossimo avvio;
 - tutte le operazioni successive agiscono su quel progetto.
 
-Per crearne uno nuovo o rinominarlo si usa la **Configurazione** (sotto) o la struttura a cartelle del progetto sul disco.
+## Gestione progetti — Project Manager
+
+Il pulsante **📁 Progetti** nella barra in alto apre il **Project Manager**, che
+sostituisce i vecchi controlli nella Configurazione. Da qui puoi:
+
+| Azione | Cosa fa |
+|---|---|
+| **Crea** | Nuovo progetto con `id` (lettere minuscole, numeri, `-`, `_`) e nome visualizzato. |
+| **Clona** | Copia un progetto esistente, con inclusione opzionale di wiki, sorgenti, note, output e configurazione. |
+| **Rinomina** | Cambia il **nome visualizzato** (`config.toml` e registry restano sincronizzati); l'id e il percorso non cambiano. |
+| **Archivia / Ripristina** | Sposta il progetto sotto `.wiki-forge/archive/` e lo riporta indietro. |
+| **Esporta / Importa** | Scarica o carica un bundle JSON con file e metadati. |
+| **Elimina** | **Sposta nel cestino** (`.wiki-forge/trash/`) per impostazione predefinita: è recuperabile. |
+
+Per un'eliminazione definitiva esiste un'azione separata in rosso che richiede
+una conferma esplicita. Il progetto `default` non può essere eliminato.
 
 ## La finestra ⚙️ Config (Developer Mode)
 
@@ -36,7 +51,12 @@ Apre le impostazioni del progetto attivo, divise in schede:
 | **OKF** | Opzioni del formato OKF v0.2 |
 | **Schema** | Schema tipizzato della wiki |
 
-Le modifiche vengono scritte direttamente su `config.toml` (fonte unica di verità) tramite le API del backend.
+Le modifiche vengono scritte direttamente su `config.toml` (fonte unica di verità) tramite le API del backend. La creazione e la cancellazione di progetti **non** sono più qui: usa il Project Manager.
+
+## Lingua e scorciatoie
+
+- Il selettore **🇮🇹 IT / 🇬🇧 EN** nella barra in alto cambia la lingua dell'interfaccia.
+- `Ctrl+K` apre la palette comandi, `F1` la guida contestuale, `Ctrl+Shift+D` passa da Focus a Developer Mode.
 
 ## L'Onboarding Wizard
 

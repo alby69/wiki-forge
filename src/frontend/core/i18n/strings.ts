@@ -1,0 +1,318 @@
+/** Minimal bilingual UI dictionary. No external i18n dependency (KISS). */
+export type Language = 'it' | 'en';
+
+const IT = {
+  appName: 'Wiki-Forge',
+  project: 'Progetto',
+  projects: 'Progetti',
+  language: 'Lingua',
+  actions: 'Azioni',
+  moreActions: 'Altre azioni',
+  view: 'Vista',
+  viewEditor: 'Editor',
+  viewScratchpad: 'Note rapide',
+  viewGraph: 'Grafo',
+  viewSplit: 'Divisione',
+  focusMode: 'Modalità Focus',
+  developerMode: 'Modalità Sviluppo',
+  research: 'Ricerca',
+  study: 'Studio',
+  review: 'Revisione',
+  history: 'Cronologia',
+  nodeInfo: 'Info nodo',
+  docsWiki: 'Wiki Docs',
+  tools: 'Strumenti',
+  config: 'Configurazione',
+  wizard: 'Guida iniziale',
+  keWorkbench: 'Workbench KE',
+  changesets: 'Modifiche',
+  chat: 'Chat agente',
+  help: 'Guida',
+  save: 'Salva',
+  edit: 'Modifica',
+  saveAndClose: 'Salva e chiudi',
+  cancel: 'Annulla',
+  close: 'Chiudi',
+  confirm: 'Conferma',
+  open: 'Apri',
+  create: 'Crea',
+  clone: 'Clona',
+  rename: 'Rinomina',
+  archive: 'Archivia',
+  restore: 'Ripristina',
+  delete: 'Elimina',
+  moveToTrash: 'Sposta nel cestino',
+  unregister: 'Solo deregistrazione',
+  permanentDelete: 'Elimina definitivamente',
+  export: 'Esporta',
+  import: 'Importa',
+  stats: 'Statistiche',
+  id: 'ID',
+  name: 'Nome',
+  path: 'Percorso',
+  source: 'Origine',
+  status: 'Stato',
+  active: 'Attivo',
+  archived: 'Archiviato',
+  notes: 'Note',
+  sources: 'Sorgenti',
+  assets: 'Risorse',
+  size: 'Dimensione',
+  createdAt: 'Creato il',
+  projectManager: 'Gestione progetti',
+  projectManagerHint: 'Crea, clona, rinomina, archivia ed esporta i wiki. Le eliminazioni finiscono nel cestino.',
+  newProject: 'Nuovo progetto',
+  cloneProject: 'Clona progetto',
+  renameProject: 'Rinomina progetto',
+  deleteProject: 'Elimina progetto',
+  importProject: 'Importa progetto',
+  exportProject: 'Esporta progetto',
+  includeContent: 'Includi contenuti',
+  projectName: 'Nome visualizzato',
+  projectId: 'Identificatore (id)',
+  sourceProject: 'Progetto sorgente',
+  bundle: 'Bundle JSON',
+  noProjects: 'Nessun progetto disponibile.',
+  noNoteSelected: 'Seleziona una nota dalla vista o un nodo del grafo per visualizzarla.',
+  searchPlaceholder: 'Cerca note, azioni o procedure (Ctrl+K)...',
+  noResults: 'Nessun risultato.',
+  escapeHint: 'ESC per chiudere',
+  openNote: 'Nota in',
+  action: 'Azione',
+  note: 'Nota',
+  reviewStudio: 'Review Studio',
+  researchStudio: 'Research Studio',
+  studyStudio: 'Study Studio',
+  verifyHuman: 'Verifica umana',
+  criticalReview: 'Revisione critica',
+  activityDigest: 'Digest attività',
+  compareVersions: 'Confronta versioni',
+  noteBacklinks: 'Backlink della nota',
+  suggestedRelated: 'Correlazioni suggerite',
+  studyGuide: 'Guida di studio',
+  selfQuiz: 'Quiz di autovalutazione',
+  mindmap: 'Mappa concettuale',
+  audioScript: 'Copione audio',
+  projectCreated: 'Progetto “{name}” creato.',
+  projectRenamed: 'Progetto rinominato in “{name}”.',
+  projectCloned: 'Progetto clonato in “{name}”.',
+  projectArchived: 'Progetto archiviato.',
+  projectRestored: 'Progetto ripristinato.',
+  projectDeleted: 'Progetto spostato nel cestino.',
+  projectImported: 'Progetto importato.',
+  projectExported: 'Bundle di esportazione scaricato.',
+  saved: 'Salvato su disco.',
+  vaultUpdated: 'Vault aggiornato.',
+  renameUnavailable: 'Rinomina non disponibile: il backend API non risponde.',
+  renameFailed: 'Impossibile rinominare: {error}',
+  renameDocument: 'Rinomina documento',
+  renameDocumentMessage: 'Titolo: {oldTitle} → {newTitle}\nFile: {from} → {to}\n\n{count} collegamento(i) in {files} file verranno aggiornati.\n\nProcedere?',
+  confirmDeleteMessage: 'Eliminare il progetto “{name}”? I file verranno spostati nel cestino e potranno essere ripristinati.',
+  confirmPermanentMessage: 'Eliminare DEFINITIVAMENTE il progetto “{name}”? Questa operazione non è reversibile.',
+  confirmArchiveMessage: 'Archiviare il progetto “{name}”? Potrai ripristinarlo in seguito.',
+  confirmGeneric: 'Confermare l’operazione?',
+  changesetApplied: 'Modifica applicata.',
+  changesetRejected: 'Modifica rifiutata.',
+  operationFailed: 'Operazione non riuscita: {error}',
+  selectItemFirst: 'Seleziona prima un file o una cartella.',
+  newFolder: 'Nuova cartella',
+  newFile: 'Nuovo file',
+  folderNamePrompt: 'Nome della cartella in “{parent}”:',
+  fileNamePrompt: 'Nome del file (es. nuova-nota.md) in “{parent}”:',
+  renamePrompt: 'Rinomina “{name}” in:',
+  confirmDeleteItem: 'Eliminare “{name}”?',
+  rollbackVersion: 'Ripristinare “{name}” alla versione v{version}?',
+  restoreSnapshotConfirm: 'Ripristinare questa versione? La versione corrente verrà salvata come nuovo snapshot.',
+  deleteScratchpadNote: 'Eliminare questa nota dallo scratchpad?\n\n{id}',
+  duplicateShortcut: 'Scorciatoia duplicata: {combo}',
+} as const;
+
+export type TranslationKey = keyof typeof IT;
+
+const EN: Record<TranslationKey, string> = {
+  appName: 'Wiki-Forge',
+  project: 'Project',
+  projects: 'Projects',
+  language: 'Language',
+  actions: 'Actions',
+  moreActions: 'More actions',
+  view: 'View',
+  viewEditor: 'Editor',
+  viewScratchpad: 'Scratchpad',
+  viewGraph: 'Graph',
+  viewSplit: 'Split',
+  focusMode: 'Focus Mode',
+  developerMode: 'Developer Mode',
+  research: 'Research',
+  study: 'Study',
+  review: 'Review',
+  history: 'History',
+  nodeInfo: 'Node info',
+  docsWiki: 'Wiki Docs',
+  tools: 'Tools',
+  config: 'Configuration',
+  wizard: 'Setup wizard',
+  keWorkbench: 'KE workbench',
+  changesets: 'Changesets',
+  chat: 'Agent chat',
+  help: 'Help',
+  save: 'Save',
+  edit: 'Edit',
+  saveAndClose: 'Save & close',
+  cancel: 'Cancel',
+  close: 'Close',
+  confirm: 'Confirm',
+  open: 'Open',
+  create: 'Create',
+  clone: 'Clone',
+  rename: 'Rename',
+  archive: 'Archive',
+  restore: 'Restore',
+  delete: 'Delete',
+  moveToTrash: 'Move to trash',
+  unregister: 'Unregister only',
+  permanentDelete: 'Delete permanently',
+  export: 'Export',
+  import: 'Import',
+  stats: 'Statistics',
+  id: 'ID',
+  name: 'Name',
+  path: 'Path',
+  source: 'Source',
+  status: 'Status',
+  active: 'Active',
+  archived: 'Archived',
+  notes: 'Notes',
+  sources: 'Sources',
+  assets: 'Assets',
+  size: 'Size',
+  createdAt: 'Created at',
+  projectManager: 'Project manager',
+  projectManagerHint: 'Create, clone, rename, archive and export wikis. Deletions go to the trash.',
+  newProject: 'New project',
+  cloneProject: 'Clone project',
+  renameProject: 'Rename project',
+  deleteProject: 'Delete project',
+  importProject: 'Import project',
+  exportProject: 'Export project',
+  includeContent: 'Include content',
+  projectName: 'Display name',
+  projectId: 'Identifier (id)',
+  sourceProject: 'Source project',
+  bundle: 'JSON bundle',
+  noProjects: 'No projects available.',
+  noNoteSelected: 'Select a note from the vault or a graph node to view it.',
+  searchPlaceholder: 'Search notes, actions or procedures (Ctrl+K)...',
+  noResults: 'No results.',
+  escapeHint: 'ESC to close',
+  openNote: 'Note in',
+  action: 'Action',
+  note: 'Note',
+  reviewStudio: 'Review Studio',
+  researchStudio: 'Research Studio',
+  studyStudio: 'Study Studio',
+  verifyHuman: 'Human verification',
+  criticalReview: 'Critical review',
+  activityDigest: 'Activity digest',
+  compareVersions: 'Compare versions',
+  noteBacklinks: 'Note backlinks',
+  suggestedRelated: 'Suggested related notes',
+  studyGuide: 'Study guide',
+  selfQuiz: 'Self-assessment quiz',
+  mindmap: 'Mind map',
+  audioScript: 'Audio script',
+  projectCreated: 'Project “{name}” created.',
+  projectRenamed: 'Project renamed to “{name}”.',
+  projectCloned: 'Project cloned as “{name}”.',
+  projectArchived: 'Project archived.',
+  projectRestored: 'Project restored.',
+  projectDeleted: 'Project moved to trash.',
+  projectImported: 'Project imported.',
+  projectExported: 'Export bundle downloaded.',
+  saved: 'Saved to disk.',
+  vaultUpdated: 'Vault updated.',
+  renameUnavailable: 'Rename unavailable: the backend API did not respond.',
+  renameFailed: 'Unable to rename: {error}',
+  renameDocument: 'Rename document',
+  renameDocumentMessage: 'Title: {oldTitle} → {newTitle}\nFile: {from} → {to}\n\n{count} link(s) in {files} files will be updated.\n\nContinue?',
+  confirmDeleteMessage: 'Delete project “{name}”? Files will be moved to the trash and can be restored.',
+  confirmPermanentMessage: 'Permanently delete project “{name}”? This cannot be undone.',
+  confirmArchiveMessage: 'Archive project “{name}”? You can restore it later.',
+  confirmGeneric: 'Confirm this operation?',
+  changesetApplied: 'Changeset applied.',
+  changesetRejected: 'Changeset rejected.',
+  operationFailed: 'Operation failed: {error}',
+  selectItemFirst: 'Select a file or folder first.',
+  newFolder: 'New folder',
+  newFile: 'New file',
+  folderNamePrompt: 'Name of the folder inside “{parent}”:',
+  fileNamePrompt: 'File name (e.g. new-note.md) inside “{parent}”:',
+  renamePrompt: 'Rename “{name}” to:',
+  confirmDeleteItem: 'Delete “{name}”?',
+  rollbackVersion: 'Rollback “{name}” to version v{version}?',
+  restoreSnapshotConfirm: 'Restore this version? The current version will be saved as a new snapshot.',
+  deleteScratchpadNote: 'Delete this note from the scratchpad?\n\n{id}',
+  duplicateShortcut: 'Duplicate shortcut: {combo}',
+};
+
+const LANGUAGE_KEY = 'wiki-forge:language';
+const dictionaries: Record<Language, Record<TranslationKey, string>> = { it: IT, en: EN };
+const listeners = new Set<(language: Language) => void>();
+
+function detectLanguage(): Language {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(LANGUAGE_KEY);
+      if (stored === 'it' || stored === 'en') return stored;
+    } catch (_e) {
+      // Storage can be unavailable in embedded contexts.
+    }
+  }
+  return 'it';
+}
+
+let currentLanguage: Language = detectLanguage();
+
+export function getLanguage(): Language {
+  return currentLanguage;
+}
+
+export function setLanguage(language: Language): void {
+  if (currentLanguage === language) return;
+  currentLanguage = language;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(LANGUAGE_KEY, language);
+    } catch (_e) {
+      // Best effort only.
+    }
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = language;
+  }
+  listeners.forEach(listener => listener(language));
+}
+
+export function toggleLanguage(): Language {
+  const next: Language = currentLanguage === 'it' ? 'en' : 'it';
+  setLanguage(next);
+  return next;
+}
+
+export function subscribeLanguage(listener: (language: Language) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Translate a key, interpolating {placeholders} when supplied. */
+export function t(key: TranslationKey, vars: Record<string, string | number> = {}): string {
+  const template = dictionaries[currentLanguage][key] ?? IT[key] ?? String(key);
+  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : match
+  );
+}
+
+/** Apply the persisted language to the document root. Safe to call at boot. */
+export function applyStoredLanguage(): void {
+  if (typeof document !== 'undefined') document.documentElement.lang = currentLanguage;
+}

@@ -3,6 +3,7 @@ import { getActiveProjectId, resolveApiBaseUrl } from '@frontend/storage/ApiStor
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
 import { escapeHtml } from '@frontend/core/utils/html';
+import { bindResizer } from '@frontend/core/ui/resizer';
 import {
   formatScheduleTime,
   parseSseEvents,
@@ -191,52 +192,24 @@ export class KEWorkbenchModal {
     const toggle = this.overlay.querySelector('#ke-console-toggle') as HTMLElement;
     if (!resizer || !panel || !rightPane || !toggle) return;
 
-    const onMouseMove = (e: MouseEvent) => {
-      if (!this.isResizingConsole) return;
-      const rect = rightPane.getBoundingClientRect();
-      this.consoleHeight = clampConsoleHeight(rect.bottom - e.clientY, rect.height);
-      panel.style.height = `${this.consoleHeight}px`;
-      toggle.style.bottom = `${this.consoleHeight + 8}px`;
-    };
-
-    const onMouseUp = () => {
-      if (!this.isResizingConsole) return;
-      this.isResizingConsole = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      resizer.style.background = 'transparent';
-      this.saveConsolePrefs();
-    };
-
-    resizer.addEventListener('mousedown', (e) => {
-      if (this.consoleCollapsed) return;
-      e.preventDefault();
-      this.isResizingConsole = true;
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = 'row-resize';
-      document.body.style.userSelect = 'none';
-      resizer.style.background = '#6366f1';
-    });
-
-    resizer.addEventListener('mouseenter', () => {
-      if (!this.isResizingConsole && !this.consoleCollapsed) resizer.style.background = '#818cf8';
-    });
-    resizer.addEventListener('mouseleave', () => {
-      if (!this.isResizingConsole) resizer.style.background = 'transparent';
+    bindResizer(resizer, {
+      axis: 'y',
+      onStart: () => { this.isResizingConsole = true; },
+      onResize: event => {
+        if (this.consoleCollapsed) return;
+        const rect = rightPane.getBoundingClientRect();
+        this.consoleHeight = clampConsoleHeight(rect.bottom - event.clientY, rect.height);
+        panel.style.height = `${this.consoleHeight}px`;
+        toggle.style.bottom = `${this.consoleHeight + 8}px`;
+      },
+      onEnd: () => {
+        this.isResizingConsole = false;
+        resizer.style.background = 'transparent';
+        this.saveConsolePrefs();
+      },
     });
 
     toggle.addEventListener('click', () => this.toggleConsole());
-    toggle.addEventListener('mouseenter', () => {
-      toggle.style.color = '#c7d2fe';
-      toggle.style.background = '#312e81';
-    });
-    toggle.addEventListener('mouseleave', () => {
-      toggle.style.color = '#94a3b8';
-      toggle.style.background = '#1e293b';
-    });
 
     window.addEventListener('resize', () => this.applyConsoleState());
     this.applyConsoleState();

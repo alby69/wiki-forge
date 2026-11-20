@@ -56,3 +56,44 @@ Serves the six-tab Research Studio (`/api/notes/research/search|backlinks|relate
 
 ### 6. Adapter-based Note Editor (`src/frontend/components/editor/`)
 `MarkdownEditor.ts` is the stable shell; the editing surface sits behind the `NoteEditorAdapter` interface (`EditorAdapter.ts`) with two implementations: `CodeMirrorAdapter.ts` (source view / fallback) and `milkdown/MilkdownAdapter.ts` (Crepe 7.23 WYSIWYG, vanilla TS, no React). `resolveEngine()` auto-selects Milkdown in browsers and CodeMirror under mock DOMs/tests; the Milkdown module is dynamically imported so Crepe's ESM-only subpaths never reach the Node test runner. Toolbar actions are semantic (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`) with shared pure helpers in `editorMarkdownOps.ts`. OKF frontmatter is preserved byte-for-byte via `WikiNote.frontmatterRaw` and the `rawContent` save path. A custom remark plugin + inline atom (`milkdown/wikilink*.ts`) keeps `[[wikilinks]]` unescaped through serialisation and bridges clicks to navigation. See `docs/EDITOR_MIGRATION.md`.
+
+## Shared Frontend Foundations (Fase 78)
+
+The UI now has a small set of cross-cutting modules so features no longer
+reimplement the same behaviour in each component:
+
+| Module | Responsibility |
+|---|---|
+| `styles/tokens.css` | Colours, spacing, radii, motion — one source of truth mirrored to the legacy `theme.css` aliases. |
+| `styles/primitives.css` | Reusable `.wf-btn`, `.wf-field`, `.wf-modal*`, `.wf-menu*`, `.wf-toast*`, `.wf-tab*`, `.wf-palette*` classes. |
+| `core/actions.ts` | **Single action catalogue** (`global`, `note`, `studio` groups). Header, note header, context menu and command palette render from it; handlers are bound once in `WikiForgeApp.bindGlobalActions()`. |
+| `core/shortcuts.ts` | **One** global `keydown` listener, all combos registered through `registerShortcut()`. Fixed the old `Ctrl+Alt+D` collision (digest = `Ctrl+Alt+D`, wiki docs = `Ctrl+Alt+W`). |
+| `core/events.ts` | Typed `eventBus` (`project:changed`, `vault:changed`, `note:selected`, `note:saved`). |
+| `core/i18n/strings.ts` | IT/EN dictionary with `t(key, vars)`, persisted language selection, updates `document.documentElement.lang`. |
+| `core/ui/resizer.ts` | Shared `bindResizer()` — replaces four separate drag implementations. |
+| `services/notificationService.ts` | Styled toasts + accessible `confirm()` / `prompt()` dialogs. No native `alert`/`confirm`/`prompt` remains in the frontend. |
+| `store/appStore.ts` | Single source of truth for the active project; `ApiStorage` delegates to it. |
+
+Research and Studio are now **global-only** actions: the duplicated buttons were
+removed from the note header. The note header keeps only Node Info, Review,
+History, Save/Edit. The header includes a language selector (IT/EN) and an
+overflow menu generated from the action catalogue.
+
+## Project Lifecycle (Fase 78)
+
+Backend (`src/backend/server/projectService.ts`, routes in `agentServer.ts`):
+
+- `GET /api/projects?includeArchived=true`, `POST /api/projects`
+- `PATCH /api/projects/:id` (display name only; `config.toml` stays in sync)
+- `POST /api/projects/:id/clone`, `/archive`, `/restore`
+- `DELETE /api/projects/:id?mode=unregister|trash|permanent&confirm=<id>` —
+  **default mode is `trash`**: files are moved to `.wiki-forge/trash/` and can be
+  restored. `permanent` requires an explicit confirm token and never targets the
+  `default` project.
+- `GET /api/projects/:id/export`, `POST /api/projects/import`, `GET /api/projects/:id/stats`
+
+Frontend (`src/frontend/services/projectService.ts` +
+`components/projects/ProjectManagerModal.ts`) exposes the same operations with
+inline forms and trash-by-default deletion. `ConfigManager` no longer owns
+project creation/deletion; its project selector bar was removed to avoid
+duplication. See `docs/help/progetti-config.md`.

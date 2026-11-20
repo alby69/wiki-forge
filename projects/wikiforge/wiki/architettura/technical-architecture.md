@@ -261,6 +261,56 @@ The note editor is engine-agnostic. `MarkdownEditor.ts` remains the shell (heade
 
 Full design and rationale: `docs/EDITOR_MIGRATION.md`.
 
+### 2.13 Frontend foundations & project lifecycle (Fase 78)
+
+The UI keeps vanilla TypeScript + Vite but now centralises cross-cutting concerns:
+
+- **`core/actions.ts`** — declarative action catalogue (`global` / `note` /
+  `studio`) with labels, icons, shortcuts and grouping. `Header`,
+  `MarkdownEditor`, `ReviewContextMenu` and `CommandPalette` render from it.
+  Behaviour is attached once via `bindActionHandler()` in
+  `WikiForgeApp.bindGlobalActions()`. Research/Studio are global-only: the
+  duplicate buttons were removed from the note header.
+- **`core/shortcuts.ts`** — one `document` keydown listener for every combo;
+  multiple handlers can share a combo. `Ctrl+Alt+D` is Digest (the former
+  collision), Docs Wiki moved to `Ctrl+Alt+W`. `Ctrl+K` opens the command
+  palette, `F1` help, `Ctrl+Shift+D` toggles Focus/Developer mode.
+- **`core/events.ts`** — typed pub/sub (`project:changed`, `vault:changed`,
+  `note:selected`, `note:saved`) replaces manual fan-out between components.
+- **`core/i18n/strings.ts`** — IT/EN dictionary persisted in `localStorage`;
+  `document.documentElement.lang` follows the selection. The header exposes a
+  language selector.
+- **`core/ui/resizer.ts`** — `bindResizer()` used by MainLayout, Sidebar tag
+  cloud, ChatDrawer and KE Workbench console (four duplicated implementations
+  removed); sizes persist in `localStorage`.
+- **`styles/tokens.css` + `styles/primitives.css`** — design tokens and shared
+  `.wf-*` classes for buttons, fields, modals, menus, tabs, toasts and palette.
+- **`services/notificationService.ts`** — accessible toasts plus async
+  `confirm()`/`prompt()` dialogs; every native `alert`/`confirm`/`prompt` in the
+  frontend was removed.
+- **`store/appStore.ts`** — sole in-memory owner of `activeProjectId`;
+  `ApiStorage.getActiveProjectId()/setActiveProjectId()` delegate to it (the
+  `wiki-forge:active-project` key remains the persisted mirror).
+
+**Backend project lifecycle** (`projectService.ts`, routes in `agentServer.ts`):
+
+| Route | Operation |
+|---|---|
+| `GET /api/projects?includeArchived=true` | list (optionally archived) |
+| `POST /api/projects` | create + scaffold directories, copy root config |
+| `PATCH /api/projects/:id` | rename display name (id/path unchanged, config synced) |
+| `POST /api/projects/:id/clone` | clone with optional content includes |
+| `POST /api/projects/:id/archive` / `/restore` | archive under `.wiki-forge/archive/` |
+| `DELETE /api/projects/:id?mode=unregister\|trash\|permanent&confirm=<id>` | **trash by default**; permanent needs explicit token, `default` protected |
+| `GET /api/projects/:id/export`, `POST /api/projects/import` | JSON bundle round-trip |
+| `GET /api/projects/:id/stats` | note/source/asset counts and size |
+
+**Frontend project UI**: `services/projectService.ts` (typed API client) and
+`components/projects/ProjectManagerModal.ts` (create, clone, rename, archive,
+restore, export, import, delete). `ConfigManager` no longer owns project
+create/delete or native dialogs. See `docs/FRONTEND_UIUX_PLAN.md` and
+`docs/help/progetti-config.md`.
+
 ---
 
 ## 3. Comparative Matrix: `wiki-forge` Local RAG vs. From-Scratch Training (`nanochat`)

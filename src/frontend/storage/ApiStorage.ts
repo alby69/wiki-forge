@@ -25,6 +25,7 @@ import {
   StudyThesisResponse,
 } from '@frontend/core/types/study';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
+import { appStore } from '@frontend/store/appStore';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
 
@@ -48,18 +49,27 @@ export interface ProjectInfo {
   path: string;
 }
 
-/** Shared key for the wiki currently selected in the header project picker. */
+/** Shared key for the wiki currently selected in the header project picker.
+ * Kept as an export for external launchers; appStore is the only writer. */
 export const ACTIVE_PROJECT_KEY = 'wiki-forge:active-project';
 
 /** Read the active project id outside of an ApiStorage instance.
  *
  * Script launchers (Script Control Panel, KE workbench, ...) must use this so
- * every API call is scoped to the wiki the user actually selected. */
+ * every API call is scoped to the wiki the user actually selected. appStore is
+ * the single source of truth and mirrors its value to localStorage; we read the
+ * persisted value first so external launchers and tests that set it directly
+ * are honoured, then fall back to the in-memory store. */
 export function getActiveProjectId(fallback: string = 'default'): string {
   if (typeof localStorage !== 'undefined') {
-    return localStorage.getItem(ACTIVE_PROJECT_KEY) || fallback;
+    try {
+      const stored = localStorage.getItem(ACTIVE_PROJECT_KEY);
+      if (stored) return stored;
+    } catch (_e) {
+      // Storage can be unavailable in embedded contexts.
+    }
   }
-  return fallback;
+  return appStore.getState().activeProjectId || fallback;
 }
 
 export interface ScratchpadEntry {
@@ -98,21 +108,17 @@ export function resolveApiBaseUrl(fallback: string = ''): string {
 export class ApiStorage implements IStorage {
   private fallback = new FileStorage();
   private baseUrl: string;
-  private activeProjectIdMemory: string = 'default';
 
   constructor(baseUrl: string = '') {
     this.baseUrl = resolveApiBaseUrl(baseUrl);
   }
 
   public getActiveProjectId(): string {
-    return getActiveProjectId(this.activeProjectIdMemory || 'default');
+    return getActiveProjectId();
   }
 
   public setActiveProjectId(id: string): void {
-    this.activeProjectIdMemory = id;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(ACTIVE_PROJECT_KEY, id);
-    }
+    appStore.setActiveProjectId(id);
   }
 
   private getHeaders(): Record<string, string> {

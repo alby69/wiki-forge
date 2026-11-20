@@ -1,9 +1,7 @@
 import * as fs from 'node:fs/promises';
-import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import * as http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
-import * as toml from 'smol-toml';
 import { MarkdownParser } from '../../frontend/services/markdownParser';
 import { WikiNote } from '../../frontend/core/types/wiki';
 import { LlmClient, LlmClientFactory } from './llmClient';
@@ -55,7 +53,17 @@ import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTrigg
 import { GENERATED_SCRIPT_REGISTRY } from './generated/scriptRegistry.generated';
 import { resolveToolScript } from './toolPaths';
 import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from './safeFs';
+import {
+  ProjectService,
+  type CloneProjectOptions,
+  type ProjectBundle,
+  type ProjectDeleteMode,
+  type ProjectEntry,
+} from './projectService';
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
+
+// Backwards-compatible type exports: callers may still import ProjectEntry here.
+export type { ProjectBundle, ProjectDeleteMode, ProjectEntry } from './projectService';
 
 export interface ResearchConsultCitation {
   id: string;
@@ -228,12 +236,6 @@ export function withoutApprovalFlags(args?: Record<string, any>): Record<string,
 }
 
 export const SCRIPT_REGISTRY: Record<string, ScriptDef> = GENERATED_SCRIPT_REGISTRY;
-
-export interface ProjectEntry {
-  id: string;
-  name: string;
-  path: string;
-}
 
 export interface ChatRequest {
   message?: string;
@@ -693,10 +695,12 @@ export class AgentServer {
   private scheduleConfigErrors: string[] = [];
   private readonly scheduleClients = new Set<http.ServerResponse>();
   private scheduleHeartbeat?: NodeJS.Timeout;
+  private readonly projects: ProjectService;
 
   constructor(rootDir: string = process.cwd(), llmClient?: LlmClient) {
     this.rootDir = rootDir;
     this.llmClient = llmClient;
+    this.projects = new ProjectService(rootDir);
   }
 
   // ---------------------------------------------------------------- scheduler
@@ -1049,27 +1053,11 @@ export class AgentServer {
   }
 
   public getConfigPath(dir: string): string {
-    const configInSub = path.join(dir, 'config', 'config.toml');
-    if (fsSync.existsSync(configInSub)) {
-      return configInSub;
-    }
-    const configInRoot = path.join(dir, 'config.toml');
-    if (fsSync.existsSync(configInRoot)) {
-      return configInRoot;
-    }
-    return configInSub;
+    return this.projects.getConfigPath(dir);
   }
 
   public getProjectsJsonPath(): string {
-    const registryInSub = path.join(this.rootDir, 'config', 'projects.json');
-    if (fsSync.existsSync(registryInSub)) {
-      return registryInSub;
-    }
-    const registryInRoot = path.join(this.rootDir, 'projects.json');
-    if (fsSync.existsSync(registryInRoot)) {
-      return registryInRoot;
-    }
-    return registryInSub;
+    return this.projects.getProjectsJsonPath();
   }
 
   public async getWikiDir(projectId: string = 'default'): Promise<string> {
@@ -1222,111 +1210,57 @@ export class AgentServer {
     return 'default';
   }
 
+  /** Compatibility helper: internal callers historically saw every registry entry. */
   public async getProjects(): Promise<ProjectEntry[]> {
-    const registryPath = this.getProjectsJsonPath();
-    try {
-      const data = await fs.readFile(registryPath, 'utf-8');
-      const list = JSON.parse(data) as ProjectEntry[];
-      if (Array.isArray(list) && list.length > 0) {
-        return list;
-      }
-    } catch (_e) {
-      // Missing or invalid
-    }
-    return [{ id: 'default', name: 'Default Wiki', path: '.' }];
+    return this.projects.list({ includeArchived: true });
   }
 
   public async saveProjects(projects: ProjectEntry[]): Promise<void> {
-    const registryPath = this.getProjectsJsonPath();
-    await fs.mkdir(path.dirname(registryPath), { recursive: true });
-    await atomicWriteFile(registryPath, JSON.stringify(projects, null, 2), 'utf-8');
+    await this.projects.saveProjects(projects);
   }
 
   public async resolveProjectRoot(projectId: string = 'default'): Promise<string> {
-    const projects = await this.getProjects();
-    const project = projects.find(p => p.id === projectId);
-    const relPath = project ? project.path : (projectId === 'default' ? '.' : `projects/${projectId}`);
-
-    // Containment check against rootDir
-    const absPath = path.resolve(this.rootDir, relPath);
-    const relToRoot = path.relative(this.rootDir, absPath);
-    if (relToRoot.startsWith('..') || (path.isAbsolute(relToRoot) && relToRoot !== absPath)) {
-      const err = new Error('Access denied: Invalid project path traversal detected');
-      (err as unknown as { status: number }).status = 400;
-      throw err;
-    }
-    return absPath;
+    return this.projects.resolveRoot(projectId);
   }
 
   public async createProject(id: string, name: string): Promise<ProjectEntry> {
-    const cleanId = id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-    if (!cleanId) {
-      const err = new Error('Invalid project ID');
-      (err as unknown as { status: number }).status = 400;
-      throw err;
-    }
-
-    const projects = await this.getProjects();
-    if (projects.some(p => p.id === cleanId)) {
-      const err = new Error(`Project '${cleanId}' already exists`);
-      (err as unknown as { status: number }).status = 400;
-      throw err;
-    }
-
-    const projectRelPath = cleanId === 'default' ? '.' : `projects/${cleanId}`;
-    const projectAbsPath = path.resolve(this.rootDir, projectRelPath);
-
-    // Create project directories
-    await fs.mkdir(path.join(projectAbsPath, 'sources'), { recursive: true });
-    await fs.mkdir(path.join(projectAbsPath, 'raw'), { recursive: true });
-    await fs.mkdir(path.join(projectAbsPath, 'wiki'), { recursive: true });
-    await fs.mkdir(path.join(projectAbsPath, 'output'), { recursive: true });
-    await fs.mkdir(path.join(projectAbsPath, 'notes'), { recursive: true });
-
-    // Copy template or default config.toml
-    const configPath = this.getConfigPath(projectAbsPath);
-    await fs.mkdir(path.dirname(configPath), { recursive: true });
-    const defaultConfigPath = this.getConfigPath(this.rootDir);
-    try {
-      const baseConfig = await fs.readFile(defaultConfigPath, 'utf-8');
-      const parsed = toml.parse(baseConfig) as Record<string, unknown>;
-      if (!parsed.project) parsed.project = {};
-      (parsed.project as Record<string, unknown>).name = cleanId;
-      (parsed.project as Record<string, unknown>).title = name || `${cleanId} Wiki`;
-      await atomicWriteFile(configPath, toml.stringify(parsed), 'utf-8');
-    } catch (_e) {
-      const initialConfig = `[project]\nname = "${cleanId}"\ntitle = "${name || cleanId}"\ncontext = ""\nlanguage = "en"\n\n[paths]\nsources = "sources"\nraw = "raw"\nwiki = "wiki"\noutput = "output"\nnotes = "notes"\n`;
-      await atomicWriteFile(configPath, initialConfig, 'utf-8');
-    }
-
-    const newProject: ProjectEntry = { id: cleanId, name: name || cleanId, path: projectRelPath };
-    projects.push(newProject);
-    await this.saveProjects(projects);
-    return newProject;
+    return this.projects.create(id, name);
   }
 
+  /**
+   * Legacy signature kept for ApiStorage. `deleteFolder=true` used to mean an
+   * irreversible rm; it now maps to the recoverable trash mode.
+   */
   public async deleteProject(id: string, deleteFolder: boolean = false): Promise<void> {
-    if (id === 'default') {
-      const err = new Error('Cannot delete default project');
-      (err as unknown as { status: number }).status = 400;
-      throw err;
-    }
+    await this.projects.remove(id, deleteFolder ? 'trash' : 'unregister');
+  }
 
-    let projects = await this.getProjects();
-    const proj = projects.find(p => p.id === id);
-    if (!proj) {
-      const err = new Error(`Project '${id}' not found`);
-      (err as unknown as { status: number }).status = 404;
-      throw err;
-    }
+  public renameProject(id: string, name: string) {
+    return this.projects.rename(id, name);
+  }
 
-    projects = projects.filter(p => p.id !== id);
-    await this.saveProjects(projects);
+  public cloneProject(sourceId: string, options: CloneProjectOptions) {
+    return this.projects.clone(sourceId, options);
+  }
 
-    if (deleteFolder) {
-      const projectAbsPath = await this.resolveProjectRoot(id);
-      await fs.rm(projectAbsPath, { recursive: true, force: true });
-    }
+  public archiveProject(id: string) {
+    return this.projects.archive(id);
+  }
+
+  public restoreProject(id: string) {
+    return this.projects.restore(id);
+  }
+
+  public exportProject(id: string) {
+    return this.projects.export(id);
+  }
+
+  public importProject(bundle: ProjectBundle | string | Buffer) {
+    return this.projects.import(bundle);
+  }
+
+  public getProjectStats(id: string) {
+    return this.projects.stats(id);
   }
 
   private proxyToFastApi(req: http.IncomingMessage, res: http.ServerResponse, targetPath: string): Promise<boolean> {
@@ -2123,10 +2057,12 @@ export class AgentServer {
       return true;
     }
 
-    // Projects CRUD API
+    // Projects CRUD API — every operation is delegated to ProjectService.
     if (pathname === '/api/projects' && req.method === 'GET') {
       try {
-        const projects = await this.getProjects();
+        const projects = await this.projects.list({
+          includeArchived: url.searchParams.get('includeArchived') === 'true',
+        });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, projects }));
       } catch (err) {
@@ -2139,9 +2075,66 @@ export class AgentServer {
     if (pathname === '/api/projects' && req.method === 'POST') {
       try {
         const body = await this.parseJsonBody<{ id: string; name: string }>(req);
-        const project = await this.createProject(body.id, body.name);
+        const project = await this.projects.create(body.id, body.name);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, project }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    if (pathname === '/api/projects/import' && req.method === 'POST') {
+      try {
+        const body = await this.parseJsonBody<{ bundle?: ProjectBundle } & ProjectBundle>(req);
+        const bundle = body.bundle ?? body;
+        const project = await this.projects.import(bundle);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, project }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
+    const projectActionMatch = pathname.match(/^\/api\/projects\/([^/]+)\/(clone|archive|restore|export|stats)$/);
+    if (projectActionMatch) {
+      const pId = projectActionMatch[1];
+      const action = projectActionMatch[2];
+      try {
+        if (action === 'clone' && req.method === 'POST') {
+          const body = await this.parseJsonBody<{ id?: string; name?: string; include?: Record<string, boolean> }>(req);
+          const project = await this.projects.clone(pId, {
+            id: String(body.id ?? ''),
+            name: String(body.name ?? ''),
+            include: body.include,
+          });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, project }));
+        } else if (action === 'archive' && req.method === 'POST') {
+          const result = await this.projects.archive(pId);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, project: result.project, trashed: result.entry }));
+        } else if (action === 'restore' && req.method === 'POST') {
+          const project = await this.projects.restore(pId);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, project }));
+        } else if (action === 'export' && req.method === 'GET') {
+          const bundle = JSON.parse(await this.projects.export(pId)) as ProjectBundle;
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, bundle }));
+        } else if (action === 'stats' && req.method === 'GET') {
+          const stats = await this.projects.stats(pId);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, stats }));
+        } else {
+          res.writeHead(405, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: `Method ${req.method} not allowed on ${pathname}` }));
+        }
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -2155,17 +2148,9 @@ export class AgentServer {
       const pId = configMatch[1];
       if (req.method === 'GET') {
         try {
-          const projectRoot = await this.resolveProjectRoot(pId);
-          const configPath = this.getConfigPath(projectRoot);
-          let parsed: unknown = {};
-          try {
-            const raw = await fs.readFile(configPath, 'utf-8');
-            parsed = toml.parse(raw);
-          } catch (_e) {
-            // file missing
-          }
+          const config = await this.projects.readProjectConfig(pId);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, config: parsed }));
+          res.end(JSON.stringify({ success: true, config }));
         } catch (err) {
           const status = (err as { status?: number }).status || 500;
           res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -2177,12 +2162,9 @@ export class AgentServer {
       if (req.method === 'PUT') {
         try {
           const body = await this.parseJsonBody<Record<string, unknown>>(req);
-          const projectRoot = await this.resolveProjectRoot(pId);
-          const configPath = this.getConfigPath(projectRoot);
-          const tomlContent = toml.stringify(body);
-          await atomicWriteFile(configPath, tomlContent, 'utf-8');
+          const config = await this.projects.mergeProjectConfig(pId, body);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true }));
+          res.end(JSON.stringify({ success: true, config }));
         } catch (err) {
           const status = (err as { status?: number }).status || 500;
           res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -2192,14 +2174,39 @@ export class AgentServer {
       }
     }
 
+    const renameMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
+    if (renameMatch && req.method === 'PATCH') {
+      try {
+        const body = await this.parseJsonBody<{ name?: string }>(req);
+        const project = await this.projects.rename(renameMatch[1], String(body.name ?? ''));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, project }));
+      } catch (err) {
+        const status = (err as { status?: number }).status || 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+      }
+      return true;
+    }
+
     const deleteMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
     if (deleteMatch && req.method === 'DELETE') {
       try {
         const pId = deleteMatch[1];
-        const deleteFolder = url.searchParams.get('deleteFolder') === 'true';
-        await this.deleteProject(pId, deleteFolder);
+        const explicitMode = url.searchParams.get('mode');
+        const legacyFlag = url.searchParams.get('deleteFolder');
+        const mode: ProjectDeleteMode = explicitMode
+          ? (explicitMode as ProjectDeleteMode)
+          : legacyFlag === 'true'
+            ? 'trash'
+            : legacyFlag === 'false'
+              ? 'unregister'
+              : 'trash';
+        const confirm = url.searchParams.get('confirm') ??
+          (typeof req.headers['x-confirm-token'] === 'string' ? req.headers['x-confirm-token'] : undefined);
+        const result = await this.projects.remove(pId, mode, confirm ?? undefined);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify({ success: true, mode: result.mode, trashed: result.trashed }));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -2847,124 +2854,6 @@ export class AgentServer {
         const result = await this.ingestMarkdownHandler(body, projectId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, ...result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/save' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<SaveNoteRequest>(req);
-        const result = await this.saveWikiNote(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/attach' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<AttachNoteRequest>(req);
-        const result = await this.attachToNote(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/chat' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<ChatRequest>(req);
-        const isStream = body.stream === true || (req.headers.accept && req.headers.accept.includes('text/event-stream'));
-
-        if (isStream) {
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
-          });
-          await this.processChatCommandStream(body, chunk => {
-            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-          });
-          res.write('data: [DONE]\n\n');
-          res.end();
-        } else {
-          const response = await this.processChatCommand(body);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, response }));
-        }
-      } catch (err) {
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        } else {
-          res.write(`data: ${JSON.stringify({ error: String(err) })}\n\n`);
-          res.end();
-        }
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/folder/create' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<CreateFolderRequest>(req);
-        const result = await this.createFolderHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, folder: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/file/create' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<CreateFileRequest>(req);
-        const result = await this.createFileHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/rename' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<RenameRequest>(req);
-        const result = await this.renameHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/move' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<MoveRequest>(req);
-        const result = await this.moveHandler(body);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
       } catch (err) {
         const status = (err as { status?: number }).status || 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });

@@ -1,3 +1,5 @@
+import { eventBus } from '@frontend/core/events';
+
 export interface AppState {
   isAdvancedMode: boolean;
   activeProjectId: string;
@@ -105,11 +107,18 @@ class AppStore {
   }
 
   public setActiveProjectId(id: string): void {
+    const previousId = this.state.activeProjectId;
+    if (previousId === id) return;
     this.state.activeProjectId = id;
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PROJECT_KEY, id);
+      try {
+        localStorage.setItem(PROJECT_KEY, id);
+      } catch (_e) {
+        // Best effort only.
+      }
     }
     this.notify();
+    eventBus.emit('project:changed', { id, previousId });
   }
 
   public setTheme(theme: 'dark' | 'light'): void {

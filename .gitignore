@@ -28,6 +28,10 @@ Thumbs.db
 # ----- Excluded data -----
 # Local note history for the Review Studio "Confronta versioni" tab.
 .wiki-forge/snapshots/
+# F5 project lifecycle: archived projects and recoverable deletes are runtime state.
+.wiki-forge/archive/
+**/.wiki-forge/archive/
+**/.wiki-forge/trash/
 # Scheduler runtime state, PID lock and approval queue (F2/F6): machine-local, never versioned.
 .wiki-forge/scheduler-state.json
 .wiki-forge/scheduler.lock

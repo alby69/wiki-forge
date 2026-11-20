@@ -1,5 +1,7 @@
 import { ScratchpadEntry } from '@frontend/storage/ApiStorage';
 import { escapeHtml } from '@frontend/core/utils/html';
+import { notifications } from '@frontend/services/notificationService';
+import { t } from '@frontend/core/i18n/strings';
 
 export interface ScratchpadCallbacks {
   getScratchpad?: () => Promise<ScratchpadEntry[]>;
@@ -105,7 +107,12 @@ export class ScratchpadPanel {
         e.stopPropagation();
         const id = btn.getAttribute('data-scratch-id');
         if (!id || !this.cbs.deleteScratchpad) return;
-        if (!confirm(`Eliminare questa nota dallo scratchpad?\n\n${id}`)) return;
+        const confirmed = await notifications.confirm({
+          title: t('delete'),
+          message: t('deleteScratchpadNote', { id }),
+          danger: true,
+        });
+        if (!confirmed) return;
         const ok = await this.cbs.deleteScratchpad(id);
         if (ok) void this.load();
       });

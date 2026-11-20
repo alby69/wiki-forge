@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Frontend UI/UX & Project Lifecycle — implementazione (Fase 78, fasi 1–7)
+
+- **Design system minimale**: nuovi `styles/tokens.css` (colori, spaziature, raggi) e `styles/primitives.css` (`.wf-btn`, `.wf-field`, `.wf-modal*`, `.wf-menu*`, `.wf-toast*`, `.wf-tab*`, `.wf-palette*`). Le feature CSS riutilizzano le primitive invece di duplicare stili inline.
+- **Catalogo azioni unico** (`core/actions.ts`): Header, header nota, menu contestuale e Command Palette leggono la stessa fonte; Research e Studio sono ora **solo globali** (rimossi i pulsanti duplicati dall'header della nota). Handler collegati una volta in `WikiForgeApp.bindGlobalActions()`.
+- **Disaccoppiamento**: `core/events.ts` (eventBus tipizzato), `appStore` come unica fonte di verità del progetto attivo (`ApiStorage` delega ad esso), callback tipate per `MarkdownEditor` con overload storico conservato, `core/ui/resizer.ts` condiviso da MainLayout, Sidebar, ChatDrawer e KE Workbench (quattro implementazioni duplicate eliminate).
+- **Scorciatoie e i18n**: un solo listener globale (`core/shortcuts.ts`) risolve la collisione `Ctrl+Alt+D` (Digest = `Ctrl+Alt+D`, Wiki Docs = `Ctrl+Alt+W`); `Ctrl+K` palette, `F1` guida, `Ctrl+Shift+D` toggle modalità. Dizionario IT/EN con selettore lingua nell'header e `document.documentElement.lang` sincronizzato (`index.html` ora `lang="it"`).
+- **Dialoghi accessibili**: `services/notificationService.ts` (toast + `confirm`/`prompt` asincroni) sostituisce **ogni** `alert`/`confirm`/`prompt` nativo nel frontend.
+- **Ciclo di vita progetti**: backend `projectService.ts` con rename, clone, archive/restore, export/import, stats e `DELETE` con **cestino come predefinito** (`permanent` richiede token di conferma, `default` protetto). Nuovo `ProjectManagerModal` frontend; `ConfigManager` non gestisce più creazione/cancellazione progetti e non usa più dialoghi nativi.
+- **Documentazione**: aggiornati `ARCHITECTURE.md`, `TECHNICAL_ARCHITECTURE.md`, `USER_GUIDE.md`, `docs/help/progetti-config.md`, `ROADMAP.md`; wiki `wikiforge` rigenerata da `docs/`.
+- **Validazione**: `npx tsc --noEmit`, `npm test` (274 pass, 1 skipped), `npm run build` verdi. I test Python passano tranne la nota utente preservata `architettura/note_architettura.md` e i test che richiedono `pyshacl`/`watchdog` non installati in questo ambiente.
+
 ### Frontend UI/UX & Project Lifecycle — studio e piano (Fase 78)
 
 - Aggiunto `docs/FRONTEND_UIUX_PLAN.md`: audit dettagliato del frontend (pulsanti Research/Studio duplicati in header globale e header nota, ~746 stili inline, 4 resizer duplicati, 3 listener `keydown` con collisione `Ctrl+Alt+D`, doppia source of truth del progetto attivo) e piano in 7 fasi KISS/DRY con catalogo azioni unico, design system a token, primitive UI, disaccoppiamento, accessibilità/i18n e ciclo di vita progetti completo lato backend/frontend.

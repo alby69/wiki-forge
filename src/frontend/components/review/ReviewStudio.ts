@@ -11,6 +11,8 @@ import {
   ReviewTab,
 } from '@frontend/core/types/review';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
+import { notifications } from '@frontend/services/notificationService';
+import { t } from '@frontend/core/i18n/strings';
 
 export interface ReviewStudioCallbacks {
   /** Called after the note was rewritten by a verify or restore action. */
@@ -269,9 +271,11 @@ export class ReviewStudio {
 
   private async restoreSnapshot(): Promise<void> {
     if (!this.selectedSnapshotId) return;
-    const confirmed = confirm(
-      'Ripristinare questa versione? La versione corrente verrà salvata come nuovo snapshot.'
-    );
+    const confirmed = await notifications.confirm({
+      title: t('restore'),
+      message: t('restoreSnapshotConfirm'),
+      danger: true,
+    });
     if (!confirmed) return;
 
     const restored = await this.storage.restoreReviewSnapshot(

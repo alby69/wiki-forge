@@ -6,6 +6,7 @@ import { appStore } from '@frontend/store/appStore';
 import { AttachModal } from './AttachModal';
 import { COMMAND_CATALOG } from './commandCatalog';
 import type { ResearchTab } from '@frontend/core/types/research';
+import { bindResizer } from '@frontend/core/ui/resizer';
 
 const RESEARCH_COMMANDS: Record<string, ResearchTab> = {
   '/consult': 'consult',
@@ -35,6 +36,7 @@ export class ChatDrawer {
   private isMaximized: boolean = false;
   private chatWidth: number = 380;
   private isResizingChat: boolean = false;
+  private unbindChatResizer?: () => void;
   private messages: ChatMessage[] = [];
   private notesGetter: () => WikiNote[];
   private onVaultUpdatedCb?: () => void;
@@ -284,31 +286,25 @@ export class ChatDrawer {
     this.setMaximized(!this.isMaximized);
   }
 
-  private startChatResize(e: MouseEvent): void {
-    e.preventDefault();
+  private startChatResize(event: MouseEvent): void {
+    const handle = event.currentTarget as HTMLElement | null;
+    if (!handle) return;
+    this.unbindChatResizer?.();
     this.isResizingChat = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    const onMove = (ev: MouseEvent): void => {
-      if (this.isMaximized) return;
-      const maxWidth = Math.max(520, window.innerWidth - CHAT_MIN_WIDTH);
-      const raw = window.innerWidth - ev.clientX;
-      this.chatWidth = Math.min(Math.max(raw, CHAT_MIN_WIDTH), maxWidth);
-      this.container.style.width = `${this.chatWidth}px`;
-    };
-
-    const onUp = (): void => {
-      this.isResizingChat = false;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      this.saveChatWidth();
-    };
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    this.unbindChatResizer = bindResizer(handle, {
+      axis: 'x',
+      onResize: ev => {
+        if (this.isMaximized) return;
+        const maxWidth = Math.max(520, window.innerWidth - CHAT_MIN_WIDTH);
+        const raw = window.innerWidth - ev.clientX;
+        this.chatWidth = Math.min(Math.max(raw, CHAT_MIN_WIDTH), maxWidth);
+        this.container.style.width = `${this.chatWidth}px`;
+      },
+      onEnd: () => {
+        this.isResizingChat = false;
+        this.saveChatWidth();
+      },
+    });
   }
 
   private renderCommandCatalog(): string {

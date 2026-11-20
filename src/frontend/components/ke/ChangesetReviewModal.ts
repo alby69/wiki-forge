@@ -1,4 +1,6 @@
 import { getActiveProjectId, resolveApiBaseUrl } from '../../storage/ApiStorage';
+import { notifications } from '@frontend/services/notificationService';
+import { t } from '@frontend/core/i18n/strings';
 
 export interface ChangesetData {
   id: string;
@@ -197,12 +199,12 @@ export class ChangesetReviewModal {
         headers: this.projectHeaders(),
       });
       if (res.ok) {
-        alert('Changeset applied successfully!');
+        notifications.translated('changesetApplied', 'success');
         if (this.onAppliedCb) this.onAppliedCb();
         await this.open();
       }
     } catch (err: any) {
-      alert(`Error applying changeset: ${err.message}`);
+      notifications.translated('operationFailed', 'error', { error: err.message });
     }
   }
 
@@ -214,11 +216,11 @@ export class ChangesetReviewModal {
         body: JSON.stringify({ reason: 'rejected from review queue' }),
       });
       if (res.ok) {
-        alert('Changeset rejected.');
+        notifications.translated('changesetRejected', 'success');
         await this.open();
       }
     } catch (err: any) {
-      alert(`Error rejecting changeset: ${err.message}`);
+      notifications.translated('operationFailed', 'error', { error: err.message });
     }
   }
 }

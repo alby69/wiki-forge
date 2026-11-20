@@ -1,83 +1,53 @@
 import { ProjectInfo } from '@frontend/storage/ApiStorage';
-import { WikiNote } from '@frontend/core/types/wiki';
-import { appStore, ViewMode } from '@frontend/store/appStore';
-import { SimpleModeDashboard } from '@frontend/components/simple-mode/SimpleModeDashboard';
+import { appStore, type AppState, type ViewMode } from '@frontend/store/appStore';
+import { getAction, getActions, runAction, actionLabel, actionTitle, type ActionDefinition } from '@frontend/core/actions';
+import { getLanguage, setLanguage, subscribeLanguage, t } from '@frontend/core/i18n/strings';
+import { escapeHtml } from '@frontend/core/utils/html';
 
-const VIEW_MODES: { id: ViewMode; label: string; title: string; icon: string }[] = [
-  { id: 'editor', label: 'Editor', title: 'Solo Editor (riclicca per chiudere)', icon: '📝' },
-  { id: 'scratchpad', label: 'Scratchpad', title: 'Note veloci nello spazio editor (riclicca per chiudere)', icon: '📒' },
-  { id: 'graph', label: 'Graph', title: 'Solo Knowledge Graph (riclicca per chiudere)', icon: '🕸️' },
-  { id: 'split', label: 'Split', title: 'Editor e Graph affiancati (riclicca per tornare alla vista singola)', icon: '◧' },
+const VIEW_MODES: Array<{ id: ViewMode; labelKey: 'viewEditor' | 'viewScratchpad' | 'viewGraph' | 'viewSplit'; icon: string }> = [
+  { id: 'editor', labelKey: 'viewEditor', icon: '📝' },
+  { id: 'scratchpad', labelKey: 'viewScratchpad', icon: '📒' },
+  { id: 'graph', labelKey: 'viewGraph', icon: '🕸️' },
+  { id: 'split', labelKey: 'viewSplit', icon: '◧' },
 ];
 
 export interface HeaderOptions {
   container: HTMLElement;
   onViewModeChange?: (mode: ViewMode) => void;
   onToggleChat?: () => void;
-  onOpenConfig?: () => void;
   onProjectSelect?: (projectId: string) => void;
-  onOpenTools?: () => void;
-  onOpenWizard?: () => void;
-  onOpenKEWorkbench?: () => void;
-  onOpenChangesets?: () => void;
-  onOpenResearch?: () => void;
+  /** Kept for compatibility with existing launchers; falls back to the action registry. */
   onOpenDocsWiki?: () => void;
-  onOpenStudy?: () => void;
-  onOpenHelp?: () => void;
 }
 
+/** Global header. Every shared action comes from the single action registry. */
 export class Header {
   private container: HTMLElement;
   private onViewModeChangeCb?: (mode: ViewMode) => void;
   private onToggleChatCb?: () => void;
-  private onOpenConfigCb?: () => void;
-  private onOpenToolsCb?: () => void;
   private onProjectSelectCb?: (projectId: string) => void;
-  private onOpenWizardCb?: () => void;
-  private onOpenKEWorkbenchCb?: () => void;
-  private onOpenChangesetsCb?: () => void;
-  private onOpenResearchCb?: () => void;
   private onOpenDocsWikiCb?: () => void;
-  private onOpenStudyCb?: () => void;
-  private onOpenHelpCb?: () => void;
-  private simpleDashboard?: SimpleModeDashboard;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
-  private activeNote: WikiNote | null = null;
   private unsubscribeStore?: () => void;
+  private unsubscribeLanguage?: () => void;
+  private onOutsideClick?: (event: MouseEvent) => void;
+  private renderedActionIds: string[] = [];
+  private lastRenderKey = '';
 
   constructor(options: HeaderOptions) {
     this.container = options.container;
     this.onViewModeChangeCb = options.onViewModeChange;
     this.onToggleChatCb = options.onToggleChat;
-    this.onOpenConfigCb = options.onOpenConfig;
     this.onProjectSelectCb = options.onProjectSelect;
-    this.onOpenToolsCb = options.onOpenTools;
-    this.onOpenWizardCb = options.onOpenWizard;
-    this.onOpenKEWorkbenchCb = options.onOpenKEWorkbench;
-    this.onOpenChangesetsCb = options.onOpenChangesets;
-    this.onOpenResearchCb = options.onOpenResearch;
     this.onOpenDocsWikiCb = options.onOpenDocsWiki;
-    this.onOpenStudyCb = options.onOpenStudy;
-    this.onOpenHelpCb = options.onOpenHelp;
 
-    this.unsubscribeStore = appStore.subscribe(() => {
-      this.render();
+    this.unsubscribeStore = appStore.subscribe(state => {
+      const key = `${state.isAdvancedMode}|${state.viewMode}|${state.activeProjectId}`;
+      if (key !== this.lastRenderKey) this.render();
     });
-
-    this.setupKeyboardShortcuts();
+    this.unsubscribeLanguage = subscribeLanguage(() => this.render());
     this.render();
-  }
-
-  private setupKeyboardShortcuts(): void {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-          e.preventDefault();
-          appStore.toggleAdvancedMode();
-        }
-      });
-    }
   }
 
   public setProjects(projects: ProjectInfo[], activeProjectId: string): void {
@@ -86,146 +56,175 @@ export class Header {
     this.render();
   }
 
-  public setActiveNote(note: WikiNote | null): void {
-    this.activeNote = note;
-    this.render();
+  /** No-op kept for callers that used the old header note badge. */
+  public setSimpleDashboard(): void {
+    // Focus-mode pills are mounted by WikiForgeApp, not by the header.
   }
 
-  public setSimpleDashboard(dashboard: SimpleModeDashboard): void {
-    this.simpleDashboard = dashboard;
-    this.render();
+  private renderActionButton(action: ActionDefinition, id: string, extraClass = ''): string {
+    this.renderedActionIds.push(id);
+    const title = escapeHtml(actionTitle(action));
+    return `<button id="${id}" class="wf-btn wf-btn--sm ${extraClass}" data-action-id="${id}" data-action-key="${action.id}" title="${title}" aria-label="${title}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}</button>`;
   }
 
-  private renderNoteBadge(): string {
-    if (!this.activeNote) return '';
-
-    const tier = this.activeNote.trustTier || 'unverified';
-    if (tier === 'human-reviewed') {
-      return `<span style="font-size: 11px; background: #22543d; color: #9ae6b4; padding: 2px 6px; border-radius: 4px; font-weight: 600;">✓ Human-Reviewed</span>`;
-    } else if (tier === 'machine-confirmed') {
-      return `<span style="font-size: 11px; background: #2a4365; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-weight: 600;">🤖 Machine-Confirmed</span>`;
-    } else {
-      return `<span style="font-size: 11px; background: #334155; color: #cbd5e0; padding: 2px 6px; border-radius: 4px;">Unverified</span>`;
-    }
+  private renderMenu(): string {
+    const actions = getActions({ group: 'global', menu: true });
+    return `
+      <div class="wf-header__menu">
+        <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}">⋯</button>
+        <div id="header-more-menu" class="wf-menu" role="menu" hidden>
+          ${actions.map(action => {
+            const id = `menu-item-${action.id.replace(':', '-')}`;
+            this.renderedActionIds.push(id);
+            const shortcut = action.shortcut ? `<span class="wf-menu__shortcut">${escapeHtml(action.shortcut)}</span>` : '';
+            return `<button id="${id}" class="wf-menu__item" role="menuitem" data-action-id="${id}" data-action-key="${action.id}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}${shortcut}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
   }
 
   public render(): void {
-    const { isAdvancedMode, viewMode } = appStore.getState();
+    const state: AppState = appStore.getState();
+    this.lastRenderKey = `${state.isAdvancedMode}|${state.viewMode}|${state.activeProjectId}`;
+    this.renderedActionIds = [];
 
     const projOptions = this.projects.length > 0
-      ? this.projects.map(p => `<option value="${p.id}" ${p.id === this.activeProjectId ? 'selected' : ''}>${p.name}</option>`).join('')
+      ? this.projects.map(p => `<option value="${escapeHtml(p.id)}" ${p.id === this.activeProjectId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')
       : `<option value="default" selected>Default Wiki</option>`;
 
-    const modeBadge = isAdvancedMode
-      ? `<button id="mode-toggle-btn" class="mode-badge-advanced mode-badge-btn" title="Passa a Focus Mode (Ctrl+Shift+D)">👑 Developer Mode</button>`
-      : `<button id="mode-toggle-btn" class="mode-badge-simple mode-badge-btn" title="Passa a Developer Mode (Ctrl+Shift+D)">🌱 Focus Mode</button>`;
+    const modeTitle = state.isAdvancedMode ? t('focusMode') : t('developerMode');
+    const modeBadge = state.isAdvancedMode
+      ? `<button id="mode-toggle-btn" class="mode-badge-advanced mode-badge-btn" title="${escapeHtml(modeTitle)}">👑 ${escapeHtml(t('developerMode'))}</button>`
+      : `<button id="mode-toggle-btn" class="mode-badge-simple mode-badge-btn" title="${escapeHtml(modeTitle)}">🌱 ${escapeHtml(t('focusMode'))}</button>`;
+
+    const docsAction = getAction('global:docsWiki');
+    const pinnedIds = ['global:projects', 'global:research', 'global:study'];
+    const pinned = pinnedIds
+      .map(id => getAction(id))
+      .filter((action): action is ActionDefinition => Boolean(action))
+      .map(action => this.renderActionButton(action, `header-${action.id.replace(':', '-')}-btn`))
+      .join('');
+    const docsButton = state.isAdvancedMode && docsAction
+      ? `<button id="header-docs-wiki-btn" class="wf-btn wf-btn--sm wf-btn--success" data-action-id="header-docs-wiki-btn" data-action-key="global:docsWiki" title="${escapeHtml(t('docsWiki'))}" aria-label="${escapeHtml(t('docsWiki'))}">${docsAction.icon} ${escapeHtml(actionLabel(docsAction))}</button>`
+      : '';
+    if (docsButton) this.renderedActionIds.push('header-docs-wiki-btn');
 
     this.container.innerHTML = `
-      <header style="height: 52px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: #f8fafc;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <a href="https://github.com/alby69/wiki-forge" target="_blank" rel="noopener noreferrer" style="font-weight: 700; font-size: 16px; color: #60a5fa; letter-spacing: 0.5px; white-space: nowrap; text-decoration: none;" id="header-brand">Wiki-Forge</a>
+      <header class="wf-header">
+        <div class="wf-header__group">
+          <a href="https://github.com/alby69/wiki-forge" target="_blank" rel="noopener noreferrer" class="wf-header__brand" id="header-brand">${escapeHtml(t('appName'))}</a>
           ${modeBadge}
-          ${this.renderNoteBadge()}
-
-          <div style="margin-left: 6px; display: flex; align-items: center; gap: 6px;">
-            <label style="font-size: 12px; color: #94a3b8;">Project:</label>
-            <select id="header-project-select" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-              ${projOptions}
-            </select>
+          <div class="wf-header__group">
+            <label class="wf-label" for="header-project-select">${escapeHtml(t('project'))}:</label>
+            <select id="header-project-select" class="wf-field" aria-label="${escapeHtml(t('project'))}">${projOptions}</select>
           </div>
+          <label class="wf-label" for="header-language-select">${escapeHtml(t('language'))}:</label>
+          <select id="header-language-select" class="wf-field" aria-label="${escapeHtml(t('language'))}">
+            <option value="it" ${getLanguage() === 'it' ? 'selected' : ''}>🇮🇹 IT</option>
+            <option value="en" ${getLanguage() === 'en' ? 'selected' : ''}>🇬🇧 EN</option>
+          </select>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <!-- View Mode Toggles -->
-          <div class="seg-control" role="tablist" aria-label="Vista">
-            ${VIEW_MODES.map(
-              m => {
-                const isActive = m.id === viewMode;
-                return `<button
-                id="view-mode-${m.id}"
-                class="seg-btn ${isActive ? 'active' : ''}"
-                role="tab"
-                aria-selected="${isActive}"
-                title="${m.title}"
-              >${m.icon} ${m.label}</button>`;
-              }
-            ).join('')}
+        <div class="wf-header__group">
+          <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
+            ${VIEW_MODES.map(m => {
+              const active = m.id === state.viewMode;
+              return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
+            }).join('')}
           </div>
-
-          <div style="width: 1px; height: 20px; background: #334155; margin: 0 2px;"></div>
-
-          ${
-            isAdvancedMode
-              ? `<!-- Onboarding + Developer Tools in Dev Mode -->
-                 <button id="header-wizard-btn" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                   <span>🪄</span> Onboarding Wizard
-                 </button>
-                 <button id="header-ke-btn" style="background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🧠 KE Workbench</button>
-                  <button id="header-changesets-btn" title="Revisiona i changeset LLM in attesa di approvazione" style="background: #1e293b; color: #c7d2fe; border: 1px solid #3730a3; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">📋 Changesets</button>
-                 <button id="header-research-btn" title="Research Studio: consult, ricerca, backlink, correlate, traccia, deep research" style="background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🔎 Research</button>
-                  <button id="header-docs-wiki-btn" title="Chiedi alla wiki di wiki-forge (documentazione, architettura, procedure)" style="background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">📚 Wiki Docs</button>
-                 <button id="header-study-btn" title="Study Studio: guida, quiz, mindmap, audio, note veloci, promozione, capitolo di tesi" style="background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">📚 Studio</button>
-                 <button id="header-tools-btn" style="background: #1e293b; color: #60a5fa; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">🛠️ Tools</button>
-                 <button id="header-config-btn" style="background: #334155; color: #ffffff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;">⚙️ Config</button>`
-              : `<!-- Simple-mode action pills in Focus Mode -->
-                 <div id="simple-mode-pills-slot" style="display: flex; align-items: center; gap: 6px;"></div>`
-          }
-
-          <button id="header-help-btn" title="Guida Wiki-Forge (F1)" style="background: #1e293b; color: #94a3b8; border: 1px solid #334155; width: 26px; height: 26px; border-radius: 50%; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">?</button>
-
-          <button id="chat-toggle-header-btn" style="background: #4338ca; color: #ffffff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">💬 Agent Chat</button>
+          <div class="wf-divider"></div>
+          ${pinned}
+          ${docsButton}
+          <button id="chat-toggle-header-btn" class="wf-btn wf-btn--primary" title="${escapeHtml(t('chat'))}" aria-label="${escapeHtml(t('chat'))}"><span aria-hidden="true">💬</span> ${escapeHtml(t('chat'))}</button>
+          <button id="header-help-btn" class="wf-icon-btn" title="${escapeHtml(t('help'))} (F1)" aria-label="${escapeHtml(t('help'))}">?</button>
+          ${this.renderMenu()}
         </div>
-      </header>
-    `;
+      </header>`;
 
-    const wizardBtn = this.container.querySelector('#header-wizard-btn');
-    const keBtn = this.container.querySelector('#header-ke-btn');
-    const changesetsBtn = this.container.querySelector('#header-changesets-btn');
-    const researchBtn = this.container.querySelector('#header-research-btn');
-    const docsWikiBtn = this.container.querySelector('#header-docs-wiki-btn');
-    const studyBtn = this.container.querySelector('#header-study-btn');
-    const toolsBtn = this.container.querySelector('#header-tools-btn');
-    const configBtn = this.container.querySelector('#header-config-btn');
-    const chatBtn = this.container.querySelector('#chat-toggle-header-btn');
-    const helpBtn = this.container.querySelector('#header-help-btn');
-    const modeToggleBtn = this.container.querySelector('#mode-toggle-btn');
-    const pillsSlot = this.container.querySelector('#simple-mode-pills-slot') as HTMLElement | null;
-    const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement;
+    this.bindEvents();
+  }
 
+  private bindEvents(): void {
     VIEW_MODES.forEach(m => {
-      const btn = this.container.querySelector(`#view-mode-${m.id}`);
-      btn?.addEventListener('click', () => this.onViewModeChangeCb?.(m.id));
+      this.container.querySelector(`#view-mode-${m.id}`)?.addEventListener('click', () =>
+        this.onViewModeChangeCb ? this.onViewModeChangeCb(m.id) : runAction(`view:${m.id}`)
+      );
     });
 
-    if (wizardBtn) wizardBtn.addEventListener('click', () => this.onOpenWizardCb?.());
-    if (keBtn) keBtn.addEventListener('click', () => this.onOpenKEWorkbenchCb?.());
-    if (changesetsBtn) changesetsBtn.addEventListener('click', () => this.onOpenChangesetsCb?.());
-    if (researchBtn) researchBtn.addEventListener('click', () => this.onOpenResearchCb?.());
-    if (docsWikiBtn) docsWikiBtn.addEventListener('click', () => this.onOpenDocsWikiCb?.());
-    if (studyBtn) studyBtn.addEventListener('click', () => this.onOpenStudyCb?.());
-    if (toolsBtn) toolsBtn.addEventListener('click', () => this.onOpenToolsCb?.());
-    if (configBtn) configBtn.addEventListener('click', () => this.onOpenConfigCb?.());
-    if (chatBtn) chatBtn.addEventListener('click', () => this.onToggleChatCb?.());
-    if (helpBtn) helpBtn.addEventListener('click', () => this.onOpenHelpCb?.());
+    this.container.querySelector('#mode-toggle-btn')?.addEventListener('click', () => runAction('global:toggleMode'));
+    this.container.querySelector('#chat-toggle-header-btn')?.addEventListener('click', () => {
+      if (this.onToggleChatCb) this.onToggleChatCb();
+      else runAction('global:chat');
+    });
+    this.container.querySelector('#header-help-btn')?.addEventListener('click', () => runAction('global:help'));
 
-    if (modeToggleBtn) {
-      modeToggleBtn.addEventListener('click', () => {
-        appStore.toggleAdvancedMode();
+    const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement | null;
+    projectSelect?.addEventListener('change', () => {
+      const id = projectSelect.value;
+      this.activeProjectId = id;
+      if (this.onProjectSelectCb) this.onProjectSelectCb(id);
+      else appStore.setActiveProjectId(id);
+    });
+
+    const languageSelect = this.container.querySelector('#header-language-select') as HTMLSelectElement | null;
+    languageSelect?.addEventListener('change', () => {
+      const value = languageSelect.value;
+      if (value === 'it' || value === 'en') setLanguage(value);
+    });
+
+    const actionKeyById: Record<string, string> = {
+      'header-docs-wiki-btn': 'global:docsWiki',
+      'header-projects-btn': 'global:projects',
+      'header-research-btn': 'global:research',
+      'header-study-btn': 'global:study',
+      'header-help-btn': 'global:help',
+    };
+    for (const id of this.renderedActionIds) {
+      const element = this.container.querySelector(`#${id}`);
+      if (!element) continue;
+      const key = (element as HTMLElement).dataset?.actionKey ?? actionKeyById[id];
+      if (!key) continue;
+      element.addEventListener('click', () => {
+        if (id === 'header-docs-wiki-btn' && this.onOpenDocsWikiCb) {
+          this.onOpenDocsWikiCb();
+          return;
+        }
+        this.toggleMoreMenu(false);
+        runAction(key);
       });
     }
 
-    if (pillsSlot && this.simpleDashboard) {
-      this.simpleDashboard.mountIn(pillsSlot);
-    }
+    const moreBtn = this.container.querySelector('#header-more-btn');
+    moreBtn?.addEventListener('click', () => {
+      const menu = this.container.querySelector('#header-more-menu') as HTMLElement | null;
+      if (!menu) return;
+      const open = menu.hidden;
+      menu.hidden = !open;
+      moreBtn.setAttribute?.('aria-expanded', String(open));
+    });
 
-    if (projectSelect) {
-      projectSelect.addEventListener('change', () => {
-        this.onProjectSelectCb?.(projectSelect.value);
-      });
+    if (typeof document !== 'undefined' && !this.onOutsideClick) {
+      this.onOutsideClick = event => {
+        if (this.container.contains?.(event.target as Node)) return;
+        this.toggleMoreMenu(false);
+      };
+      document.addEventListener('mousedown', this.onOutsideClick);
     }
   }
 
+  private toggleMoreMenu(open: boolean): void {
+    const menu = this.container.querySelector('#header-more-menu') as HTMLElement | null;
+    const button = this.container.querySelector('#header-more-btn');
+    if (menu) menu.hidden = !open;
+    button?.setAttribute?.('aria-expanded', String(open));
+  }
+
   public destroy(): void {
-    if (this.unsubscribeStore) this.unsubscribeStore();
+    this.unsubscribeStore?.();
+    this.unsubscribeLanguage?.();
+    if (this.onOutsideClick && typeof document !== 'undefined') {
+      document.removeEventListener('mousedown', this.onOutsideClick);
+      this.onOutsideClick = undefined;
+    }
   }
 }

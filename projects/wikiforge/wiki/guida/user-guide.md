@@ -78,7 +78,7 @@ Search, backlinks, related and trace are deterministic and work offline. Consult
 See [`TUTORIAL.md`](tutorial.md) §2 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) §2.12 for the API.
 
 ## Study Studio
-The **📚 Studio** button in the top bar and in the editor header opens the **Study Studio**, a single modal with seven horizontal tabs matching the 📚 study commands:
+The **📚 Studio** button in the top bar (global action) opens the **Study Studio**, a single modal with seven horizontal tabs matching the 📚 study commands:
 
 | Tab | Command | Purpose |
 |---|---|---|
@@ -91,10 +91,33 @@ The **📚 Studio** button in the top bar and in the editor header opens the **S
 | **Tesi** | `/thesis-chapter` | Aggregates `tipo: capitolo_tesi` notes and mature syntheses; also refreshes `output/thesis_compiled.md`. |
 
 Ways to open it:
-- click **📚 Studio** in the top bar or in the editor header;
+- click **📚 Studio** in the top bar;
 - right-click a note and pick **Guida di studio**, **Quiz di autovalutazione**, **Mappa concettuale** or **Copione audio**;
 - press `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap) or `Ctrl+Alt+A` (Audio).
 
 All seven tabs are deterministic: they use the same builders as the chat commands (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`) and need no LLM. Generated artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and promoted articles to `wiki/`.
 
 See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) §2.13 for the API.
+
+## Top bar, languages and keyboard shortcuts (Fase 78)
+
+- The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
+  the view-mode pills, the global **Research**, **Studio**, **Docs Wiki** and
+  **Chat** buttons, plus a `⋯` overflow menu for the remaining actions.
+- Research and Studio are **global only**: the duplicated buttons were removed
+  from the note header, which now shows only Node Info, Review, History and
+  Save/Edit.
+- `Ctrl+K` opens the command palette (notes + actions), `F1` opens contextual
+  help, `Ctrl+Shift+D` toggles Focus/Developer mode, `Ctrl+Alt+W` opens the
+  docs wiki. Studio shortcuts: `Ctrl+Alt+G/K/M/A` (guide/quiz/mindmap/audio),
+  Review shortcuts: `Ctrl+Alt+R/C/D/F`.
+- Confirmation and input dialogs are styled and keyboard accessible; no native
+  browser dialogs are used.
+
+## Managing projects (Fase 78)
+
+Open **📁 Projects** in the top bar to use the **Project Manager**. From there you
+can create, clone, rename, archive/restore, export/import and delete wikis.
+**Delete moves the project to the trash by default** (recoverable); a separate
+danger action performs a permanent delete after an explicit confirmation. The
+`default` project cannot be removed. See [`help/progetti-config.md`](../riferimenti/help-progetti-config.md).

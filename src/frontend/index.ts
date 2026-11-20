@@ -1,7 +1,9 @@
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame-dark.css';
 
+import './styles/tokens.css';
 import './styles/theme.css';
+import './styles/primitives.css';
 import './styles/sidebar.css';
 import './styles/chat-drawer.css';
 import './styles/editor.css';
@@ -40,6 +42,14 @@ import { ResearchStudio } from '@frontend/components/research/ResearchStudio';
 import { StudyStudio } from '@frontend/components/study/StudyStudio';
 import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu';
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
+import { CommandPalette } from '@frontend/components/ui/CommandPalette';
+import { ProjectManagerModal } from '@frontend/components/projects/ProjectManagerModal';
+import { ProjectService } from '@frontend/services/projectService';
+import { bindActionHandler } from '@frontend/core/actions';
+import { eventBus } from '@frontend/core/events';
+import { applyStoredLanguage, t } from '@frontend/core/i18n/strings';
+import { installShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
+import { notifications } from '@frontend/services/notificationService';
 
 export class WikiForgeApp {
   private parser = new MarkdownParser();
@@ -74,10 +84,23 @@ export class WikiForgeApp {
   private studyStudio!: StudyStudio;
   private reviewContextMenu!: ReviewContextMenu;
   private helpPanel!: HelpPanel;
+  private commandPalette!: CommandPalette;
+  private projectService = new ProjectService();
+  private projectManager!: ProjectManagerModal;
 
   constructor(rootContainer: HTMLElement) {
+    applyStoredLanguage();
     this.layout = new MainLayout(rootContainer);
     this.initUI();
+    this.bindGlobalActions();
+    registerActionShortcuts();
+    setShortcutContext(() => ({ noteId: this.selectedNote?.id }));
+    installShortcuts();
+    eventBus.on('vault:changed', () => void this.loadVault(true));
+    eventBus.on('project:changed', ({ id }) => {
+      if (id !== this.storage.getActiveProjectId()) this.storage.setActiveProjectId(id);
+      void this.loadVault();
+    });
     void this.loadVault();
     this.checkFirstLaunchOnboarding();
   }
@@ -165,7 +188,7 @@ Backlink to [[01-index]].
 
   private initUI(): void {
     this.configManager = new ConfigManager(this.storage, () => {
-      void this.loadVault();
+      eventBus.emit('vault:changed', {});
     });
 
     this.toolsModal = new ToolsModal(
@@ -219,17 +242,17 @@ Backlink to [[01-index]].
         this.selectNote(noteId);
       },
       onVaultChanged: () => {
-        void this.loadVault(true);
-        this.editor.showSaveStatus('Deep research salvato nella wiki');
+        eventBus.emit('vault:changed', {});
+        this.editor.showSaveStatus(t('vaultUpdated'));
       },
     });
 
     this.studyStudio = new StudyStudio(this.storage, {
       onOpenNote: noteId => this.selectNote(noteId),
       onVaultChanged: () => {
-        void this.loadVault(true);
+        eventBus.emit('vault:changed', {});
         void this.scratchpadPanel.load();
-        this.editor.showSaveStatus('Study Studio: wiki e scratchpad aggiornati');
+        this.editor.showSaveStatus(t('vaultUpdated'));
       },
     });
 
@@ -239,93 +262,13 @@ Backlink to [[01-index]].
       onOpenStudy: (noteId, tab) => this.openStudyStudio({ noteId, tab }),
     });
 
-    document.addEventListener('keydown', event => {
-      if (!event.ctrlKey || !event.altKey) return;
-      const tabByKey: Record<string, ReviewTab> = {
-        r: 'verify',
-        c: 'critique',
-        d: 'digest',
-        f: 'diff',
-      };
-      const tab = tabByKey[event.key.toLowerCase()];
-      if (!tab) return;
-      event.preventDefault();
-      this.openReviewStudio(undefined, tab);
-    });
-
-    document.addEventListener('keydown', event => {
-      if (!event.ctrlKey || !event.altKey) return;
-      const tabByKey: Record<string, ResearchTab> = {
-        q: 'consult',
-        s: 'search',
-        b: 'backlinks',
-        l: 'related',
-        t: 'trace',
-        h: 'deep',
-      };
-      const key = event.key.toLowerCase();
-      if (key === 'd') {
-        event.preventDefault();
-        this.openDocsWiki();
-        return;
-      }
-      const tab = tabByKey[key];
-      if (!tab) return;
-      event.preventDefault();
-      this.openResearchStudio({ tab });
-    });
-
-    document.addEventListener('keydown', event => {
-      if (!event.ctrlKey || !event.altKey) return;
-      const tabByKey: Record<string, StudyTab> = {
-        g: 'guide',
-        k: 'quiz',
-        m: 'mindmap',
-        a: 'audio',
-      };
-      const tab = tabByKey[event.key.toLowerCase()];
-      if (!tab) return;
-      event.preventDefault();
-      this.openStudyStudio({ tab });
-    });
-
+    // Keyboard shortcuts are registered once in core/shortcuts.ts; see
+    // bindGlobalActions() below for the action handlers they dispatch to.
     this.header = new Header({
       container: this.layout.headerContainer,
       onViewModeChange: mode => this.handleViewModeToggle(mode),
-      onToggleChat: () => {
-        this.chatDrawer.toggle();
-      },
-      onOpenConfig: () => {
-        void this.configManager.open();
-      },
-      onProjectSelect: projectId => {
-        this.storage.setActiveProjectId(projectId);
-        void this.loadVault();
-      },
-      onOpenTools: () => {
-        void this.toolsModal.open();
-      },
-      onOpenWizard: () => {
-        this.onboardingWizard.open();
-      },
-      onOpenKEWorkbench: () => {
-        void this.keWorkbenchModal.open();
-      },
-      onOpenChangesets: () => {
-        void this.changesetReviewModal.open();
-      },
-      onOpenResearch: () => {
-        this.openResearchStudio();
-      },
-      onOpenDocsWiki: () => {
-        this.openDocsWiki();
-      },
-      onOpenStudy: () => {
-        this.openStudyStudio();
-      },
-      onOpenHelp: () => {
-        void this.helpPanel.open();
-      },
+      onToggleChat: () => this.chatDrawer.toggle(),
+      onProjectSelect: projectId => this.storage.setActiveProjectId(projectId),
     });
 
     this.sidebar = new Sidebar(
@@ -354,32 +297,32 @@ Backlink to [[01-index]].
         onRenameDocument: async (oldPath, newTitle) => {
           const preview = await this.storage.previewRename(oldPath, newTitle);
           if (!preview) {
-            alert('Rinomina non disponibile: il backend API non risponde.');
+            notifications.translated('renameUnavailable', 'error');
             return;
           }
           if (!preview.success) {
-            alert(`Impossibile rinominare:\n${preview.error ?? 'errore sconosciuto'}`);
+            notifications.translated('renameFailed', 'error', { error: preview.error ?? 'unknown' });
             return;
           }
 
-          const fileCount = preview.updatedFiles.length;
           const samples = preview.updatedFiles
             .flatMap(update => update.samples)
             .slice(0, 8)
             .join('\n');
-          const proceed = confirm(
-            `Rinomina documento\n\n` +
-              `Titolo: ${preview.renamed.oldTitle} → ${preview.renamed.newTitle}\n` +
-              `File: ${preview.renamed.from} → ${preview.renamed.to}\n\n` +
-              `${preview.totalReplacements} collegamento(i) in ${fileCount} file verranno aggiornati.` +
-              (samples ? `\n\n${samples}` : '') +
-              `\n\nProcedere?`
-          );
+          const message = t('renameDocumentMessage', {
+            oldTitle: preview.renamed.oldTitle,
+            newTitle: preview.renamed.newTitle,
+            from: preview.renamed.from,
+            to: preview.renamed.to,
+            count: preview.totalReplacements,
+            files: preview.updatedFiles.length,
+          }) + (samples ? `\n\n${samples}` : '');
+          const proceed = await notifications.confirm({ title: t('renameDocument'), message });
           if (!proceed) return;
 
           const result = await this.storage.renameDocument(oldPath, newTitle);
           if (!result || !result.success) {
-            alert(`Rinomina fallita:\n${result?.error ?? 'errore sconosciuto'}`);
+            notifications.translated('renameFailed', 'error', { error: result?.error ?? 'unknown' });
             return;
           }
 
@@ -417,16 +360,16 @@ Backlink to [[01-index]].
 
     this.editor = new MarkdownEditor(
       this.layout.editorContainer,
-      (noteId, content, fullContent) => {
-        void this.updateAndSaveNote(noteId, content, fullContent);
+      {
+        onSave: (noteId, content, fullContent) => {
+          void this.updateAndSaveNote(noteId, content, fullContent);
+        },
+        onOpenLink: target => this.openWikilink(target),
+        getNotes: () => this.notes,
+        onToggleContext: () => this.toggleContext(),
+        onOpenHistory: () => this.openVersionTimeline(),
+        onOpenReview: () => this.openReviewStudio(),
       },
-      target => this.openWikilink(target),
-      () => this.notes,
-      () => this.toggleContext(),
-      () => this.openVersionTimeline(),
-      () => this.openReviewStudio(),
-      () => this.openResearchStudio(),
-      () => this.openStudyStudio(),
       { storage: this.storage }
     );
 
@@ -474,6 +417,21 @@ Backlink to [[01-index]].
       onAskAgent: question => this.chatDrawer.prefill(question),
     });
 
+    this.commandPalette = new CommandPalette(
+      () => this.notes,
+      noteId => this.selectNote(noteId),
+      () => void this.keWorkbenchModal.open(),
+      () => ({ noteId: this.selectedNote?.id })
+    );
+
+    this.projectManager = new ProjectManagerModal({
+      service: this.projectService,
+      onChanged: () => {
+        void this.loadVault();
+      },
+      onOpenProject: id => this.storage.setActiveProjectId(id),
+    });
+
     this.scratchpadPanel = new ScratchpadPanel(this.layout.scratchContainer, {
       getScratchpad: () => this.storage.getScratchpad(),
       onPromoteScratchpad: noteId => {
@@ -488,13 +446,44 @@ Backlink to [[01-index]].
       onOpenChat: () => this.chatDrawer.open(),
       onVaultUpdated: () => void this.loadVault(),
     });
-    this.header.setSimpleDashboard(this.simpleDashboard);
-
     appStore.subscribe(state => {
       this.layout.setViewMode(state.viewMode);
     });
 
     this.layout.setViewMode(appStore.getState().viewMode);
+  }
+
+  /** Single wiring point between the action catalogue and app behaviour. */
+  private bindGlobalActions(): void {
+    bindActionHandler('global:projects', () => void this.projectManager.open());
+    bindActionHandler('global:research', () => this.openResearchStudio());
+    bindActionHandler('global:docsWiki', () => this.openDocsWiki());
+    bindActionHandler('global:study', () => this.openStudyStudio());
+    bindActionHandler('global:review', () => this.openReviewStudio());
+    bindActionHandler('global:tools', () => void this.toolsModal.open());
+    bindActionHandler('global:config', () => void this.configManager.open());
+    bindActionHandler('global:wizard', () => this.onboardingWizard.open());
+    bindActionHandler('global:keWorkbench', () => void this.keWorkbenchModal.open());
+    bindActionHandler('global:changesets', () => void this.changesetReviewModal.open());
+    bindActionHandler('global:help', () => void this.helpPanel.open());
+    bindActionHandler('global:chat', () => this.chatDrawer.toggle());
+    bindActionHandler('global:toggleMode', () => appStore.toggleAdvancedMode());
+
+    bindActionHandler('note:info', () => this.toggleContext());
+    bindActionHandler('note:review', context => this.openReviewStudio(context.noteId));
+    bindActionHandler('note:history', () => this.openVersionTimeline());
+
+    for (const tab of ['verify', 'critique', 'digest', 'diff'] as ReviewTab[]) {
+      bindActionHandler(`review:${tab}`, context => this.openReviewStudio(context.noteId, tab));
+    }
+    bindActionHandler('research:backlinks', context => this.openResearchStudio({ noteId: context.noteId, tab: 'backlinks' }));
+    bindActionHandler('research:related', context => this.openResearchStudio({ noteId: context.noteId, tab: 'related' }));
+    for (const tab of ['guide', 'quiz', 'mindmap', 'audio'] as StudyTab[]) {
+      bindActionHandler(`study:${tab}`, context => this.openStudyStudio({ noteId: context.noteId, tab }));
+    }
+    for (const mode of ['editor', 'graph', 'split', 'scratchpad'] as ViewMode[]) {
+      bindActionHandler(`view:${mode}`, () => this.handleViewModeToggle(mode));
+    }
   }
 
   private refreshAll(): void {
@@ -600,7 +589,7 @@ Backlink to [[01-index]].
 
   /**
    * Opens the Research Studio scoped to the self-documentation wiki without
-   * changing the active project/vault. Ctrl+Alt+D is the keyboard shortcut.
+   * changing the active project/vault. Ctrl+Alt+W is the keyboard shortcut.
    */
   public openDocsWiki(): void {
     this.openResearchStudio({
@@ -647,7 +636,7 @@ Backlink to [[01-index]].
     this.notes = this.parser.computeBacklinks(this.notes);
     this.selectedNote = this.notes.find(n => n.id === saved.id) ?? saved;
     this.refreshAll();
-    this.editor.showSaveStatus('Saved to disk! 💾');
+    this.editor.showSaveStatus(`💾 ${t('saved')}`);
   }
 }
 

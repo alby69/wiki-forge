@@ -15,7 +15,7 @@
 * [Mockup — Review Studio](mockups.md) — Prototipo statico e interattivo della console di revisione descritta nella proposta.
 * [Modificare le note](help-modifica-note.md) — Argomenti: modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot…
 * [Problemi frequenti](help-problematic.md) — Argomenti: problema, errore, error, non funziona, aiuto, bug, offline, lento, crash, debug, log
-* [Progetti e configurazione](help-progetti-config.md) — Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle
+* [Progetti e configurazione](help-progetti-config.md) — Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle, clone, archivia, cestino, esporta, importa
 * [Research Studio](help-research-studio.md) — Argomenti: research, ricerca, consult, search, backlink, backlinks, related, correlate, trace, traccia, deep research, deep-research, fonti, citazioni…
 * [Review Studio](help-review-studio.md) — Argomenti: review, revisione, verifica, critica, digest, confronta, diff, snapshot, versioni, qualità, qa, approvazione
 * [Sources](sources.md) — Registry of all documentary sources ingested into the project (folder raw/,

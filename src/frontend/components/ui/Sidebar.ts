@@ -1,6 +1,9 @@
 import { WikiNote } from '@frontend/core/types/wiki';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { computeNoteTrustTier, isNoteStale, renderTrustTierDot } from './TrustBadge';
+import { notifications } from '@frontend/services/notificationService';
+import { t } from '@frontend/core/i18n/strings';
+import { bindResizer } from '@frontend/core/ui/resizer';
 
 interface TreeNode {
   name: string;
@@ -413,7 +416,7 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-new-folder')?.addEventListener('click', async () => {
       const parent = this.selectedItemPath && !this.selectedItemPath.endsWith('.md') ? this.selectedItemPath : 'wiki';
-      const name = prompt(`Enter new folder name inside '${parent}':`);
+      const name = await notifications.prompt({ title: t('newFolder'), label: t('folderNamePrompt', { parent }) });
       if (name && this.actionCb?.onCreateFolder) {
         await this.actionCb.onCreateFolder(parent, name.trim());
       }
@@ -421,7 +424,7 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-new-file')?.addEventListener('click', async () => {
       const parent = this.selectedItemPath && !this.selectedItemPath.endsWith('.md') ? this.selectedItemPath : 'wiki';
-      const name = prompt(`Enter new file name (e.g. 'new-note.md') inside '${parent}':`);
+      const name = await notifications.prompt({ title: t('newFile'), label: t('fileNamePrompt', { parent }) });
       if (name && this.actionCb?.onCreateFile) {
         await this.actionCb.onCreateFile(parent, name.trim());
       }
@@ -440,7 +443,7 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-rename-item')?.addEventListener('click', async () => {
       if (!this.selectedItemPath) {
-        alert('Please select a file or folder in the tree first.');
+        notifications.translated('selectItemFirst', 'warning');
         return;
       }
 
@@ -456,10 +459,11 @@ this.container.innerHTML = `
           .replace(/\.md$/i, '')
           .replace(/[-_]/g, ' ');
         const currentTitle = note?.title || fallbackTitle;
-        const newTitle = prompt(
-          `Nuovo titolo del documento:\n(file: ${this.selectedItemPath})\n\nI collegamenti [[...]] verranno aggiornati automaticamente.`,
-          currentTitle
-        );
+        const newTitle = await notifications.prompt({
+          title: t('renameDocument'),
+          label: t('renamePrompt', { name: currentTitle }),
+          defaultValue: currentTitle,
+        });
         if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
           await this.actionCb.onRenameDocument(this.selectedItemPath, newTitle.trim());
         }
@@ -467,7 +471,11 @@ this.container.innerHTML = `
       }
 
       const currentName = this.selectedItemPath.split('/').pop() || '';
-      const newName = prompt(`Rename '${currentName}' to:`, currentName);
+      const newName = await notifications.prompt({
+        title: t('rename'),
+        label: t('renamePrompt', { name: currentName }),
+        defaultValue: currentName,
+      });
       if (newName && newName !== currentName && this.actionCb?.onRename) {
         await this.actionCb.onRename(this.selectedItemPath, newName.trim());
       }
@@ -475,10 +483,15 @@ this.container.innerHTML = `
 
     this.container.querySelector('#btn-delete-item')?.addEventListener('click', async () => {
       if (!this.selectedItemPath) {
-        alert('Please select a file or folder in the tree first.');
+        notifications.translated('selectItemFirst', 'warning');
         return;
       }
-      if (confirm(`Are you sure you want to delete '${this.selectedItemPath}'?`)) {
+      const confirmed = await notifications.confirm({
+        title: t('delete'),
+        message: t('confirmDeleteItem', { name: this.selectedItemPath }),
+        danger: true,
+      });
+      if (confirmed) {
         if (this.actionCb?.onDelete) {
           await this.actionCb.onDelete(this.selectedItemPath);
           this.selectedItemPath = null;
@@ -592,26 +605,25 @@ this.container.innerHTML = `
       void this.refresh();
     });
 
-    this.container.querySelectorAll('.tagcloud-resize-handle').forEach(handle => {
-      handle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const startY = (e as MouseEvent).clientY;
-        const startH = this.tagCloudHeight;
-        const section = handle.parentElement as HTMLElement | null;
-        const maxH = Math.max(80, this.container.clientHeight * 0.6);
-
-        const onMove = (ev: MouseEvent): void => {
-          const newH = Math.min(Math.max(startH + (startY - ev.clientY), 80), maxH);
-          this.tagCloudHeight = newH;
-          if (section) section.style.height = `${newH}px`;
-        };
-        const onUp = (): void => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-          localStorage.setItem('wiki-forge:tagcloud-height', String(this.tagCloudHeight));
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+    this.container.querySelectorAll<HTMLElement>('.tagcloud-resize-handle').forEach(handle => {
+      let startHeight = this.tagCloudHeight;
+      bindResizer(handle, {
+        axis: 'y',
+        onStart: () => { startHeight = this.tagCloudHeight; },
+        onResize: (event, session) => {
+          const maxH = Math.max(80, this.container.clientHeight * 0.6);
+          const height = Math.min(Math.max(startHeight + (session.startY - event.clientY), 80), maxH);
+          this.tagCloudHeight = height;
+          const section = handle.parentElement as HTMLElement | null;
+          if (section) section.style.height = `${height}px`;
+        },
+        onEnd: () => {
+          try {
+            localStorage.setItem('wiki-forge:tagcloud-height', String(this.tagCloudHeight));
+          } catch {
+            /* storage unavailable */
+          }
+        },
       });
     });
   }

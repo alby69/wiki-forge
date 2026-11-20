@@ -1,4 +1,4 @@
-import { ApiStorage, ProjectInfo } from '@frontend/storage/ApiStorage';
+import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 
 /**
@@ -13,7 +13,6 @@ export class ConfigManager {
   private onProjectChanged: () => void;
   private activeTab: 'general' | 'paths' | 'llm' | 'okf' | 'schema' = 'general';
   private currentConfig: Record<string, any> = {};
-  private projects: ProjectInfo[] = [];
 
   constructor(storage: ApiStorage, onProjectChanged: () => void) {
     this.storage = storage;
@@ -32,7 +31,6 @@ export class ConfigManager {
   public async open(): Promise<void> {
     this.container.style.display = 'flex';
     setHelpContext('config');
-    this.projects = await this.storage.getProjects();
     const config = await this.storage.getProjectConfig();
     this.currentConfig = config || this.getDefaultConfig();
     this.render();
@@ -80,12 +78,6 @@ export class ConfigManager {
   }
 
   private render(): void {
-    const activeId = this.storage.getActiveProjectId();
-
-    const projOptions = this.projects
-      .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.name} (${p.id})</option>`)
-      .join('');
-
     const projectSection = this.currentConfig.project || {};
     const pathsSection = this.currentConfig.paths || {};
     const agentLlmSection = (this.currentConfig.agent && this.currentConfig.agent.llm) || {};
@@ -106,18 +98,6 @@ export class ConfigManager {
             <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #64b5f6;">Configuration Manager</h3>
           </div>
           <button id="config-close-btn" style="background: transparent; border: none; color: #a0aec0; font-size: 18px; cursor: pointer;">✕</button>
-        </div>
-
-        <!-- Project Selector Bar -->
-        <div style="padding: 12px 20px; background: #1e2025; border-bottom: 1px solid #2d3748; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-            <label style="font-size: 12px; color: #a0aec0; font-weight: 600;">Project:</label>
-            <select id="config-project-select" style="background: #2d3748; color: #ffffff; border: 1px solid #4a5568; padding: 4px 8px; border-radius: 4px; font-size: 13px; flex: 1;">
-              ${projOptions}
-            </select>
-          </div>
-          <button id="config-new-project-btn" style="background: #2b6cb0; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">+ New Project</button>
-          ${activeId !== 'default' ? `<button id="config-delete-project-btn" style="background: #c53030; color: #ffffff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Delete Project</button>` : ''}
         </div>
 
         <!-- Tabs Header -->
@@ -294,9 +274,6 @@ export class ConfigManager {
     const closeBtn = this.container.querySelector('#config-close-btn');
     const cancelBtn = this.container.querySelector('#config-cancel-btn');
     const saveBtn = this.container.querySelector('#config-save-btn');
-    const projSelect = this.container.querySelector('#config-project-select') as HTMLSelectElement;
-    const newProjBtn = this.container.querySelector('#config-new-project-btn');
-    const deleteProjBtn = this.container.querySelector('#config-delete-project-btn');
 
     if (closeBtn) closeBtn.addEventListener('click', () => this.close());
     if (cancelBtn) cancelBtn.addEventListener('click', () => this.close());
@@ -311,52 +288,6 @@ export class ConfigManager {
         }
       });
     });
-
-    if (projSelect) {
-      projSelect.addEventListener('change', async () => {
-        const newId = projSelect.value;
-        this.storage.setActiveProjectId(newId);
-        const config = await this.storage.getProjectConfig(newId);
-        this.currentConfig = config || this.getDefaultConfig();
-        this.onProjectChanged();
-        this.render();
-      });
-    }
-
-    if (newProjBtn) {
-      newProjBtn.addEventListener('click', async () => {
-        const id = prompt('Enter new project ID (e.g. thesis, business-kb):');
-        if (!id) return;
-        const name = prompt('Enter project title:', `${id} Wiki`) || id;
-        const created = await this.storage.createProject(id, name);
-        if (created) {
-          this.storage.setActiveProjectId(created.id);
-          this.projects = await this.storage.getProjects();
-          const config = await this.storage.getProjectConfig(created.id);
-          this.currentConfig = config || this.getDefaultConfig();
-          this.onProjectChanged();
-          this.render();
-        } else {
-          alert('Failed to create project.');
-        }
-      });
-    }
-
-    if (deleteProjBtn) {
-      deleteProjBtn.addEventListener('click', async () => {
-        const activeId = this.storage.getActiveProjectId();
-        if (confirm(`Are you sure you want to delete project '${activeId}' from projects registry?`)) {
-          const deleteFolder = confirm(`Do you also want to permanently delete the folder 'projects/${activeId}' on disk?`);
-          await this.storage.deleteProject(activeId, deleteFolder);
-          this.storage.setActiveProjectId('default');
-          this.projects = await this.storage.getProjects();
-          const config = await this.storage.getProjectConfig('default');
-          this.currentConfig = config || this.getDefaultConfig();
-          this.onProjectChanged();
-          this.render();
-        }
-      });
-    }
 
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {

@@ -9,6 +9,8 @@ import type {
 import { resolveEngine } from './EditorAdapter';
 import { CodeMirrorAdapter } from './CodeMirrorAdapter';
 import type { ApiStorage } from '@frontend/storage/ApiStorage';
+import { actionLabel, actionTitle, getAction, runAction, type ActionDefinition } from '@frontend/core/actions';
+import { t } from '@frontend/core/i18n/strings';
 
 export {
   applyAlignment,
@@ -25,6 +27,18 @@ export interface MarkdownEditorOptions {
   storage?: ApiStorage;
 }
 
+/** Typed callback object: the old positional signature remains for compat. */
+export interface MarkdownEditorCallbacks {
+  onSave?: (noteId: string, content: string, fullContent?: string) => void;
+  onOpenLink?: (target: string) => void;
+  getNotes?: () => WikiNote[];
+  onToggleContext?: () => void;
+  onOpenHistory?: () => void;
+  onOpenReview?: () => void;
+}
+
+type LegacySaveCallback = (noteId: string, content: string, fullContent?: string) => void;
+
 export class MarkdownEditor {
   private container: HTMLElement;
   private currentNote: WikiNote | null = null;
@@ -36,8 +50,6 @@ export class MarkdownEditor {
   private onToggleContextCb?: () => void;
   private onOpenHistoryCb?: () => void;
   private onOpenReviewCb?: () => void;
-  private onOpenResearchCb?: () => void;
-  private onOpenStudyCb?: () => void;
   private contextVisible = true;
 
   private adapter: NoteEditorAdapter | null = null;
@@ -46,9 +58,10 @@ export class MarkdownEditor {
   private readonly storage?: ApiStorage;
   private onKeyDown: (event: KeyboardEvent) => void = () => {};
 
+  constructor(container: HTMLElement, callbacks?: MarkdownEditorCallbacks, options?: MarkdownEditorOptions);
   constructor(
     container: HTMLElement,
-    onSave?: (noteId: string, content: string, fullContent?: string) => void,
+    onSave?: LegacySaveCallback,
     onOpenLink?: (target: string) => void,
     getNotes?: () => WikiNote[],
     onToggleContext?: () => void,
@@ -56,19 +69,42 @@ export class MarkdownEditor {
     onOpenReview?: () => void,
     onOpenResearch?: () => void,
     onOpenStudy?: () => void,
+    options?: MarkdownEditorOptions
+  );
+  constructor(
+    container: HTMLElement,
+    callbacksOrSave?: MarkdownEditorCallbacks | LegacySaveCallback,
+    legacyOpenLinkOrOptions?: ((target: string) => void) | MarkdownEditorOptions,
+    legacyGetNotes?: () => WikiNote[],
+    legacyToggleContext?: () => void,
+    legacyHistory?: () => void,
+    legacyReview?: () => void,
+    _legacyResearch?: () => void,
+    _legacyStudy?: () => void,
     options: MarkdownEditorOptions = {}
   ) {
     this.container = container;
-    this.onSaveCb = onSave;
-    this.onOpenLinkCb = onOpenLink;
-    this.getNotesCb = getNotes;
-    this.onToggleContextCb = onToggleContext;
-    this.onOpenHistoryCb = onOpenHistory;
-    this.onOpenReviewCb = onOpenReview;
-    this.onOpenResearchCb = onOpenResearch;
-    this.onOpenStudyCb = onOpenStudy;
-    this.enginePreference = options.engine ?? 'auto';
-    this.storage = options.storage;
+    const resolvedOptions: MarkdownEditorOptions =
+      typeof legacyOpenLinkOrOptions === 'object' && legacyOpenLinkOrOptions !== null
+        ? legacyOpenLinkOrOptions
+        : options;
+    if (typeof callbacksOrSave === 'function') {
+      this.onSaveCb = callbacksOrSave;
+      this.onOpenLinkCb = legacyOpenLinkOrOptions as ((target: string) => void) | undefined;
+      this.getNotesCb = legacyGetNotes;
+      this.onToggleContextCb = legacyToggleContext;
+      this.onOpenHistoryCb = legacyHistory;
+      this.onOpenReviewCb = legacyReview;
+    } else if (callbacksOrSave) {
+      this.onSaveCb = callbacksOrSave.onSave;
+      this.onOpenLinkCb = callbacksOrSave.onOpenLink;
+      this.getNotesCb = callbacksOrSave.getNotes;
+      this.onToggleContextCb = callbacksOrSave.onToggleContext;
+      this.onOpenHistoryCb = callbacksOrSave.onOpenHistory;
+      this.onOpenReviewCb = callbacksOrSave.onOpenReview;
+    }
+    this.enginePreference = resolvedOptions.engine ?? 'auto';
+    this.storage = resolvedOptions.storage;
     this.render();
   }
 
@@ -87,7 +123,7 @@ export class MarkdownEditor {
   public setContextVisible(visible: boolean): void {
     this.contextVisible = visible;
     const btn = this.container.querySelector('#editor-context-toggle');
-    if (btn) btn.classList.toggle('active', visible);
+    if (btn) btn.classList.toggle('wf-btn--active', visible);
   }
 
   public showSaveStatus(msg: string): void {
@@ -149,6 +185,25 @@ export class MarkdownEditor {
     return new CodeMirrorAdapter(getNotes);
   }
 
+  private renderNoteAction(id: string, elementId: string, variant: string): string {
+    const action = getAction(id);
+    if (!action) return '';
+    const title = escapeHtml(actionTitle(action));
+    return `<button id="${elementId}" class="wf-btn wf-btn--sm ${variant}" data-action-key="${id}" title="${title}" aria-label="${title}"><span aria-hidden="true">${action.icon}</span> ${escapeHtml(actionLabel(action))}</button>`;
+  }
+
+  /** Render one note-scoped action from the shared catalogue. */
+  private noteActions(): Array<{ id: string; elementId: string; variant: string; action: ActionDefinition }> {
+    const spec: Array<{ id: string; elementId: string; variant: string }> = [
+      { id: 'note:info', elementId: 'editor-context-toggle', variant: 'wf-btn--info' },
+      { id: 'note:review', elementId: 'editor-review-btn', variant: 'wf-btn--success' },
+      { id: 'note:history', elementId: 'editor-history-btn', variant: '' },
+    ];
+    return spec
+      .map(item => ({ ...item, action: getAction(item.id) }))
+      .filter((item): item is { id: string; elementId: string; variant: string; action: ActionDefinition } => Boolean(item.action));
+  }
+
   public render(): void {
     const generation = ++this.renderGeneration;
     const previous = this.adapter;
@@ -158,8 +213,8 @@ export class MarkdownEditor {
 
     if (!this.currentNote) {
       this.container.innerHTML = `
-        <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: #718096; background: #18191c; font-size: 14px;">
-          Select a note from the vault or click a graph node to view it.
+        <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--wf-text-muted); background: var(--wf-bg-deep); font-size: 14px;">
+          ${escapeHtml(t('noNoteSelected'))}
         </div>
       `;
       return;
@@ -175,17 +230,15 @@ export class MarkdownEditor {
           <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; max-width: 100%;">
             <span id="editor-save-status" style="font-size: 12px; color: #48bb78; font-weight: 500;">${escapeHtml(this.saveStatusMessage)}</span>
             <span style="font-size: 12px; color: #a0aec0; background: #2d3748; padding: 2px 8px; border-radius: 4px;">${escapeHtml(note.folder || 'wiki')}</span>
-            <button id="editor-context-toggle" class="editor-info-toggle ${this.contextVisible ? 'active' : ''}" title="Mostra/nascondi Node Metadata, Backlinks e Outbound Links">📊 Node Info</button>
-            <button id="editor-review-btn" title="Apri la Review Studio (verifica, critica, digest, diff)" style="background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">🧐 Revisione</button>
-            <button id="editor-research-btn" title="Apri la Research Studio (consult, ricerca, backlink, correlate, traccia, deep research)" style="background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">🔎 Ricerca</button>
-            <button id="editor-study-btn" title="Apri la Study Studio (guida, quiz, mindmap, audio, note veloci, tesi)" style="background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">📚 Studio</button>
-            <button id="editor-history-btn" title="Cronologia delle versioni della nota" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">🕐 Cronologia</button>
+            ${this.noteActions().map(item =>
+              this.renderNoteAction(item.id, item.elementId, item.id === 'note:info' && this.contextVisible ? `${item.variant} wf-btn--active` : item.variant)
+            ).join('')}
             ${
               isPreview
-                ? `<button id="editor-save-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save</button>
-                   <button id="editor-toggle-btn" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✏️ Edit</button>`
-                : `<button id="editor-save-close-btn" style="background: #3182ce; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">💾 Save & Close</button>
-                   <button id="editor-cancel-btn" style="background: #4a5568; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">✖ Cancel</button>`
+                ? `<button id="editor-save-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('save'))}</button>
+                   <button id="editor-toggle-btn" class="wf-btn">✏️ ${escapeHtml(t('edit'))}</button>`
+                : `<button id="editor-save-close-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('saveAndClose'))}</button>
+                   <button id="editor-cancel-btn" class="wf-btn">✖ ${escapeHtml(t('cancel'))}</button>`
             }
           </div>
         </div>
@@ -258,22 +311,14 @@ export class MarkdownEditor {
 
     const historyBtn = this.container.querySelector('#editor-history-btn');
     historyBtn?.addEventListener('click', () => {
-      this.onOpenHistoryCb?.();
+      if (this.onOpenHistoryCb) this.onOpenHistoryCb();
+      else runAction('note:history', { noteId: this.currentNote?.id });
     });
 
     const reviewBtn = this.container.querySelector('#editor-review-btn');
     reviewBtn?.addEventListener('click', () => {
-      this.onOpenReviewCb?.();
-    });
-
-    const researchBtn = this.container.querySelector('#editor-research-btn');
-    researchBtn?.addEventListener('click', () => {
-      this.onOpenResearchCb?.();
-    });
-
-    const studyBtn = this.container.querySelector('#editor-study-btn');
-    studyBtn?.addEventListener('click', () => {
-      this.onOpenStudyCb?.();
+      if (this.onOpenReviewCb) this.onOpenReviewCb();
+      else runAction('note:review', { noteId: this.currentNote?.id });
     });
 
     const toggleBtn = this.container.querySelector('#editor-toggle-btn');

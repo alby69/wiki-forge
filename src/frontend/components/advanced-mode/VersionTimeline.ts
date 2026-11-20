@@ -1,6 +1,8 @@
 import { WikiNote } from '@frontend/core/types/wiki';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
+import { notifications } from '@frontend/services/notificationService';
+import { t } from '@frontend/core/i18n/strings';
 
 export interface NoteVersion {
   version: number;
@@ -152,7 +154,12 @@ export class VersionTimeline {
     if (rollbackBtn && this.selectedVersion && this.activeNote) {
       rollbackBtn.addEventListener('click', async () => {
         if (!this.selectedVersion || !this.activeNote) return;
-        if (confirm(`Are you sure you want to rollback '${this.activeNote.title}' to version v${this.selectedVersion.version}?`)) {
+        const confirmed = await notifications.confirm({
+          title: t('restore'),
+          message: t('rollbackVersion', { name: this.activeNote.title, version: this.selectedVersion.version }),
+          danger: true,
+        });
+        if (confirmed) {
           const restoredNote = await this.storage.saveNote({
             id: this.activeNote.id,
             content: this.selectedVersion.content,

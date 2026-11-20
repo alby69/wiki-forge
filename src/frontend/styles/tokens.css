@@ -1,0 +1,70 @@
+/* Design tokens — single source of truth for colours, spacing and radii.
+ *
+ * Feature CSS and TypeScript templates must reference these variables instead
+ * of repeating hex literals. The palette values mirror theme.css so the
+ * migration is visually neutral.
+ */
+:root {
+  /* Surfaces */
+  --wf-bg: #0f172a;
+  --wf-bg-deep: #020617;
+  --wf-surface: #1e293b;
+  --wf-surface-raised: #334155;
+  --wf-surface-sunken: #121316;
+  --wf-border: #334155;
+  --wf-border-strong: #475569;
+
+  /* Text */
+  --wf-text: #f8fafc;
+  --wf-text-muted: #94a3b8;
+  --wf-text-subtle: #64748b;
+  --wf-text-link: #60a5fa;
+
+  /* Semantic accents */
+  --wf-accent: #6366f1;
+  --wf-accent-soft: rgba(99, 102, 241, 0.15);
+  --wf-accent-border: rgba(99, 102, 241, 0.35);
+  --wf-info: #7dd3fc;
+  --wf-info-soft: rgba(56, 189, 248, 0.14);
+  --wf-info-border: rgba(56, 189, 248, 0.45);
+  --wf-success: #6ee7b7;
+  --wf-success-soft: rgba(16, 185, 129, 0.14);
+  --wf-success-border: rgba(16, 185, 129, 0.45);
+  --wf-warning: #fcd34d;
+  --wf-warning-soft: rgba(245, 158, 11, 0.14);
+  --wf-warning-border: rgba(245, 158, 11, 0.45);
+  --wf-danger: #fca5a5;
+  --wf-danger-soft: rgba(239, 68, 68, 0.14);
+  --wf-danger-border: rgba(239, 68, 68, 0.45);
+
+  /* Spacing scale */
+  --wf-space-1: 4px;
+  --wf-space-2: 8px;
+  --wf-space-3: 12px;
+  --wf-space-4: 16px;
+  --wf-space-6: 24px;
+
+  /* Radii */
+  --wf-radius-sm: 4px;
+  --wf-radius-md: 6px;
+  --wf-radius-lg: 8px;
+  --wf-radius-pill: 9999px;
+
+  /* Motion & shadows */
+  --wf-transition: 0.15s ease;
+  --wf-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+  --wf-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --wf-font-mono: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* Shared aliases so existing theme.css consumers keep working. */
+:root {
+  --bg-primary: var(--wf-bg);
+  --bg-secondary: var(--wf-surface);
+  --bg-tertiary: var(--wf-surface-raised);
+  --border-color: var(--wf-border);
+  --text-primary: var(--wf-text);
+  --text-secondary: var(--wf-text-muted);
+  --text-muted: var(--wf-text-subtle);
+  --accent-blue: var(--wf-text-link);
+}
