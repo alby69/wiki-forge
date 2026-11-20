@@ -1,6 +1,13 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { isSingleView, nextViewMode, paneFlexes } from '@frontend/core/utils/viewMode';
+import {
+  isSingleView,
+  isThreePaneSplit,
+  nextViewMode,
+  paneFlexes,
+  SPLIT_PANE_IDS,
+} from '@frontend/core/utils/viewMode';
+import { appStore } from '@frontend/store/appStore';
 
 describe('Central area view mode toggle', () => {
   it('opens Split only when the Split toggle is clicked', () => {
@@ -43,5 +50,45 @@ describe('Central area view mode toggle', () => {
     // divider available to widen it.
     assert.deepStrictEqual(paneFlexes(true, false, 0.35, 0.65), { editor: '1', graph: '1' });
     assert.deepStrictEqual(paneFlexes(false, true, 0.35, 0.65), { editor: '1', graph: '1' });
+  });
+
+  it('defines Split as three panes: File, Editor, Grafo', () => {
+    assert.deepStrictEqual([...SPLIT_PANE_IDS], ['files', 'editor', 'graph']);
+    assert.equal(isThreePaneSplit('split', true), true);
+    assert.equal(isThreePaneSplit('split', false), false);
+    assert.equal(isThreePaneSplit('editor', true), false);
+  });
+});
+
+describe('Split reveals the file pane', () => {
+  beforeEach(() => {
+    const values = new Map<string, string>();
+    (globalThis as any).localStorage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    };
+    appStore.setFilesVisible(true);
+    appStore.setViewMode('editor');
+  });
+
+  afterEach(() => {
+    appStore.setFilesVisible(true);
+    appStore.setViewMode('editor');
+  });
+
+  it('entering Split makes the File pane visible in one state update', () => {
+    appStore.setFilesVisible(false);
+    assert.equal(appStore.getState().filesVisible, false);
+    appStore.setViewMode('split');
+    assert.equal(appStore.getState().viewMode, 'split');
+    assert.equal(appStore.getState().filesVisible, true);
+    assert.equal(isThreePaneSplit(appStore.getState().viewMode, appStore.getState().filesVisible), true);
+  });
+
+  it('the File pane can still be toggled off after Split', () => {
+    appStore.setViewMode('split');
+    appStore.toggleFilesVisible();
+    assert.equal(isThreePaneSplit(appStore.getState().viewMode, appStore.getState().filesVisible), false);
   });
 });

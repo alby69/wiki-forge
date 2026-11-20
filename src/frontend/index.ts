@@ -10,6 +10,7 @@ import './styles/editor.css';
 import './styles/review-studio.css';
 import './styles/research-studio.css';
 import './styles/study-studio.css';
+import './styles/templates.css';
 
 import { WikiNote } from '@frontend/core/types/wiki';
 import type { ReviewTab } from '@frontend/core/types/review';
@@ -44,6 +45,8 @@ import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 import { CommandPalette } from '@frontend/components/ui/CommandPalette';
 import { ProjectManagerModal } from '@frontend/components/projects/ProjectManagerModal';
+import { NewDocumentModal } from '@frontend/components/templates/NewDocumentModal';
+import { TemplateManagerModal } from '@frontend/components/templates/TemplateManagerModal';
 import { ProjectService } from '@frontend/services/projectService';
 import { bindActionHandler } from '@frontend/core/actions';
 import { eventBus } from '@frontend/core/events';
@@ -87,6 +90,8 @@ export class WikiForgeApp {
   private commandPalette!: CommandPalette;
   private projectService = new ProjectService();
   private projectManager!: ProjectManagerModal;
+  private newDocumentModal!: NewDocumentModal;
+  private templateManager!: TemplateManagerModal;
 
   constructor(rootContainer: HTMLElement) {
     applyStoredLanguage();
@@ -270,6 +275,7 @@ Backlink to [[01-index]].
     this.header = new Header({
       container: this.layout.headerContainer,
       onViewModeChange: mode => this.handleViewModeToggle(mode),
+      onToggleFiles: () => appStore.toggleFilesVisible(),
       onToggleChat: () => this.chatDrawer.toggle(),
       onProjectSelect: projectId => this.storage.setActiveProjectId(projectId),
     });
@@ -293,6 +299,7 @@ Backlink to [[01-index]].
           await this.storage.createFile(parent, fileName);
           await this.loadVault();
         },
+        onNewDocument: () => this.openNewDocument(),
         onRename: async (oldPath, newName) => {
           await this.storage.renameItem(oldPath, newName);
           await this.loadVault();
@@ -435,6 +442,23 @@ Backlink to [[01-index]].
       onOpenProject: id => this.storage.setActiveProjectId(id),
     });
 
+    this.newDocumentModal = new NewDocumentModal({
+      onSubmit: async ({ folderPath, fileName, content }) => {
+        try {
+          const note = await this.storage.createFile(folderPath, fileName, content);
+          await this.loadVault();
+          this.selectNote(note.id);
+          notifications.translated('templateCreated', 'success');
+        } catch (err) {
+          notifications.translated('operationFailed', 'error', { error: String(err) });
+        }
+      },
+    });
+
+    this.templateManager = new TemplateManagerModal({
+      onCreateDocument: () => this.openNewDocument(),
+    });
+
     this.scratchpadPanel = new ScratchpadPanel(this.layout.scratchContainer, {
       getScratchpad: () => this.storage.getScratchpad(),
       onPromoteScratchpad: noteId => {
@@ -468,6 +492,7 @@ Backlink to [[01-index]].
     bindActionHandler('global:wizard', () => this.onboardingWizard.open());
     bindActionHandler('global:keWorkbench', () => void this.keWorkbenchModal.open());
     bindActionHandler('global:changesets', () => void this.changesetReviewModal.open());
+    bindActionHandler('global:template', () => this.templateManager.open());
     bindActionHandler('global:help', () => void this.helpPanel.open());
     bindActionHandler('global:chat', () => this.chatDrawer.toggle());
     bindActionHandler('global:toggleMode', () => appStore.toggleAdvancedMode());
@@ -547,6 +572,13 @@ Backlink to [[01-index]].
     const current = appStore.getState().viewMode;
     if (isSingleView(mode)) this.lastSingleView = mode;
     appStore.setViewMode(nextViewMode(current, mode, this.lastSingleView));
+  }
+
+  /** Open the create-document dialog with the selected folder as initial path. */
+  private openNewDocument(): void {
+    const selected = this.sidebar.getSelectedPath();
+    const parent = selected && !selected.endsWith('.md') ? selected : 'wiki';
+    this.newDocumentModal.open(parent);
   }
 
   private toggleContext(): void {

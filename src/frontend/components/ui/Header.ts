@@ -23,6 +23,7 @@ const HEADER_BUTTON_IDS: Record<string, string> = {
   'global:wizard': 'header-wizard-btn',
   'global:keWorkbench': 'header-ke-workbench-btn',
   'global:changesets': 'header-changesets-btn',
+  'global:template': 'header-template-btn',
   'global:chat': 'chat-toggle-header-btn',
   'global:help': 'header-help-btn',
 };
@@ -41,6 +42,8 @@ function headerButtonId(actionId: string): string {
 export interface HeaderOptions {
   container: HTMLElement;
   onViewModeChange?: (mode: ViewMode) => void;
+  /** Toggle the left file-manager pane (the "File" button before Editor). */
+  onToggleFiles?: () => void;
   onToggleChat?: () => void;
   onProjectSelect?: (projectId: string) => void;
   /** Kept for compatibility with existing launchers; falls back to the action registry. */
@@ -51,6 +54,7 @@ export interface HeaderOptions {
 export class Header {
   private container: HTMLElement;
   private onViewModeChangeCb?: (mode: ViewMode) => void;
+  private onToggleFilesCb?: () => void;
   private onToggleChatCb?: () => void;
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenDocsWikiCb?: () => void;
@@ -70,6 +74,7 @@ export class Header {
   constructor(options: HeaderOptions) {
     this.container = options.container;
     this.onViewModeChangeCb = options.onViewModeChange;
+    this.onToggleFilesCb = options.onToggleFiles;
     this.onToggleChatCb = options.onToggleChat;
     this.onProjectSelectCb = options.onProjectSelect;
     this.onOpenDocsWikiCb = options.onOpenDocsWiki;
@@ -99,6 +104,7 @@ export class Header {
       state.isAdvancedMode,
       state.viewMode,
       state.activeProjectId,
+      state.filesVisible,
       state.pinnedActionIds.join(','),
     ].join('|');
   }
@@ -207,6 +213,7 @@ export class Header {
           </div>
 
           <div class="wf-header__view-group">
+            <button id="header-files-btn" class="seg-btn seg-btn--files ${state.filesVisible ? 'active' : ''}" role="tab" aria-selected="${state.filesVisible}" title="${escapeHtml(t('viewFiles'))}" aria-label="${escapeHtml(t('viewFiles'))}"><span aria-hidden="true">🗂️</span> ${escapeHtml(t('viewFiles'))}</button>
             <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
               ${VIEW_MODES.map(m => {
                 const active = m.id === state.viewMode;
@@ -293,6 +300,11 @@ export class Header {
   }
 
   private bindEvents(): void {
+    this.container.querySelector('#header-files-btn')?.addEventListener('click', () => {
+      if (this.onToggleFilesCb) this.onToggleFilesCb();
+      else appStore.toggleFilesVisible();
+    });
+
     VIEW_MODES.forEach(m => {
       this.container.querySelector(`#view-mode-${m.id}`)?.addEventListener('click', () =>
         this.onViewModeChangeCb ? this.onViewModeChangeCb(m.id) : runAction(`view:${m.id}`)

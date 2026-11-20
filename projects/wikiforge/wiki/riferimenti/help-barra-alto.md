@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "La barra in alto"
-description: "Argomenti: barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar, research, studio, study"
+description: "Argomenti: barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar, research, studio, study, file, template"
 resource: docs/help/barra-alto.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
@@ -25,12 +25,14 @@ Da **sinistra a destra** trovi:
    - 🤖 **Machine-Confirmed** (confermata dall'agente)
    - **Unverified** (non ancora verificata)
 4. **Selettore Project** — cambia il progetto wiki attivo; la busta si ricarica automaticamente.
-5. **4 viste** (al centro-destra): **Editor**, **Scratchpad**, **Graph**, **Split** — vedi la voce *Viste* nella guida.
-6. **Contesto della modalità**:
+5. **🗂️ File** — subito **a sinistra di Editor**: mostra/nasconde il file manager a sinistra. Premilo una volta per aprirlo, di nuovo per chiuderlo, come le altre viste; lo stato viene ricordato.
+6. **4 viste** (al centro-destra): **Editor**, **Scratchpad**, **Graph**, **Split** — vedi la voce *Viste* nella guida. **Split** ora mostra tre pannelli: **File · Editor · Grafo**.
+7. **Contesto della modalità**:
    - In **Focus Mode**: i 4 pulsanti **Carica · Importa · Compila · Chiedi**.
    - In **Developer Mode**: **Onboarding Wizard · KE Workbench · 🔎 Research · 📚 Studio · Tools · Config**.
-7. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
-8. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
+8. **`⋯` (Altre azioni)** — menu con l'elenco **Personalizza barra**: clicca una riga per eseguire l'azione, spunta la casella per aggiungerla come pulsante. Include **📐 Template**, che apre la gestione grafica dei template (crea/modifica, predefinito e **Nuovo documento**).
+9. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
+10. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
 
 > **Nell'header dell'editor** trovi anche **🧐 Revisione** (apre la Review Studio a quattro schede), **🔎 Ricerca** (apre la Research Studio a sei schede), **📚 Studio** (apre la Study Studio a sette schede) e **🕐 Cronologia** (versioni e rollback). Le scorciatoie sono `Ctrl+Alt+R/C/D/F` per la Review Studio, `Ctrl+Alt+Q/S/B/L/T/H` per la Research Studio e `Ctrl+Alt+G/K/M/A` per la Study Studio; in alternativa usa il tasto destro su una nota.
 
@@ -38,8 +40,9 @@ Da **sinistra a destra** trovi:
 
 Sulla sinistra c'è la colonna con l'**albero dei file** della wiki e la **tag cloud**:
 
-- Sul bordo destro della colonna c'è il pulsante **`◀`** (o `▶` se chiusa): **chiude e riapre la barra** per avere più spazio all'editor. La scelta viene ricordata.
+- Il pulsante **🗂️ File** in alto a sinistra, accanto a Editor, **chiude e riapre la colonna** (come le altre viste). Sul bordo destro della colonna c'è anche il vecchio pulsante **`◀`** (o `▶` se chiusa): agisce sullo stesso stato, quindi i due controlli restano sincronizzati. La scelta viene ricordata.
 - Il bordo stesso si può **trascinare** per ridimensionare (da 200 a 500 px).
+- Il pulsante **➕ Nuovo file** in alto nella colonna apre la finestra di creazione documento con nome, percorso wiki modificabile e scelta del template.
 
 ## In basso (footer)
 

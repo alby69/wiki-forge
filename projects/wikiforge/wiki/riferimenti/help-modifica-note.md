@@ -25,6 +25,17 @@ Le modifiche vengono salvate nel file Markdown della nota: nulla di nascosto, pu
 
 > L'editor usa Milkdown/Crepe nei browser normali. In ambienti senza DOM completo (per esempio i test automatici) resta disponibile il vecchio editor a sorgente CodeMirror, con le stesse funzioni della toolbar.
 
+## Creare un documento da un template
+
+1. Apri **📐 Template** dal menu `⋯` in alto: nel **Template Manager** vedi i template incorporati (rieditati da `templates/article.md`, `templates/thesis_*.md` e `templates/reveal/template.md` con frontmatter OKF v0.2), puoi crearne di nuovi, modificarli/eliminare i tuoi e scegliere quello **predefinito**.
+2. Clicca **➕ Nuovo file** nella colonna sinistra (o **Nuovo documento** nel Template Manager).
+3. Nella finestra inserisci il **nome**, controlla il **percorso nella wiki** (precompilato con la cartella selezionata; modificarlo, ad es. `guida/approfondimenti`, crea il documento altrove — vuoto significa radice di `wiki/`), scegli il **template** e guarda l'**anteprima**.
+4. Conferma: il file `wiki/<percorso>/<nome>.md` viene creato con il contenuto del template già renderizzato e si apre nell'editor.
+
+I segnaposto noti (`{{TITLE}}`, `{{DATE}}`, `{{ID}}`, `{{AUTHOR}}`, `{{CHAPTER_NUMBER}}`, `{{SUBTITLE}}`) sono sostituiti automaticamente; gli altri restano da compilare a mano. I template personali sono salvati nel browser (`localStorage`).
+
+> I comandi chat `/template show` e `/new-article <nome>` compaiono nel catalogo e negli skill, ma il router della chat non li gestisce: per creare note dai template usa la procedura grafica qui sopra.
+
 ## La toolbar
 
 - **↩️ Undo / ↪️ Redo** annulla/ripristina (Ctrl+Z / Ctrl+Y)

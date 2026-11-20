@@ -3,6 +3,15 @@ import type { ViewMode } from '@frontend/store/appStore';
 /** Panes that can occupy the central area on their own. */
 export type SingleViewMode = 'editor' | 'graph' | 'scratchpad';
 
+/** The three panes shown by the Split toggle, in visual order. */
+export const SPLIT_PANE_IDS = ['files', 'editor', 'graph'] as const;
+export type SplitPaneId = (typeof SPLIT_PANE_IDS)[number];
+
+/** True only when Split actually shows its three panes (File, Editor, Grafo). */
+export function isThreePaneSplit(mode: ViewMode, filesVisible: boolean): boolean {
+  return mode === 'split' && filesVisible;
+}
+
 export function isSingleView(mode: ViewMode): mode is SingleViewMode {
   return mode === 'editor' || mode === 'graph' || mode === 'scratchpad';
 }
@@ -10,11 +19,11 @@ export function isSingleView(mode: ViewMode): mode is SingleViewMode {
 /**
  * Decide the next view mode when the user clicks a header toggle.
  *
- * Split is a real toggle: the first click splits the central area, the second
- * one restores the last single pane (Editor by default). Clicking the active
- * single pane closes the central area; clicking another pane shows it full
- * width. This keeps the editor/graph split an explicit choice instead of a
- * side effect of selecting a note.
+ * Split is a real toggle: the first click opens the three-pane layout (File,
+ * Editor, Grafo), the second one restores the last single pane (Editor by
+ * default). Clicking the active single pane closes the central area; clicking
+ * another pane shows it full width. This keeps the split an explicit choice
+ * instead of a side effect of selecting a note.
  */
 export function nextViewMode(
   current: ViewMode,

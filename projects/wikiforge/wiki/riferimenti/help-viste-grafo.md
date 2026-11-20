@@ -1,7 +1,7 @@
 ---
 type: Reference
-title: "Viste: Editor, Scratchpad, Graph, Split"
-description: "Argomenti: viste, vista, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio"
+title: "Viste: File, Editor, Scratchpad, Graph, Split"
+description: "Argomenti: viste, vista, file, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio"
 resource: docs/help/viste-grafo.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
@@ -11,21 +11,22 @@ generated:
 sources:
   - id: source-docs-help-viste-grafo-md
     resource: docs/help/viste-grafo.md
-    title: "Viste: Editor, Scratchpad, Graph, Split"
+    title: "Viste: File, Editor, Scratchpad, Graph, Split"
     author: human:alby69
 ---
 ## Le 4 viste
 
-In alto a destra trovi il selettore a 4 bottoni:
+In alto trovi il pulsante **🗂️ File** e, accanto, il selettore a 4 bottoni:
 
 | Vista | Cosa mostra |
 |---|---|
+| **🗂️ File** | Mostra/nasconde il file manager a sinistra (toggle indipendente, come le viste) |
 | **📝 Editor** | Solo il testo della nota (massimo spazio per scrivere) |
 | **📒 Scratchpad** | Appunti veloci sopra l'area editor (fai click due volte per richiuderla) |
 | **🕸️ Graph** | Solo il Knowledge Graph: tutti i collegamenti tra le note |
-| **◧ Split** | Editor e Graph affiancati — la vista migliore per navigare mentre scrivi |
+| **◧ Split** | **Tre pannelli: File · Editor · Grafo** — la vista migliore per navigare mentre scrivi |
 
-Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermata *Vista chiusa*). **Split** fa eccezione: al secondo click torna all'ultima vista singola (Editor, Scratchpad o Graph) a tutto spazio. Dalla vista Split, un click su Editor, Scratchpad o Graph mostra subito quel pannello a larghezza intera.
+Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermata *Vista chiusa*). **Split** fa eccezione: al secondo click torna all'ultima vista singola (Editor, Scratchpad o Graph) a tutto spazio. Dalla vista Split, un click su Editor, Scratchpad o Graph mostra subito quel pannello a larghezza intera. Entrare in Split **apre automaticamente il pannello File**; il pulsante **🗂️ File** può comunque chiuderlo e riaprirlo anche mentre sei in Split.
 
 ## Il Knowledge Graph
 
@@ -37,8 +38,9 @@ Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermat
 
 ## La barra laterale e lo spazio dell'editor
 
-- La colonna sinistra (**file manager + tag cloud**) si può **chiudere col pulsante `◀`** sul suo bordo, per dare più spazio all'editor (in particolare in vista *Editor* e *Split*). Il pulsante `▶` la riapre: la scelta resta valida al prossimo avvio.
+- La colonna sinistra (**file manager + tag cloud**) si può **chiudere col pulsante 🗂️ File** nella barra in alto (o con il vecchio `◀` sul suo bordo), per dare più spazio all'editor. Il pulsante `▶` sul bordo la riapre: i due controlli sono sincronizzati e la scelta resta valida al prossimo avvio.
 - Trascinando il bordo si regola la larghezza (200–500 px).
+- In vista **Split** la colonna diventa il primo dei tre pannelli affiancati (File · Editor · Grafo).
 - Anche il **pannello inferiore** (Node Metadata/Backlinks) si ridimensiona trascinandone il bordo superiore, e si nasconde col pulsante dedicato nella toolbar dell'editor.
 
 ## Tag cloud

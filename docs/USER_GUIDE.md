@@ -86,18 +86,26 @@ See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 ## Top bar, languages and keyboard shortcuts (Fase 78)
 
 - The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
-  the view-mode pills (**Editor**, **Note rapide**, **Grafo**, **Divisione**),
-  the global **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus
-  a `⋯` overflow menu for the remaining actions. The four view-mode pills and
-  the `⋯` menu stay in the first row; the other pinned buttons stay to their
-  right as long as they fit and move to a **centred second row** when the window
-  gets narrow.
+  a **🗂️ File** toggle **to the left of the view-mode pills**, the view-mode
+  pills (**Editor**, **Note rapide**, **Grafo**, **Divisione**), the global
+  **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus a `⋯`
+  overflow menu for the remaining actions. The File toggle, the four view-mode
+  pills and the `⋯` menu stay in the first row; the other pinned buttons stay
+  to their right as long as they fit and move to a **centred second row** when
+  the window gets narrow.
+- **🗂️ File** shows/hides the left file manager with the same toggle semantics as
+  the other views: press once to reveal it, press again to close it. The old
+  `◀`/`▶` grip on the pane border works too and stays in sync. The state is
+  persisted and shared with the File pane of the Split view.
+- **Divisione / Split** is now three panes: **File · Editor · Grafo**. Entering
+  Split reveals the file pane; a second click returns to the last single view.
 - The `⋯` menu contains a single **Personalizza barra / Customize toolbar**
   list, one row per global action: **click the row** to run the action, **tick
   its checkbox** to also show it as a button in the main bar (untick to hide it).
   There is no second duplicate list. The choice is remembered across restarts
   and the default layout is unchanged. The **Docs Wiki** row appears only in
-  Developer Mode.
+  Developer Mode. The list also includes **📐 Template**, which opens the
+  graphical template manager (and can be pinned to the bar).
 - Research and Studio are **global only**: the duplicated buttons were removed
   from the note header, which now shows only Node Info, Review, History and
   Save/Edit.
@@ -107,6 +115,41 @@ See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
   Review shortcuts: `Ctrl+Alt+R/C/D/F`.
 - Confirmation and input dialogs are styled and keyboard accessible; no native
   browser dialogs are used.
+
+## Templates and creating documents
+
+The repository ships note templates in `templates/`: `article.md` (standard wiki
+article), `thesis_capitolo.md`, `thesis_domanda.md`, `thesis_sintesi.md`
+(thesis chapter / question / synthesis), and `reveal/template.md` with its
+`index.html` shell for slide decks. `kg_sample.ttl` is a Turtle graph sample,
+not a note template. They are Markdown skeletons with `{{PLACEHOLDER}}` slots:
+copy them by hand, or — recommended — use the graphical workflow:
+
+1. Click **📐 Template** in the `⋯` menu (or the pinned button). The **Template
+   Manager** lists the built-ins adapted from those files with OKF v0.2
+   frontmatter (`type`, `status: draft`, `generated.by/at`, `sources`), plus any
+   templates you created yourself.
+2. Optionally create your own template (**Nuovo template**: name, description,
+   Markdown content) and use **Usa come predefinito** to choose the default.
+   User templates are stored in the browser (`localStorage`), so they survive
+   reloads but are not shared across machines or projects. Built-ins cannot be
+   deleted or overwritten.
+3. Click **➕ Nuovo file** in the left file tree (or **Nuovo documento** inside
+   the Template Manager). The dialog asks for the **document name**, shows an
+   **editable wiki path** prefilled with the selected folder (e.g. `guida`, or
+   empty for `wiki/`), and lets you pick a template — the default one is
+   preselected. A live **Anteprima** shows the content that will be written.
+4. Confirm: `POST /api/wiki/file/create` writes the rendered content to
+   `wiki/<path>/<name>.md`, the vault reloads and the new note opens in the
+   editor. `{{TITLE}}`, `{{DATE}}`, `{{ID}}`, `{{AUTHOR}}`, `{{CHAPTER_NUMBER}}`
+   and `{{SUBTITLE}}` are substituted automatically; descriptive placeholders
+   such as `{{punto 1}}` are left for you to fill in.
+
+> **Chat commands:** `/template show` and `/new-article <nome>` are still listed
+> in the command catalogue and in the `wiki-curate` / `wiki-onboarding` skills,
+> but the chat router has no handler for them — they fall through to the LLM
+> free-form path. Use the graphical UI above for reliable template-based
+> creation. See [`help/chat-comandi.md`](help/chat-comandi.md).
 
 ## Managing projects (Fase 78)
 

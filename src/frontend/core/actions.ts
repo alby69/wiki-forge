@@ -36,6 +36,7 @@ const BUILT_IN_ACTIONS: ActionDefinition[] = [
   { id: 'global:wizard', labelKey: 'wizard', icon: '🪄', group: 'global', menu: true },
   { id: 'global:keWorkbench', labelKey: 'keWorkbench', icon: '🧠', group: 'global', menu: true },
   { id: 'global:changesets', labelKey: 'changesets', icon: '📋', group: 'global', menu: true },
+  { id: 'global:template', labelKey: 'template', icon: '📐', titleKey: 'templateManager', group: 'global', menu: true },
   { id: 'global:help', labelKey: 'help', icon: '❓', group: 'global', menu: true, shortcut: 'F1' },
   { id: 'global:chat', labelKey: 'chat', icon: '💬', group: 'global', menu: true },
   { id: 'global:toggleMode', labelKey: 'actions', icon: '🔄', group: 'global', menu: false, shortcut: 'Ctrl+Shift+D' },

@@ -1,5 +1,6 @@
 import { paneFlexes } from '@frontend/core/utils/viewMode';
 import { bindResizer } from '@frontend/core/ui/resizer';
+import { appStore } from '@frontend/store/appStore';
 
 export class MainLayout {
   private container: HTMLElement;
@@ -19,11 +20,15 @@ export class MainLayout {
   private graphFlex = 1;
   private sidebarCollapsed = false;
   private sidebarToggleBtn!: HTMLElement;
+  private unsubscribeStore?: () => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    // The header "File" button and this pane share one store flag. The legacy
+    // localStorage key is migrated by appStore, so no duplicate state here.
+    this.sidebarCollapsed = !appStore.getState().filesVisible;
+    this.unsubscribeStore = appStore.subscribe(state => this.setFilesVisible(state.filesVisible));
     try {
-      this.sidebarCollapsed = localStorage.getItem('wiki-forge:sidebar-collapsed') === 'true';
       this.sidebarWidth = Number(localStorage.getItem('wiki-forge:sidebar-width')) || this.sidebarWidth;
       this.contextHeight = Number(localStorage.getItem('wiki-forge:context-height')) || this.contextHeight;
       const ratio = Number(localStorage.getItem('wiki-forge:editor-ratio'));
@@ -32,7 +37,7 @@ export class MainLayout {
         this.graphFlex = 1 - ratio;
       }
     } catch {
-      this.sidebarCollapsed = false;
+      // Width/height/ratio storage unavailable: keep defaults.
     }
     this.render();
   }
@@ -150,12 +155,12 @@ export class MainLayout {
   }
 
   public toggleSidebar(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
-    try {
-      localStorage.setItem('wiki-forge:sidebar-collapsed', String(this.sidebarCollapsed));
-    } catch {
-      /* storage unavailable */
-    }
+    appStore.toggleFilesVisible();
+  }
+
+  /** Apply the shared visibility flag to the file pane. */
+  public setFilesVisible(visible: boolean): void {
+    this.sidebarCollapsed = !visible;
     this.applySidebarState();
   }
 

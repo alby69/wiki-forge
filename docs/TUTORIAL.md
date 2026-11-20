@@ -275,8 +275,8 @@ Questa è la fase centrale in cui la conoscenza prende vita nell'interfaccia UI.
    - `/related concetti/lavoro`: Identifica gli articoli correlati.
    - `/trace "claim di ricerca"`: Verifica e traccia le affermazioni fino alle righe esatte del sorgente originale (`#L10-L25`).
 
-4. **Creazione Articoli & Gestione Versioni (`new-article`, Cronologia)**:
-   Crea un nuovo articolo da modello con `/new-article <nome>`. Ogni modifica sostanziale viene salvata nello storico delle versioni. Per visualizzare gli snapshot e ripristinarne uno, clicca il pulsante **🕐 Cronologia** nell'header dell'editor: si apre la finestra **Version History & Rollback**, dove il pulsante **🔄 Rollback to vN** riporta la nota alla versione selezionata.
+4. **Creazione Articoli & Gestione Versioni (template, Cronologia)**:
+   Crea un nuovo articolo da modello in modo grafico: apri **📐 Template** dal menu `⋯` per scegliere il template predefinito (opzionalmente creandone uno personale), poi clicca **➕ Nuovo file** nella barra laterale: la finestra chiede nome, percorso wiki modificabile e template, con anteprima del contenuto. I template incorporati derivano da `templates/article.md`, `templates/thesis_*.md` e `templates/reveal/template.md` e producono frontmatter OKF v0.2. Il vecchio comando `/new-article <nome>` è ancora elencato negli skill ma non è gestito dal router della chat: usa l'interfaccia grafica. Ogni modifica sostanziale viene salvata nello storico delle versioni. Per visualizzare gli snapshot e ripristinarne uno, clicca il pulsante **🕐 Cronologia** nell'header dell'editor: si apre la finestra **Version History & Rollback**, dove il pulsante **🔄 Rollback to vN** riporta la nota alla versione selezionata.
 
 ---
 
@@ -318,7 +318,7 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
 3. **Utility di Manutenzione & Esportazione Struttura (`export`, `diff`, `template`, `sources`, `help`)**:
    - `/export` (o `export json`): Esporta la struttura della wiki.
    - `/diff <articolo>`: Mostra le differenze tra le versioni di un articolo.
-   - `/template show`: Visualizza il modello standard delle note.
+   - `/template show`: Storicamente mostrava il modello standard; oggi è solo nel catalogo/skill e non ha un handler nella chat. Per vedere e usare i template apri **📐 Template** nel menu `⋯` (o il pulsante **➕ Nuovo file** nella colonna sinistra).
    - `/sources` (o `sources regenerate`): Rigenera il registro bibliografico.
    - `/help [argomento]`: Apre la guida in-app (stesso contenuto del pannello **?** / tasto **F1**): indice completo o un argomento specifico.
 

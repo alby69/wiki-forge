@@ -1,0 +1,104 @@
+/* Template manager and new-document dialog. Builds on the wf-* primitives. */
+
+.seg-btn--files {
+  border-color: var(--wf-accent-border, #2b6cb0);
+}
+
+.wf-template-field {
+  gap: 4px;
+}
+
+.wf-template-hint {
+  color: var(--wf-text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.wf-template-preview {
+  min-height: 120px !important;
+  font-size: 11px !important;
+  opacity: 0.9;
+}
+
+.wf-template-list {
+  list-style: none;
+  margin: 0 0 var(--wf-space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.wf-template-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-space-3);
+  padding: var(--wf-space-3);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius-md);
+  background: var(--wf-surface-sunken);
+}
+
+.wf-template-row__main {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.wf-template-row__name {
+  color: var(--wf-text);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.wf-template-row__desc {
+  flex: 1 0 100%;
+  color: var(--wf-text-muted);
+  font-size: 11px;
+}
+
+.wf-template-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.wf-template-badge {
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid var(--wf-border);
+  color: var(--wf-text-muted);
+}
+
+.wf-template-badge--default {
+  color: var(--wf-success);
+  border-color: var(--wf-success-border);
+  background: var(--wf-success-soft);
+}
+
+.wf-template-badge--builtin {
+  color: var(--wf-info);
+  border-color: var(--wf-info-border);
+  background: var(--wf-info-soft);
+}
+
+.wf-template-separator {
+  border: 0;
+  border-top: 1px solid var(--wf-border);
+  margin: 0 0 var(--wf-space-4);
+}
+
+.wf-template-form-title {
+  margin: 0 0 var(--wf-space-3);
+  font-size: 13px;
+  color: var(--wf-text-link);
+}

@@ -28,6 +28,8 @@ const TAG_PALETTE = [
 export interface FileActionCallbacks {
   onCreateFolder?: (parentFolder: string, name: string) => Promise<void>;
   onCreateFile?: (parentFolder: string, fileName: string) => Promise<void>;
+  /** Opens the graphical new-document dialog (name, path and template). */
+  onNewDocument?: () => void;
   onRename?: (path: string, newName: string) => Promise<void>;
   onRenameDocument?: (path: string, newTitle: string) => Promise<void>;
   onMove?: (sourcePath: string, targetFolder: string) => Promise<void>;
@@ -104,6 +106,11 @@ export class Sidebar {
   public setActiveNote(noteId: string): void {
     this.activeId = noteId;
     void this.render();
+  }
+
+  /** Folder (or file) currently selected in the tree, used as the new-file path. */
+  public getSelectedPath(): string | null {
+    return this.selectedItemPath;
   }
 
   /** Notes visible under the current search query + selected-tag filter.
@@ -423,6 +430,10 @@ this.container.innerHTML = `
     });
 
     this.container.querySelector('#btn-new-file')?.addEventListener('click', async () => {
+      if (this.actionCb?.onNewDocument) {
+        this.actionCb.onNewDocument();
+        return;
+      }
       const parent = this.selectedItemPath && !this.selectedItemPath.endsWith('.md') ? this.selectedItemPath : 'wiki';
       const name = await notifications.prompt({ title: t('newFile'), label: t('fileNamePrompt', { parent }) });
       if (name && this.actionCb?.onCreateFile) {

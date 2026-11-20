@@ -109,6 +109,17 @@ describe('Header toolbar customizer', () => {
     }
     assert.ok(markup.includes('<div class="wf-header__overflow" id="wf-header-overflow" hidden>'), 'centred overflow row is rendered');
 
+    // The File toggle is pinned in the same first row, immediately before Editor.
+    assert.ok(beforeActions.includes('id="header-files-btn"'), 'File toggle stays in the fixed first-row group');
+    assert.ok(
+      markup.indexOf('id="header-files-btn"') < markup.indexOf('id="view-mode-editor"'),
+      'File toggle is to the left of Editor'
+    );
+
+    // Template is a first-class entry in the "..." menu and can be pinned.
+    assert.ok(markup.includes('id="menu-item-global-template"'), 'Template item is in the ⋯ menu');
+    assert.ok(markup.includes('data-pin-action="global:template"'), 'Template can be pinned to the bar');
+
     header.destroy();
   });
 
@@ -228,6 +239,20 @@ describe('Header toolbar customizer', () => {
     for (const cb of windowListeners.get('resize') ?? []) cb();
     assert.equal(selectors(actions.children).length, 6);
     assert.equal(overflow.hidden, true, 'empty second row is hidden');
+
+    header.destroy();
+  });
+
+  it('the File button toggles the file pane', () => {
+    const dom = createDom();
+    let toggled = 0;
+    const header = new Header({
+      container: dom.container,
+      onToggleFiles: () => { toggled += 1; },
+    });
+
+    fire(dom.elements.get('#header-files-btn')!, 'click');
+    assert.equal(toggled, 1);
 
     header.destroy();
   });
