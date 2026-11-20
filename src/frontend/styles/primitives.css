@@ -149,6 +149,12 @@
 .wf-menu__item:hover, .wf-menu__item:focus-visible { background: var(--wf-accent-soft); }
 .wf-menu__shortcut { margin-left: auto; color: var(--wf-text-subtle); font-size: 10px; }
 
+/* Toolbar customizer (first section of the ⋯ menu) */
+.wf-menu__section { padding-bottom: var(--wf-space-1); margin-bottom: var(--wf-space-1); border-bottom: 1px solid var(--wf-border); }
+.wf-menu__label { padding: 6px 10px 4px; color: var(--wf-text-subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.wf-menu__toggle { cursor: pointer; user-select: none; }
+.wf-menu__toggle input { margin: 0; accent-color: var(--wf-accent); }
+
 .wf-modal-overlay {
   position: fixed;
   inset: 0;

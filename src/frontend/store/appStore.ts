@@ -6,6 +6,8 @@ export interface AppState {
   onboardingCompleted: boolean;
   theme: 'dark' | 'light';
   viewMode: ViewMode;
+  /** Global action ids currently pinned as buttons in the main header. */
+  pinnedActionIds: string[];
 }
 
 export type ViewMode = 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed';
@@ -17,8 +19,19 @@ const ONBOARDING_KEY = 'wiki-forge:onboarding-completed';
 const PROJECT_KEY = 'wiki-forge:active-project';
 const THEME_KEY = 'wiki-forge:theme';
 const VIEW_MODE_KEY = 'wiki-forge:view-mode';
+const PINNED_ACTIONS_KEY = 'wiki-forge:pinned-actions';
 
 const VIEW_MODES: ViewMode[] = ['editor', 'graph', 'split', 'scratchpad', 'closed'];
+
+/** Header layout before the user customises it (matches the historical UI). */
+export const DEFAULT_PINNED_ACTION_IDS: string[] = [
+  'global:projects',
+  'global:research',
+  'global:study',
+  'global:docsWiki',
+  'global:chat',
+  'global:help',
+];
 
 class AppStore {
   private state: AppState;
@@ -36,6 +49,7 @@ class AppStore {
     // Open on the editor: the editor/graph split is an explicit user choice
     // (Split toggle) rather than the default layout.
     let viewMode: ViewMode = 'editor';
+    let pinnedActionIds = [...DEFAULT_PINNED_ACTION_IDS];
 
     if (typeof localStorage !== 'undefined') {
       try {
@@ -53,6 +67,16 @@ class AppStore {
 
         const storedView = localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
         if (storedView && VIEW_MODES.includes(storedView)) viewMode = storedView;
+
+        const storedPinned = localStorage.getItem(PINNED_ACTIONS_KEY);
+        if (storedPinned !== null) {
+          const parsed: unknown = JSON.parse(storedPinned);
+          if (Array.isArray(parsed)) {
+            // Unknown ids are harmless: the header ignores actions that are no
+            // longer in the catalogue. Keeping them makes upgrades lossless.
+            pinnedActionIds = parsed.filter((id): id is string => typeof id === 'string');
+          }
+        }
       } catch (_e) {
         // Fallback
       }
@@ -64,6 +88,7 @@ class AppStore {
       onboardingCompleted,
       theme,
       viewMode,
+      pinnedActionIds,
     };
   }
 
@@ -141,6 +166,30 @@ class AppStore {
       }
     }
     this.notify();
+  }
+
+  /** Persist the full set of actions the user wants as header buttons. */
+  public setPinnedActionIds(ids: string[]): void {
+    const next = [...new Set(ids)];
+    if (next.join('\u0000') === this.state.pinnedActionIds.join('\u0000')) return;
+    this.state.pinnedActionIds = next;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(PINNED_ACTIONS_KEY, JSON.stringify(next));
+      } catch (_e) {
+        // Persisting is best-effort
+      }
+    }
+    this.notify();
+  }
+
+  /** Add or remove a single action from the header (used by the ⋯ menu flags). */
+  public setPinnedAction(id: string, pinned: boolean): void {
+    const has = this.state.pinnedActionIds.includes(id);
+    if (has === pinned) return;
+    this.setPinnedActionIds(
+      pinned ? [...this.state.pinnedActionIds, id] : this.state.pinnedActionIds.filter(item => item !== id)
+    );
   }
 }
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Header personalizzabile
+
+- Il menu `⋯` della barra in alto ora contiene una sezione **Personalizza barra** con un flag per ogni azione globale: spuntandola l'azione compare anche come pulsante nella barra, disattivandola il pulsante scompare (l'azione resta sempre nel menu). La scelta è persistita in `localStorage` tramite `appStore.pinnedActionIds`; i valori iniziali riproducono il layout storico. Il flag di **Wiki Docs** è disponibile solo in Developer Mode. Aggiunti test dedicati (`tests/headerToolbarCustomizer.test.ts`).
+
 ### Frontend UI/UX & Project Lifecycle — implementazione (Fase 78, fasi 1–7)
 
 - **Design system minimale**: nuovi `styles/tokens.css` (colori, spaziature, raggi) e `styles/primitives.css` (`.wf-btn`, `.wf-field`, `.wf-modal*`, `.wf-menu*`, `.wf-toast*`, `.wf-tab*`, `.wf-palette*`). Le feature CSS riutilizzano le primitive invece di duplicare stili inline.
