@@ -25,7 +25,7 @@ Da **sinistra a destra** trovi:
    - 🤖 **Machine-Confirmed** (confermata dall'agente)
    - **Unverified** (non ancora verificata)
 4. **Selettore Project** — cambia il progetto wiki attivo; la busta si ricarica automaticamente.
-5. **Riquadro viste** (al centro-destra): **🗂️ File · 📝 Editor · 📒 Scratchpad · 🕸️ Graph · ◧ Split**, tutti dentro lo **stesso riquadro** (il File è il primo pulsante). **🗂️ File** mostra/nasconde il file manager a sinistra: premilo una volta per aprirlo, di nuovo per chiuderlo, come le altre viste; lo stato viene ricordato. **Split** ora mostra tre pannelli: **File · Editor · Grafo**. Vedi la voce *Viste* nella guida.
+5. **Riquadro viste** (al centro-destra): **🗂️ File · 📝 Editor · 📒 Note · 🕸️ Grafo · ◧ Divisione**, tutti dentro lo **stesso riquadro** (il File è il primo pulsante). **🗂️ File** mostra/nasconde il file manager a sinistra: premilo una volta per aprirlo, di nuovo per chiuderlo, come le altre viste; lo stato viene ricordato. **Split** ora mostra tre pannelli: **File · Editor · Grafo**. Vedi la voce *Viste* nella guida.
 6. **Contesto della modalità**:
    - In **Focus Mode**: i 4 pulsanti **Carica · Importa · Compila · Chiedi**.
    - In **Developer Mode**: **Onboarding Wizard · KE Workbench · 🔎 Research · 📚 Studio · Tools · Config**.

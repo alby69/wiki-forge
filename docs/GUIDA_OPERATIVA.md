@@ -97,7 +97,7 @@ Le **4 viste** in alto a destra:
 | Vista | A cosa serve |
 |---|---|
 | **📝 Editor** | Leggere e scrivere una nota con il massimo spazio |
-| **📒 Scratchpad** | Appunti rapidi sopra l'editor |
+| **📒 Note** | Appunti rapidi sopra l'editor |
 | **🕸️ Graph** | Vedere la mappa dei collegamenti |
 | **◧ Split** | Editor e grafo affiancati: la vista migliore per lavorare |
 

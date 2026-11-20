@@ -16,13 +16,13 @@ sources:
 ---
 ## Le viste in un unico riquadro
 
-In alto trovi un **unico riquadro segmentato** con cinque pulsanti, nell'ordine **🗂️ File · 📝 Editor · 📒 Note rapide · 🕸️ Grafo · ◧ Divisione**:
+In alto trovi un **unico riquadro segmentato** con cinque pulsanti, nell'ordine **🗂️ File · 📝 Editor · 📒 Note · 🕸️ Grafo · ◧ Divisione**:
 
 | Vista | Cosa mostra |
 |---|---|
 | **🗂️ File** | Mostra/nasconde il file manager a sinistra (toggle indipendente, come le viste) |
 | **📝 Editor** | Solo il testo della nota (massimo spazio per scrivere) |
-| **📒 Scratchpad** | Appunti veloci sopra l'area editor (fai click due volte per richiuderla) |
+| **📒 Note** | Appunti veloci sopra l'area editor (fai click due volte per richiuderla) |
 | **🕸️ Graph** | Solo il Knowledge Graph: tutti i collegamenti tra le note |
 | **◧ Split** | **Tre pannelli: File · Editor · Grafo** — la vista migliore per navigare mentre scrivi |
 

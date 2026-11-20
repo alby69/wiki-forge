@@ -12,7 +12,7 @@ const IT = {
   showInBar: 'Mostra nella barra',
   view: 'Vista',
   viewEditor: 'Editor',
-  viewScratchpad: 'Note rapide',
+  viewScratchpad: 'Note',
   viewGraph: 'Grafo',
   viewSplit: 'Divisione',
   viewFiles: 'File',

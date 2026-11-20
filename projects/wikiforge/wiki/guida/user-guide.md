@@ -103,7 +103,7 @@ See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 
 - The top bar holds the project selector, a **language selector (🇮🇹 IT / 🇬🇧 EN)**,
   a single bordered **view control** whose segments are **🗂️ File**, **Editor**,
-  **Note rapide**, **Grafo**, **Divisione** (File is the first segment), the
+  **Note**, **Grafo**, **Divisione** (File is the first segment), the
   global **Research**, **Studio**, **Docs Wiki** and **Chat** buttons, plus a
   `⋯` overflow menu for the remaining actions. This whole view control and the
   `⋯` menu stay in the first row; the other pinned buttons stay to their right

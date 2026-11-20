@@ -100,7 +100,7 @@ describe('Header toolbar customizer', () => {
     assert.ok(!markup.includes('wf-header__scroll'), 'horizontal scrolling removed');
     assert.ok(markup.includes('class="wf-menu__dots"'), 'dots do not depend on a font glyph');
 
-    // Editor / Note rapide / Grafo / Divisione are fixed in the first row,
+    // Editor / Note / Grafo / Divisione are fixed in the first row,
     // before the customisable action strip. Overflow is a centred second row.
     const beforeActions = markup.split('<div class="wf-header__group wf-header__group--actions">')[0];
     for (const id of ['view-mode-editor', 'view-mode-scratchpad', 'view-mode-graph', 'view-mode-split']) {
@@ -108,6 +108,11 @@ describe('Header toolbar customizer', () => {
       assert.ok(!actionsMatch![1].includes(`id="${id}"`), `${id} is not in the overflowing action strip`);
     }
     assert.ok(markup.includes('<div class="wf-header__overflow" id="wf-header-overflow" hidden>'), 'centred overflow row is rendered');
+
+    const scratchButton = markup.match(/<button id="view-mode-scratchpad"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+    assert.ok(scratchButton, 'scratchpad view button is rendered');
+    assert.ok(!scratchButton.includes('Note rapide'), 'old label is gone');
+    assert.match(scratchButton, />\s*Note\s*<\/button>/, 'the segment is labelled Note');
 
     // File is the first segment of the same bordered control as Editor etc.
     assert.ok(beforeActions.includes('id="header-files-btn"'), 'File toggle stays in the fixed first-row group');

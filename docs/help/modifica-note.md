@@ -95,6 +95,6 @@ Scorciatoie: `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap), 
 
 ## Appunti veloci (Scratchpad)
 
-La vista **📒 Scratchpad** raccoglie appunti rapidi (`/note <testo>` dalla chat, o il campo apposito). Un appunto utile si **promuove a nota vera** con il pulsante dedicato, con `/promote-note <id>` oppure dalla scheda **🚀 Promuovi** della Study Studio.
+La vista **📒 Note** raccoglie appunti rapidi (`/note <testo>` dalla chat, o il campo apposito). Un appunto utile si **promuove a nota vera** con il pulsante dedicato, con `/promote-note <id>` oppure dalla scheda **🚀 Promuovi** della Study Studio.
 
 **Approfondisci:** `docs/USER_GUIDE.md` (editor), `docs/OKF_SPEC.md` (frontmatter e versioni), `docs/PROCEDURES.md`.

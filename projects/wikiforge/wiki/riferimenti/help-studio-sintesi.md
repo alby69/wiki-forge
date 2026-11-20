@@ -35,7 +35,7 @@ Senza argomento lavorano sull'intera wiki; con l'argomento restringono il campo 
 ## Appunti e promozioni
 
 - `/note <testo>` — salva subito un appunto nello **Scratchpad**.
-- `/promote-note <id>` — trasforma un appunto in **nota vera** della wiki (nella vista 📒 Scratchpad c'è il pulsante equivalente).
+- `/promote-note <id>` — trasforma un appunto in **nota vera** della wiki (nella vista 📒 Note c'è il pulsante equivalente).
 
 ## Come chiedere bene
 

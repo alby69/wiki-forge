@@ -44,7 +44,7 @@ I pulsanti principali sono **a destra nella barra in alto** (Modalità Semplice)
 
 ```
   ┌──────────────────────────────────────────────────────────────────────────────────┐
-  │ Wiki-Forge 🌱 Focus Mode  [Project: …]    📝Editor 📒Scratchpad 🕸️Graph ◧Split   │
+  │ Wiki-Forge 🌱 Focus Mode  [Project: …]    📝Editor 📒Note 🕸️Graph ◧Split   │
   │                    📥 1. Carica  📝 Importa  ⚡ 2. Compila  💬 3. Chiedi  💬 Agent Chat │
   └──────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -66,10 +66,10 @@ I pulsanti principali sono **a destra nella barra in alto** (Modalità Semplice)
 
 ### 🖥️ Viste dell'area di lavoro nell'Interfaccia Grafica
 
-I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Scratchpad**, **🕸️ Graph**, **◧ Split**) scelgono come disporre l'area di lavoro:
+I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Note**, **🕸️ Graph**, **◧ Split**) scelgono come disporre l'area di lavoro:
 
 - **📝 Editor** — solo editor di testo a tutto schermo.
-- **📒 Scratchpad** — foglio di appunti libero per appunti veloci e bozze, affiancato o al posto dell'editor.
+- **📒 Note** — foglio di appunti libero per appunti veloci e bozze, affiancato o al posto dell'editor.
 - **🕸️ Graph** — solo grafo della conoscenza interattivo (i controlli del grafo compaiono in alto).
 - **◧ Split** — editor e grafo affiancati, separati da un trascinatore. La vista predefinita è **Editor**; Split si apre solo quando lo clicchi e, se lo riclicchi, torna all'ultima vista singola (Editor, Scratchpad o Graph) a tutto spazio.
 
