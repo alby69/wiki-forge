@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Nuovi nodi wiki: OKF valido e nessun drift da `docs/`
+
+- **Frontmatter minimo generato per le note nuove**: `ensureOkfFrontmatter()` (in `src/frontend/services/okfFrontmatter.ts`) è usato da New Document, creazione file, salvataggio editor, upload, attach e sintesi deep research. Aggiunge `type: Note` e `title` solo quando mancano, lascia intatto il frontmatter già valido e non tocca i file riservati `index.md`/`log.md`. Le note create dall'utente passano così il lint OKF senza bisogno di template perfetti.
+- **La proiezione dipende solo da `docs/`**: `build_bundle()` non legge più la wiki (prima indicizzava le note di `sintesi/`), quindi aggiungere una nota in qualsiasi cartella della wiki non cambia più gli indici generati e non produce `changed:`. `write_bundle()` continua a non cancellare i file extra.
+- **Reindex sicuro**: la wiki `wikiforge` è marcata `docsManaged: true` in `config/projects.json`; `executeReindexWorkflow()` la salta, evitando che `okf_reindex.py` riscriva gli indici generati in un formato diverso e crei falso drift.
+- Test: `tests/okfFrontmatter.test.ts` e `test_bundle_depends_only_on_docs_not_on_wiki_notes` in `tests/python/test_docs_to_wiki.py`.
+
 ### Fix CI: note utente preservate non più segnalate come drift
 
 - **CI Test Suite e OKF Validation tornano verdi**: `scripts/check_docs_sync.py` chiamava `docs_to_wiki.check_bundle()` senza il filtro che già usavano `docs_wiki_drift.py` e i test Python, quindi `architettura/note_architettura.md` (nota scritta dall'utente nella wiki, non proiezione di `docs/`) faceva fallire ogni push con `unexpected:`. La policy è ora centralizzata in `docs_to_wiki.actionable_problems()`: vengono ignorati solo gli `unexpected:` di note **senza** provenance `generated.by: process:docs-to-wiki` (o in `sintesi/`); un file generato rimasto orfano continua a essere segnalato. Lo stesso filtro vale per `check_docs_sync.py`, `docs_wiki_drift.py` e `docs_to_wiki.py --check`, quindi anche note utente create in futuro non rompono la CI.

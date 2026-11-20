@@ -20,6 +20,8 @@ export interface ProjectEntry {
   archived?: boolean;
   createdAt?: string;
   sourceProjectId?: string;
+  /** The wiki is a generated projection of docs/; local reindex must not rewrite it. */
+  docsManaged?: boolean;
 }
 
 export interface ProjectListOptions {

@@ -6,6 +6,7 @@ import {
   listTemplates,
   renderTemplate,
 } from '@frontend/services/templateService';
+import { ensureOkfFrontmatter } from '@frontend/services/okfFrontmatter';
 
 export interface NewDocumentResult {
   /** Folder relative to the wiki root ('' means the wiki root). */
@@ -174,10 +175,12 @@ export class NewDocumentModal {
     if (!template) return;
 
     const title = name.replace(/\.md$/i, '') || name;
+    const fileName = buildFileName(name);
     const result: NewDocumentResult = {
       folderPath: normalizeFolderPath(pathInput?.value ?? 'wiki'),
-      fileName: buildFileName(name),
-      content: renderTemplate(template.content, { title }),
+      fileName,
+      // Even a user-written template must produce an OKF-valid first version.
+      content: ensureOkfFrontmatter(renderTemplate(template.content, { title }), title, fileName),
     };
     this.host.hidden = true;
     this.openFlag = false;

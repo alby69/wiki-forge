@@ -12,6 +12,7 @@
   {
     "id": "wikiforge",
     "name": "Wiki-Forge Docs",
-    "path": "projects/wikiforge"
+    "path": "projects/wikiforge",
+    "docsManaged": true
   }
 ]

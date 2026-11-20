@@ -295,22 +295,6 @@ def build_frontmatter(
     ])
 
 
-def curated_notes(wiki_dir: Path) -> list[dict[str, str]]:
-    """Human-owned notes in sintesi/ are read but never overwritten."""
-    notes: list[dict[str, str]] = []
-    sintesi = wiki_dir / "sintesi"
-    if not sintesi.is_dir():
-        return notes
-    for path in sorted(sintesi.glob("*.md")):
-        if path.name in ("index.md", "log.md"):
-            continue
-        fields, body = split_frontmatter(path.read_text(encoding="utf-8"))
-        title = fields.get("title") or path.stem.replace("-", " ").title()
-        description = derive_description("sintesi/" + path.name, title, body, fields)
-        notes.append({"name": path.stem, "title": title, "description": description})
-    return notes
-
-
 def index_lines(area: str, notes: Iterable[dict[str, str]], prefix: str = "") -> list[str]:
     lines = [f"## {AREA_LABELS.get(area, area.title())}", ""]
     for note in sorted(notes, key=lambda item: item["title"].lower()):
@@ -354,9 +338,10 @@ def build_bundle(root: Path, docs_dir: Path, wiki_dir: Path) -> tuple[dict[str, 
         bundle[note_path + ".md"] = content
         grouped[area].append({"name": posixpath.basename(note_path), "title": title, "description": description})
 
-    # Curated synthesis layer: human-owned files are indexed, not regenerated.
-    for note in curated_notes(wiki_dir):
-        grouped["sintesi"].append(note)
+    # The bundle is a pure projection of docs/. Notes created in the wiki
+    # (including sintesi/) are a separate human-owned layer: reading them here
+    # would make the generated indexes change after a wiki-only edit, which is
+    # exactly the drift we must avoid. write_bundle() never deletes them.
 
     topic_lines = [
         "## Topics",
@@ -371,13 +356,8 @@ def build_bundle(root: Path, docs_dir: Path, wiki_dir: Path) -> tuple[dict[str, 
         )
     topic_lines += ["", "## Sintesi curata", ""]
     topic_lines.append(
-        f"* [Sintesi](sintesi/index.md) ({len(grouped['sintesi'])} note) — risposte e approfondimenti approvati da una persona."
+        "* [Sintesi](sintesi/index.md) — note scritte a mano, preservate e fuori dalla proiezione di `docs/`."
     )
-    topic_lines += ["", "## Recently Updated", ""]
-    for note in sorted(grouped["sintesi"], key=lambda item: item["title"].lower())[:5]:
-        topic_lines.append(f"* [{note['title']}](sintesi/{note['name']}.md) — {note['description']}")
-    if not grouped["sintesi"]:
-        topic_lines.append("*Nessuna sintesi approvata finora.*")
     topic_lines.append("")
 
     bundle["index.md"] = "---\nokf_version: \"0.2\"\n---\n\n# Wiki-Forge — Documentazione\n\n" + "\n".join(topic_lines)
@@ -385,11 +365,11 @@ def build_bundle(root: Path, docs_dir: Path, wiki_dir: Path) -> tuple[dict[str, 
     for area in AREA_ORDER:
         notes = grouped[area]
         intro = ""
-        if area == "sintesi" and not notes:
+        if area == "sintesi":
             intro = (
                 "Questa cartella contiene le note scritte a mano a partire da risposte verificate. "
-                "Usa `scripts/promote_doc_answer.py` con un `reviewer` umano per aggiungerne una, "
-                "poi rigenera il bundle.\n\n"
+                "Sono un livello utente: la rigenerazione da `docs/` non le modifica e non le indicizza. "
+                "Usa `scripts/promote_doc_answer.py` con un `reviewer` umano per aggiungerne una.\n\n"
             )
         bundle[f"{area}/index.md"] = (
             f"# {AREA_LABELS[area]}\n\n{intro}" + "\n".join(index_lines(area, notes)) + "\n"

@@ -14,8 +14,4 @@ okf_version: "0.2"
 
 ## Sintesi curata
 
-* [Sintesi](sintesi/index.md) (0 note) — risposte e approfondimenti approvati da una persona.
-
-## Recently Updated
-
-*Nessuna sintesi approvata finora.*
+* [Sintesi](sintesi/index.md) — note scritte a mano, preservate e fuori dalla proiezione di `docs/`.

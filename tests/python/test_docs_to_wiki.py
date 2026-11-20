@@ -186,6 +186,27 @@ def test_any_user_note_is_preserved_not_just_the_known_filename(tmp_path: Path):
     assert result["preserved"] == ["unexpected: guida/nota-dell-utente.md"]
 
 
+def test_bundle_depends_only_on_docs_not_on_wiki_notes(tmp_path: Path):
+    """Adding a note anywhere in the wiki cannot change the docs projection."""
+    wiki_dir, bundle = _temp_bundle(tmp_path)
+    user_note = "# Nota scritta a mano\n"
+    (wiki_dir / "architettura" / "nuova-nota.md").write_text(user_note, encoding="utf-8")
+    (wiki_dir / "sintesi" / "nota-utente.md").write_text(user_note, encoding="utf-8")
+
+    rebuilt, warnings = docs_to_wiki.build_bundle(REPO_ROOT, DOCS_DIR, wiki_dir)
+    assert warnings == []
+    assert rebuilt == bundle
+
+    problems = docs_to_wiki.check_bundle(rebuilt, wiki_dir, DOCS_DIR)
+    assert docs_to_wiki.actionable_problems(problems, wiki_dir) == []
+
+    fix = docs_wiki_drift.repair(REPO_ROOT, DOCS_DIR, wiki_dir)
+    assert fix["written"] == 0
+    assert fix["remaining"] == []
+    assert (wiki_dir / "architettura" / "nuova-nota.md").read_text(encoding="utf-8") == user_note
+    assert (wiki_dir / "sintesi" / "nota-utente.md").read_text(encoding="utf-8") == user_note
+
+
 def test_stale_generated_note_is_still_reported_as_drift(tmp_path: Path):
     wiki_dir, _ = _temp_bundle(tmp_path)
     (wiki_dir / "architettura" / "stale.md").write_text(

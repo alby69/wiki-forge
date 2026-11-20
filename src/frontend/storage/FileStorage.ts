@@ -1,6 +1,7 @@
 import { WikiNote } from '@frontend/core/types/wiki';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { MarkdownParser } from '@frontend/services/markdownParser';
+import { ensureOkfFrontmatter } from '@frontend/services/okfFrontmatter';
 
 /**
  * File-based vault adapter (read-only viewer).
@@ -80,7 +81,12 @@ export class FileStorage implements IStorage {
   public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
     const id = fileName.replace(/\.md$/i, '');
     const title = id.replace(/[-_]/g, ' ');
-    const noteContent = content || `# ${title}\n\nNew wiki note.`;
+    const fileNameWithExt = fileName.endsWith('.md') ? fileName : `${fileName}.md`;
+    const noteContent = ensureOkfFrontmatter(
+      content || `# ${title}\n\nNew wiki note.`,
+      title,
+      fileNameWithExt,
+    );
     const folder = folderPath.replace(/^wiki\/?/, '') || 'wiki';
     const filePath = `wiki/${folder}/${fileName.endsWith('.md') ? fileName : `${fileName}.md`}`;
     return this.parser.parseNote(id, title, noteContent, folder, filePath);

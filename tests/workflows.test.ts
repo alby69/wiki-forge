@@ -133,3 +133,47 @@ Links to [[non-existent-note]].
     assert.ok(response.includes('sample-note'));
   });
 });
+
+test('/reindex skips docs-managed wikis so generated indexes are not overwritten', async t => {
+  const tmpDir = path.join(process.cwd(), 'tests', 'tmp-reindex-docs-managed-' + Date.now());
+  const wikiDir = path.join(tmpDir, 'wiki');
+  await fs.mkdir(wikiDir, { recursive: true });
+
+  // Registry marks this project as a docs/ projection.
+  await fs.mkdir(path.join(tmpDir, 'config'), { recursive: true });
+  await fs.writeFile(
+    path.join(tmpDir, 'config', 'projects.json'),
+    JSON.stringify([
+      { id: 'default', name: 'Default', path: '.' },
+      { id: 'docs-managed', name: 'Docs Managed', path: '.', docsManaged: true },
+    ]),
+    'utf-8'
+  );
+
+  // A docs-generated index (sentinel) plus a user note that must survive.
+  const generatedIndex = '---\nokf_version: "0.2"\n---\n\n# Generated Index\n';
+  await fs.writeFile(path.join(wikiDir, 'index.md'), generatedIndex, 'utf-8');
+  await fs.writeFile(
+    path.join(wikiDir, 'user-note.md'),
+    '---\ntype: Note\ntitle: "Utente"\n---\n\n# Utente\n',
+    'utf-8'
+  );
+
+  const agentServer = new AgentServer(tmpDir, new MockWorkflowLlmClient());
+  t.after(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  const response = await agentServer.processChatCommand({ command: '/reindex' }, 'docs-managed');
+  assert.ok(response.includes('Reindex skipped'), response);
+  assert.ok(response.includes('docs_to_wiki.py'), response);
+  assert.equal(
+    await fs.readFile(path.join(wikiDir, 'index.md'), 'utf-8'),
+    generatedIndex,
+    'docs-managed index must not be rewritten by okf_reindex.py'
+  );
+  assert.ok(
+    (await fs.readFile(path.join(wikiDir, 'user-note.md'), 'utf-8')).includes('# Utente'),
+    'user note must be preserved'
+  );
+});

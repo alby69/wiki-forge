@@ -50,11 +50,13 @@ docs/  (sorgente, intoccata)
 | `processi/` | `Process` / `Playbook` | Manuale agente, KE, migrazione, scheduler, questo piano |
 | `standard/` | `Reference` | OKF, schema, procedure, pattern Karpathy |
 | `riferimenti/` | `Reference` | Indice docs, roadmap, changelog, audit, mockup, topic help |
-| `sintesi/` | `Reference` | Note **curate** da risposte approvate (non rigenerate) |
+| `sintesi/` | `Reference` | Note **curate** da risposte approvate (livello utente, non proiettato) |
 
 Tag sempre presenti: `scope/docs`, `layer/generated` (o `layer/curated`), `area/<cartella>`, `lang/it|en`.
 
 Provenienza: ogni nota generata ha `generated.by: process:docs-to-wiki`, `generated.at` uguale al `BUILD_STAMP` dello script (valore fisso per garantire idempotenza dei file commitati) e `sources[0].resource` che punta al documento sorgente.
+
+**Regola di proprietà**: `build_bundle()` legge solo `docs/`; non legge alcun file della wiki. Qualsiasi nota creata nella wiki (inclusa `sintesi/`) è un livello utente: non entra negli indici generati, non viene mai sovrascritta o cancellata da `write_bundle()` e non può generare drift. Solo una modifica in `docs/` cambia la proiezione. Di conseguenza il reindex della wiki `wikiforge` viene saltato (`docsManaged: true` in `config/projects.json`).
 
 ## 4. Mapping completo dei documenti
 
