@@ -124,7 +124,8 @@ See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
   graphical template manager (and can be pinned to the bar).
 - Research and Studio are **global only**: the duplicated buttons were removed
   from the note header, which now shows only Node Info, Review, History and
-  Save/Edit.
+  Save/Edit. The **Node Info** panel below the editor is **collapsed by default**:
+  click **📊 Info nodo** to reveal it, click again to hide it.
 - `Ctrl+K` opens the command palette (notes + actions), `F1` opens contextual
   help, `Ctrl+Shift+D` toggles Focus/Developer mode, `Ctrl+Alt+W` opens the
   docs wiki. Studio shortcuts: `Ctrl+Alt+G/K/M/A` (guide/quiz/mindmap/audio),

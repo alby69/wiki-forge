@@ -46,7 +46,7 @@ Scrivi `[[nome-della-nota]]` per collegare due note:
 
 - Nella lettura diventano link **cliccabili** che navigano alla nota.
 - Se la nota non esiste ancora, l'**`/audit`** la segnala come *orfana*: puoi crearla (o farla creare all'agente con `/stub <concetto>`).
-- Il **pannello in basso** mostra per la nota corrente: **Node Metadata** (tag, stato, versione), **Backlink** (chi punta a questa nota) e **Outbound** (dove punta questa nota).
+- Il **pannello in basso** mostra per la nota corrente: **Node Metadata** (tag, stato, versione), **Backlink** (chi punta a questa nota) e **Outbound** (dove punta questa nota). Di default è **chiuso**: clicca **📊 Info nodo** nella barra dell'editor per aprirlo, clicca di nuovo per nasconderlo.
 
 ## Versioni
 

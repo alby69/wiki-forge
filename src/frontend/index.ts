@@ -62,7 +62,8 @@ export class WikiForgeApp {
   private selectedNote: WikiNote | null = null;
   private filterTags: string[] = [];
   private excludedFolders: string[] = [];
-  private contextVisible = true;
+  /** Node Info starts collapsed; the 📊 button in the note header reveals it. */
+  private contextVisible = false;
   /** Last single pane shown, restored when Split is clicked again. */
   private lastSingleView: SingleViewMode = 'editor';
 
@@ -386,6 +387,10 @@ Backlink to [[01-index]].
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {
       this.selectNote(noteId);
     });
+
+    // The node info bar and its resizer start hidden from the initial markup;
+    // keep the runtime state in sync so the first 📊 click opens it.
+    this.layout.setContextVisible(this.contextVisible);
 
     this.graphViewer = new ForceGraphViewer();
     this.graphViewer.render(this.layout.graphContainer, { nodes: [], links: [] });

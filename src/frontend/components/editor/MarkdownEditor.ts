@@ -50,7 +50,7 @@ export class MarkdownEditor {
   private onToggleContextCb?: () => void;
   private onOpenHistoryCb?: () => void;
   private onOpenReviewCb?: () => void;
-  private contextVisible = true;
+  private contextVisible = false;
 
   private adapter: NoteEditorAdapter | null = null;
   private renderGeneration = 0;

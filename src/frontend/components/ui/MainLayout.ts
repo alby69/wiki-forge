@@ -61,8 +61,8 @@ export class MainLayout {
               <div id="graph-root" style="flex: ${this.graphFlex}; height: 100%; position: relative; min-width: 0;"></div>
               <div id="view-empty" style="display: none; flex: 1; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: #18191c; color: #718096;"></div>
             </div>
-            <div id="context-resizer" data-resizer="context"></div>
-            <div id="context-root" style="height: ${this.contextHeight}px; min-height: 0; flex-shrink: 0; border-top: 1px solid #2d3748; background: #121316;"></div>
+            <div id="context-resizer" data-resizer="context" style="display: none;"></div>
+            <div id="context-root" style="display: none; height: ${this.contextHeight}px; min-height: 0; flex-shrink: 0; border-top: 1px solid #2d3748; background: #121316;"></div>
           </div>
           <div id="chat-root" style="display: none; height: 100%; z-index: 100;"></div>
         </div>

@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Pannello Info Nodo chiuso di default
+
+- Il pannello **Info Nodo** (Node Metadata / Backlinks / Outbound) non è più visibile quando apri una nota: parte **chiuso**. Il pulsante **📊 Info nodo** nella barra dell'editor lo apre e, se premuto di nuovo, lo chiude; lo stato del pulsante riflette quello del pannello. Lo stato iniziale è chiuso a ogni avvio (`contextVisible = false` in `index.ts` e `MarkdownEditor.ts`), mentre l'altezza del pannello resta persistita in `wiki-forge:context-height`. Test dedicati in `tests/nodeInfoVisibility.test.ts` e `tests/editorFormatting.test.ts`.
+
 ### Template grafici, pulsante File e Split a tre pannelli
 
 - **Gestione template grafica**: nuova voce **📐 Template** nel menu `⋯` (aggiunta al catalogo azioni come `global:template`, quindi pinnabile nella barra). Apre il **Template Manager**: elenco dei template incorporati e personali, scelta del **predefinito**, creazione/modifica/eliminazione di template utente e pulsante **Nuovo documento**.

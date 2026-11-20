@@ -73,7 +73,7 @@ I quattro pulsanti in alto a destra (**📝 Editor**, **📒 Scratchpad**, **�
 - **🕸️ Graph** — solo grafo della conoscenza interattivo (i controlli del grafo compaiono in alto).
 - **◧ Split** — editor e grafo affiancati, separati da un trascinatore. La vista predefinita è **Editor**; Split si apre solo quando lo clicchi e, se lo riclicchi, torna all'ultima vista singola (Editor, Scratchpad o Graph) a tutto spazio.
 
-La scelta viene ricordata automaticamente. Passando alla sola vista **Graph**, il pannello **Node Metadata** sotto l'editor resta visibile; cliccando una nota dalla barra laterale si apre automaticamente la vista **Editor**, senza forzare lo Split.
+La scelta viene ricordata automaticamente. Passando alla sola vista **Graph**, il pannello **Info Nodo** sotto l'editor resta chiuso (di default non è visibile): apri **📊 Info nodo** nella barra dell'editor se vuoi vedere i metadati; cliccando una nota dalla barra laterale si apre automaticamente la vista **Editor**, senza forzare lo Split.
 
 ### 🧐 Review Studio nell'Interfaccia Grafica
 

@@ -345,4 +345,37 @@ test('Editor Formatting & Toolbar Actions Test Suite', async (t) => {
     // Clean up editor instance to avoid pending async measuring callbacks in mock DOM
     (editor as any).destroyEditor();
   });
+
+  await t.test('Node Info button starts inactive and follows setContextVisible', () => {
+    const container = document.createElement('div');
+    const sampleNote: WikiNote = {
+      id: 'info-note',
+      title: 'Info Note',
+      content: 'Content',
+      folder: 'wiki',
+      path: 'wiki/info-note.md',
+      tags: [],
+      frontmatter: {},
+      outboundLinks: [],
+      backlinks: [],
+    };
+    const editor = new MarkdownEditor(container);
+    editor.setNote(sampleNote);
+
+    const infoButtonMarkup = () =>
+      (container.innerHTML.match(/<button id="editor-context-toggle"[^>]*>/) ?? [''])[0];
+
+    assert.ok(infoButtonMarkup(), 'Info button is rendered in the note header');
+    assert.ok(!infoButtonMarkup().includes('wf-btn--active'), 'collapsed by default');
+
+    editor.setContextVisible(true);
+    editor.setNote(sampleNote);
+    assert.ok(infoButtonMarkup().includes('wf-btn--active'), 'active after the panel is shown');
+
+    editor.setContextVisible(false);
+    editor.setNote(sampleNote);
+    assert.ok(!infoButtonMarkup().includes('wf-btn--active'), 'inactive again after hiding');
+
+    (editor as any).destroyEditor();
+  });
 });

@@ -36,7 +36,7 @@ Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermat
 - La colonna sinistra (**file manager + tag cloud**) si può **chiudere col pulsante 🗂️ File** nella barra in alto (o con il vecchio `◀` sul suo bordo), per dare più spazio all'editor. Il pulsante `▶` sul bordo la riapre: i due controlli sono sincronizzati e la scelta resta valida al prossimo avvio.
 - Trascinando il bordo si regola la larghezza (200–500 px).
 - In vista **Split** la colonna diventa il primo dei tre pannelli affiancati (File · Editor · Grafo).
-- Anche il **pannello inferiore** (Node Metadata/Backlinks) si ridimensiona trascinandone il bordo superiore, e si nasconde col pulsante dedicato nella toolbar dell'editor.
+- Anche il **pannello inferiore** (Node Metadata/Backlinks) si ridimensiona trascinandone il bordo superiore. Parte **chiuso**: si apre con il pulsante **📊 Info nodo** nella toolbar dell'editor e si richiude premendo lo stesso pulsante.
 
 ## Tag cloud
 
