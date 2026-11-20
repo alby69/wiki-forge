@@ -140,3 +140,36 @@
   background: #3d4759;
   margin: 0 2px;
 }
+
+/* ---------------------------------------------------------------------------
+   Milkdown/Crepe editing surface
+
+   Crepe themes do not declare a scroll container: the .ProseMirror node grows
+   with the document while the shell's editor wrapper clips the overflow, so no
+   scrollbar is shown. Make the ProseMirror node itself the scroll container:
+
+   - vertical scrolling for long notes;
+   - horizontal scrolling for wide tables, code blocks and images;
+   - the floating Crepe toolbar stays anchored to .milkdown and does not scroll.
+
+   These rules are loaded after the Crepe theme imports in index.ts and use a
+   higher specificity, so they safely override the theme defaults.
+   --------------------------------------------------------------------------- */
+#cm-editor-container .milkdown {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#cm-editor-container .milkdown > .editor.ProseMirror {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: auto;
+  /* Crepe defaults to 60px 120px, too wide for the resizable editor panel. */
+  padding: 16px 20px;
+}

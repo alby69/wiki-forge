@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Frontmatter OKF byte-identico**: `WikiNote.frontmatterRaw` conserva il blocco YAML esatto; l'editor vede solo il body e `saveCurrentContent()` passa `frontmatterRaw + body` come `fullContent`. `ApiStorage.saveNote()` invia `rawContent`, che il backend scrive verbatim con `safeFs.atomicWriteFile()`.
 - **Wikilink nativi**: plugin remark + nodo inline atomico (`milkdown/wikilink.ts`, helper puri in `wikilinkParsing.ts`) mantengono `[[target]]`, `[[target|label]]`, `[[predicate::target|label]]` e `#anchor` invariati durante la serializzazione (remark altrimenti escapa `[[`). Click bridgiati a `onOpenLink`. Colori/allineamenti inseriti come nodi `html` per evitare l'escape del markup.
 - **Test e documentazione**: nuovi `tests/editorWikilink.test.ts` (8 test); `tests/editorFormatting.test.ts` e il test di round-trip frontmatter restano verdi. Nuovo `docs/EDITOR_MIGRATION.md`; aggiornati `ARCHITECTURE.md`, `TECHNICAL_ARCHITECTURE.md` e la proiezione wiki da `docs/`.
+- **Fix scroll**: il tema Crepe non dichiara un contenitore di scroll e il wrapper dell'editor tagliava il contenuto. `styles/editor.css` rende il nodo `.ProseMirror` lo scroll container (`overflow: auto`): scorrimento verticale per note lunghe e orizzontale per tabelle/codice larghe, toolbar flottante ancorata a `.milkdown`, padding ridotto a `16px 20px` per il pannello ridimensionabile.
 
 ### Architettura coerente — Fase 77 (KISS/DRY, addio duplicazioni)
 

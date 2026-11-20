@@ -89,7 +89,31 @@ its `@milkdown/kit/component/diff` subpath cannot be resolved by the Node test
 runner; lazy loading keeps the tests on the CodeMirror path. Vite emits a
 separate `dist/assets/MilkdownAdapter-*.js` chunk.
 
-## 4. OKF frontmatter preservation
+## 4. Layout and scrolling
+
+The shell's `#cm-editor-wrapper` clips overflow (`overflow: hidden`) because
+CodeMirror provides its own `.cm-scroller`. Crepe themes do **not** define a
+scroll container, so without explicit CSS the `.ProseMirror` node simply grows
+past the panel and its content becomes unreachable. `src/frontend/styles/editor.css`
+therefore turns the Crepe document node into the scroll container:
+
+```css
+#cm-editor-container .milkdown {
+  display: flex; flex-direction: column; height: 100%; min-height: 0;
+  overflow: hidden;
+}
+#cm-editor-container .milkdown > .editor.ProseMirror {
+  flex: 1 1 auto; min-width: 0; min-height: 0; box-sizing: border-box;
+  overflow: auto; padding: 16px 20px;
+}
+```
+
+This gives vertical scrolling for long notes and horizontal scrolling for wide
+tables/code blocks/images, while Crepe's floating toolbar stays anchored to
+`.milkdown`. The padding also replaces Crepe's `60px 120px` default, which is
+too wide for the resizable editor panel.
+
+## 5. OKF frontmatter preservation
 
 `WikiNote` carries two extra fields:
 
@@ -111,7 +135,7 @@ Image uploads use `ApiStorage.uploadFile()`; Milkdown's image feature calls it
 with folder `raw/assets` and a sanitised filename. When no storage is supplied
 (e.g. in isolation) it falls back to a local blob URL.
 
-## 5. Wikilinks
+## 6. Wikilinks
 
 `[[target]]` is not a Markdown primitive. remark-stringify would escape it as
 `\[\[target]]`, silently corrupting the note. We therefore:
@@ -140,7 +164,7 @@ Supported forms (all round-trip byte-for-byte):
 pure functions, unit-tested in `tests/editorWikilink.test.ts`. Navigation drops
 the optional predicate and label and keeps the `#anchor` if present.
 
-## 6. Colour and alignment
+## 7. Colour and alignment
 
 Milkdown escapes raw text, so `<span style="color: red;">` typed as plain text
 would be serialised as `\<span ...>`. `insertColor()` and `insertAlignment()`
@@ -148,7 +172,7 @@ instead insert Milkdown `html` nodes (which carry a `value` attribute and are
 serialised raw). This preserves the exact HTML already used by the CodeMirror
 engine and by `renderMarkdown()`.
 
-## 7. Validation
+## 8. Validation
 
 ```bash
 npx tsc --noEmit
