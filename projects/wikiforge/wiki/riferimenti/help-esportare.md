@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: 'Esportare: PDF, slide, RDF'
-description: 'Argomenti: esporta, export, pdf, slide, presentazione, rdf, json-ld,
-  turtle, tesi, pandoc, scarica, studio, thesis'
+title: "Esportare: PDF, slide, RDF"
+description: "Argomenti: esporta, export, pdf, slide, presentazione, rdf, json-ld, turtle, tesi, pandoc, scarica, studio, thesis"
 resource: docs/help/esportare.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-esportare-md
-  resource: docs/help/esportare.md
-  title: 'Esportare: PDF, slide, RDF'
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-esportare-md
+    resource: docs/help/esportare.md
+    title: "Esportare: PDF, slide, RDF"
+    author: human:alby69
 ---
 ## Da dove si esporta
 

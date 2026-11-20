@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: 'Viste: Editor, Scratchpad, Graph, Split'
-description: 'Argomenti: viste, vista, editor, scratchpad, graph, grafo, split, affiancata,
-  visualizzazione, nodi, spazio'
+title: "Viste: Editor, Scratchpad, Graph, Split"
+description: "Argomenti: viste, vista, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio"
 resource: docs/help/viste-grafo.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-viste-grafo-md
-  resource: docs/help/viste-grafo.md
-  title: 'Viste: Editor, Scratchpad, Graph, Split'
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-viste-grafo-md
+    resource: docs/help/viste-grafo.md
+    title: "Viste: Editor, Scratchpad, Graph, Split"
+    author: human:alby69
 ---
 ## Le 4 viste
 

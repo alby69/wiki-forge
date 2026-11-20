@@ -1,25 +1,18 @@
 ---
 type: Process
-title: 'Piano: docs/ come wiki di wiki-forge'
-description: 'Progetto di self-documentazione: la cartella docs/ diventa la wiki consultabile
-  di wiki-forge stesso.'
+title: "Piano: docs/ come wiki di wiki-forge"
+description: "Progetto di self-documentazione: la cartella docs/ diventa la wiki consultabile di wiki-forge stesso."
 resource: docs/SELF_WIKI_PLAN.md
-tags:
-- scope/docs
-- layer/generated
-- area/processi
-- lang/it
+tags: [scope/docs, layer/generated, area/processi, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-self-wiki-plan-md
-  resource: docs/SELF_WIKI_PLAN.md
-  title: 'Piano: docs/ come wiki di wiki-forge'
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-self-wiki-plan-md
+    resource: docs/SELF_WIKI_PLAN.md
+    title: "Piano: docs/ come wiki di wiki-forge"
+    author: human:alby69
 ---
 # Piano: `docs/` come wiki auto-documentante di wiki-forge
 

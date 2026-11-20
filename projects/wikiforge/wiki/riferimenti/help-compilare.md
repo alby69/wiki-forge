@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: Compilare le fonti
-description: 'Argomenti: compila, compile, compilazione, ingesta, ingest, recompile,
-  convert, pipeline, barra avanzamento'
+title: "Compilare le fonti"
+description: "Argomenti: compila, compile, compilazione, ingesta, ingest, recompile, convert, pipeline, barra avanzamento"
 resource: docs/help/compilare.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-compilare-md
-  resource: docs/help/compilare.md
-  title: Compilare le fonti
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-compilare-md
+    resource: docs/help/compilare.md
+    title: "Compilare le fonti"
+    author: human:alby69
 ---
 ## Cos'è la compilazione
 

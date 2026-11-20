@@ -1,6 +1,6 @@
-# Standard — Topic Index
+# Standard e specifiche
 
-## Articles
+## Standard e specifiche
 
 * [LLM Wiki — by Andrej Karpathy](karpathy-llm-wiki.md) — A pattern for building personal knowledge bases using LLMs.
 * [Open Knowledge Format (OKF) Specification v0.2](okf-spec.md) — Repository: https://github.com/GoogleCloudPlatform/open-knowledge-format

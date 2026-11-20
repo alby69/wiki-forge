@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: Developer Mode e strumenti
-description: 'Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script,
-  avanzato, skills'
+title: "Developer Mode e strumenti"
+description: "Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills"
 resource: docs/help/modalita-dev.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-modalita-dev-md
-  resource: docs/help/modalita-dev.md
-  title: Developer Mode e strumenti
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-modalita-dev-md
+    resource: docs/help/modalita-dev.md
+    title: "Developer Mode e strumenti"
+    author: human:alby69
 ---
 ## Attivare Developer Mode
 

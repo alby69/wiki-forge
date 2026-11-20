@@ -1,25 +1,18 @@
 ---
 type: Playbook
-title: '📘 Workflow Integrato: Da NotebookLM a Wiki-Forge per la Tesi Magistrale'
-description: 'Il progetto adotta un''architettura a due livelli per massimizzare sia
-  la profondità analitica che la persistenza strutturata della conoscenza:'
+title: "📘 Workflow Integrato: Da NotebookLM a Wiki-Forge per la Tesi Magistrale"
+description: "Il progetto adotta un'architettura a due livelli per massimizzare sia la profondità analitica che la persistenza strutturata della conoscenza:"
 resource: docs/WORKFLOW.md
-tags:
-- scope/docs
-- layer/generated
-- area/guida
-- lang/it
+tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-workflow-md
-  resource: docs/WORKFLOW.md
-  title: '📘 Workflow Integrato: Da NotebookLM a Wiki-Forge per la Tesi Magistrale'
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-workflow-md
+    resource: docs/WORKFLOW.md
+    title: "📘 Workflow Integrato: Da NotebookLM a Wiki-Forge per la Tesi Magistrale"
+    author: human:alby69
 ---
 # 📘 Workflow Integrato: Da NotebookLM a Wiki-Forge per la Tesi Magistrale
 

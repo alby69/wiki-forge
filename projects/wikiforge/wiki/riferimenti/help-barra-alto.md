@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: La barra in alto
-description: 'Argomenti: barra, header, alta, pulsanti, menu, badge, progetto, vista,
-  chat, aiuto, F1, sidebar, research, studio, study'
+title: "La barra in alto"
+description: "Argomenti: barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar, research, studio, study"
 resource: docs/help/barra-alto.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-barra-alto-md
-  resource: docs/help/barra-alto.md
-  title: La barra in alto
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-barra-alto-md
+    resource: docs/help/barra-alto.md
+    title: "La barra in alto"
+    author: human:alby69
 ---
 ## Di cosa è fatta la barra in alto
 

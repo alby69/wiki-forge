@@ -12,20 +12,22 @@ context: [versioni]
 ## Modificare una nota
 
 1. Seleziona la nota nella barra sinistra.
-2. Clicca **Modifica** (in alto nell'editor): il testo diventa modificabile.
-3. Formatta con la **toolbar** (vedi sotto).
-4. **💾 Salva** (Ctrl+S-like) per salvare, oppure **Annulla** per tornare alla versione precedente.
+2. Clicca **✏️ Edit** (in alto nell'editor): si apre l'editor WYSIWYG.
+3. Formatta con la **toolbar** (vedi sotto) e con i comandi di Milkdown/Crepe (slash command, tabelle, immagini, blocchi di codice).
+4. **💾 Save & Close** oppure **💾 Save** per salvare, **✖ Cancel** per tornare alla versione precedente. Funziona anche **Ctrl/Cmd+S**.
 
-Le modifiche vengono salvate nel file Markdown della nota: nulla di nascosto, puoi anche modificare i file col tuo editor preferito.
+Le modifiche vengono salvate nel file Markdown della nota: nulla di nascosto, puoi anche modificare i file col tuo editor preferito. Il frontmatter OKF viene conservato byte-per-byte: l'editor modifica solo il corpo della nota.
+
+> L'editor usa Milkdown/Crepe nei browser normali. In ambienti senza DOM completo (per esempio i test automatici) resta disponibile il vecchio editor a sorgente CodeMirror, con le stesse funzioni della toolbar.
 
 ## La toolbar
 
-- **↶ / ↷** annulla/ripristina (Ctrl+Z / Ctrl+Y)
-- **B / I / S / `code`** grassetto, corsivo, barrato, codice
-- **Menu H** intestazioni H1–H4
-- **Liste** puntate e numerate, **citazione** `>`
-- ** colore testo ** e **allineamento**
-- **Link**: inserisci rapidamente collegamenti
+- **↩️ Undo / ↪️ Redo** annulla/ripristina (Ctrl+Z / Ctrl+Y)
+- **B / I / S / `</>`** grassetto, corsivo, barrato, codice inline
+- **Header...** intestazioni H1–H3
+- **• Lista / 1. Lista / ” Quote** elenco puntato, numerato e citazione
+- **🎨 Colore...** e **📐 Align...** colore e allineamento del testo (markup HTML preservato nel Markdown)
+- La toolbar di Crepe aggiunge tabelle, link, immagini, KaTeX e blocchi di codice con evidenziazione
 
 ## I wikilink
 

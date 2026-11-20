@@ -1,25 +1,18 @@
 ---
 type: Playbook
-title: TUTORIAL — Guida Operativa all'Uso di Wiki-Forge
-description: Quando affronti un progetto complesso — come una Tesi Magistrale, una
-  ricerca di mercato o un manuale operativo — accumuli decine di PDF, articoli e appunti…
+title: "TUTORIAL — Guida Operativa all'Uso di Wiki-Forge"
+description: "Quando affronti un progetto complesso — come una Tesi Magistrale, una ricerca di mercato o un manuale operativo — accumuli decine di PDF, articoli e appunti…"
 resource: docs/TUTORIAL.md
-tags:
-- scope/docs
-- layer/generated
-- area/guida
-- lang/it
+tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-tutorial-md
-  resource: docs/TUTORIAL.md
-  title: TUTORIAL — Guida Operativa all'Uso di Wiki-Forge
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-tutorial-md
+    resource: docs/TUTORIAL.md
+    title: "TUTORIAL — Guida Operativa all'Uso di Wiki-Forge"
+    author: human:alby69
 ---
 # TUTORIAL — Guida Operativa all'Uso di Wiki-Forge
 

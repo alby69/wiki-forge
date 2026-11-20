@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: La chat e i comandi
-description: 'Argomenti: chat, comandi, slash, comando, agente, assistente, help,
-  consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks…'
+title: "La chat e i comandi"
+description: "Argomenti: chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks…"
 resource: docs/help/chat-comandi.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-chat-comandi-md
-  resource: docs/help/chat-comandi.md
-  title: La chat e i comandi
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-chat-comandi-md
+    resource: docs/help/chat-comandi.md
+    title: "La chat e i comandi"
+    author: human:alby69
 ---
 ## Aprire la chat
 

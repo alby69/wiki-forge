@@ -1,24 +1,18 @@
 ---
 type: Playbook
-title: User Guide — Simple Focus Mode & Guided Procedures
-description: 'Focus Mode provides a clean, 3-step interface for operators:'
+title: "User Guide — Simple Focus Mode & Guided Procedures"
+description: "Focus Mode provides a clean, 3-step interface for operators:"
 resource: docs/USER_GUIDE.md
-tags:
-- scope/docs
-- layer/generated
-- area/guida
-- lang/it
+tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-user-guide-md
-  resource: docs/USER_GUIDE.md
-  title: User Guide — Simple Focus Mode & Guided Procedures
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-user-guide-md
+    resource: docs/USER_GUIDE.md
+    title: "User Guide — Simple Focus Mode & Guided Procedures"
+    author: human:alby69
 ---
 # User Guide — Simple Focus Mode & Guided Procedures
 

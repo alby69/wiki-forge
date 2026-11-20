@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Note Editor — migrazione a Milkdown/Crepe (WYSIWYG, disaccoppiato)
+
+- **Adapter seam**: `MarkdownEditor.ts` resta lo shell (header, Node Info, Review/Research/Studio/Cronologia, save lifecycle) e delega la superficie di editing a `NoteEditorAdapter` (`EditorAdapter.ts`). Due motori: `CodeMirrorAdapter` (fallback/source view) e `milkdown/MilkdownAdapter` (Crepe 7.23 WYSIWYG, TypeScript vanilla, nessun React). `resolveEngine()` sceglie automaticamente Milkdown nei browser reali e CodeMirror con DOM mock nei test. Le azioni della toolbar sono semantiche (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`, undo/redo); gli helper puri condivisi stanno in `editorMarkdownOps.ts`.
+- **Caricamento lazily**: `MilkdownAdapter` è importato con `import()` dinamico: Crepe è ESM-only e il subpath `@milkdown/kit/component/diff` non è risolvibile dal test runner Node, che resta quindi sul fallback CodeMirror. Vite emette un chunk `MilkdownAdapter-*.js` separato. CSS Crepe (`common/style.css`, `frame-dark.css`) importati in `index.ts`.
+- **Feature Crepe**: toolbar, tabelle GFM, KaTeX, upload immagini, slash command e blocchi di codice CodeMirror attivi; `AI` e `TopBar` disabilitati (Review/Research/Studio esistono già). Upload via `ApiStorage.uploadFile()` in `raw/assets`.
+- **Frontmatter OKF byte-identico**: `WikiNote.frontmatterRaw` conserva il blocco YAML esatto; l'editor vede solo il body e `saveCurrentContent()` passa `frontmatterRaw + body` come `fullContent`. `ApiStorage.saveNote()` invia `rawContent`, che il backend scrive verbatim con `safeFs.atomicWriteFile()`.
+- **Wikilink nativi**: plugin remark + nodo inline atomico (`milkdown/wikilink.ts`, helper puri in `wikilinkParsing.ts`) mantengono `[[target]]`, `[[target|label]]`, `[[predicate::target|label]]` e `#anchor` invariati durante la serializzazione (remark altrimenti escapa `[[`). Click bridgiati a `onOpenLink`. Colori/allineamenti inseriti come nodi `html` per evitare l'escape del markup.
+- **Test e documentazione**: nuovi `tests/editorWikilink.test.ts` (8 test); `tests/editorFormatting.test.ts` e il test di round-trip frontmatter restano verdi. Nuovo `docs/EDITOR_MIGRATION.md`; aggiornati `ARCHITECTURE.md`, `TECHNICAL_ARCHITECTURE.md` e la proiezione wiki da `docs/`.
+
 ### Architettura coerente — Fase 77 (KISS/DRY, addio duplicazioni)
 
 **Scopo originale — selezione del progetto.** Script Control Panel e KE Workbench inviano ora

@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: Progetti e configurazione
-description: 'Argomenti: progetto, project, config, configurazione, impostazioni,
-  wizard, onboarding, modello, llm, cartelle'
+title: "Progetti e configurazione"
+description: "Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle"
 resource: docs/help/progetti-config.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-progetti-config-md
-  resource: docs/help/progetti-config.md
-  title: Progetti e configurazione
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-progetti-config-md
+    resource: docs/help/progetti-config.md
+    title: "Progetti e configurazione"
+    author: human:alby69
 ---
 ## Cambiare progetto
 

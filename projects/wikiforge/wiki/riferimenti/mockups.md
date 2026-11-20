@@ -1,25 +1,18 @@
 ---
 type: Reference
-title: Mockup — Review Studio
-description: Prototipo statico e interattivo della console di revisione descritta
-  nella proposta.
+title: "Mockup — Review Studio"
+description: "Prototipo statico e interattivo della console di revisione descritta nella proposta."
 resource: docs/mockups/README.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-mockups-readme-md
-  resource: docs/mockups/README.md
-  title: Mockup — Review Studio
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-mockups-readme-md
+    resource: docs/mockups/README.md
+    title: "Mockup — Review Studio"
+    author: human:alby69
 ---
 # Mockup — Review Studio
 

@@ -1,13 +1,29 @@
 import { WikiNote } from '@frontend/core/types/wiki';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { renderMarkdown } from '@frontend/core/utils/markdown';
-import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, drawSelection, highlightActiveLine } from '@codemirror/view';
-import { markdown } from '@codemirror/lang-markdown';
-import { defaultKeymap, history, historyKeymap, undo, redo, undoDepth, redoDepth } from '@codemirror/commands';
-import { autocompletion } from '@codemirror/autocomplete';
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
-import { wikilinkAutocompleteSource } from './wikilinkAutocomplete';
+
+import type {
+  EditorEngine,
+  NoteEditorAdapter,
+} from './EditorAdapter';
+import { resolveEngine } from './EditorAdapter';
+import { CodeMirrorAdapter } from './CodeMirrorAdapter';
+import type { ApiStorage } from '@frontend/storage/ApiStorage';
+
+export {
+  applyAlignment,
+  applyColor,
+  insertLinePrefix,
+  toggleWrapSelection,
+  wrapSelection,
+} from './editorMarkdownOps';
+
+export interface MarkdownEditorOptions {
+  /** Force an engine. `auto` uses Milkdown in real browsers, CodeMirror otherwise. */
+  engine?: EditorEngine | 'auto';
+  /** Storage used by Milkdown for image uploads. */
+  storage?: ApiStorage;
+}
 
 export class MarkdownEditor {
   private container: HTMLElement;
@@ -23,7 +39,12 @@ export class MarkdownEditor {
   private onOpenResearchCb?: () => void;
   private onOpenStudyCb?: () => void;
   private contextVisible = true;
-  private editorView: EditorView | null = null;
+
+  private adapter: NoteEditorAdapter | null = null;
+  private renderGeneration = 0;
+  private readonly enginePreference: EditorEngine | 'auto';
+  private readonly storage?: ApiStorage;
+  private onKeyDown: (event: KeyboardEvent) => void = () => {};
 
   constructor(
     container: HTMLElement,
@@ -34,7 +55,8 @@ export class MarkdownEditor {
     onOpenHistory?: () => void,
     onOpenReview?: () => void,
     onOpenResearch?: () => void,
-    onOpenStudy?: () => void
+    onOpenStudy?: () => void,
+    options: MarkdownEditorOptions = {}
   ) {
     this.container = container;
     this.onSaveCb = onSave;
@@ -45,6 +67,8 @@ export class MarkdownEditor {
     this.onOpenReviewCb = onOpenReview;
     this.onOpenResearchCb = onOpenResearch;
     this.onOpenStudyCb = onOpenStudy;
+    this.enginePreference = options.engine ?? 'auto';
+    this.storage = options.storage;
     this.render();
   }
 
@@ -81,34 +105,56 @@ export class MarkdownEditor {
     }, 3000);
   }
 
-  private destroyEditor(): void {
-    if (this.editorView) {
-      this.editorView.destroy();
-      this.editorView = null;
-    }
+  /** Current engine, exposed for diagnostics and tests. */
+  public get engine(): EditorEngine {
+    return resolveEngine(this.enginePreference);
+  }
+
+  private destroyEditor(target: NoteEditorAdapter | null = this.adapter): void {
+    if (this.adapter === target) this.adapter = null;
+    if (!target) return;
+    void target.destroy().catch(() => {
+      // A torn-down editor must never block navigation.
+    });
   }
 
   private saveCurrentContent(): void {
     if (!this.currentNote || !this.onSaveCb) return;
-    const content = this.editorView ? this.editorView.state.doc.toString() : this.currentNote.content;
+    const content = this.adapter ? this.adapter.getMarkdown() : this.currentNote.content;
     const fullContent = `${this.currentNote.frontmatterRaw ?? ''}${content}`;
     this.onSaveCb(this.currentNote.id, content, fullContent);
   }
 
   private updateUndoRedoState(): void {
-    if (!this.editorView) return;
     const undoBtn = this.container.querySelector('#tb-undo') as HTMLButtonElement | null;
     const redoBtn = this.container.querySelector('#tb-redo') as HTMLButtonElement | null;
-    if (undoBtn) {
-      undoBtn.disabled = undoDepth(this.editorView.state) === 0;
+    if (undoBtn) undoBtn.disabled = !this.adapter?.canUndo();
+    if (redoBtn) redoBtn.disabled = !this.adapter?.canRedo();
+  }
+
+  private createAdapter(): NoteEditorAdapter | Promise<NoteEditorAdapter> {
+    const getNotes = () => (this.getNotesCb ? this.getNotesCb() : []);
+    const engine = resolveEngine(this.enginePreference);
+    if (engine === 'milkdown') {
+      // Loaded on demand: Crepe is ESM-only and must not be evaluated by the
+      // Node test runner, which always uses the CodeMirror fallback.
+      return import('./milkdown/MilkdownAdapter').then(({ MilkdownAdapter }) =>
+        new MilkdownAdapter({
+          uploadFile: this.storage
+            ? (folder, name, data) => this.storage!.uploadFile(folder, name, data)
+            : undefined,
+        })
+      );
     }
-    if (redoBtn) {
-      redoBtn.disabled = redoDepth(this.editorView.state) === 0;
-    }
+    return new CodeMirrorAdapter(getNotes);
   }
 
   public render(): void {
-    this.destroyEditor();
+    const generation = ++this.renderGeneration;
+    const previous = this.adapter;
+    this.adapter = null;
+    this.container.removeEventListener('keydown', this.onKeyDown);
+    if (previous) this.destroyEditor(previous);
 
     if (!this.currentNote) {
       this.container.innerHTML = `
@@ -147,7 +193,7 @@ export class MarkdownEditor {
           ${
             isPreview
               ? `<div id="markdown-preview" class="markdown-body" style="flex: 1; overflow-y: auto; line-height: 1.6; font-size: 14px;">${renderMarkdown(note.content)}</div>`
-              : `<div id="codemirror-wrapper" style="flex: 1; display: flex; flex-direction: column; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden;">
+              : `<div id="cm-editor-wrapper" style="flex: 1; display: flex; flex-direction: column; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden;">
                    <div class="editor-toolbar" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; background: #121316; border-bottom: 1px solid #2d3748; font-size: 12px; user-select: none;">
                      <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <button id="tb-undo" class="toolbar-btn" title="Annulla (Ctrl+Z)" disabled style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">↩️ Undo</button>
@@ -155,8 +201,8 @@ export class MarkdownEditor {
                      </div>
                      <div class="toolbar-divider" style="width: 1px; height: 18px; background: #3d4759; margin: 0 2px;"></div>
                      <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
-                       <button id="tb-bold" class="toolbar-btn" title="Grassetto (**bold**)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-weight: bold; font-size: 12px;">B</button>
-                       <button id="tb-italic" class="toolbar-btn" title="Corsivo (*italic*)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-style: italic; font-size: 12px;">I</button>
+                       <button id="tb-bold" class="toolbar-btn" title="Grassetto (Ctrl+B)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-weight: bold; font-size: 12px;">B</button>
+                       <button id="tb-italic" class="toolbar-btn" title="Corsivo (Ctrl+I)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-style: italic; font-size: 12px;">I</button>
                        <button id="tb-strike" class="toolbar-btn" title="Barrato (~~strike~~)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; text-decoration: line-through; font-size: 12px;">S</button>
                        <button id="tb-code" class="toolbar-btn" title="Codice (\`code\`)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-family: monospace; font-size: 11px;">&lt;/&gt;</button>
                      </div>
@@ -164,9 +210,9 @@ export class MarkdownEditor {
                      <div class="toolbar-group" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0;">
                        <select id="tb-heading" class="toolbar-select" title="Intestazione (Header)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 6px; font-size: 12px; cursor: pointer;">
                          <option value="">Header...</option>
-                         <option value="# ">H1 - Titolo</option>
-                         <option value="## ">H2 - Sezione</option>
-                         <option value="### ">H3 - Sottosezione</option>
+                         <option value="h1">H1 - Titolo</option>
+                         <option value="h2">H2 - Sezione</option>
+                         <option value="h3">H3 - Sottosezione</option>
                        </select>
                        <button id="tb-list-ul" class="toolbar-btn" title="Elenco puntato (- item)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">• Lista</button>
                        <button id="tb-list-ol" class="toolbar-btn" title="Elenco numerato (1. item)" style="background: #2d3748; color: #e2e8f0; border: 1px solid #3d4759; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 12px;">1. Lista</button>
@@ -193,7 +239,7 @@ export class MarkdownEditor {
                        </select>
                      </div>
                    </div>
-                   <div id="cm-editor-container" style="flex: 1; overflow: hidden;"></div>
+                   <div id="cm-editor-container" class="wiki-forge-editor-surface" style="flex: 1; overflow: hidden;"></div>
                  </div>`
           }
         </div>
@@ -253,247 +299,117 @@ export class MarkdownEditor {
           }
         });
       });
-    } else {
-      const cmContainer = this.container.querySelector('#cm-editor-container') as HTMLElement;
-      if (cmContainer) {
-        const state = EditorState.create({
-          doc: note.content,
-          extensions: [
-            history(),
-            drawSelection(),
-            highlightActiveLine(),
-            EditorView.lineWrapping,
-            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-            markdown(),
-            autocompletion({
-              override: [
-                wikilinkAutocompleteSource(() => (this.getNotesCb ? this.getNotesCb() : [])),
-              ],
-            }),
-            EditorView.updateListener.of((update) => {
-              if (update.docChanged || update.selectionSet) {
-                this.updateUndoRedoState();
-              }
-            }),
-            keymap.of([
-              {
-                key: 'Mod-s',
-                run: () => {
-                  this.saveCurrentContent();
-                  return true;
-                },
-              },
-              {
-                key: 'Mod-b',
-                run: (view) => toggleWrapSelection(view, '**'),
-              },
-              {
-                key: 'Mod-i',
-                run: (view) => toggleWrapSelection(view, '*'),
-              },
-              ...defaultKeymap,
-              ...historyKeymap,
-            ]),
-            wikiForgeEditorTheme,
-          ],
-        });
+      return;
+    }
 
-        this.editorView = new EditorView({
-          state,
-          parent: cmContainer,
-        });
+    const editorRoot = this.container.querySelector('#cm-editor-container') as HTMLElement | null;
+    if (editorRoot) {
+      const setupAdapter = (adapter: NoteEditorAdapter): void => {
+        if (generation !== this.renderGeneration) {
+          void adapter.destroy();
+          return;
+        }
+        adapter.onChange(() => this.updateUndoRedoState());
+        adapter.onWikilinkClick(target => this.onOpenLinkCb?.(target));
+        this.adapter = adapter;
+        void Promise.resolve(adapter.mount(editorRoot, note.content))
+          .then(() => {
+            if (generation !== this.renderGeneration) {
+              this.destroyEditor(adapter);
+              return;
+            }
+            this.bindToolbarEvents();
+            this.updateUndoRedoState();
+          })
+          .catch(() => {
+            // If the engine fails to boot, keep the toolbar usable.
+            this.bindToolbarEvents();
+            this.updateUndoRedoState();
+          });
+      };
 
-        this.updateUndoRedoState();
-        this.bindToolbarEvents();
+      const pendingAdapter = this.createAdapter();
+      if (pendingAdapter instanceof Promise) {
+        void pendingAdapter.then(setupAdapter).catch(() => {
+          this.bindToolbarEvents();
+          this.updateUndoRedoState();
+        });
+      } else {
+        setupAdapter(pendingAdapter);
       }
 
-      const saveCloseBtn = this.container.querySelector('#editor-save-close-btn');
-      saveCloseBtn?.addEventListener('click', () => {
-        this.saveCurrentContent();
-        this.mode = 'preview';
-        this.render();
-      });
-
-      const cancelBtn = this.container.querySelector('#editor-cancel-btn');
-      cancelBtn?.addEventListener('click', () => {
-        this.mode = 'preview';
-        this.render();
-      });
+      this.onKeyDown = (event: KeyboardEvent) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+          event.preventDefault();
+          this.saveCurrentContent();
+        }
+      };
+      this.container.addEventListener('keydown', this.onKeyDown);
     }
+
+    const saveCloseBtn = this.container.querySelector('#editor-save-close-btn');
+    saveCloseBtn?.addEventListener('click', () => {
+      this.saveCurrentContent();
+      this.mode = 'preview';
+      this.render();
+    });
+
+    const cancelBtn = this.container.querySelector('#editor-cancel-btn');
+    cancelBtn?.addEventListener('click', () => {
+      this.mode = 'preview';
+      this.render();
+    });
   }
 
   private bindToolbarEvents(): void {
-    if (!this.editorView) return;
+    const bindClick = (id: string, cb: () => void): void => {
+      this.container.querySelector(id)?.addEventListener('click', () => {
+        cb();
+        this.adapter?.focus();
+      });
+    };
 
-    const undoBtn = this.container.querySelector('#tb-undo');
-    undoBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        undo(this.editorView);
-        this.editorView.focus();
-      }
-    });
+    const adapter = this.adapter;
+    if (!adapter) return;
 
-    const redoBtn = this.container.querySelector('#tb-redo');
-    redoBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        redo(this.editorView);
-        this.editorView.focus();
-      }
-    });
-
-    const boldBtn = this.container.querySelector('#tb-bold');
-    boldBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        wrapSelection(this.editorView, '**', '**', 'testo in grassetto');
-        this.editorView.focus();
-      }
-    });
-
-    const italicBtn = this.container.querySelector('#tb-italic');
-    italicBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        wrapSelection(this.editorView, '*', '*', 'testo in corsivo');
-        this.editorView.focus();
-      }
-    });
-
-    const strikeBtn = this.container.querySelector('#tb-strike');
-    strikeBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        wrapSelection(this.editorView, '~~', '~~', 'testo barrato');
-        this.editorView.focus();
-      }
-    });
-
-    const codeBtn = this.container.querySelector('#tb-code');
-    codeBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        wrapSelection(this.editorView, '`', '`', 'codice');
-        this.editorView.focus();
-      }
-    });
+    bindClick('#tb-undo', () => adapter.undo());
+    bindClick('#tb-redo', () => adapter.redo());
+    bindClick('#tb-bold', () => adapter.toggleInline('strong'));
+    bindClick('#tb-italic', () => adapter.toggleInline('emphasis'));
+    bindClick('#tb-strike', () => adapter.toggleInline('strike'));
+    bindClick('#tb-code', () => adapter.toggleInline('code'));
+    bindClick('#tb-list-ul', () => adapter.applyBlock('bullet-list'));
+    bindClick('#tb-list-ol', () => adapter.applyBlock('ordered-list'));
+    bindClick('#tb-quote', () => adapter.applyBlock('quote'));
 
     const headingSelect = this.container.querySelector('#tb-heading') as HTMLSelectElement | null;
     headingSelect?.addEventListener('change', () => {
-      const prefix = headingSelect.value;
-      if (prefix && this.editorView) {
-        insertLinePrefix(this.editorView, prefix);
+      const value = headingSelect.value;
+      if (/^h[123]$/.test(value)) {
+        adapter.applyBlock(value as 'heading1' | 'heading2' | 'heading3');
         headingSelect.value = '';
-        this.editorView.focus();
-      }
-    });
-
-    const listUlBtn = this.container.querySelector('#tb-list-ul');
-    listUlBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        insertLinePrefix(this.editorView, '- ');
-        this.editorView.focus();
-      }
-    });
-
-    const listOlBtn = this.container.querySelector('#tb-list-ol');
-    listOlBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        insertLinePrefix(this.editorView, '1. ');
-        this.editorView.focus();
-      }
-    });
-
-    const quoteBtn = this.container.querySelector('#tb-quote');
-    quoteBtn?.addEventListener('click', () => {
-      if (this.editorView) {
-        insertLinePrefix(this.editorView, '> ');
-        this.editorView.focus();
+        adapter.focus();
       }
     });
 
     const colorSelect = this.container.querySelector('#tb-color') as HTMLSelectElement | null;
     colorSelect?.addEventListener('change', () => {
       const color = colorSelect.value;
-      if (color && this.editorView) {
-        applyColor(this.editorView, color);
+      if (color) {
+        adapter.insertColor(color);
         colorSelect.value = '';
-        this.editorView.focus();
+        adapter.focus();
       }
     });
 
     const alignSelect = this.container.querySelector('#tb-align') as HTMLSelectElement | null;
     alignSelect?.addEventListener('change', () => {
       const align = alignSelect.value;
-      if (align && this.editorView) {
-        applyAlignment(this.editorView, align);
+      if (align) {
+        adapter.insertAlignment(align);
         alignSelect.value = '';
-        this.editorView.focus();
+        adapter.focus();
       }
     });
   }
 }
-
-export function toggleWrapSelection(view: EditorView, wrapper: string): boolean {
-  return wrapSelection(view, wrapper, wrapper);
-}
-
-export function wrapSelection(view: EditorView, before: string, after: string = before, placeholder: string = ''): boolean {
-  const range = view.state.selection.main;
-  const selectedText = view.state.sliceDoc(range.from, range.to) || placeholder;
-  const newText = `${before}${selectedText}${after}`;
-  view.dispatch({
-    changes: { from: range.from, to: range.to, insert: newText },
-    selection: { anchor: range.from + before.length, head: range.from + before.length + selectedText.length },
-  });
-  return true;
-}
-
-export function insertLinePrefix(view: EditorView, prefix: string): boolean {
-  const range = view.state.selection.main;
-  const line = view.state.doc.lineAt(range.from);
-  view.dispatch({
-    changes: { from: line.from, to: line.from, insert: prefix },
-    selection: { anchor: range.from + prefix.length, head: range.to + prefix.length },
-  });
-  return true;
-}
-
-export function applyColor(view: EditorView, color: string): boolean {
-  if (!color) return false;
-  return wrapSelection(view, `<span style="color: ${color};">`, `</span>`, 'testo colorato');
-}
-
-export function applyAlignment(view: EditorView, align: string): boolean {
-  if (!align) return false;
-  return wrapSelection(view, `<div align="${align}">\n`, `\n</div>`, 'testo allineato');
-}
-
-const wikiForgeEditorTheme = EditorView.theme({
-  '&': {
-    height: '100%',
-    width: '100%',
-    minWidth: '0',
-    backgroundColor: '#121316',
-    color: '#e2e8f0',
-    fontSize: '13px',
-    fontFamily: 'monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-  },
-  '.cm-scroller': {
-    overflow: 'auto',
-    minWidth: '0',
-  },
-  '.cm-content': {
-    caretColor: '#64b5f6',
-    padding: '12px',
-  },
-  '&.cm-focused .cm-cursor': {
-    borderLeftColor: '#64b5f6',
-  },
-  '&.cm-focused .cm-selectionBackground, ::selection': {
-    backgroundColor: '#2b6cb0 !important',
-  },
-  '.cm-gutters': {
-    backgroundColor: '#18191c',
-    color: '#718096',
-    borderRight: '1px solid #2d3748',
-  },
-  '.cm-activeLine': {
-    backgroundColor: '#1a1d24',
-  },
-});

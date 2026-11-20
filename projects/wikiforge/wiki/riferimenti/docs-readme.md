@@ -1,25 +1,18 @@
 ---
 type: Reference
-title: Wiki-Forge Documentation Index
-description: Indice completo dei documenti in docs/ (24 file), dei contenuti della
-  guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
+title: "Wiki-Forge Documentation Index"
+description: "Indice completo dei documenti in docs/ (24 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/."
 resource: docs/README.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/en
+tags: [scope/docs, layer/generated, area/riferimenti, lang/en]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-readme-md
-  resource: docs/README.md
-  title: Wiki-Forge Documentation Index
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-readme-md
+    resource: docs/README.md
+    title: "Wiki-Forge Documentation Index"
+    author: human:alby69
 ---
 # Wiki-Forge Documentation Index
 
@@ -52,6 +45,7 @@ Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in
 |---|---|
 | [`ARCHITECTURE.md`](../architettura/architecture.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
 | [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
+| [`EDITOR_MIGRATION.md`](../architettura/editor-migration.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
 | [`KE_PLAYBOOK.md`](../processi/ke-playbook.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
 | [`PROCEDURES.md`](../standard/procedures.md) | Specifica del Procedure Engine: schema TOML, DAG, criteri di uscita. |
 | [`SCHEMA.md`](../standard/schema.md) | Guida allo schema tipizzato (`[schema]`), validazione e inferenza (`/schema-lint`, `/schema-infer`). |

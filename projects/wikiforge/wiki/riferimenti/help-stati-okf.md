@@ -1,26 +1,18 @@
 ---
 type: Reference
-title: Stati e livelli di fiducia (OKF)
-description: 'Argomenti: stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed,
-  unverified, verify, verifica, stale, review, revisione, snapshot, diff'
+title: "Stati e livelli di fiducia (OKF)"
+description: "Argomenti: stato, trust, fiducia, okf, verified, human-reviewed, machine-confirmed, unverified, verify, verifica, stale, review, revisione, snapshot, diff"
 resource: docs/help/stati-okf.md
-tags:
-- scope/docs
-- layer/generated
-- area/riferimenti
-- lang/it
-- help
+tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-help-stati-okf-md
-  resource: docs/help/stati-okf.md
-  title: Stati e livelli di fiducia (OKF)
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-help-stati-okf-md
+    resource: docs/help/stati-okf.md
+    title: "Stati e livelli di fiducia (OKF)"
+    author: human:alby69
 ---
 ## I tre livelli di fiducia
 

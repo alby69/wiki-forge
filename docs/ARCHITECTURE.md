@@ -51,3 +51,8 @@ Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critiqu
 
 ### 5. Research Studio API & Query Helpers (`src/backend/server/agentServer.ts`, `researchHelpers.ts`)
 Serves the six-tab Research Studio (`/api/notes/research/search|backlinks|related|trace` on `GET`, `consult|deep-research` on `POST`). Search, backlinks, related and trace are pure deterministic functions over the loaded notes (`researchHelpers.ts`, unit-tested); consult and deep-research use the configured LLM with a deterministic fallback. Deep research writes `output/research-*.md` and `wiki/synthesis/<slug>.md` with a source-attribution matrix and knowledge gaps.
+
+## Key Frontend Components
+
+### 6. Adapter-based Note Editor (`src/frontend/components/editor/`)
+`MarkdownEditor.ts` is the stable shell; the editing surface sits behind the `NoteEditorAdapter` interface (`EditorAdapter.ts`) with two implementations: `CodeMirrorAdapter.ts` (source view / fallback) and `milkdown/MilkdownAdapter.ts` (Crepe 7.23 WYSIWYG, vanilla TS, no React). `resolveEngine()` auto-selects Milkdown in browsers and CodeMirror under mock DOMs/tests; the Milkdown module is dynamically imported so Crepe's ESM-only subpaths never reach the Node test runner. Toolbar actions are semantic (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`) with shared pure helpers in `editorMarkdownOps.ts`. OKF frontmatter is preserved byte-for-byte via `WikiNote.frontmatterRaw` and the `rawContent` save path. A custom remark plugin + inline atom (`milkdown/wikilink*.ts`) keeps `[[wikilinks]]` unescaped through serialisation and bridges clicks to navigation. See `docs/EDITOR_MIGRATION.md`.

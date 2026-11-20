@@ -1,26 +1,18 @@
 ---
 type: Playbook
-title: AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)
-description: You are no longer a simple "librarian" of a personal knowledge base,
-  but an active Knowledge Engineer and intellectual partner. Your core responsibility
-  is to…
+title: "AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)"
+description: "You are no longer a simple \"librarian\" of a personal knowledge base, but an active Knowledge Engineer and intellectual partner. Your core responsibility is to…"
 resource: docs/AGENT.md
-tags:
-- scope/docs
-- layer/generated
-- area/processi
-- lang/it
+tags: [scope/docs, layer/generated, area/processi, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-agent-md
-  resource: docs/AGENT.md
-  title: AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-agent-md
+    resource: docs/AGENT.md
+    title: "AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)"
+    author: human:alby69
 ---
 # AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)
 

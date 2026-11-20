@@ -1,3 +1,6 @@
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/frame-dark.css';
+
 import './styles/theme.css';
 import './styles/sidebar.css';
 import './styles/chat-drawer.css';
@@ -423,7 +426,8 @@ Backlink to [[01-index]].
       () => this.openVersionTimeline(),
       () => this.openReviewStudio(),
       () => this.openResearchStudio(),
-      () => this.openStudyStudio()
+      () => this.openStudyStudio(),
+      { storage: this.storage }
     );
 
     this.contextPanel = new ContextPanel(this.layout.contextContainer, noteId => {

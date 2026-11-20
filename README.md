@@ -62,6 +62,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
 - **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Analisi tecnica approfondita**: moduli, versioning, API della Review Studio e snapshot store, MCP, export RDF.
+- **[`docs/EDITOR_MIGRATION.md`](docs/EDITOR_MIGRATION.md)** — **Editor note**: architettura ad adapter (CodeMirror/Milkdown-Crepe), conservazione frontmatter OKF e wikilink.
 - **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
 - **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.
 - **[`docs/MIGRATION.md`](docs/MIGRATION.md)** — **Guida alla Migrazione Changeset Review**: Sistema Plan-Review-Apply per modifiche AI.

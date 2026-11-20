@@ -29,6 +29,7 @@ Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in
 |---|---|
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
 | [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
+| [`EDITOR_MIGRATION.md`](EDITOR_MIGRATION.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
 | [`KE_PLAYBOOK.md`](KE_PLAYBOOK.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
 | [`PROCEDURES.md`](PROCEDURES.md) | Specifica del Procedure Engine: schema TOML, DAG, criteri di uscita. |
 | [`SCHEMA.md`](SCHEMA.md) | Guida allo schema tipizzato (`[schema]`), validazione e inferenza (`/schema-lint`, `/schema-infer`). |

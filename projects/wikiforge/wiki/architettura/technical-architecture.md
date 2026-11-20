@@ -1,27 +1,18 @@
 ---
 type: Concept
-title: 'Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and
-  Knowledge Engineering'
-description: This document provides a comprehensive technical breakdown of the wiki-forge
-  architecture. It details the system design, the separation between parametric and…
+title: "Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering"
+description: "This document provides a comprehensive technical breakdown of the wiki-forge architecture. It details the system design, the separation between parametric and…"
 resource: docs/TECHNICAL_ARCHITECTURE.md
-tags:
-- scope/docs
-- layer/generated
-- area/architettura
-- lang/it
+tags: [scope/docs, layer/generated, area/architettura, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: '2026-11-19T00:00:00Z'
+  at: "2026-11-19T00:00:00Z"
 sources:
-- id: source-docs-technical-architecture-md
-  resource: docs/TECHNICAL_ARCHITECTURE.md
-  title: 'Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and
-    Knowledge Engineering'
-  author: human:alby69
-  last_modified: '2026-11-20T09:35:27Z'
-verified: []
+  - id: source-docs-technical-architecture-md
+    resource: docs/TECHNICAL_ARCHITECTURE.md
+    title: "Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering"
+    author: human:alby69
 ---
 # Technical Architecture & Usage Analysis: `wiki-forge` with Local LLMs and Knowledge Engineering
 
@@ -255,6 +246,20 @@ Implemented in `src/backend/server/safeFs.ts`, `src/backend/server/changesetStor
 - The header picker value is sent as `X-Project-Id` (and `projectId` in bodies) by Script Control Panel, KE Workbench and Changeset review. The backend treats the header as authoritative over stale form arguments, and exports `WIKIFORGE_PROJECT_ID` + `WIKI_FORGE_WIKI_DIR` to spawned Python processes.
 - `scripts/okf_common.py::resolve_dir()` resolves a bare `wiki` to `<cwd>/wiki` → `projects/<selected>/wiki` → repo root, so scripts behave identically when launched from the repo root or a project root.
 - `resolveToolScript(rootDir, relativePath)` in `toolPaths.ts` keeps tool sources in the installation root even when `AgentServer` is constructed with a project-only data root (the reason the old inline reindex writer existed).
+
+### 2.15 Note Editor Adapter — Milkdown/Crepe WYSIWYG
+
+The note editor is engine-agnostic. `MarkdownEditor.ts` remains the shell (header, Node Info panel, Review/Research/Studio/History buttons, save lifecycle), while the editing surface is behind the `NoteEditorAdapter` contract in `src/frontend/components/editor/EditorAdapter.ts`.
+
+- **Two engines**: `CodeMirrorAdapter` (legacy source view, capability fallback and test path) and `milkdown/MilkdownAdapter` (Crepe 7.23 WYSIWYG). `resolveEngine()` picks Milkdown in real browsers and CodeMirror under a mock DOM or when explicitly requested. Vanilla TypeScript only — no React.
+- **Semantic contract**: the shell calls `toggleInline('strong')`, `applyBlock('heading2')`, `insertColor()`, `insertAlignment()`, `undo()`/`redo()`. No CodeMirror or ProseMirror type crosses the boundary; formatting helpers live in the pure `editorMarkdownOps.ts` module.
+- **Crepe features**: toolbar, GFM tables, KaTeX, image upload, slash commands and CodeMirror code blocks are on; `AI` and `TopBar` are off (Review, Research and Study Studios already provide those capabilities). Image uploads go through `ApiStorage.uploadFile()` into `raw/assets`.
+- **Lazy loading**: `MarkdownEditor` imports `MilkdownAdapter` with a dynamic `import()`. Crepe is ESM-only and its `@milkdown/kit/component/diff` subpath is not resolvable by the Node test runner, so tests always use the CodeMirror fallback. Vite emits a dedicated `MilkdownAdapter-*.js` chunk.
+- **OKF safety**: `WikiNote.frontmatterRaw` stores the exact YAML block; the editor receives only the body and `saveCurrentContent()` calls `onSave(id, body, frontmatterRaw + body)`. `ApiStorage` sends that as `rawContent` and the backend writes it verbatim via `safeFs.atomicWriteFile()`.
+- **Wikilinks**: a custom remark plugin + inline atom keeps `[[target]]`, `[[target|label]]`, `[[predicate::target|label]]` and `#anchors` byte-identical through serialisation (remark would otherwise escape `[[`). Parsing/splitting helpers are pure and unit-tested; click events are bridged to the shell's `onOpenLink`.
+- **Colour/alignment**: inserted as Milkdown `html` nodes so remark-stringify preserves the raw `<span style="color: ...">` / `<div align="...">` markup instead of escaping it.
+
+Full design and rationale: `docs/EDITOR_MIGRATION.md`.
 
 ---
 

@@ -46,6 +46,7 @@ DOC_MAP: dict[str, str] = {
     # architettura
     "docs/ARCHITECTURE.md": "architettura/architecture",
     "docs/TECHNICAL_ARCHITECTURE.md": "architettura/technical-architecture",
+    "docs/EDITOR_MIGRATION.md": "architettura/editor-migration",
     "docs/GRAPH_RAG.md": "architettura/graph-rag",
     # processi
     "docs/AGENT.md": "processi/agent-manual",
@@ -89,6 +90,7 @@ for _help_id in HELP_IDS:
 
 ENGLISH_SOURCES = frozenset({
     "docs/ARCHITECTURE.md",
+    "docs/EDITOR_MIGRATION.md",
     "docs/CHANGELOG.md",
     "docs/KARPATHY_LLM_WIKI.md",
     "docs/OKF_SPEC.md",
