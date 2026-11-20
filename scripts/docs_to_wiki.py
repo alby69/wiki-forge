@@ -459,11 +459,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
-    docs_dir = Path(args.docs_dir).resolve() if args.docs_dir else root / "docs"
-    wiki_dir = (
-        Path(args.wiki_dir).resolve()
-        if args.wiki_dir
-        else root / "projects" / args.project / "wiki"
+
+    def resolve_dir(value: str | None, default: Path) -> Path:
+        """Resolve a CLI path against the repository root, not the cwd."""
+        candidate = Path(value) if value else default
+        return (candidate if candidate.is_absolute() else root / candidate).resolve()
+
+    docs_dir = resolve_dir(args.docs_dir, root / "docs")
+    wiki_dir = resolve_dir(
+        args.wiki_dir, root / "projects" / args.project / "wiki"
     )
 
     bundle, warnings = build_bundle(root, docs_dir, wiki_dir)

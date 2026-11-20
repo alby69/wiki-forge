@@ -74,7 +74,10 @@ def test_committed_bundle_matches_docs():
     wiki_dir = REPO_ROOT / "projects" / "wikiforge" / "wiki"
     assert wiki_dir.is_dir(), "the generated bundle must be committed"
     bundle, _ = docs_to_wiki.build_bundle(REPO_ROOT, DOCS_DIR, wiki_dir)
-    assert docs_to_wiki.check_bundle(bundle, wiki_dir, DOCS_DIR) == []
+    problems = docs_to_wiki.check_bundle(bundle, wiki_dir, DOCS_DIR)
+    # The curated note_architettura.md is user-owned and intentionally outside
+    # the generated bundle; every other problem means real drift.
+    assert docs_wiki_drift.actionable_problems(problems) == [], problems
 
 
 def test_drift_report_is_read_only_and_grounded(tmp_path: Path):
@@ -89,6 +92,81 @@ def test_drift_report_is_read_only_and_grounded(tmp_path: Path):
     assert drifted["status"] == "drift"
     assert drifted["drift"]
     assert "docs_to_wiki.py" in drifted["rationale"]
+
+
+def test_resolve_dir_is_root_relative_not_cwd_relative(tmp_path, monkeypatch):
+    # Relative paths are resolved against the repository root even when the
+    # process cwd is a project folder such as /app/projects/tesi.
+    monkeypatch.chdir(tmp_path)
+    assert docs_wiki_drift.resolve_dir(REPO_ROOT, "docs", REPO_ROOT / "docs") == DOCS_DIR
+    assert (
+        docs_wiki_drift.resolve_dir(
+            REPO_ROOT, "projects/wikiforge/wiki", REPO_ROOT / "projects" / "wikiforge" / "wiki"
+        )
+        == REPO_ROOT / "projects" / "wikiforge" / "wiki"
+    )
+    # Absolute paths and defaults keep working.
+    assert docs_wiki_drift.resolve_dir(REPO_ROOT, str(tmp_path), DOCS_DIR) == tmp_path.resolve()
+    assert docs_wiki_drift.resolve_dir(REPO_ROOT, None, tmp_path) == tmp_path.resolve()
+
+
+def test_repair_regenerates_drift_and_preserves_curated_notes(tmp_path: Path):
+    wiki_dir, bundle = _temp_bundle(tmp_path)
+
+    # Simulate drift: a changed file and a deleted file.
+    changed = wiki_dir / "index.md"
+    changed.write_text("# drifted\n", encoding="utf-8")
+    (wiki_dir / "guida" / "tutorial.md").unlink()
+
+    # A human-owned curated note that must never be touched by regeneration.
+    curated = wiki_dir / "sintesi" / "user-note.md"
+    curated.write_text("---\ntitle: Nota utente\n---\n\nTesto preservato.\n", encoding="utf-8")
+    curated_before = curated.read_text(encoding="utf-8")
+
+    fix = docs_wiki_drift.repair(REPO_ROOT, DOCS_DIR, wiki_dir)
+    assert fix["written"] >= 2
+    assert fix["remaining"] == [], fix["remaining"]
+    assert fix["warnings"] == [], fix["warnings"]
+    assert changed.read_text(encoding="utf-8") == docs_to_wiki.build_bundle(
+        REPO_ROOT, DOCS_DIR, wiki_dir
+    )[0]["index.md"]
+    assert (wiki_dir / "guida" / "tutorial.md").is_file()
+    assert curated.read_text(encoding="utf-8") == curated_before
+
+
+def test_check_flag_never_writes(tmp_path: Path):
+    wiki_dir, _ = _temp_bundle(tmp_path)
+    changed = wiki_dir / "index.md"
+    changed.write_text("# drifted\n", encoding="utf-8")
+    before = changed.read_text(encoding="utf-8")
+
+    code = docs_wiki_drift.main(
+        ["--root", str(REPO_ROOT), "--docs-dir", "docs", "--wiki-dir", str(wiki_dir), "--check"]
+    )
+    assert code == 0
+    assert changed.read_text(encoding="utf-8") == before, "--check must not write"
+
+
+def test_main_regenerates_by_default(tmp_path: Path):
+    wiki_dir, bundle = _temp_bundle(tmp_path)
+    (wiki_dir / "index.md").write_text("# drifted\n", encoding="utf-8")
+
+    code = docs_wiki_drift.main(
+        ["--root", str(REPO_ROOT), "--docs-dir", "docs", "--wiki-dir", str(wiki_dir), "--json"]
+    )
+    assert code == 0
+    assert (wiki_dir / "index.md").read_text(encoding="utf-8") == bundle["index.md"]
+
+
+def test_preserved_user_note_is_not_drift(tmp_path: Path):
+    wiki_dir, _ = _temp_bundle(tmp_path)
+    (wiki_dir / "architettura" / "note_architettura.md").write_text(
+        "# Nota architettura dell'utente\n", encoding="utf-8"
+    )
+    result = docs_wiki_drift.analyze(REPO_ROOT, DOCS_DIR, wiki_dir)
+    assert result["status"] == "ok"
+    assert result["drift"] == []
+    assert result["preserved"] == ["unexpected: architettura/note_architettura.md"]
 
 
 def test_promoted_answer_is_human_verified_and_okf_valid(tmp_path: Path):

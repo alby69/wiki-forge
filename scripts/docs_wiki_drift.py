@@ -2,12 +2,16 @@
 """
 scripts/docs_wiki_drift.py
 
-Advisory, read-only check for drift between docs/ and the committed OKF wiki
-projection. Designed to be run by the F5-guarded scheduler job; it never writes
-to the wiki and always exits 0 so a detected drift is a report, not a failure.
+Compares docs/ with the committed OKF wiki projection and, by default,
+regenerates the projection so the wiki actually matches docs/. Use --check for
+the previous read-only advisory report (exit code is always 0).
+
+Relative --docs-dir / --wiki-dir values are resolved against --root, not the
+current working directory: scheduler jobs run from a project folder such as
+/app/projects/tesi while the paths are repository-relative.
 
 Usage:
-    python scripts/docs_wiki_drift.py [--json] [--root ROOT]
+    python scripts/docs_wiki_drift.py [--check] [--json] [--root ROOT]
                                       [--docs-dir DOCS] [--wiki-dir WIKI]
 """
 
@@ -19,55 +23,104 @@ import sys
 from pathlib import Path
 
 from okf_common import repo_root
-from docs_to_wiki import build_bundle, check_bundle
+from docs_to_wiki import build_bundle, check_bundle, write_bundle
 
 BASELINE_SOURCES = ["docs/README.md", "config/projects.json", "projects/wikiforge/wiki/index.md"]
 
+# This curated note belongs to the user and is intentionally never written by
+# the projection. Its "unexpected" drift is expected and must not trigger a fix.
+PRESERVED_NOTES = {"unexpected: architettura/note_architettura.md"}
+
+
+def resolve_dir(root: Path, value: str | None, default: Path) -> Path:
+    """Resolve a CLI path against the repository root, whatever the cwd is."""
+    candidate = Path(value) if value else default
+    return (candidate if candidate.is_absolute() else root / candidate).resolve()
+
+
+def actionable_problems(problems: list[str]) -> list[str]:
+    return [problem for problem in problems if problem not in PRESERVED_NOTES]
+
 
 def analyze(root: Path, docs_dir: Path, wiki_dir: Path) -> dict:
+    """Read-only comparison. Kept separate from repair() so it stays testable."""
     bundle, warnings = build_bundle(root, docs_dir, wiki_dir)
     problems = check_bundle(bundle, wiki_dir, docs_dir)
+    drift = actionable_problems(problems)
     return {
-        "status": "drift" if problems else "ok",
+        "status": "drift" if drift else "ok",
         "docs": len(bundle),
         "notes": len(bundle),
-        "drift": problems,
+        "drift": drift,
+        "preserved": sorted(set(problems) & PRESERVED_NOTES),
         "warnings": warnings,
         "rationale": (
-            "La proiezione OKF non corrisponde più a docs/: rigenerare con "
-            "`python scripts/docs_to_wiki.py` e verificare il diff." if problems
-            else "La proiezione OKF è allineata con docs/."
+            "La proiezione OKF non corrisponde più a docs/: rigenerarla con "
+            "`python scripts/docs_to_wiki.py` (o con questo script), scrivendo solo i "
+            "file generati; le note curate di sintesi sono preservate."
+            if drift else "La proiezione OKF è allineata con docs/."
         ),
         "sources": BASELINE_SOURCES,
     }
 
 
+def repair(root: Path, docs_dir: Path, wiki_dir: Path) -> dict:
+    """Regenerate the docs/ projection inside wiki_dir. Returns a short report."""
+    bundle, warnings = build_bundle(root, docs_dir, wiki_dir)
+    written = write_bundle(bundle, wiki_dir)
+    remaining = actionable_problems(check_bundle(bundle, wiki_dir, docs_dir))
+    return {"written": written, "remaining": remaining, "warnings": warnings}
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Report drift between docs/ and the wiki bundle (read-only).")
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+    parser = argparse.ArgumentParser(
+        description="Report docs/wiki drift and regenerate the OKF projection."
+    )
     parser.add_argument("--root", default=str(repo_root()))
     parser.add_argument("--docs-dir", default=None)
     parser.add_argument("--wiki-dir", default=None)
+    parser.add_argument("--check", action="store_true", help="Only report drift; never write.")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
-    docs_dir = Path(args.docs_dir).resolve() if args.docs_dir else root / "docs"
-    wiki_dir = (
-        Path(args.wiki_dir).resolve()
-        if args.wiki_dir
-        else root / "projects" / "wikiforge" / "wiki"
-    )
+    docs_dir = resolve_dir(root, args.docs_dir, root / "docs")
+    wiki_dir = resolve_dir(root, args.wiki_dir, root / "projects" / "wikiforge" / "wiki")
+
     result = analyze(root, docs_dir, wiki_dir)
+    result["written"] = 0
+    result["remaining"] = []
+    if result["status"] == "drift" and not args.check:
+        fix = repair(root, docs_dir, wiki_dir)
+        result["written"] = fix["written"]
+        result["remaining"] = fix["remaining"]
+        result["warnings"] = fix["warnings"]
+        if not fix["remaining"]:
+            result["status"] = "fixed"
+            result["rationale"] = (
+                f"Proiezione rigenerata: {fix['written']} file aggiornati in {wiki_dir}. "
+                "Le note curate di sintesi e i file utente preservati non sono stati toccati."
+            )
 
     if args.json:
         print(json.dumps(result, ensure_ascii=False))
     else:
         if result["status"] == "ok":
             print(f"✅ docs/wiki allineate: {result['notes']} note OKF.")
+        elif result["status"] == "fixed":
+            print(f"✅ docs/wiki aggiornate: {result['written']} file scritti in {wiki_dir}.")
         else:
-            print(f"⚠️  docs/wiki disallineate: {len(result['drift'])} problema/i.")
+            mode = " (sola lettura)" if args.check else ""
+            print(f"⚠️  docs/wiki disallineate: {len(result['drift'])} problema/i{mode}.")
             for problem in result["drift"]:
                 print(f"  - {problem}")
+        if result.get("preserved"):
+            print(f"ℹ️  preservate: {', '.join(result['preserved'])}")
         print(f"Fonti: {', '.join(result['sources'])}")
         print(f"Motivazione: {result['rationale']}")
     return 0

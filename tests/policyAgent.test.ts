@@ -41,6 +41,7 @@ describe('F5 — Policy Agent decision log', () => {
     assert.strictEqual(isMutatingScript('suggest_tags'), true);
     assert.strictEqual(isMutatingScript('maturity_calculator'), true);
     assert.strictEqual(isMutatingScript('promote_doc_answer'), true);
+    assert.strictEqual(isMutatingScript('docs_wiki_drift'), true);
     assert.strictEqual(isMutatingScript('wiki_program_change_apply'), true);
     assert.strictEqual(isMutatingScript('wiki_program_change_propose'), false);
     assert.strictEqual(isMutatingScript('export_semantic'), false);

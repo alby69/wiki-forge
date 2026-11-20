@@ -44,7 +44,7 @@ python scripts/docs_to_wiki.py
 python scripts/check_docs_sync.py
 ```
 
-Un job schedulato consultivo (`weekly-docs-wiki-drift`) segnala eventuali disallineamenti senza scrivere nulla.
+Un job schedulato (`weekly-docs-wiki-drift`) rileva eventuali disallineamenti e rigenera la proiezione OKF dalla wiki di wikiforge, preservando le note curate. I percorsi relativi (`docs`, `projects/wikiforge/wiki`) sono risolti rispetto alla radice del repository, quindi funziona anche quando lo scheduler lo lancia da una cartella di progetto. Per un controllo in sola lettura usa `python scripts/docs_wiki_drift.py --check`. Lo script è mutante: nei run schedulati il Policy Agent F5 lo accoda per l'approvazione F6; l'esecuzione diretta scrive subito.
 
 ## Dalla risposta al codice (Fase 76)
 

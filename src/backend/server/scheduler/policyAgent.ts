@@ -74,6 +74,7 @@ export const MUTATING_SCRIPT_IDS = new Set([
   'okf_reindex',
   'maturity_calculator',
   'promote_doc_answer',
+  'docs_wiki_drift',
   'wiki_program_change_apply',
 ]);
 

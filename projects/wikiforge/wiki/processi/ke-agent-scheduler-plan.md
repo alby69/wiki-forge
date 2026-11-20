@@ -371,8 +371,8 @@ una `policy_decision`, un'`approval_required` o un `event_triggered`.
 | **F6** ✅ | Trigger da eventi (watcher/webhook) + approvazione mutanti | 1 giorno | ✅ Verificato: 5 test in `tests/eventTriggers.test.ts` e 5 in `tests/agentScheduleF5F6.test.ts`; `note.created` → job dopo debounce, step mutante accodato ed eseguito solo dopo `POST .../approve` con snapshot e audit `actor: human` |
 
 **Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6. La wiki
-si auto-aggiorna con report in sola lettura; gli step che scrivono restano
-sottoposti a decisione umana esplicita.
+viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
+(compreso `docs_wiki_drift`) restano sottoposti a decisione umana esplicita F6.
 
 ---
 

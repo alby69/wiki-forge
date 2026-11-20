@@ -105,9 +105,11 @@ project = "default"
 auto_apply = false
 max_retries = 1
 
-# Fase 75 — report consultivo sul drift tra docs/ e la wiki di wiki-forge.
-# Un solo step in sola lettura: nessuna scrittura nella wiki. Ogni decisione
-# del Policy Agent riporta rationale e fonti in output/scheduler/decisions.jsonl.
+# Fase 75 — rilevamento e riparazione del drift tra docs/ e la wiki di wiki-forge.
+# Lo step rigenera la proiezione OKF nella wiki (le note curate sono preservate).
+# I percorsi relativi sono risolti rispetto alla radice del repository. Essendo
+# mutante, il Policy Agent F5 lo sottrae e lo accoda per l'approvazione F6.
+# Ogni decisione riporta rationale e fonti in output/scheduler/decisions.jsonl.
 [[agent.scheduler.jobs]]
 id = "weekly-docs-wiki-drift"
 role = "Documentation Auditor"

@@ -147,7 +147,7 @@ La Fase 76 collega una risposta approvata dalla wiki a una modifica di `docs/` o
 - **`scripts/wiki_program_change_apply.py`** (mutante, F6-only): applica la proposta accodata con find/replace deterministico, snapshot di ogni file prima della scrittura e voce in `output/program-changes/audit.jsonl`. Si rifiuta senza `--reviewer human:<id>` e `--confirm`.
 - **Use Case 8 `ke_wiki_program_change`**: step 1 di staging (read-only) e step 2 di apply (mutante). Il Policy Agent F5 hard-blocca `wiki_program_change_apply` tramite `MUTATING_SCRIPT_IDS`: lo step 2 non viene mai eseguito automaticamente, viene accodato in `.wiki-forge/scheduler-approvals.json` e applicato solo da `POST /api/ke/schedule/approvals/:id/approve`. L'identità umana dell'approvatore viene iniettata in `--reviewer` in quella fase; un'esecuzione diretta dello Use Case non può fornire `--confirm`.
 - I flag di approvazione (`--confirm`, `--reviewer`) non possono essere forniti dagli endpoint di esecuzione generici (`/api/ke/use-cases/execute`, `/api/scripts/execute`): vengono rimossi e iniettati solo da `decideApproval` dopo la decisione F6.
-- Job `wiki-program-change` (`auto_apply = false`, disabilitato di default): richiede una proposta già presente e va innescato a mano. Nessun job pianificato modifica `docs/`, la wiki o il codice.
+- Job `wiki-program-change` (`auto_apply = false`, disabilitato di default): richiede una proposta già presente e va innescato a mano. Nessun job pianificato modifica `docs/` o il codice; la rigenerazione della wiki (UC7) è mutante e richiede approvazione F6, quindi non avviene in automatico.
 
 ## 7. Comandi
 
@@ -156,7 +156,8 @@ python scripts/docs_to_wiki.py                 # rigenera il bundle
 python scripts/docs_to_wiki.py --check         # verifica drift (CI)
 python scripts/docs_to_wiki.py --json          # output machine-readable
 python scripts/okf_lint.py projects/wikiforge/wiki --json
-python scripts/docs_wiki_drift.py --json
+python scripts/docs_wiki_drift.py --json             # rileva e rigenera la proiezione (mutante)
+python scripts/docs_wiki_drift.py --check --json     # solo report, senza scrivere
 python scripts/promote_doc_answer.py --title "..." --question "..." --answer-file ... --reviewer human:<id>
 python scripts/wiki_program_change_propose.py --proposal output/program-changes/proposal.json --json
 python scripts/wiki_program_change_apply.py --proposal output/program-changes/proposal.json \

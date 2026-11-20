@@ -632,13 +632,13 @@ export const KE_USE_CASES: Record<string, KEUseCaseDef> = {
     title: 'Use Case 7: Self-Documentation Wiki Drift',
     role: 'Knowledge Engineer',
     category: 'Documentation Governance',
-    summary: 'Confronta docs/ con la proiezione OKF della wiki di wiki-forge e produce un report consultivo, senza scrivere nella wiki.',
-    objective: 'Rilevare il drift della documentazione e fornire sempre motivazione e fonti, lasciando ogni modifica alla persona che approva.',
+    summary: 'Confronta docs/ con la proiezione OKF della wiki di wiki-forge e la rigenera per eliminare il drift, preservando le note curate. Con --check produce solo un report consultivo.',
+    objective: 'Mantenere la proiezione OKF allineata a docs/ con motivazione e fonti; essendo uno script mutante, i run schedulati vengono sottratti dal Policy Agent F5 e richiedono approvazione F6.',
     steps: [
       {
         stepNumber: 1,
-        title: 'Docs/Wiki Drift Report',
-        description: 'Verifica che il bundle generato corrisponda a docs/ e stampa motivazione e fonti del report.',
+        title: 'Docs/Wiki Drift Report & Regenerate',
+        description: 'Verifica il bundle generato rispetto a docs/ e, se necessario, rigenera la proiezione nella wiki di wiki-forge. I percorsi relativi sono risolti rispetto alla radice del repository.',
         scriptId: 'docs_wiki_drift',
         defaultArgs: { docs_dir: 'docs', wiki_dir: 'projects/wikiforge/wiki' },
       },

@@ -759,9 +759,9 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     "docs_wiki_drift": {
       "id": "docs_wiki_drift",
       "path": "scripts/docs_wiki_drift.py",
-      "displayName": "Docs/Wiki Drift Report",
+      "displayName": "Docs/Wiki Drift Report & Regenerate",
       "category": "Knowledge Engineering",
-      "description": "Read-only comparison of docs/ with the committed OKF wiki projection; emits rationale and sources.",
+      "description": "Compares docs/ with the committed OKF wiki projection and regenerates it to remove drift; curated notes are preserved. Use --check for a read-only report with rationale and sources.",
       "parameters": [
         {
           "name": "docs_dir",
@@ -769,7 +769,7 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "type": "text",
           "default": "docs",
           "cliFlag": "--docs-dir",
-          "description": "Documentation source directory."
+          "description": "Documentation source directory (resolved against the repository root)."
         },
         {
           "name": "wiki_dir",
@@ -777,7 +777,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "type": "text",
           "default": "projects/wikiforge/wiki",
           "cliFlag": "--wiki-dir",
-          "description": "Generated OKF wiki directory."
+          "description": "Generated OKF wiki directory (resolved against the repository root)."
+        },
+        {
+          "name": "check",
+          "label": "Check Only (read-only)",
+          "type": "boolean",
+          "default": false,
+          "cliFlag": "--check",
+          "description": "Only report drift, do not write to the wiki."
         }
       ]
     },

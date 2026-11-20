@@ -62,7 +62,7 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Piano e mapping completo in `docs/SELF_WIKI_PLAN.md`: `docs/` resta sorgente canonica, la wiki è una proiezione OKF v0.2 commitata in `projects/wikiforge/wiki/` (help e mockup inclusi, `METRICS.md` escluso, lingua del sorgente preservata).
   - Generatore deterministico `scripts/docs_to_wiki.py` (`--check`, `--json`, `--dry-run`) con provenienza e tag; progetto dedicato `wikiforge` registrato in `config/projects.json`; verifica drift in `scripts/check_docs_sync.py` e validazione `okf_lint.py`.
   - UX: bottone **📚 Wiki Docs** e `Ctrl+Alt+D` aprono il Research Studio con `projectId=wikiforge` (query + header) senza cambiare vault attivo, con badge di ambito e topic guida `wiki-di-wiki-forge`.
-  - Accumulazione curata: `scripts/promote_doc_answer.py` (solo umano, `verified: human:<id>`, script mutante bloccato dal Policy Agent) e job consultivo read-only `weekly-docs-wiki-drift` con rationale e fonti.
+  - Accumulazione curata: `scripts/promote_doc_answer.py` (solo umano, `verified: human:<id>`, script mutante bloccato dal Policy Agent) e job `weekly-docs-wiki-drift` che rigenera la proiezione OKF da `docs/` (note curate preservate), con rationale e fonti; i percorsi relativi sono risolti dalla radice del repo e i run schedulati richiedono approvazione F6.
   - Fase 76: ponte wiki → modifiche al programma con Use Case 8 `ke_wiki_program_change`; `wiki_program_change_propose.py` (sola lettura) accoda la proposta, `wiki_program_change_apply.py` (mutante, F6-only) la applica con snapshot e audit solo dopo approvazione umana. Nessuna mutazione automatica.
 
 ---
