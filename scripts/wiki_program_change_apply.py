@@ -21,8 +21,10 @@ import json
 import sys
 from pathlib import Path
 
+from actor_provenance import actor_kind
 from okf_common import repo_root
 from program_change_common import (
+    PROCESS_REVIEWER_RE,
     REVIEWER_RE,
     append_audit,
     atomic_write,
@@ -40,10 +42,16 @@ def apply_change(
     reviewer: str,
     stage_dir: Path,
     dry_run: bool = False,
+    allow_process_actor: bool = False,
 ) -> dict:
-    """Apply a validated, staged proposal. Requires a human reviewer."""
-    if not REVIEWER_RE.match(reviewer):
-        return {"status": "error", "errors": ["reviewer must match human:<id>"]}
+    """Apply a staged proposal. Human by default; process only via F6 flag."""
+    valid_actor = bool(REVIEWER_RE.match(reviewer))
+    if allow_process_actor and not valid_actor:
+        valid_actor = bool(PROCESS_REVIEWER_RE.match(reviewer))
+    if not valid_actor:
+        expected = "human:<id> or process:<id>" if allow_process_actor else "human:<id>"
+        return {"status": "error", "errors": [f"reviewer must match {expected}"]}
+    kind = actor_kind(reviewer)
 
     try:
         change_id = proposal_id(proposal)
@@ -85,7 +93,7 @@ def apply_change(
             "action": "program-change-applied",
             "change_id": change_id,
             "reviewer": reviewer,
-            "actor": "human",
+            "actor": kind,
             "files": files,
             "rationale": payload["rationale"],
             "sources": payload["sources"],
@@ -106,7 +114,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Apply a human-approved program-change proposal.")
     parser.add_argument("--root", default=str(repo_root()))
     parser.add_argument("--proposal", required=True, help="Path to the JSON proposal object.")
-    parser.add_argument("--reviewer", required=True, help="Human actor, e.g. human:alby69.")
+    parser.add_argument("--reviewer", required=True, help="Canonical actor, e.g. human:alby69.")
+    parser.add_argument(
+        "--allow-process-actor",
+        action="store_true",
+        help="B5/F6-only: accept a server-trusted process:<id> reviewer. Never expose in generic job args.",
+    )
     parser.add_argument("--confirm", action="store_true", help="Explicit human confirmation.")
     parser.add_argument("--stage-dir", default="output/program-changes")
     parser.add_argument("--project", default="wikiforge", help="Project scope (provenance only).")
@@ -121,8 +134,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.confirm:
         return fail(["--confirm is required: a program change needs explicit human approval"])
-    if not REVIEWER_RE.match(args.reviewer):
-        return fail(["reviewer must match human:<id>"])
+    if not REVIEWER_RE.match(args.reviewer) and not (
+        args.allow_process_actor and PROCESS_REVIEWER_RE.match(args.reviewer)
+    ):
+        expected = "human:<id> or process:<id>" if args.allow_process_actor else "human:<id>"
+        return fail([f"reviewer must match {expected}"])
 
     root = Path(args.root).resolve()
     stage_dir = (root / args.stage_dir).resolve() if not Path(args.stage_dir).is_absolute() else Path(args.stage_dir).resolve()
@@ -131,7 +147,14 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         return fail([f"cannot read proposal: {exc}"])
 
-    result = apply_change(root, proposal, args.reviewer, stage_dir, dry_run=args.dry_run)
+    result = apply_change(
+        root,
+        proposal,
+        args.reviewer,
+        stage_dir,
+        dry_run=args.dry_run,
+        allow_process_actor=args.allow_process_actor,
+    )
     if result["status"] == "error":
         return fail(result["errors"])
 

@@ -1156,7 +1156,7 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "type": "text",
           "default": "human:alby69",
           "cliFlag": "--reviewer",
-          "description": "Human actor authorising the change (human:<id>)."
+          "description": "Canonical actor authorising the change (human:<id> by default; process:<id> only with the F6-only flag)."
         },
         {
           "name": "confirm",
@@ -1165,6 +1165,14 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "default": false,
           "cliFlag": "--confirm",
           "description": "Required explicit confirmation; injected only after F6 approval."
+        },
+        {
+          "name": "allow_process_actor",
+          "label": "Allow Server Process Actor (B5/F6)",
+          "type": "boolean",
+          "default": false,
+          "cliFlag": "--allow-process-actor",
+          "description": "B5: server-injected only. Accepts a canonical process:<id> reviewer; never accepted from generic job args."
         },
         {
           "name": "stage_dir",

@@ -9,8 +9,8 @@ import { AgentServer } from '@backend/server/agentServer';
  * Auth characterization — B0 baseline plus the B4 hardening.
  *
  * B0 pinned the envelope and the two then-known gaps. B4 closed the graph
- * proxy bypass; the raw client-supplied reviewer remains documented here and
- * will be fixed by B5.
+ * proxy bypass; B5 binds provenance to the server Principal only in strict
+ * mode, so the raw reviewer documented here is the intentional legacy path.
  */
 
 const UNAUTHORIZED = {
@@ -212,7 +212,7 @@ describe('Auth characterization (B0)', () => {
     });
   });
 
-  it('KNOWN PROVENANCE (B5): reviewer is taken raw from the client body, default human', async () => {
+  it('LEGACY PROVENANCE (B5): reviewer is taken raw from the client body, default human', async () => {
     const calls: Array<{ decision: string; reviewer?: string }> = [];
     const original = h.agentServer.decideApproval.bind(h.agentServer);
     h.agentServer.decideApproval = async (approvalId, decision, reviewer) => {

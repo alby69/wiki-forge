@@ -158,7 +158,8 @@ export interface AuditEntry {
   failedSteps: number[];
   error?: string;
   logFile?: string;
-  actor: 'scheduler' | 'human';
+  /** B5: approvals may be attributed to a server-trusted process actor. */
+  actor: 'scheduler' | 'human' | 'process' | 'producer';
   trigger?: JobTrigger;
   triggerEvent?: TriggerEvent;
   policyDecisionId?: string;
@@ -402,9 +403,11 @@ export class Scheduler {
     return this.runningJobs.has(jobId);
   }
 
-  /** F6: audit a mutating step executed after explicit human approval. */
+  /** F6: audit a mutating step executed after an explicit approval decision. */
   public async recordApprovalRun(entry: AuditEntry): Promise<void> {
-    await this.appendAudit({ ...entry, actor: 'human' });
+    // B5: preserve the caller's canonical actor. Legacy callers still pass
+    // 'human', so the emitted audit entry is byte-identical.
+    await this.appendAudit({ ...entry, actor: entry.actor ?? 'human' });
   }
 
   /** `PATCH /api/ke/schedule/:id` — enable/disable a job at runtime. */

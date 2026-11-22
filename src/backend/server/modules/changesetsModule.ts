@@ -7,7 +7,7 @@
  */
 
 import { error, json, type ApiResult } from '../api/http';
-import type { DomainModule, MessageBus } from '../bus/messageBus';
+import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { ChangesetStatus, ChangesetStore, StageChangesetInput } from '../changesetStore';
 import type { DomainServices, ProjectId } from './services';
 
@@ -37,10 +37,10 @@ export class ChangesetsModule implements DomainModule {
 
   register(bus: MessageBus): void {
     bus.register<Payload>('changesets.list', (payload, context) => this.list(payload, context.projectId));
-    bus.register<Payload>('changesets.stage', (payload, context) => this.stage(payload, context.projectId));
+    bus.register<Payload>('changesets.stage', (payload, context) => this.stage(payload, context));
     bus.register<Payload>('changesets.get', (payload, context) => this.get(payload, context.projectId));
-    bus.register<Payload>('changesets.apply', (payload, context) => this.apply(payload, context.projectId));
-    bus.register<Payload>('changesets.reject', (payload, context) => this.reject(payload, context.projectId));
+    bus.register<Payload>('changesets.apply', (payload, context) => this.apply(payload, context));
+    bus.register<Payload>('changesets.reject', (payload, context) => this.reject(payload, context));
   }
 
   private async store(projectId: ProjectId): Promise<ChangesetStore> {
@@ -58,9 +58,18 @@ export class ChangesetsModule implements DomainModule {
     }
   }
 
-  private async stage(payload: Payload, projectId: ProjectId): Promise<ApiResult> {
+  private async stage(payload: Payload, context: CommandContext): Promise<ApiResult> {
     try {
-      const changeset = await (await this.store(projectId)).stage(payload as unknown as StageChangesetInput);
+      const input = { ...payload } as unknown as StageChangesetInput;
+      // B5: in legacy mode no provenance field is written at all, so stored
+      // changesets stay byte-identical even if the body carries an `actor`.
+      // Strict mode binds to the Principal instead.
+      if (this.services.isStrictProvenance()) {
+        input.actor = this.services.provenanceActor(context.principal);
+      } else {
+        delete input.actor;
+      }
+      const changeset = await (await this.store(context.projectId)).stage(input);
       return json({ success: true, changeset }, 201);
     } catch (err) {
       return error(String(err), 400);
@@ -76,19 +85,25 @@ export class ChangesetsModule implements DomainModule {
     }
   }
 
-  private async apply(payload: Payload, projectId: ProjectId): Promise<ApiResult> {
+  private async apply(payload: Payload, context: CommandContext): Promise<ApiResult> {
     try {
-      const result = await (await this.store(projectId)).apply(pathId(payload));
+      const actor = this.services.isStrictProvenance()
+        ? this.services.provenanceActor(context.principal)
+        : undefined;
+      const result = await (await this.store(context.projectId)).apply(pathId(payload), actor);
       return json({ success: true, ...result });
     } catch (err) {
       return error(String(err), 400);
     }
   }
 
-  private async reject(payload: Payload, projectId: ProjectId): Promise<ApiResult> {
+  private async reject(payload: Payload, context: CommandContext): Promise<ApiResult> {
     try {
       const reason = asString(payload.reason) ?? '';
-      const changeset = await (await this.store(projectId)).reject(pathId(payload), reason);
+      const actor = this.services.isStrictProvenance()
+        ? this.services.provenanceActor(context.principal)
+        : undefined;
+      const changeset = await (await this.store(context.projectId)).reject(pathId(payload), reason, actor);
       return json({ success: true, changeset });
     } catch (err) {
       return error(String(err), 400);

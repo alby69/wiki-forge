@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 from okf_common import resolve_dir
+from actor_provenance import ACTOR_RE
 
 try:
     import yaml
@@ -29,9 +30,10 @@ except ImportError:
 ISO_TIMESTAMP_REGEX = re.compile(
     r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$"
 )
-ACTOR_REGEX = re.compile(
-    r"^(human:[a-zA-Z0-9_\-]+|process:[a-zA-Z0-9_\-]+|[a-zA-Z0-9_\-]+\/[a-zA-Z0-9_\-\.]+)$"
-)
+# B5: the canonical actor grammar lives in actor_provenance.py (mirror of
+# src/backend/server/auth/actor.ts). Keep the old name as an alias so callers
+# and tests referring to ACTOR_REGEX keep working.
+ACTOR_REGEX = ACTOR_RE
 
 def is_iso_timestamp(val: str) -> bool:
     if not isinstance(val, str):

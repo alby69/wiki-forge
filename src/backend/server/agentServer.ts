@@ -80,10 +80,11 @@ import {
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
 import { handleDocsRequest } from './api/docsBrowser';
 import { readJsonBody, sendApiResult } from './api/http';
-import { createMessageBus, type MessageBus } from './bus/messageBus';
+import { createMessageBus, type MessageBus, type Principal } from './bus/messageBus';
 import { deriveRequestPrincipal } from './auth/principal';
 import { apiTokenFromRequest, UNAUTHORIZED_MESSAGE, verifyApiToken } from './auth/apiToken';
-import { loadRbacConfigSync } from './auth/rbacConfig';
+import { actorKind, canonicalActor, PROCESS_FALLBACK_ACTOR } from './auth/actor';
+import { loadRbacConfigSync, type RbacConfig } from './auth/rbacConfig';
 import { createRbacMiddleware } from './auth/rbacMiddleware';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from './modules/toolsModule';
@@ -292,16 +293,17 @@ export function buildCliArgs(scriptDef: ScriptDef, userArgs: Record<string, any>
 }
 
 /**
- * Fase 76: `--confirm` and `--reviewer` are F6-only flags. Generic execution
- * endpoints (Use Case SSE and Script Panel) must never supply them, otherwise
- * the mutating program-change apply step could bypass the approval queue.
- * They are injected solely by `decideApproval()` after a human decision.
+ * Fase 76: `--confirm` and `--reviewer` are F6-only flags. B5 adds
+ * `--allow-process-actor` to the same trust boundary: generic execution
+ * endpoints (Use Case SSE and Script Panel) must never supply any of them,
+ * otherwise the mutating program-change apply step could bypass the approval
+ * queue. They are injected solely by `decideApproval()` after a decision.
  */
 export function withoutApprovalFlags(args?: Record<string, any>): Record<string, any> | undefined {
   if (!args) return args;
   const safe: Record<string, any> = {};
   for (const [key, value] of Object.entries(args)) {
-    if (key === 'confirm' || key === 'reviewer') continue;
+    if (key === 'confirm' || key === 'reviewer' || key === 'allow_process_actor') continue;
     safe[key] = value;
   }
   return safe;
@@ -769,6 +771,8 @@ export class AgentServer {
   private readonly scheduleClients = new Set<http.ServerResponse>();
   private scheduleHeartbeat?: NodeJS.Timeout;
   private readonly projects: ProjectService;
+  private readonly rbacConfig: RbacConfig;
+  private readonly strictProvenance: boolean;
   private readonly bus: MessageBus;
   private readonly catalogue: CatalogueModule;
   private readonly tools: ToolsModule;
@@ -780,11 +784,13 @@ export class AgentServer {
     this.rootDir = rootDir;
     this.llmClient = llmClient;
     this.projects = new ProjectService(rootDir);
+    this.rbacConfig = loadRbacConfigSync(rootDir);
+    this.strictProvenance = this.rbacConfig.enabled;
     this.bus = createMessageBus();
     // B3 — opt-in gate. With `enable_rbac=false` this middleware returns
     // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
     // The catalogue is read once at construction; no connection is opened.
-    this.bus.use(createRbacMiddleware(loadRbacConfigSync(rootDir)));
+    this.bus.use(createRbacMiddleware(this.rbacConfig));
     this.catalogue = createCatalogueModule(rootDir);
     this.catalogue.register(this.bus);
     this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);
@@ -806,6 +812,8 @@ export class AgentServer {
     const services: DomainServices = {
       bus: this.bus,
       projects: this.projects,
+      isStrictProvenance: () => this.strictProvenance,
+      provenanceActor: (principal, rawActor) => this.provenanceActorFor(principal, rawActor),
       changesets: async (projectId) => new ChangesetStore(await this.resolveProjectRoot(projectId)),
       rootDir: this.rootDir,
       registry: SCRIPT_REGISTRY,
@@ -839,7 +847,8 @@ export class AgentServer {
       publishNoteCreated: (projectId, notePath) => this.publishNoteCreated(projectId, notePath),
 
       getReviewMeta: (noteRef, projectId) => this.getReviewMeta(noteRef, projectId).then(jsonRecord),
-      recordHumanVerification: (options) => this.recordHumanVerification(options as any).then(jsonRecord),
+      recordHumanVerification: (options, principal) =>
+        this.recordHumanVerification({ ...options, principal } as any).then(jsonRecord),
       getReviewDigest: (projectId, days, scope, noteRef) =>
         this.getReviewDigest(projectId, days, scope as any, noteRef).then(jsonRecord),
       critiqueNote: (options) => this.critiqueNote(options as any).then(jsonRecord),
@@ -863,8 +872,9 @@ export class AgentServer {
       promoteQuickNote: (noteId, folder, projectId) => this.promoteQuickNote(noteId, folder, projectId).then(jsonRecord),
       generateThesisChapter: (input, projectId) => this.generateThesisChapter(input as any, projectId).then(jsonRecord),
 
-      processChatCommand: (req, projectId) => this.processChatCommand(req, projectId),
-      processChatCommandStream: (req, onChunk, projectId) => this.processChatCommandStream(req, onChunk, projectId),
+      processChatCommand: (req, projectId, principal) => this.processChatCommand(req, projectId, principal),
+      processChatCommandStream: (req, onChunk, projectId, principal) =>
+        this.processChatCommandStream(req, onChunk, projectId, principal),
 
       getScheduler: () => this.scheduler,
       getSchedulerConfig: () => this.schedulerConfig as unknown as Record<string, unknown> | null,
@@ -872,8 +882,8 @@ export class AgentServer {
       getEventBus: () => this.eventBus,
       getApprovalStore: () => this.approvalStore,
       readDecisionLog: async (options) => (await this.readDecisionLog(options)).map(jsonRecord),
-      decideApproval: async (approvalId, decision, reviewer, reason) => {
-        const result = await this.decideApproval(approvalId, decision, reviewer, reason);
+      decideApproval: async (approvalId, decision, reviewer, reason, principal) => {
+        const result = await this.decideApproval(approvalId, decision, reviewer, reason, principal);
         return { approval: result.approval ? jsonRecord(result.approval) : undefined, error: result.error };
       },
       addScheduleClient: (res) => this.addScheduleClient(res),
@@ -900,6 +910,23 @@ export class AgentServer {
   /** Backend components communicate through this bus (additive public accessor). */
   public getBus(): MessageBus {
     return this.bus;
+  }
+
+  /** B5 — strict provenance is active only with `enterprise.enable_rbac=true`. */
+  public isStrictProvenance(): boolean {
+    return this.strictProvenance;
+  }
+
+  /**
+   * B5 — resolve the actor written by a bus command.
+   *
+   * Legacy mode preserves the old raw-body behaviour exactly. Strict mode
+   * ignores `rawActor` and always uses the server-derived Principal, falling
+   * back to the canonical process actor if the principal is absent/malformed.
+   */
+  public provenanceActorFor(principal?: Principal, rawActor?: string): string {
+    if (!this.strictProvenance) return rawActor?.trim() || 'human';
+    return canonicalActor(principal?.actor, PROCESS_FALLBACK_ACTOR);
   }
 
   /** Dispatch a catalogue command and write its transport-neutral result. */
@@ -1178,8 +1205,14 @@ export class AgentServer {
     approvalId: string,
     decision: 'approved' | 'rejected',
     reviewer: string = 'human',
-    reason?: string
+    reason?: string,
+    principal?: Principal
   ): Promise<{ approval: ApprovalRequest | undefined; error?: string }> {
+    // B5: strict mode ignores the client reviewer and binds every written
+    // field to the server-derived Principal. Legacy mode keeps the raw value.
+    const actor = this.strictProvenance
+      ? canonicalActor(principal?.actor, PROCESS_FALLBACK_ACTOR)
+      : reviewer;
     const store = this.approvalStore;
     if (!store) return { approval: undefined, error: 'Scheduler non avviato' };
     const request = await store.get(approvalId);
@@ -1188,7 +1221,7 @@ export class AgentServer {
       return { approval: request, error: `Approval '${approvalId}' is ${request.status}` };
     }
     if (decision === 'rejected') {
-      return { approval: await store.update(approvalId, { status: 'rejected', decidedBy: reviewer, reason }) };
+      return { approval: await store.update(approvalId, { status: 'rejected', decidedBy: actor, reason }) };
     }
 
     // S2: script jobs run through one-step synthetic Use Cases, so the approval
@@ -1212,11 +1245,15 @@ export class AgentServer {
       }
 
       // Fase 76: the program-change apply step is mutating and can only run
-      // with an explicit human actor. `decideApproval` is reached exclusively
-      // from the F6 endpoint, so inject the reviewer and the confirmation flag
+      // with an explicit actor. `decideApproval` is reached exclusively from
+      // the F6 endpoint, so inject the reviewer and the confirmation flag
       // here; a direct run of the Use Case cannot supply them.
+      // B5: in strict mode the actor is server-trusted; a process principal is
+      // accepted by the Python script only with the injected F6-only flag.
       const isProgramApply = stepDef.scriptId === 'wiki_program_change_apply';
-      const humanActor = /^human:/.test(reviewer) ? reviewer : `human:${reviewer}`;
+      const injectedActor = this.strictProvenance
+        ? actor
+        : /^human:/.test(reviewer) ? reviewer : `human:${reviewer}`;
       // Same precedence as the scheduler/runner: step defaults, then job args.
       // Synthetic script steps carry the resolved defaults; a job override still wins.
       const stepArgs: Record<string, any> = {
@@ -1224,7 +1261,14 @@ export class AgentServer {
         ...(job.args as Record<string, any>),
       };
       const approvedArgs: Record<string, any> = isProgramApply
-        ? { ...stepArgs, reviewer: humanActor, confirm: true }
+        ? {
+            ...stepArgs,
+            reviewer: injectedActor,
+            confirm: true,
+            ...(this.strictProvenance && actorKind(actor) === 'process'
+              ? { allow_process_actor: true }
+              : {}),
+          }
         : stepArgs;
 
       const startedAt = new Date();
@@ -1247,7 +1291,7 @@ export class AgentServer {
       const failed = result.failedSteps.length > 0;
       const approval = await store.update(approvalId, {
         status: failed ? 'failed' : 'approved',
-        decidedBy: reviewer,
+        decidedBy: actor,
         error: failed ? `failed steps: ${result.failedSteps.join(', ')}` : undefined,
       });
       await this.scheduler?.recordApprovalRun({
@@ -1262,9 +1306,9 @@ export class AgentServer {
         exitCodes: failed ? [1] : [0],
         failedSteps: result.failedSteps,
         error: failed ? `failed steps: ${result.failedSteps.join(', ')}` : undefined,
-        actor: 'human',
+        actor: this.strictProvenance ? actorKind(actor) : 'human',
         approvalId,
-        approvedBy: reviewer,
+        approvedBy: actor,
         steps: [request.stepIndex],
       });
       return failed
@@ -1273,7 +1317,7 @@ export class AgentServer {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       return {
-        approval: await store.update(approvalId, { status: 'failed', decidedBy: reviewer, error }),
+        approval: await store.update(approvalId, { status: 'failed', decidedBy: actor, error }),
         error,
       };
     }
@@ -2569,7 +2613,12 @@ export class AgentServer {
     );
   }
 
-  public async processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void, projectId: string = 'default'): Promise<string> {
+  public async processChatCommandStream(
+    req: ChatRequest,
+    onChunk: (chunk: string) => void,
+    projectId: string = 'default',
+    principal?: Principal
+  ): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
     if (rawInput.length > 50000) {
       throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
@@ -2587,7 +2636,7 @@ export class AgentServer {
     }
 
     if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'thesis-chapter' || command === 'verify' || command === 'human-review' || command === 'apply' || command === 'applica' || command === 'help') {
-      const result = await this.processChatCommand(req, projectId);
+      const result = await this.processChatCommand(req, projectId, principal);
       onChunk(result);
       return result;
     }
@@ -2654,13 +2703,17 @@ export class AgentServer {
         return fallback;
       }
     } else {
-      const full = await this.processChatCommand(req, projectId);
+      const full = await this.processChatCommand(req, projectId, principal);
       onChunk(full);
       return full;
     }
   }
 
-  public async processChatCommand(req: ChatRequest, projectId: string = 'default'): Promise<string> {
+  public async processChatCommand(
+    req: ChatRequest,
+    projectId: string = 'default',
+    principal?: Principal
+  ): Promise<string> {
     const rawInput = (req.message || req.command || '').trim();
     if (rawInput.length > 50000) {
       throw new Error('Chat message exceeds maximum allowed length (50,000 characters).');
@@ -2772,7 +2825,7 @@ export class AgentServer {
 
       case 'verify':
       case 'human-review': {
-        return await this.executeVerifyWorkflow(args, notes, projectId);
+        return await this.executeVerifyWorkflow(args, notes, projectId, principal);
       }
 
       case 'skill': {
@@ -3383,7 +3436,12 @@ ${bodyText.slice(0, 500)}
    * list (docs/OKF_SPEC.md §6). Optionally promotes `status` to `stable`,
    * which ontology Rule 3 only allows for human-verified notes.
    */
-  public async executeVerifyWorkflow(argsText: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+  public async executeVerifyWorkflow(
+    argsText: string,
+    notes: WikiNote[],
+    projectId: string = 'default',
+    principal?: Principal
+  ): Promise<string> {
     const tokens = (argsText || '').trim().split(/\s+/).filter(Boolean);
     let reviewerId = 'local';
     let setStable = false;
@@ -3432,6 +3490,7 @@ ${bodyText.slice(0, 500)}
       setStable,
       projectId,
       notes,
+      principal,
     });
 
     if (!result.success) {
@@ -3481,6 +3540,8 @@ ${bodyText.slice(0, 500)}
     setStable?: boolean;
     projectId?: string;
     notes?: WikiNote[];
+    /** B5 — supplied by the bus adapter; never read from the HTTP body. */
+    principal?: Principal;
   }): Promise<{
     success: boolean;
     error?: 'not-found' | 'read-failed' | 'invalid-path' | string;
@@ -3504,10 +3565,25 @@ ${bodyText.slice(0, 500)}
     const target = this.resolveReviewTarget(noteRef, notes);
     if (!target) return { success: false, error: 'not-found', path: noteRef };
 
-    const id = (options.reviewer || 'local').replace(/^human:/i, '').trim() || 'local';
-    const actor = `human:${id}`;
+    // B5: strict mode binds the actor to the server-derived Principal. Legacy
+    // mode keeps the exact raw-reviewer normalization of the old implementation.
+    const actor = this.strictProvenance
+      ? canonicalActor(options.principal?.actor, PROCESS_FALLBACK_ACTOR)
+      : `human:${(options.reviewer || 'local').replace(/^human:/i, '').trim() || 'local'}`;
     const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     const setStable = options.setStable === true;
+
+    // Ontology Rule 3: `status: stable` needs a human: verified entry. A
+    // process principal may refresh `verified`, but must never promote to
+    // stable (the legacy path is unchanged and still allows its raw reviewer).
+    if (this.strictProvenance && setStable && actorKind(actor) !== 'human') {
+      return {
+        success: false,
+        error: 'stable-requires-human-actor',
+        target,
+        path: target.path,
+      };
+    }
 
     const projRoot = await this.resolveProjectRoot(projectId);
     const absPath = path.resolve(projRoot, target.path);

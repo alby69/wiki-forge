@@ -44,7 +44,7 @@ export class SchedulerModule implements DomainModule {
     bus.register<Payload>('schedule.decisions', (payload) => this.decisions(payload));
     bus.register<Payload>('schedule.approvals', (payload, context) => this.approvals(payload, context));
     bus.register<Payload>('schedule.trigger', (payload) => this.trigger(payload));
-    bus.register<Payload>('schedule.approvalDecision', (payload) => this.approvalDecision(payload));
+    bus.register<Payload>('schedule.approvalDecision', (payload, context) => this.approvalDecision(payload, context));
     bus.register<Payload>('scripts.schedule', (payload) => this.scheduleScript(payload));
     bus.register<Payload>('scripts.unschedule', (payload) => this.unscheduleScript(payload));
   }
@@ -216,16 +216,19 @@ export class SchedulerModule implements DomainModule {
     return json({ success: true, queued, pending: eventBus?.getPending() ?? [] });
   }
 
-  private async approvalDecision(payload: Payload): Promise<ApiResult> {
+  private async approvalDecision(payload: Payload, context: CommandContext): Promise<ApiResult> {
     const approvalId = asString(payload.id) ?? '';
     const action = asString(payload.action) === 'reject' ? 'reject' : 'approve';
     const rawReviewer = asString(payload.reviewer);
-    const reviewer = rawReviewer?.trim() ? rawReviewer.trim() : 'human';
+    const reviewer = this.services.isStrictProvenance()
+      ? this.services.provenanceActor(context.principal)
+      : rawReviewer?.trim() ? rawReviewer.trim() : 'human';
     const result = await this.services.decideApproval(
       approvalId,
       action === 'approve' ? 'approved' : 'rejected',
       reviewer,
       asString(payload.reason),
+      context.principal,
     );
     const status = result.error && !result.approval ? 404 : result.error ? 500 : 200;
     return json({ success: !result.error, ...result }, status);

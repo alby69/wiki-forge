@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B5 — Provenance vincolata al Principal (dual-mode)
+
+- **Grammatica condivisa**: nuovi `src/backend/server/auth/actor.ts` e `scripts/actor_provenance.py` mirror TS/Python della regex OKF (`human:<id>`, `process:<id>`, `<producer>/<version>`). `okf_lint.py`, `promote_doc_answer.py` e `program_change_common.py` la riusano; i messaggi di errore e i default human-only restano invariati.
+- **Strict mode**: con `enterprise.enable_rbac=true` ogni scrittura di provenance ignora `reviewer`/`user`/`actor` del body e usa il `Principal` server-derived. Verify (`recordHumanVerification`, `/verify`, Review Studio), decisioni F6 (`decidedBy`/`approvedBy`, audit `actor`, `--reviewer` injection) e changeset (`actor`, `applied_by`, `rejected_by` additivi) sono allineati. Un principal non umano può aggiornare `verified` ma non promuovere a `status: stable`: la risposta è `stable-requires-human-actor`, come richiesto dalla Rule 3 dell'ontologia.
+- **F6 process actor**: `wiki_program_change_apply.py` accetta `--allow-process-actor` solo quando iniettato da `decideApproval()`; il flag è rimosso da `withoutApprovalFlags()` insieme a `--confirm`/`--reviewer`, quindi non può arrivare dai job generici. La SSOT Python (`script_schema.py`), il registry TS e `docs/SCRIPT_AUTOMATION_REFERENCE.md` sono stati rigenerati.
+- **Legacy invariato**: con `enable_rbac=false` il reviewer grezzo resta quello di B0 e i changeset non contengono campi di provenance additivi. Endpoint, envelope e metodi pubblici invariati.
+- **Verifica**: 10 test Node in `tests/provenance.test.ts` e 4 Python in `tests/python/test_provenance.py`; suite Node 408 pass + 1 skip pre-esistente, Python 87 pass, typecheck e build verdi. Grado provenance 3 → 4.5, RBAC complessivo ~3.5; la piena identità resta a B6.
+
 ### B4 — Chiusura dei bypass auth
 
 - **Verifica token unificata**: nuovo `auth/apiToken.ts` con `verifyApiToken()` (confronto SHA-256 + `timingSafeEqual`, sicuro anche per valori corti/mancanti) e `apiTokenFromRequest()` (`X-WikiForge-Token` anche ripetuto, `Authorization: Bearer`, bare token; `Bearer` senza valore non diventa un token). `validateApiToken()` usa questo modulo per ogni ingresso.
@@ -57,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
 
 - **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.
-- **Gap noti a B0**: il test `KNOWN BYPASS (B4)` dimostrava che `/api/v1/graph/{sync,validate,rag}` raggiungeva il proxy FastAPI (502 se irraggiungibile) anche con token configurato e header assente — **corretto in B4**; il test `KNOWN PROVENANCE (B5)` fissa ancora `decidedBy` raw dal body con default `'human'`, da correggere in B5.
+- **Gap noti a B0**: il bypass del proxy graph (502 senza token quando FastAPI era irraggiungibile) è stato **corretto in B4**; il reviewer grezzo con default `'human'` resta intenzionalmente il comportamento legacy dopo B5, mentre in strict mode la provenance è vincolata al Principal.
 - Nessun file di produzione, endpoint, envelope o metodo pubblico modificato.
 
 ### S5/S6 — Documentazione allineata e collaudo finale

@@ -8,8 +8,8 @@
  */
 
 import { error, json, sse, type ApiResult } from '../api/http';
-import type { DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices, ProjectId } from './services';
+import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
+import type { DomainServices } from './services';
 import type { ChatRequest } from '../agentServer';
 
 type Payload = Record<string, unknown>;
@@ -28,10 +28,11 @@ export class ChatModule implements DomainModule {
   constructor(private readonly services: DomainServices) {}
 
   register(bus: MessageBus): void {
-    bus.register<Payload>('chat.send', (payload, context) => this.send(payload, context.projectId));
+    bus.register<Payload>('chat.send', (payload, context) => this.send(payload, context));
   }
 
-  private async send(payload: Payload, projectId: ProjectId): Promise<ApiResult> {
+  private async send(payload: Payload, context: CommandContext): Promise<ApiResult> {
+    const projectId = context.projectId;
     const body: ChatRequest = {
       message: asString(payload.message),
       command: asString(payload.command),
@@ -45,7 +46,7 @@ export class ChatModule implements DomainModule {
         try {
           await this.services.processChatCommandStream(body, (chunk) => {
             res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-          }, projectId);
+          }, projectId, context.principal);
           res.write('data: [DONE]\n\n');
           res.end();
         } catch (err) {
@@ -58,7 +59,7 @@ export class ChatModule implements DomainModule {
     }
 
     try {
-      const response = await this.services.processChatCommand(body, projectId);
+      const response = await this.services.processChatCommand(body, projectId, context.principal);
       return json({ success: true, response });
     } catch (err) {
       return error(String(err), 500);

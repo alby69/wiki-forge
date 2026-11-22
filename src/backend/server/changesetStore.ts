@@ -36,6 +36,10 @@ export interface Changeset {
   edits: ChangesetEdit[];
   applied_at?: string;
   rejected_reason?: string;
+  /** B5 — additive, server-trusted provenance (absent in legacy mode). */
+  actor?: string;
+  applied_by?: string;
+  rejected_by?: string;
 }
 
 export interface StageChangesetInput {
@@ -44,6 +48,8 @@ export interface StageChangesetInput {
   author?: string;
   rationale?: string;
   sources?: string[];
+  /** B5 — set by the strict-mode HTTP adapter, never from the raw body. */
+  actor?: string;
 }
 
 export class ChangesetStore {
@@ -111,6 +117,7 @@ export class ChangesetStore {
       rationale: input.rationale,
       sources: input.sources,
       edits: processed,
+      ...(input.actor ? { actor: input.actor } : {}),
     };
     await this.write(changeset);
     return changeset;
@@ -143,7 +150,7 @@ export class ChangesetStore {
   }
 
   /** Apply every edit after human review. Never called by the LLM itself. */
-  async apply(id: string): Promise<{ changesetId: string; appliedFiles: string[] }> {
+  async apply(id: string, actor?: string): Promise<{ changesetId: string; appliedFiles: string[] }> {
     const changeset = await this.get(id);
     if (changeset.status !== 'pending') {
       throw new Error(`Changeset '${id}' is '${changeset.status}', cannot re-apply`);
@@ -176,17 +183,25 @@ export class ChangesetStore {
 
     changeset.status = 'applied';
     changeset.applied_at = new Date().toISOString();
+    if (actor) {
+      changeset.actor = actor;
+      changeset.applied_by = actor;
+    }
     await this.write(changeset);
     return { changesetId: changeset.id, appliedFiles };
   }
 
-  async reject(id: string, reason = ''): Promise<Changeset> {
+  async reject(id: string, reason = '', actor?: string): Promise<Changeset> {
     const changeset = await this.get(id);
     if (changeset.status !== 'pending') {
       throw new Error(`Changeset '${id}' is '${changeset.status}', cannot reject`);
     }
     changeset.status = 'rejected';
     changeset.rejected_reason = reason;
+    if (actor) {
+      changeset.actor = actor;
+      changeset.rejected_by = actor;
+    }
     await this.write(changeset);
     return changeset;
   }

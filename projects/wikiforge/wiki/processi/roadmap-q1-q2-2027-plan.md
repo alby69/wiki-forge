@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (7/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (8/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -81,7 +81,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B2 | ✅ | `config_schema.py` (enterprise.auth/roles/projectAcls), 3 config, `auth/rbacConfig.ts`, `tests/rbacConfig.test.ts` (6 test), `test_config_schema.py` (4 nuovi) |
 | B3 | ✅ | `auth/rbacMiddleware.ts` (policy + `bus.use`), `auth/rbacConfig.ts` (loader sync + ACL cartella), `bus/messageBus.ts` (`context.rbac`), `agentServer.ts`, `approvalStore.ts`, `projectsModule.ts`, `schedulerModule.ts`, `tests/rbacMiddleware.test.ts` (28 test) |
 | B4 | ✅ | `auth/apiToken.ts` (confronto constant-time + estrazione header), `agentServer.ts` (auth prima del proxy graph, envelope 401 B0), `api/openapi.ts`, `docs/OPENAPI.md`, `tests/apiToken.test.ts` (9 test), `tests/authCharacterization.test.ts` (4 nuovi test) |
-| B5 | ⬜ | — |
+| B5 | ✅ | `auth/actor.ts` + `scripts/actor_provenance.py` (grammatica condivisa), `agentServer.ts` (strict mode, binding verify/approval, flag F6-only, guard stable), `changesetStore.ts` (campi additivi), 4 moduli bus, script Python e registry rigenerato, `tests/provenance.test.ts` (10 test), `tests/python/test_provenance.py` (4 test) |
 | B6 | ⬜ | — |
 | B7 | ⬜ | — |
 | C0 | ✅ | `[neo4j]` in 3 config, `config_schema.py`, `requirements.txt`, `tests/python/test_config_schema.py` (6 nuovi test) |
@@ -105,8 +105,9 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
 A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
-B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC complessivo invariato ~3.0); dopo C0:
-C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
+B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
+RBAC ~3.5 (B1 resta 4.5 fino all'IdP di B6); dopo C0: C1 1, Neo4j ~0.65;
+gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -119,9 +120,9 @@ C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 | B1 | Autenticazione / identità del chiamante | 0.5 | 4.5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 3.5 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
-| B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 3 | 5 |
+| B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 4.5 | 5 |
 | B5 | UI identità e sessione | 0 | 0 | 5 |
-| — | **Complessivo RBAC** | **~1** | **~3.0** | **5** |
+| — | **Complessivo RBAC** | **~1** | **~3.5** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 1 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 1 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
@@ -520,6 +521,21 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: test di binding provenance + `okf_lint.py` su output generati;
   nessun test asserisce più `'qa'`/`'mario'` raw in strict mode.
 - **Grado atteso**: B4 3 → 4.5, B1 4.5 → 5 in modalità enterprise.
+- **Risultato (2026-11-22)**: ✅ completato. Grammatica attore canonica in
+  `src/backend/server/auth/actor.ts` e `scripts/actor_provenance.py` (mirror
+  TS/Python, riutilizzata da `okf_lint.py`, `promote_doc_answer.py` e
+  `program_change_common.py`). Con `enable_rbac=true` il server ignora
+  `reviewer`/`user`/`actor` del body: verify, decisioni F6 e changeset
+  (`actor`, `applied_by`, `rejected_by` additivi) scrivono sempre il
+  `Principal` server-derived. Il flag `--allow-process-actor` di
+  `wiki_program_change_apply.py` è F6-only (ritirato da
+  `withoutApprovalFlags`) e l'audit registra `actor: process` per le approvazioni
+  di processo; `stable` con principal non umano viene rifiutato con
+  `stable-requires-human-actor` (Rule 3). In legacy mode il reviewer grezzo e
+  l'assenza di campi additivi restano invariati. Registry e documentazione
+  script rigenerati dalla SSOT Python. 10 test Node + 4 Python dedicati, suite
+  408 pass + 1 skip pre-esistente, Python 87 pass. Grado provenance 3 → 4.5,
+  RBAC complessivo ~3.5; B1 resta 4.5 fino all'IdP di B6.
 
 ### B6 — Adapter IdP (OIDC / SAML / OAuth2)
 
@@ -717,6 +733,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B2 | B1 / B2 · RBAC complessivo | 1.5 · 0 · ~1.5 | 2 · 1 · ~2 | Schema enterprise con auth/roles/projectAcls, 4 ruoli canonici in 3 config, lettore TOML Node con default; 4 test Python + 6 Node, `enable_rbac=true` da solo non cambia risposte. |
 | 2026-11-22 | B3 | B2 / B3 · RBAC complessivo | 1 · 2.5 · ~2 | 3.5 · 4 · ~3.0 | Gate opt-in sul bus: matrice 84 comandi → 4 ruoli (unknown = Admin), ACL per cartella, 403 con envelope esistente, `context.rbac`, filtri membership su progetti/approvazioni; 28 test Node, B0 invariato. |
 | 2026-11-22 | B4 | B1 · RBAC complessivo | 2 · ~3.0 | 4.5 · ~3.0 | Confronto token constant-time e controllo prima del proxy graph: 401 B0 su graph senza/errato token, proxy raggiungibile con token valido, docs/OPTIONS pubblici, drift `WIKIFORGE_API_TOKEN` corretto; 13 nuovi test Node, B0/B3 invariati. |
+| 2026-11-22 | B5 | B4 · RBAC complessivo | 3 · ~3.0 | 4.5 · ~3.5 | Attore canonico condiviso TS/Python; strict mode vincola verify, F6 e changeset al Principal, flag `--allow-process-actor` F6-only, guard `stable-requires-human-actor`; legacy invariato. 10 test Node + 4 Python, suite 408 pass + 1 skip. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

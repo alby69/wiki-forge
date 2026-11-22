@@ -8,7 +8,7 @@
  */
 
 import { json, type ApiResult } from '../api/http';
-import type { DomainModule, MessageBus } from '../bus/messageBus';
+import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { DomainServices, JsonObject, ProjectId } from './services';
 
 type Payload = Record<string, unknown>;
@@ -53,7 +53,7 @@ export class ReviewStudioModule implements DomainModule {
 
   register(bus: MessageBus): void {
     bus.register<Payload>('review.meta', (payload, context) => this.meta(payload, context.projectId));
-    bus.register<Payload>('review.verify', (payload, context) => this.verify(payload, context.projectId));
+    bus.register<Payload>('review.verify', (payload, context) => this.verify(payload, context));
     bus.register<Payload>('review.digest', (payload, context) => this.digest(payload, context.projectId));
     bus.register<Payload>('review.critique', (payload, context) => this.critique(payload, context.projectId));
     bus.register<Payload>('review.snapshots', (payload, context) => this.snapshots(payload, context.projectId));
@@ -74,11 +74,12 @@ export class ReviewStudioModule implements DomainModule {
     }
   }
 
-  private async verify(payload: Payload, projectId: ProjectId): Promise<ApiResult> {
+  private async verify(payload: Payload, context: CommandContext): Promise<ApiResult> {
     const noteRef = asString(payload.note);
     if (!noteRef) {
       return json({ success: false, error: 'Campo "note" mancante' }, 400);
     }
+    const projectId = context.projectId;
     try {
       const result = (await this.services.recordHumanVerification({
         noteRef,
@@ -86,7 +87,7 @@ export class ReviewStudioModule implements DomainModule {
         comment: asString(payload.comment),
         setStable: asBool(payload.setStable),
         projectId,
-      })) as unknown as VerificationResult;
+      }, context.principal)) as unknown as VerificationResult;
       const meta = result.success
         ? await this.services.getReviewMeta(result.path as string, projectId)
         : null;

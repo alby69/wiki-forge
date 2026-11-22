@@ -20,6 +20,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from actor_provenance import HUMAN_ACTOR_RE, PROCESS_ACTOR_RE
+
 # Repo-relative prefixes that the bridge may touch. Everything else
 # (.git/, .wiki-forge/, output/, projects/, node_modules/, ...) is forbidden.
 ALLOWED_PREFIXES = (
@@ -31,7 +33,10 @@ ALLOWED_PREFIXES = (
 )
 ALLOWED_ROOT_FILES = ("AGENT.md", "README.md", "ROADMAP.md")
 
-REVIEWER_RE = re.compile(r"^human:[a-zA-Z0-9_-]+$")
+# B5: human reviewer is the default for every apply; the process variant is
+# accepted only by the F6-only flag on wiki_program_change_apply.py.
+REVIEWER_RE = HUMAN_ACTOR_RE
+PROCESS_REVIEWER_RE = PROCESS_ACTOR_RE
 DEFAULT_STAGE_DIR = "output/program-changes"
 
 

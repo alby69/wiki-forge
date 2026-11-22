@@ -343,8 +343,9 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         "description": "Fase 76 (mutating, F6-only): apply a staged program change with snapshots, human reviewer and audit. Hard-blocked from automatic execution.",
         "parameters": [
             {"name": "proposal", "label": "Proposal File", "type": "text", "default": "output/program-changes/proposal.json", "cliFlag": "--proposal", "description": "JSON proposal previously staged by the propose step."},
-            {"name": "reviewer", "label": "Human Reviewer", "type": "text", "default": "human:alby69", "cliFlag": "--reviewer", "description": "Human actor authorising the change (human:<id>)."},
+            {"name": "reviewer", "label": "Human Reviewer", "type": "text", "default": "human:alby69", "cliFlag": "--reviewer", "description": "Canonical actor authorising the change (human:<id> by default; process:<id> only with the F6-only flag)."},
             {"name": "confirm", "label": "Confirm Human Approval (F6)", "type": "boolean", "default": False, "cliFlag": "--confirm", "description": "Required explicit confirmation; injected only after F6 approval."},
+            {"name": "allow_process_actor", "label": "Allow Server Process Actor (B5/F6)", "type": "boolean", "default": False, "cliFlag": "--allow-process-actor", "description": "B5: server-injected only. Accepts a canonical process:<id> reviewer; never accepted from generic job args."},
             {"name": "stage_dir", "label": "Stage Directory", "type": "text", "default": "output/program-changes", "cliFlag": "--stage-dir", "description": "Directory containing the staged proposal records."},
             {"name": "project", "label": "Project", "type": "text", "default": "wikiforge", "cliFlag": "--project", "description": "Project scope (accepted for provenance compatibility)."},
         ],

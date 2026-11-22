@@ -22,10 +22,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from actor_provenance import HUMAN_ACTOR_RE
 from okf_common import repo_root
 import docs_to_wiki
 
-ACTOR_RE = re.compile(r"^human:[a-zA-Z0-9_-]+$")
+# B5: canonical human-only reviewer grammar shared with okf_lint.py and the
+# TypeScript mirror. The CLI contract and error text stay unchanged.
+ACTOR_RE = HUMAN_ACTOR_RE
 
 
 def utc_now() -> str:

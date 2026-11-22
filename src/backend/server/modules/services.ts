@@ -15,7 +15,7 @@ import type { Scheduler } from '../scheduler/scheduler';
 import type { ApprovalStore } from '../scheduler/approvalStore';
 import type { EventTriggerBus } from '../scheduler/eventTriggers';
 import type { ScriptScheduleCreateInput } from '../scheduler/scriptJobStore';
-import type { MessageBus } from '../bus/messageBus';
+import type { MessageBus, Principal } from '../bus/messageBus';
 import type { PythonTool } from './pythonTool';
 import type { ScriptDef, ChatRequest } from '../agentServer';
 
@@ -45,7 +45,7 @@ export interface VaultServices {
 
 export interface ReviewStudioServices {
   getReviewMeta(noteRef: string, projectId?: ProjectId): Promise<JsonObject>;
-  recordHumanVerification(options: JsonObject): Promise<JsonObject>;
+  recordHumanVerification(options: JsonObject, principal?: Principal): Promise<JsonObject>;
   getReviewDigest(projectId: ProjectId, days: number, scope: string, noteRef?: string): Promise<JsonObject>;
   critiqueNote(options: JsonObject): Promise<JsonObject>;
   listReviewSnapshots(noteRef: string, projectId?: ProjectId): Promise<JsonObject[]>;
@@ -72,8 +72,13 @@ export interface StudyServices {
 }
 
 export interface ChatServices {
-  processChatCommand(req: ChatRequest, projectId?: ProjectId): Promise<string>;
-  processChatCommandStream(req: ChatRequest, onChunk: (chunk: string) => void, projectId?: ProjectId): Promise<string>;
+  processChatCommand(req: ChatRequest, projectId?: ProjectId, principal?: Principal): Promise<string>;
+  processChatCommandStream(
+    req: ChatRequest,
+    onChunk: (chunk: string) => void,
+    projectId?: ProjectId,
+    principal?: Principal,
+  ): Promise<string>;
 }
 
 export interface ExecutionServices {
@@ -98,6 +103,7 @@ export interface SchedulerServices {
     decision: 'approved' | 'rejected',
     reviewer?: string,
     reason?: string,
+    principal?: Principal,
   ): Promise<{ approval?: JsonObject; error?: string }>;
   addScheduleClient(res: import('node:http').ServerResponse): () => void;
   snapshotStatus(): JsonObject | null;
@@ -113,4 +119,8 @@ export interface DomainServices
   projects: ProjectService;
   changesets: (projectId: ProjectId) => ChangesetStore | Promise<ChangesetStore>;
   bus: MessageBus;
+  /** B5 — strict provenance is active only when enterprise.enable_rbac=true. */
+  isStrictProvenance(): boolean;
+  /** B5 — canonical, server-trusted actor. Ignores the body in strict mode. */
+  provenanceActor(principal?: Principal, rawActor?: string): string;
 }
