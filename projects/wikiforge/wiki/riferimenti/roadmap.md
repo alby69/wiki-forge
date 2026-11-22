@@ -112,3 +112,9 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 - Connessione diretta tramite driver Neo4j e sincronizzazione del grafo mediante il watcher `graph_watcher.py`.
 - Interrogazione live in Cypher con sincronizzazione bidirezionale tra il vault Markdown e le istanze Neo4j aziendali.
 - Riconciliazione automatica delle modifiche effettuate sia dal browser che dal database a grafi.
+
+> **Piano operativo**: lo studio del codice, la scomposizione in 23 step (A0–A5,
+> B0–B7, C0–C8), le dipendenze, i criteri di accettazione, i test di verifica e
+> la tabella del **grado di implementazione raggiunto** (aggiornata a ogni step)
+> sono in [`ROADMAP_Q1_Q2_2027_PLAN.md`](../processi/roadmap-q1-q2-2027-plan.md). Baseline:
+> L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5; implementazione non ancora avviata.

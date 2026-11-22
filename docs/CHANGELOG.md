@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Q1–Q2 2027 — Piano incrementale (studio)
+
+- **Studio completo dei tre pilastri**: L4 Fully-Autonomous (~2.5/5), RBAC multi-utente (~1/5), Neo4j bidirezionale (~0.5/5), con evidenze puntuali su codice, config e test esistenti.
+- **Nuovo piano vivo** [`docs/ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md): 23 step (A0–A5 autonomia, B0–B7 RBAC, C0–C8 Neo4j), ognuno con obiettivo, modifiche, criteri di accettazione, test di verifica e grado atteso; tabella di avanzamento e registro aggiornamenti da compilare a ogni step.
+- **Gate L4 e sicurezza**: correzione obbligatoria del parsing di `cq_gaps` in `health.py` (A0) prima di qualunque autonomia; proposta (non ancora approvata) di modalità `off | propose | bounded` con allowlist, rivalidazione, snapshot e rollback, senza mai attivare `auto_apply=true`.
+- **Dipendenze esplicite**: `A4 ⟵ A0, A3, B5, C6`; `C4 ⟵ B4` (nessun endpoint Cypher prima della chiusura del bypass del proxy graph); provenance server-trusted (`human:<id>` / `process:<id>`) prima della riconciliazione automatica.
+- **Documentazione**: puntatori in `docs/ROADMAP.md`, indice `docs/README.md` (29 file), `ROADMAP.md` (task 85) e proiezione wiki rigenerata. Nessuna API, envelope o metodo pubblico modificato.
+
 ### S5/S6 — Documentazione allineata e collaudo finale
 
 - **Indici e guida**: `docs/README.md` indicizza il piano KE (28 file) e `docs/help/modalita-dev.md` spiega badge di sicurezza, **🕒 Schedula**, avvisi F6 e **🗑 Rimuovi** senza duplicare il catalogo generato.

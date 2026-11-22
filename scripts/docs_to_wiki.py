@@ -56,6 +56,7 @@ DOC_MAP: dict[str, str] = {
     "docs/KNOWLEDGE_ENGINEERING.md": "processi/knowledge-engineering",
     "docs/MIGRATION.md": "processi/migration",
     "docs/KE_AGENT_SCHEDULER_PLAN.md": "processi/ke-agent-scheduler-plan",
+    "docs/ROADMAP_Q1_Q2_2027_PLAN.md": "processi/roadmap-q1-q2-2027-plan",
     "docs/SELF_WIKI_PLAN.md": "processi/self-wiki-plan",
     # standard
     "docs/OKF_SPEC.md": "standard/okf-spec",

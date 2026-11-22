@@ -92,6 +92,7 @@
 | 82 | Automazione script — S4: UI di scheduling e gestione job | ✅ Done | Badge di sicurezza generato e pulsante **🕒 Schedula** nel Control Panel (ID automatico, argomenti del form, avvisi F6 via `apiBus`), badge "job script" e pulsante **🗑 Rimuovi** nella tab Agenti & Schedule solo per job script. Refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto e nessuna nuova route; test DOM/bus dedicati. |
 | 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
 | 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
+| 85 | Studio e piano incrementale Q1–Q2 2027 | 🔄 Ongoing | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 con criteri di accettazione, test e grado di implementazione aggiornato a ogni step in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Baseline: L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5; implementazione non avviata. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -307,3 +308,23 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Human-only apply (`scripts/wiki_program_change_apply.py`)**: refuses to run without `--reviewer human:<id>` and `--confirm`, snapshots every target file before an exact find/replace and appends a JSONL audit entry. Hard-blocked from automatic execution via `MUTATING_SCRIPT_IDS`.
 - **Use Case 8 / F6 (`ke_wiki_program_change`)**: the F5 Policy Agent withholds the mutating apply step into the approval queue; only `POST /api/ke/schedule/approvals/:id/approve` injects the human reviewer and confirmation and executes the step with an `actor: human` audit trail. The `wiki-program-change` job has `auto_apply = false` and is disabled by default.
 - **Tests**: `tests/python/test_program_change.py` (7) and `tests/programChangeBridge.test.ts` (3).
+
+## Q1–Q2 2027 — Piano incrementale 🔄 Ongoing
+
+**Goal:** coprire i tre blocchi di medio/lungo termine — L4 Fully-Autonomous
+Agentic Workflows, RBAC multi-utente e sincronizzazione bidirezionale con
+Neo4j — con step verificati da test e un grado di implementazione sempre
+aggiornato.
+
+**Deliverables:**
+- **Piano vivo (`docs/ROADMAP_Q1_Q2_2027_PLAN.md`)**: 23 step (A0–A5 autonomia,
+  B0–B7 RBAC, C0–C8 Neo4j), dipendenze, criteri di accettazione, test di
+  verifica, tabelle di avanzamento e registro dei gradi; baseline L4 ~2.5/5,
+  RBAC ~1/5, Neo4j ~0.5/5.
+- **Sicurezza prima dell'autonomia**: il gate `cq_gaps` di `health.py` va
+  corretto (A0) prima di qualunque claim L4; la modalità `bounded` (A4) resta
+  proposta e richiede approvazione esplicita, senza mai attivare
+  `auto_apply=true`.
+- **Contratti invariati**: nessun endpoint, envelope o metodo pubblico
+  modificato; nuove route solo additive e generate da `contracts.ts`; nessun
+  `fetch` diretto nell'UI.
