@@ -37,8 +37,32 @@ for _parent in _file_path.parents:
         _REPO_ROOT = _parent
         break
 
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
+# C4 — ``watchdog`` is an optional runtime dependency. Importing this module
+# (e.g. from the API tool) must stay possible on installations without it; only
+# ``LiveGraphWatcher`` actually needs the observer.
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler, FileSystemEvent
+
+    WATCHDOG_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised by dependency-free installs
+    WATCHDOG_AVAILABLE = False
+    Observer = None  # type: ignore[assignment,misc]
+
+    class FileSystemEventHandler:  # type: ignore[no-redef]
+        """Minimal stand-in keeping ``GraphSyncHandler`` importable."""
+
+        def on_created(self, event: Any) -> None: pass
+        def on_modified(self, event: Any) -> None: pass
+        def on_deleted(self, event: Any) -> None: pass
+        def on_moved(self, event: Any) -> None: pass
+
+    class FileSystemEvent:  # type: ignore[no-redef]
+        """Minimal stand-in used only for type annotations."""
+
+        src_path = ""
+        dest_path = ""
+        is_directory = False
 
 from src.backend.wikiforge.semantics.base_parser import slugify
 from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
@@ -187,6 +211,14 @@ class GraphSyncHandler(FileSystemEventHandler):
         self._execute_cypher([(statement, params)])
         self._emit(action, path, note_id, revision)
 
+    def sync_note(self, path: Path | str, action: str = "SYNC") -> None:
+        """C4 — public, idempotent single-note sync used by the API tool.
+
+        It reuses exactly the same hash/revision logic as watchdog events, so a
+        full vault scan can never issue a duplicate MERGE for an unchanged note.
+        """
+        self._sync_note(Path(path), action)
+
     def _delete_note(self, path: Path, action: str = "DELETED") -> None:
         note_id = self._note_id(path)
         revision = self._revisions.get(note_id, 0) + 1
@@ -293,6 +325,8 @@ class LiveGraphWatcher:
         on_event: Optional[Callable[[StructuredEvent], None]] = None,
         debounce_seconds: float = 0.05,
     ):
+        if Observer is None:  # C4 — dependency-free installs can still sync via API
+            raise RuntimeError("watchdog is required for LiveGraphWatcher; install the 'watchdog' package")
         self.watch_dir = Path(watch_dir)
         self.neo4j_driver = neo4j_driver
         # C1 — additive parameter; existing positional calls are unaffected.

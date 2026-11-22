@@ -9,19 +9,34 @@ export interface PythonTool {
   pythonCmd: string;
 }
 
-/** Run a Python tool in the project workspace and return its stdout verbatim. */
+/**
+ * Run a Python tool in the project workspace and return its stdout verbatim.
+ *
+ * `stdin` is additive (C4): tools that read a JSON request can receive it
+ * without writing temporary files. Existing callers are unaffected.
+ */
 export async function runPythonText(
   tool: PythonTool,
   relativePath: string,
   args: string[],
   projectId: string,
+  stdin?: string,
 ): Promise<string> {
   const cwd = await tool.resolveRoot(projectId);
   const script = tool.pathFor(relativePath);
   const child = spawn(tool.pythonCmd, [script, ...args], { cwd });
+  if (stdin !== undefined) {
+    // A tool may exit before consuming its input; a broken pipe is not an error.
+    child.stdin.on('error', () => { /* ignore EPIPE */ });
+    child.stdin.end(stdin);
+  }
   let out = '';
   child.stdout.on('data', (chunk) => { out += chunk.toString('utf-8'); });
-  await new Promise((done) => child.on('close', done));
+  await new Promise<void>((resolve, reject) => {
+    // Without an error listener a failed spawn crashes the whole gateway.
+    child.on('error', reject);
+    child.on('close', () => resolve());
+  });
   return out;
 }
 

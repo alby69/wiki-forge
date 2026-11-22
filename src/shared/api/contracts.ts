@@ -350,6 +350,58 @@ export const ROUTES = [
     command: 'graph.insights', projectScoped: true,
     request: {}, response: { schema: ok({ surprisingConnections: arr(free()), knowledgeGaps: arr(free()) }) },
   }),
+  // C4 — additive declarative routes. They are dispatched through the bus like
+  // every other catalogue operation, so the B4 token gate applies to them too.
+  defineRoute({
+    id: 'graph.cypher', method: 'POST', path: '/api/v1/graph/cypher', tags: ['Knowledge Graph'],
+    summary: 'Execute one validated read-only Cypher query',
+    description: 'C4 — read-only execution through the C3 service. Writes are rejected with a typed error.',
+    command: 'graph.cypher', projectScoped: true,
+    request: {
+      body: obj({
+        cypher: str('A single MATCH / OPTIONAL MATCH statement with RETURN'),
+        params: free('Cypher parameter map; values are bound by name'),
+        projectId: str('Optional project id selecting the configured Neo4j database'),
+      }, ['cypher'], 'Read-only Cypher request'),
+      bodyRequired: true,
+    },
+    response: {
+      schema: ok({
+        mode: str('live when a driver was used, mock otherwise', ['live', 'mock']),
+        rows: arr(free('Result row')),
+        count: int(),
+      }),
+    },
+  }),
+  defineRoute({
+    id: 'graph.sync.neo4j', method: 'POST', path: '/api/v1/graph/sync/neo4j', tags: ['Knowledge Graph'],
+    summary: 'Synchronize a project wiki into Neo4j',
+    description: 'C4 — full vault scan through the idempotent C2 handler; never writes to the vault.',
+    command: 'graph.sync.neo4j', projectScoped: true,
+    request: {
+      body: obj({ projectId: str('Optional project id; defaults to X-Project-Id') }, [], 'Neo4j sync request'),
+    },
+    response: {
+      schema: ok({
+        projectId: str(), wikiDir: str(), notes: int(), synced: int(),
+        mode: str('live when a driver was used, mock otherwise', ['live', 'mock']),
+      }),
+    },
+  }),
+  defineRoute({
+    id: 'graph.status', method: 'GET', path: '/api/v1/graph/status', tags: ['Knowledge Graph'],
+    summary: 'Report Neo4j configuration without connecting',
+    description: 'C4 — reports enabled/configured/driverInstalled/mode; never opens a socket.',
+    command: 'graph.status', projectScoped: true,
+    request: {},
+    response: {
+      schema: ok({
+        enabled: bool(), configured: bool(), driverInstalled: bool(),
+        mode: str('live when a driver is configured, mock otherwise', ['live', 'mock']),
+        database: str(), projectId: str(),
+      }),
+    },
+  }),
 
   // ---------------------------------------------------------------------------
   // Catalogues: skills, help, scripts, use cases

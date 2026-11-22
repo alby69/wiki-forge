@@ -67,9 +67,9 @@ rimasto senza tipi.
 
 ## 3. Cosa contiene la specifica
 
-- Oltre **70 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
+- **93 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
-  Files, Catalogues, Knowledge Graph, Identity e Documentazione.
+  Files, Catalogues, Knowledge Graph/Neo4j, Identity e Documentazione.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
   `SchedulerStatus`, `ResearchAnswer`).
 - `securitySchemes.WikiForgeToken`: header `X-WikiForge-Token`, richiesto solo
@@ -123,16 +123,17 @@ Il backend è stato disaccoppiato senza toccare la facciata pubblica:
 
 ```text
 AgentServer.handleRequest()
-  ├─ reverse proxy FastAPI (sync/validate/rag)   → prima di CORS/token
-  ├─ handleDocsRequest()                         → /api/openapi.json, /api/docs
-  ├─ matchRoute(ROUTES, method, path)            → command + params + schema
+  ├─ handleDocsRequest() / auth.me                → pubblici
+  ├─ auth B4 (token + CORS)                       → prima del dispatch e del proxy
+  ├─ reverse proxy FastAPI (sync/validate/rag)    → byte-compatibile
+  ├─ matchRoute(ROUTES, method, path)             → command + params + schema
   ├─ payload = query + headers + body + params   → i params sono authoritative
   └─ MessageBus.dispatch(command, payload, context)
        ├─ CatalogueModule    3    help/skills
        ├─ ToolsModule        3    script registry, KE use cases
        ├─ ReviewModule       3    coda recensioni (.llm-wiki/reviews.json)
        ├─ IngestionModule    3    coda SQLite e conversione CoT
-       ├─ GraphModule        2    cluster Louvain e insight
+       ├─ GraphModule        5    cluster, insight e Neo4j (query/sync/status)
        ├─ ProjectsModule    12    CRUD progetti, config, import/export
        ├─ ChangesetsModule   5    stages plan → review → apply
        ├─ FilesModule        1    download binario con containment check
@@ -145,11 +146,11 @@ AgentServer.handleRequest()
        └─ ChatModule         1    chat JSON e SSE
 ```
 
-Degli **90 endpoint** del catalogo, **85 comandi** sono instradati sul bus.
+Degli **93 endpoint** del catalogo, **88 comandi** sono instradati sul bus.
 I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 `docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
-`graph.proxy` restano prima di CORS/token per preservare il proxy FastAPI
-`/api/v1/graph/sync|validate|rag`.
+`graph.proxy` sono protetti dal gate B4 come ogni ingresso non pubblico e
+preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
 
 - **B7 — identità**: `GET /api/auth/me` (tag `Identity`, comando `auth.me`,
   schema `AuthIdentity`) è la route additiva che il frontend usa per risolvere
@@ -157,6 +158,14 @@ I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
   `authenticated=false`; con Bearer invalido restituisce l'envelope 401 di B0.
   Il client invia il Bearer IdP tramite `Authorization` solo quando presente,
   lasciando invariato l'header legacy `X-WikiForge-Token`.
+
+- **C4 — Neo4j dichiarativo**: `POST /api/v1/graph/cypher` (query read-only C3),
+  `POST /api/v1/graph/sync/neo4j` (scan idempotente del vault) e
+  `GET /api/v1/graph/status` (configurazione senza connessioni) sono route
+  additive dichiarate in TS e servite da `GraphModule` tramite il bus. Il tool
+  `neo4j_api_tool.py` restituisce errori tipizzati e un `mode` esplicito
+  `live`/`mock`; ruoli RBAC: Reader per query/status, Contributor per sync. Gli
+  endpoint graph legacy restano invariati e protetti da B4.
 
 - `MessageBus` (`src/backend/server/bus/messageBus.ts`) supporta handler multipli,
   middleware, eventi `command:handled`/`command:failed` e un `CommandContext`
@@ -184,7 +193,7 @@ I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (90 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (93 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -219,8 +228,8 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (90 id, assertion c
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 85 comandi |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (90 id), client generato, `apiBus`, facciate senza `fetch` diretto |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 88 comandi |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (93 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

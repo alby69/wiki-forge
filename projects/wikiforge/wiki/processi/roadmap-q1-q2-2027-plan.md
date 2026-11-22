@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (16/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (17/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -88,7 +88,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | C1 | ✅ | `src/backend/wikiforge/semantics/neo4j_client.py` (`Neo4jConfig.from_config`/`from_env`, `Neo4jClient.connect`/`verify_connectivity`/`session`/`close`, lazy import, DI), `graph_watcher.py` e `graph_rag_pipeline.py` (parametri opzionali additivi), `tests/python/test_neo4j_client.py` (9 test) |
 | C2 | ✅ | `watcher/graph_watcher.py` (MERGE parametrizzato, hash/revision, delete con slug annidato, `on_moved` + debounce, `on_event` strutturato, `--project`), `tests/python/test_graph_watcher_neo4j.py` (9 test) |
 | C3 | ✅ | `semantics/neo4j_query.py` (`Neo4jQueryService.execute_read`, whitelist, timeout/limit, binding, errori tipizzati), `graph_rag_pipeline.py` ($entities, modi mock/live espliciti, `error_type`, commenti fuorvianti rimossi), `docs/GRAPH_RAG.md`, `tests/python/test_graph_rag_live.py` (19 test) |
-| C4 | ⬜ | — |
+| C4 | ✅ | `contracts.ts`/`endpoints.ts` (3 route additive e tipi), `modules/graphModule.ts` (3 handler bus), `modules/pythonTool.ts` (stdin opzionale), `semantics/neo4j_api_tool.py` (status/query/sync), `watcher/graph_watcher.py` (watchdog lazy + `sync_note()`), `auth/rbacMiddleware.ts` (ruoli), `docs/OPENAPI.md`, `tests/graphRoutes.test.ts` (5 test), `tests/python/test_neo4j_api_tool.py` (11 test) |
 | C5 | ⬜ | — |
 | C6 | ⬜ | — |
 | C7 | ⬜ | — |
@@ -108,7 +108,7 @@ A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
-dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; gli altri valori coincidono ancora con “Oggi”).
+dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -124,14 +124,14 @@ dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j 
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 4.5 | 5 |
 | B5 | UI identità e sessione | 0 | 5 | 5 |
 | — | **Complessivo RBAC** | **~1** | **5** | **5** |
-| C1 | Driver e configurazione Neo4j | 0 | 2.5 | 5 |
+| C1 | Driver e configurazione Neo4j | 0 | 3.5 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 3.5 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
-| C4 | Interrogazione Cypher live | 0 | 3 | 5 |
+| C4 | Interrogazione Cypher live | 0 | 4 | 5 |
 | C5 | Sync Neo4j → vault Markdown | 0 | 0 | 5 |
 | C6 | Riconciliazione e soppressione echo | 0 | 0 | 5 |
 | C7 | Propagazione real-time al browser | 0 | 0 | 5 |
-| — | **Complessivo Neo4j** | **~0.5** | **~1.6** | **5** |
+| — | **Complessivo Neo4j** | **~0.5** | **~1.9** | **5** |
 
 ---
 
@@ -817,6 +817,28 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   endpoint protetti come il resto del gateway.
 - **Verifica**: `npm run typecheck`, `npm test`, `npm run build`.
 - **Grado atteso**: C4 3 → 4, C1 2.5 → 3.5.
+- **Risultato (2026-11-22)**: ✅ completato. Tre route **additive** dichiarate
+  una sola volta in `contracts.ts`/`endpoints.ts` e servite dal bus:
+  `POST /api/v1/graph/cypher` (query read-only C3), `POST /api/v1/graph/sync/neo4j`
+  (scan `projects/<id>/wiki` con l'handler idempotente C2) e
+  `GET /api/v1/graph/status` (configurazione senza connessioni). Il nuovo
+  `semantics/neo4j_api_tool.py` espone `status|query|sync` con envelope
+  `{ success, ... }`, errori tipizzati (`read_only_violation`,
+  `validation_error`, `invalid_request`, `query_execution_error`) e `mode`
+  esplicito `live`/`mock`; la libreria Cypher resta validata prima di qualunque
+  uso del driver e la sync non scrive mai vault file. `GraphModule` registra i
+  tre nuovi comandi, `pythonTool.ts` accetta `stdin` opzionale e gestisce gli
+  errori di spawn, `graph_watcher.py` importa `watchdog` in modo lazy ed espone
+  `sync_note()` senza cambiare la firma legacy. Ruoli RBAC espliciti: Reader per
+  `graph.cypher`/`graph.status`, Contributor per `graph.sync.neo4j`. Il gate B4
+  protegge le nuove route con l'envelope 401 esatto; i tre proxy FastAPI
+  `/api/v1/graph/sync|validate|rag` restano byte-compatibili e raggiungibili con
+  token valido. OpenAPI passa a 93 endpoint / 88 comandi su bus (`GraphModule` 5).
+  Verifica: 5 test Node in `tests/graphRoutes.test.ts`, 11 test Python in
+  `tests/python/test_neo4j_api_tool.py` con fake driver e zero rete, 446 test
+  Node totali (445 pass + 1 skip pre-esistente), 139 test Python, test legacy
+  graph-watcher/GraphRAG invariati. Nessun endpoint, envelope o metodo pubblico
+  esistente cambiato. Gradi C4 4, C1 3.5, Neo4j ~1.9.
 
 ### C5 — Reverse sync DB → vault via changeset
 
@@ -907,6 +929,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | C1 | C1 · Neo4j complessivo | 1 · ~0.65 | 2.5 · ~0.8 | Client Neo4j injettabile con lazy import del driver, config/env opt-in, no-op quando disabilitato o senza password, connect/verify/close idempotenti; watcher e RAG accettano il client senza cambiare le firme legacy. 9 nuovi test Python (zero rete), 100 totali; nessun endpoint o metodo pubblico cambiato. |
 | 2026-11-22 | C2 | C2 · Neo4j complessivo | 1 · ~0.8 | 3.5 · ~1.2 | Watcher vault → Neo4j reale: MERGE parametrizzato e metadata `wf:*`, hash/revision idempotenti, delete con slug annidato, `on_moved` + debounce, eventi `graph.changed` strutturati e callback legacy invariato; `--project` risolve `projects/<id>/wiki`. 9 nuovi test Python con fake driver (zero rete), 109 totali, 441 Node; nessun endpoint o metodo pubblico cambiato. |
 | 2026-11-22 | C3 | C4 · Neo4j complessivo | 0 · ~1.2 | 3 · ~1.6 | Servizio Cypher read-only con whitelist MATCH/RETURN, binding parametrico, timeout/LIMIT, project→database e errori tipizzati; pipeline in `mode="live"` solo con driver, `mode="mock"` esplicito e mai downgrade silenzioso, query generata con `$entities`. 19 nuovi test Python (zero rete), 128 totali, 5 legacy GraphRAG verdi, `docs/GRAPH_RAG.md` aggiornato; nessun endpoint o metodo pubblico cambiato. |
+| 2026-11-22 | C4 | C1 / C4 · Neo4j complessivo | 2.5 / 3 · ~1.6 | 3.5 / 4 · ~1.9 | Tre route TS additive (`graph.cypher`, `graph.sync.neo4j`, `graph.status`) e tre comandi bus in `GraphModule`; CLI Python `status/query/sync` con errori tipizzati, driver lazy e zero rete, `sync_note()` idempotente e watchdog opzionale. Gate B4 e ruoli RBAC espliciti, proxy graph legacy byte-compatibile, OpenAPI 93 endpoint / 88 comandi. 5 test Node + 11 Python nuovi (446 Node, 139 Python), legacy invariati; nessun endpoint, envelope o metodo pubblico esistente cambiato. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |
 | 2026-11-22 | B2 | B1 / B2 · RBAC complessivo | 1.5 · 0 · ~1.5 | 2 · 1 · ~2 | Schema enterprise con auth/roles/projectAcls, 4 ruoli canonici in 3 config, lettore TOML Node con default; 4 test Python + 6 Node, `enable_rbac=true` da solo non cambia risposte. |
 | 2026-11-22 | B3 | B2 / B3 · RBAC complessivo | 1 · 2.5 · ~2 | 3.5 · 4 · ~3.0 | Gate opt-in sul bus: matrice 84 comandi → 4 ruoli (unknown = Admin), ACL per cartella, 403 con envelope esistente, `context.rbac`, filtri membership su progetti/approvazioni; 28 test Node, B0 invariato. |

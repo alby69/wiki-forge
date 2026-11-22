@@ -113,6 +113,22 @@ export type EndpointTypes = {
   'graph.rag': { req: WithBody<{ question: string }>; res: Json };
   'graph.clusters': { req: EmptyRequest; res: Json };
   'graph.insights': { req: EmptyRequest; res: Ok<{ surprisingConnections?: Json[]; knowledgeGaps?: Json[] }> };
+  // C4 — additive Neo4j routes (read-only query, sync, status)
+  'graph.cypher': {
+    req: WithBody<{ cypher: string; params?: Record<string, unknown>; projectId?: string }>;
+    res: Ok<{ mode: 'live' | 'mock'; rows: Json[]; count: number }>;
+  };
+  'graph.sync.neo4j': {
+    req: ApiRequest<EmptyParams, EmptyQuery, { projectId?: string }>;
+    res: Ok<{ projectId: string; wikiDir: string; notes: number; synced: number; mode: 'live' | 'mock' }>;
+  };
+  'graph.status': {
+    req: EmptyRequest;
+    res: Ok<{
+      enabled: boolean; configured: boolean; driverInstalled: boolean;
+      mode: 'live' | 'mock'; database: string; projectId: string;
+    }>;
+  };
 
   // Catalogues
   'skills.list': { req: EmptyRequest; res: Ok<{ skills: SkillDto[] }> };

@@ -131,4 +131,7 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > **C1** (client Neo4j injettabile con lazy import del driver e test con fake),
 > **C2** (sync vault → Neo4j reale e idempotente con MERGE parametrizzato ed
 > eventi strutturati), **C3** (Cypher live read-only con whitelist e modi
-> mock/live espliciti; Neo4j ~1.6/5); gli altri step non sono ancora avviati.
+> mock/live espliciti) e **C4** (tre route Neo4j additive dichiarate in TS,
+> protette da B4 con ruoli RBAC espliciti e proxy FastAPI legacy invariato;
+> OpenAPI 93 endpoint/88 comandi; Neo4j ~1.9/5); gli altri step non sono ancora
+> avviati.
