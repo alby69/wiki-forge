@@ -1,6 +1,16 @@
 import { eventBus } from '@frontend/core/events';
+import type { AuthIdentityDto } from '@shared/api/types';
+
+/** B7 — additive auth slice; empty in legacy mode. */
+export interface AuthState {
+  /** IdP bearer token, persisted so a reload can restore the session. */
+  token: string;
+  /** Identity resolved by `GET /api/auth/me`; never client-supplied. */
+  identity?: AuthIdentityDto;
+}
 
 export interface AppState {
+  auth: AuthState;
   isAdvancedMode: boolean;
   activeProjectId: string;
   onboardingCompleted: boolean;
@@ -23,6 +33,8 @@ const THEME_KEY = 'wiki-forge:theme';
 const VIEW_MODE_KEY = 'wiki-forge:view-mode';
 const PINNED_ACTIONS_KEY = 'wiki-forge:pinned-actions';
 const FILES_VISIBLE_KEY = 'wiki-forge:files-visible';
+/** B7 — replaces the ad-hoc reviewer key as the auth session source. */
+const AUTH_TOKEN_KEY = 'wiki-forge:auth-token';
 /** Legacy key written by MainLayout before the state moved into appStore. */
 const LEGACY_SIDEBAR_COLLAPSED_KEY = 'wiki-forge:sidebar-collapsed';
 
@@ -56,6 +68,7 @@ class AppStore {
     let viewMode: ViewMode = 'editor';
     let pinnedActionIds = [...DEFAULT_PINNED_ACTION_IDS];
     let filesVisible = true;
+    let authToken = '';
 
     if (typeof localStorage !== 'undefined') {
       try {
@@ -87,12 +100,15 @@ class AppStore {
         const storedFiles = localStorage.getItem(FILES_VISIBLE_KEY);
         if (storedFiles !== null) filesVisible = storedFiles === 'true';
         else filesVisible = localStorage.getItem(LEGACY_SIDEBAR_COLLAPSED_KEY) !== 'true';
+
+        authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       } catch (_e) {
         // Fallback
       }
     }
 
     return {
+      auth: { token: authToken },
       isAdvancedMode,
       activeProjectId,
       onboardingCompleted,
@@ -117,6 +133,38 @@ class AppStore {
     for (const listener of this.listeners) {
       listener(currentState);
     }
+  }
+
+  /**
+   * B7 — update the auth slice in one notification. `identity` is always the
+   * server response from `/api/auth/me`, never assembled from client data.
+   */
+  public setAuth(token: string, identity?: AuthIdentityDto): void {
+    const normalized = token.trim();
+    const previous = this.state.auth.identity;
+    const unchanged = this.state.auth.token === normalized
+      && previous?.actor === identity?.actor
+      && previous?.authenticated === identity?.authenticated
+      && previous?.idpConfigured === identity?.idpConfigured
+      && previous?.rbacEnabled === identity?.rbacEnabled
+      && previous?.strict === identity?.strict
+      && (previous?.roles.join('\u0000') ?? '') === (identity?.roles.join('\u0000') ?? '');
+    if (unchanged) return;
+    this.state.auth = { token: normalized, identity };
+    if (typeof localStorage !== 'undefined') {
+      try {
+        if (normalized) localStorage.setItem(AUTH_TOKEN_KEY, normalized);
+        else localStorage.removeItem(AUTH_TOKEN_KEY);
+      } catch (_e) {
+        // Session persistence is best-effort.
+      }
+    }
+    this.notify();
+  }
+
+  /** B7 — clear the session; legacy UI is restored immediately. */
+  public signOut(): void {
+    this.setAuth('', undefined);
   }
 
   public setAdvancedMode(isAdvanced: boolean): void {

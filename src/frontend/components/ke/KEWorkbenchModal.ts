@@ -7,6 +7,7 @@ import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { bindResizer } from '@frontend/core/ui/resizer';
+import { appStore } from '@frontend/store/appStore';
 import {
   formatScheduleTime,
   POLICY_ACTION_META,
@@ -785,10 +786,16 @@ export class KEWorkbenchModal {
 
   /** F6 — a mutating step runs only after this explicit human decision. */
   private async decideApproval(id: string, action: 'approve' | 'reject'): Promise<void> {
+    const identity = appStore.getState().auth.identity;
+    // B7 — a verified IdP actor replaces the hardcoded label in strict mode;
+    // legacy mode keeps 'utente workbench' byte-for-byte.
+    const reviewer = identity?.strict && identity.source === 'idp'
+      ? identity.actor
+      : 'utente workbench';
     try {
       const data = await apiBus.dispatch(
         'schedule.approvalDecision',
-        { params: { id, action }, body: { reviewer: 'utente workbench' } },
+        { params: { id, action }, body: { reviewer } },
         this.requestProjectId(),
       );
       if (data.success === false) {

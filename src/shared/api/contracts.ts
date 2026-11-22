@@ -10,6 +10,7 @@
 import type {
   ApiErrorBody,
   ApprovalRequestDto,
+  AuthIdentityDto,
   BacklinkResultDto,
   ChangesetDto,
   DeepResearchDto,
@@ -147,6 +148,15 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     properties: { success: { type: 'boolean', enum: [false] }, error: str() },
     required: ['success', 'error'],
   },
+  AuthIdentity: obj({
+    actor: str('Canonical server-derived actor, e.g. human:<id> or process:api-token'),
+    roles: arr(str('Canonical RBAC role')),
+    source: str('legacy-token | idp | process', ['legacy-token', 'idp', 'process']),
+    authenticated: bool('True when a verified credential was supplied'),
+    rbacEnabled: bool('enterprise.enable_rbac'),
+    strict: bool('Strict provenance mode'),
+    idpConfigured: bool('An IdP adapter is active'),
+  }, ['actor', 'roles', 'source', 'authenticated', 'rbacEnabled', 'strict', 'idpConfigured']),
   WikiNote: obj({
     id: str('Stable note id or wiki-relative path'),
     title: str(),
@@ -283,6 +293,17 @@ export const ROUTES = [
     summary: 'Open the self-hosted Swagger UI browser',
     command: 'docs.swagger',
     request: {}, response: { schema: str('HTML page'), description: 'HTML page' },
+  }),
+
+  // ---------------------------------------------------------------------------
+  // Identity (B7) — additive, public so the UI can discover sign-in availability
+  // ---------------------------------------------------------------------------
+  defineRoute({
+    id: 'auth.me', method: 'GET', path: '/api/auth/me', tags: ['Identity'],
+    summary: 'Resolve the server-derived identity of the current request',
+    description: 'Public identity introspection: without credentials it reports authenticated=false. An invalid credential still returns the standard 401 envelope.',
+    command: 'auth.me',
+    request: {}, response: { schema: ok({ auth: ref('AuthIdentity') }) },
   }),
 
   // ---------------------------------------------------------------------------
@@ -1064,7 +1085,7 @@ export const PROJECT_SCOPED_ROUTE_COUNT: number = ROUTES.filter((route) => route
 
 /** Kinds of import above are kept as a type-only reference for documentation generation. */
 export type ContractDtos =
-  | ApiErrorBody | ApprovalRequestDto | ChangesetDto | HelpTopicDto | PolicyDecisionDto
+  | ApiErrorBody | ApprovalRequestDto | AuthIdentityDto | ChangesetDto | HelpTopicDto | PolicyDecisionDto
   | ProjectBundleDto | ProjectEntryDto | ProjectStatsDto | ReviewMetaDto | ReviewDigestDto
   | ReviewDiffDto | ReviewSnapshotDto | SchedulerEventDto | SchedulerStatusDto | SkillDto
   | SseEventDto | SuccessDto | TrashEntryDto | WikiNoteDto | SearchResultDto | TraceResultDto

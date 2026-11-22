@@ -121,6 +121,8 @@ export class ApiStorage implements IStorage {
     this.api = new FrontendApiBus(createApiClient({
       baseUrl: this.baseUrl,
       getProjectId: () => getActiveProjectId(),
+      // B7 — same session as the shared bus, no direct fetch in facades.
+      getBearerToken: () => appStore.getState().auth.token || undefined,
     }), { scopeQuery: true });
   }
 

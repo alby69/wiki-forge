@@ -39,6 +39,7 @@ export const ROLE_RANK: Record<RbacRole, number> = {
  */
 export const OPERATION_ROLES: Record<string, RbacRole> = {
   // Reader — reads and export
+  'auth.me': 'Reader',
   'files.download': 'Reader',
   'graph.clusters': 'Reader',
   'graph.insights': 'Reader',

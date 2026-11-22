@@ -28,6 +28,10 @@ test('OpenAPI catalogue is the single source of truth', () => {
     }
   }
 
+  assert.ok(doc.paths['/api/auth/me']?.get, 'B7 identity route is declared in the catalogue');
+  assert.equal(doc.paths['/api/auth/me']?.get?.operationId, 'auth.me');
+  assert.equal(doc.paths['/api/auth/me']?.get?.['x-command'], 'auth.me');
+  assert.ok((doc.components as { schemas: Record<string, unknown> }).schemas.AuthIdentity);
   assert.ok(doc.paths['/api/wiki/save']?.post);
   assert.ok(doc.paths['/api/projects/{id}/config']?.put);
   assert.ok(doc.paths['/api/ke/schedule/{jobId}/run']?.post);

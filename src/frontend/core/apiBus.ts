@@ -8,6 +8,7 @@
 
 import type { EndpointId, EndpointRequest, EndpointResponse, TypedApiClient } from '@shared/api/contracts';
 import { createApiClient } from '../api/client';
+import { appStore } from '../store/appStore';
 import { eventBus } from './events';
 
 export interface StreamEvent {
@@ -25,7 +26,10 @@ export interface FrontendApiBusOptions {
 
 export class FrontendApiBus {
   constructor(
-    private readonly client: TypedApiClient = createApiClient(),
+    private readonly client: TypedApiClient = createApiClient({
+      // B7 — the store feeds the bearer lazily: no token, no Authorization header.
+      getBearerToken: () => appStore.getState().auth.token || undefined,
+    }),
     private readonly options: FrontendApiBusOptions = {},
   ) {}
 

@@ -421,3 +421,21 @@ export interface SuccessDto {
   success: true;
   [key: string]: unknown;
 }
+
+/**
+ * B7 — identity resolved by the server for `GET /api/auth/me`.
+ *
+ * `authenticated=false` with `idpConfigured=true` means the browser has no
+ * credential yet: the UI can offer sign-in without any privileged data being
+ * exposed. In legacy mode the actor is `process:api-token` and the UI renders
+ * exactly as before.
+ */
+export interface AuthIdentityDto {
+  actor: string;
+  roles: string[];
+  source: 'legacy-token' | 'idp' | 'process';
+  authenticated: boolean;
+  rbacEnabled: boolean;
+  strict: boolean;
+  idpConfigured: boolean;
+}

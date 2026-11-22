@@ -50,6 +50,7 @@ import { TemplateManagerModal } from '@frontend/components/templates/TemplateMan
 import { ProjectService } from '@frontend/services/projectService';
 import { bindActionHandler } from '@frontend/core/actions';
 import { eventBus } from '@frontend/core/events';
+import { refreshIdentity } from '@frontend/core/auth';
 import { applyStoredLanguage, t } from '@frontend/core/i18n/strings';
 import { installShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
 import { notifications } from '@frontend/services/notificationService';
@@ -99,6 +100,9 @@ export class WikiForgeApp {
     this.layout = new MainLayout(rootContainer);
     this.initUI();
     this.bindGlobalActions();
+    // B7 — resolve the server-trusted identity once at startup. No credential
+    // means a normal anonymous result; a stale bearer is cleared by the controller.
+    void refreshIdentity();
     registerActionShortcuts();
     setShortcutContext(() => ({ noteId: this.selectedNote?.id }));
     installShortcuts();

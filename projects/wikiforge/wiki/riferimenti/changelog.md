@@ -37,6 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B7 — UI identità via solo transport tipizzato
+
+- **Nuova route additiva**: `GET /api/auth/me` dichiarata in `src/shared/api/contracts.ts` (operationId `auth.me`, schema `AuthIdentity`, DTO `AuthIdentityDto`). È pubblica per la scoperta anonima (`authenticated=false`, `idpConfigured=true`), ma un Bearer *fornito e invalido* viene respinto con l'envelope 401 esatto di B0 prima del dispatch. Nessun endpoint, metodo pubblico o envelope esistente modificato; i 5 endpoint gateway-only restano invariati.
+- **Sessione tipizzata**: `createApiClient()` accetta `getBearerToken` separato dal legacy `getToken`: il primo emette `Authorization: Bearer <token>` solo quando lo slice additivo `auth` dell'app-store contiene un token; il secondo continua a inviare `X-WikiForge-Token`. Zero `fetch(` nei componenti UI; bus e `ApiStorage` condividono la stessa sorgente.
+- **UI**: header con chip identità/roles, form sign-in e sign-out solo quando il server segnala un IdP; azioni `global:changesets`/`config`/`wizard` (Admin) e `global:keWorkbench` (KnowledgeEngineer) gated solo per identità IdP verificate. In legacy mode non viene renderizzato alcun markup aggiuntivo.
+- **Provenance strict**: Review Studio e KE Workbench usano l'attore restituito dal server al posto di `localStorage['wiki-forge:reviewer']` e di `'utente workbench'`; il token viene persistito in `wiki-forge:auth-token` e l'identità viene sempre ri-risolta via `auth.me` all'avvio.
+- **Verifica**: 13 test in `tests/authUi.test.ts` + 4 assert in `tests/openapi.test.ts`; suite Node 429 test (428 pass + 1 skip pre-esistente), Python 87 pass, typecheck e build verdi. Grado B5 5, RBAC 5/5: pilastro RBAC completato.
+
 ### B6 — Adapter IdP pluggabili (OIDC / SAML / OAuth2)
 
 - **Opt-in rigoroso**: l'adapter viene costruito solo con `enterprise.enable_rbac=true` **e** `[enterprise.auth].provider` valorizzato (`oidc`, `saml`, `oauth2`). Senza provider, o con RBAC spento, il percorso B0–B5 resta byte-identico: nessuna rete, nessuna nuova route, envelope 401 e docs pubblici invariati.

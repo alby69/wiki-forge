@@ -53,7 +53,7 @@ rimasto senza tipi.
 
 - Oltre **70 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
-  Files, Catalogues, Knowledge Graph e Documentazione.
+  Files, Catalogues, Knowledge Graph, Identity e Documentazione.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
   `SchedulerStatus`, `ResearchAnswer`).
 - `securitySchemes.WikiForgeToken`: header `X-WikiForge-Token`, richiesto solo
@@ -129,11 +129,18 @@ AgentServer.handleRequest()
        └─ ChatModule         1    chat JSON e SSE
 ```
 
-Degli **89 endpoint** del catalogo, **84 comandi** sono instradati sul bus.
+Degli **90 endpoint** del catalogo, **85 comandi** sono instradati sul bus.
 I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 `docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
 `graph.proxy` restano prima di CORS/token per preservare il proxy FastAPI
 `/api/v1/graph/sync|validate|rag`.
+
+- **B7 — identità**: `GET /api/auth/me` (tag `Identity`, comando `auth.me`,
+  schema `AuthIdentity`) è la route additiva che il frontend usa per risolvere
+  l'attore e i ruoli dal server. Senza credenziali è pubblica e riporta
+  `authenticated=false`; con Bearer invalido restituisce l'envelope 401 di B0.
+  Il client invia il Bearer IdP tramite `Authorization` solo quando presente,
+  lasciando invariato l'header legacy `X-WikiForge-Token`.
 
 - `MessageBus` (`src/backend/server/bus/messageBus.ts`) supporta handler multipli,
   middleware, eventi `command:handled`/`command:failed` e un `CommandContext`
@@ -161,7 +168,7 @@ I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (89 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (90 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -196,8 +203,8 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (89 id, assertion c
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 84 comandi |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (89 id), client generato, `apiBus`, facciate senza `fetch` diretto |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 85 comandi |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (90 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

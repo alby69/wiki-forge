@@ -13,6 +13,7 @@ import {
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
+import { appStore } from '@frontend/store/appStore';
 
 export interface ReviewStudioCallbacks {
   /** Called after the note was rewritten by a verify or restore action. */
@@ -133,6 +134,15 @@ export class ReviewStudio {
     return this.meta?.note?.path || this.currentNote()?.path || this.noteId || '';
   }
 
+  /**
+   * B7 — in strict mode the reviewer shown/sent is the server-derived actor;
+   * the legacy localStorage path is preserved unchanged when RBAC is off.
+   */
+  private authenticatedActor(): string {
+    const identity = appStore.getState().auth.identity;
+    return identity?.strict && identity.source === 'idp' ? identity.actor : '';
+  }
+
   private async loadTab(): Promise<void> {
     if (this.tab === 'verify') {
       if (!this.meta || this.meta.note?.path !== this.noteRef()) await this.loadMeta();
@@ -150,7 +160,7 @@ export class ReviewStudio {
     const meta = await this.storage.getReviewMeta(ref);
     this.meta = meta;
     if (meta.success) {
-      const stored = localStorage.getItem('wiki-forge:reviewer') || '';
+      const stored = this.authenticatedActor() || localStorage.getItem('wiki-forge:reviewer') || '';
       this.reviewer = stored || meta.suggestedReviewer || 'local';
     }
     this.metaLoading = false;
@@ -207,8 +217,11 @@ export class ReviewStudio {
     const commentInput = this.overlay.querySelector<HTMLTextAreaElement>('#wf-rs-comment');
     const stableInput = this.overlay.querySelector<HTMLInputElement>('#wf-rs-stable');
 
-    this.reviewer = reviewerInput?.value.trim() || 'local';
-    localStorage.setItem('wiki-forge:reviewer', this.reviewer);
+    const actor = this.authenticatedActor();
+    this.reviewer = actor || reviewerInput?.value.trim() || 'local';
+    // In strict mode provenance is bound server-side; do not persist a raw
+    // client reviewer that could drift from the verified Principal.
+    if (!actor) localStorage.setItem('wiki-forge:reviewer', this.reviewer);
 
     if (button) {
       button.disabled = true;

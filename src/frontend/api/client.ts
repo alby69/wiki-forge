@@ -22,8 +22,10 @@ export interface ApiClientOptions {
   baseUrl?: string;
   /** Project id sent as `X-Project-Id`. Defaults to the active localStorage project. */
   getProjectId?: () => string;
-  /** Optional auth token sent as `X-WikiForge-Token`. */
+  /** Optional shared token sent as `X-WikiForge-Token` (legacy transport). */
   getToken?: () => string | undefined;
+  /** B7 — IdP token sent as `Authorization: Bearer <token>` from the app-store. */
+  getBearerToken?: () => string | undefined;
   /** Injectable fetch (tests / alternative runtimes). */
   fetchImpl?: typeof fetch;
 }
@@ -129,6 +131,7 @@ export function createApiClient(options: ApiClientOptions = {}): TypedApiClient 
   const baseUrl = (options.baseUrl ?? defaultBaseUrl()).replace(/\/+$/, '');
   const getProjectId = options.getProjectId ?? defaultProjectId;
   const getToken = options.getToken ?? (() => undefined);
+  const getBearerToken = options.getBearerToken ?? (() => undefined);
   const fetchImpl: typeof fetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
 
   const prepare = <K extends EndpointId>(
@@ -145,6 +148,10 @@ export function createApiClient(options: ApiClientOptions = {}): TypedApiClient 
     headers['X-Project-Id'] = getProjectId();
     const token = getToken();
     if (token) headers['X-WikiForge-Token'] = token;
+    // B7 — the IdP bearer is additive: without a signed-in token no Authorization
+    // header is sent, so legacy requests stay byte-identical.
+    const bearer = getBearerToken();
+    if (bearer) headers['Authorization'] = `Bearer ${bearer}`;
     // Caller-supplied headers win, e.g. a per-call `Accept` or `X-Confirm-Token`.
     Object.assign(headers, req.headers ?? {});
 

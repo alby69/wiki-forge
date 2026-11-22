@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (9/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (10/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -83,7 +83,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B4 | ✅ | `auth/apiToken.ts` (confronto constant-time + estrazione header), `agentServer.ts` (auth prima del proxy graph, envelope 401 B0), `api/openapi.ts`, `docs/OPENAPI.md`, `tests/apiToken.test.ts` (9 test), `tests/authCharacterization.test.ts` (4 nuovi test) |
 | B5 | ✅ | `auth/actor.ts` + `scripts/actor_provenance.py` (grammatica condivisa), `agentServer.ts` (strict mode, binding verify/approval, flag F6-only, guard stable), `changesetStore.ts` (campi additivi), 4 moduli bus, script Python e registry rigenerato, `tests/provenance.test.ts` (10 test), `tests/python/test_provenance.py` (4 test) |
 | B6 | ✅ | `auth/idp.ts` (OIDC/JWKS, SAML, OAuth2 + claim mapping), `auth/principal.ts` (auth unica), `auth/rbacConfig.ts` + `config_schema.py` + 3 config, `apiToken.ts` (bearer dedicato), `rbacMiddleware.ts` (ruoli IdP senza inheritance), `agentServer.ts` (auth prima del proxy, Principal al bus), `tests/idp.test.ts` (10 test mock, zero rete) |
-| B7 | ⬜ | — |
+| B7 | ✅ | `shared/api/types.ts` (`AuthIdentityDto`) + `contracts.ts` (`auth.me`, schema `AuthIdentity`), `endpoints.ts`, `agentServer.ts` (handler bus + route pubblica), `auth/rbacMiddleware.ts` (ruolo Reader), `frontend/api/client.ts` (`getBearerToken`), `frontend/core/auth.ts`, `frontend/store/appStore.ts` (slice `auth`), `frontend/core/apiBus.ts`, `storage/ApiStorage.ts`, `components/ui/Header.ts` (chip/gating), `components/review/ReviewStudio.ts` e `components/ke/KEWorkbenchModal.ts` (attore strict), `frontend/index.ts` (refresh), `tests/authUi.test.ts` (13 test), `tests/openapi.test.ts` (4 assert) |
 | C0 | ✅ | `[neo4j]` in 3 config, `config_schema.py`, `requirements.txt`, `tests/python/test_config_schema.py` (6 nuovi test) |
 | C1 | ⬜ | — |
 | C2 | ⬜ | — |
@@ -107,6 +107,7 @@ La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
 A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
+dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
 dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
@@ -121,8 +122,8 @@ dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 5 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 4.5 | 5 |
-| B5 | UI identità e sessione | 0 | 0 | 5 |
-| — | **Complessivo RBAC** | **~1** | **~4.5** | **5** |
+| B5 | UI identità e sessione | 0 | 5 | 5 |
+| — | **Complessivo RBAC** | **~1** | **5** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 1 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 1 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
@@ -578,6 +579,21 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/authUi.test.ts`, `tests/openapi.test.ts`, `typecheck`,
   `npm test`.
 - **Grado atteso**: B5 0 → 5, complessivo RBAC 5.
+- **Risultato (2026-11-22)**: ✅ completato. Nuova route additiva
+  `GET /api/auth/me` dichiarata in `contracts.ts` con DTO `AuthIdentityDto` e
+  schema `AuthIdentity`: senza credenziali è pubblica e riporta
+  `authenticated=false`, con Bearer invalido restituisce l'envelope 401 esatto
+  di B0 prima di qualunque dispatch. Il client tipizzato separa
+  `getBearerToken` (`Authorization: Bearer`, dallo slice additivo `auth`
+  dell'app-store) dal legacy `getToken` (`X-WikiForge-Token`): senza token non
+  viene inviato alcun header `Authorization`. Nessun `fetch(` nei componenti.
+  Chip identità, form di sign-in e azioni gated per ruolo compaiono solo per
+  identità IdP verificate; in legacy mode l'header resta byte-identico. In
+  strict mode Review Studio e KE Workbench usano l'attore server-derived al
+  posto di `wiki-forge:reviewer` / `'utente workbench'`. 13 test in
+  `tests/authUi.test.ts` + 4 assert in `tests/openapi.test.ts`; suite Node
+  429 test (428 pass + 1 skip pre-esistente), Python 87 pass. Grado B5 5,
+  RBAC 5/5: pilastro completato.
 
 ---
 
@@ -751,6 +767,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B4 | B1 · RBAC complessivo | 2 · ~3.0 | 4.5 · ~3.0 | Confronto token constant-time e controllo prima del proxy graph: 401 B0 su graph senza/errato token, proxy raggiungibile con token valido, docs/OPTIONS pubblici, drift `WIKIFORGE_API_TOKEN` corretto; 13 nuovi test Node, B0/B3 invariati. |
 | 2026-11-22 | B5 | B4 · RBAC complessivo | 3 · ~3.0 | 4.5 · ~3.5 | Attore canonico condiviso TS/Python; strict mode vincola verify, F6 e changeset al Principal, flag `--allow-process-actor` F6-only, guard `stable-requires-human-actor`; legacy invariato. 10 test Node + 4 Python, suite 408 pass + 1 skip. |
 | 2026-11-22 | B6 | B1 / B2 · RBAC complessivo | 4.5 / 3.5 · ~3.5 | 5 / 5 · ~4.5 | Adapter OIDC/JWKS, SAML e OAuth2 dietro `enable_rbac` + `auth.provider`; bearer dedicato, 401 B0 invariato, ruoli claim nella matrice B3 senza inheritance ACL; 10 test mock zero-rete, suite 418 pass + 1 skip. |
+| 2026-11-22 | B7 | B5 · RBAC complessivo | 0 · ~4.5 | 5 · 5 | Identità UI via solo transport tipizzato: `GET /api/auth/me` additiva e pubblica in modalità anonima, bearer dedicato dall'app-store, chip/gating solo per IdP verificato, attore strict negli strumenti di review; 13 test UI/auth + 4 assert OpenAPI, suite 428 pass + 1 skip. Pilastro RBAC completo. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

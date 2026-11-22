@@ -3,6 +3,7 @@ import { appStore, type AppState, type ViewMode } from '@frontend/store/appStore
 import { getAction, getActions, runAction, actionLabel, actionTitle, type ActionDefinition } from '@frontend/core/actions';
 import { getLanguage, setLanguage, subscribeLanguage, t } from '@frontend/core/i18n/strings';
 import { escapeHtml } from '@frontend/core/utils/html';
+import { canRenderAction, signIn, signOut } from '@frontend/core/auth';
 
 const VIEW_MODES: Array<{ id: ViewMode; labelKey: 'viewEditor' | 'viewScratchpad' | 'viewGraph' | 'viewSplit'; icon: string }> = [
   { id: 'editor', labelKey: 'viewEditor', icon: '📝' },
@@ -106,6 +107,12 @@ export class Header {
       state.activeProjectId,
       state.filesVisible,
       state.pinnedActionIds.join(','),
+      // B7 — identity changes must re-render the gated header immediately.
+      state.auth.token,
+      state.auth.identity?.actor ?? '',
+      state.auth.identity?.roles.join(',') ?? '',
+      state.auth.identity?.authenticated === true,
+      state.auth.identity?.idpConfigured === true,
     ].join('|');
   }
 
@@ -121,7 +128,9 @@ export class Header {
     return getActions({ group: 'global', menu: true })
       // The docs wiki is a Developer Mode feature: don't offer a flag that
       // would have no visible effect in Focus Mode.
-      .filter(action => action.id !== 'global:docsWiki' || state.isAdvancedMode);
+      .filter(action => action.id !== 'global:docsWiki' || state.isAdvancedMode)
+      // B7 — role-gated rendering applies only to verified IdP identities.
+      .filter(action => canRenderAction(action.id));
   }
 
   /** The only list in the ⋯ menu: tick the flag to pin, click the row to run. */
@@ -195,6 +204,22 @@ export class Header {
       : '';
     if (helpButton) this.headerActionButtonIds.push(headerButtonId('global:help'));
 
+    // B7 — the identity chip/sign-in form appears only when the server reports
+    // an IdP session or an available IdP. Legacy mode renders no extra markup.
+    const identity = state.auth.identity;
+    const identityArea = identity?.source === 'idp'
+      ? `<div class="wf-header__identity" id="wf-identity">
+           <span id="wf-identity-actor" title="Utente autenticato">👤 ${escapeHtml(identity.actor)}</span>
+           <span id="wf-identity-roles">${identity.roles.map((role) => escapeHtml(role)).join(' · ')}</span>
+           <button id="wf-signout-btn" class="wf-icon-btn" title="Esci" aria-label="Esci">⇥</button>
+         </div>`
+      : identity?.idpConfigured && !identity.authenticated
+        ? `<div class="wf-header__identity" id="wf-identity-signin">
+             <input id="wf-token-input" class="wf-field" type="password" placeholder="Token IdP" aria-label="Token IdP" />
+             <button id="wf-signin-btn" class="wf-btn wf-btn--sm wf-btn--primary" aria-label="Accedi">Accedi</button>
+           </div>`
+        : '';
+
     this.container.innerHTML = `
       <header class="wf-header">
         <div class="wf-header__primary">
@@ -230,6 +255,7 @@ export class Header {
               ${chatButton}
               ${helpButton}
             </div>
+            ${identityArea}
             ${this.renderMenu(state)}
           </div>
         </div>
@@ -317,6 +343,14 @@ export class Header {
       else runAction('global:chat');
     });
     this.container.querySelector(`#${headerButtonId('global:help')}`)?.addEventListener('click', () => runAction('global:help'));
+
+    // B7 — sign-in/out use the auth controller, never a direct fetch.
+    this.container.querySelector('#wf-signout-btn')?.addEventListener('click', () => signOut());
+    this.container.querySelector('#wf-signin-btn')?.addEventListener('click', () => {
+      const input = this.container.querySelector('#wf-token-input') as HTMLInputElement | null;
+      const token = input?.value?.trim() ?? '';
+      if (token) void signIn(token);
+    });
 
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement | null;
     projectSelect?.addEventListener('change', () => {

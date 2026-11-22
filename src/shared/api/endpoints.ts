@@ -9,6 +9,7 @@
 
 import type {
   ApprovalRequestDto,
+  AuthIdentityDto,
   ChangesetDto,
   ChangesetEditDto,
   HelpTopicDto,
@@ -102,6 +103,9 @@ export type EndpointTypes = {
   // Documentation
   'docs.openapi': { req: EmptyRequest; res: Json };
   'docs.swagger': { req: EmptyRequest; res: string };
+
+  // Identity (B7)
+  'auth.me': { req: EmptyRequest; res: Ok<{ auth: AuthIdentityDto }> };
 
   // Knowledge graph (proxied to FastAPI)
   'graph.sync': { req: WithBody<{ wiki_dir?: string; output_ttl?: string }>; res: Json };

@@ -79,10 +79,10 @@ import {
 } from './projectService';
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
 import { handleDocsRequest } from './api/docsBrowser';
-import { readJsonBody, sendApiResult } from './api/http';
+import { json, readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus, type Principal } from './bus/messageBus';
-import { authenticateRequest, deriveRequestPrincipal } from './auth/principal';
-import { UNAUTHORIZED_MESSAGE } from './auth/apiToken';
+import { authenticateRequest, deriveRequestPrincipal, legacyPrincipal } from './auth/principal';
+import { bearerTokenFromRequest, UNAUTHORIZED_MESSAGE, apiTokenFromRequest } from './auth/apiToken';
 import { actorKind, canonicalActor, PROCESS_FALLBACK_ACTOR } from './auth/actor';
 import { createIdpAdapter, defaultIdpDependencies, type IdpAdapter, type IdpDependencies } from './auth/idp';
 import { loadRbacConfigSync, type RbacConfig } from './auth/rbacConfig';
@@ -810,6 +810,23 @@ export class AgentServer {
     // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
     // The catalogue is read once at construction; no connection is opened.
     this.bus.use(createRbacMiddleware(this.rbacConfig));
+    // B7 — identity introspection. The gateway injects `authenticated` after a
+    // best-effort credential check; the actor itself is always server-derived.
+    this.bus.register<{ authenticated?: boolean }>('auth.me', (payload, context) => {
+      const principal = context.principal ?? legacyPrincipal();
+      return json({
+        success: true,
+        auth: {
+          actor: principal.actor,
+          roles: [...principal.roles],
+          source: principal.source,
+          authenticated: payload.authenticated === true,
+          rbacEnabled: this.rbacConfig.enabled,
+          strict: this.strictProvenance,
+          idpConfigured: Boolean(this.idp),
+        },
+      });
+    });
     this.catalogue = createCatalogueModule(rootDir);
     this.catalogue.register(this.bus);
     this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);
@@ -1699,6 +1716,28 @@ export class AgentServer {
 
     // Documentation is public (the browser injects a token for "Try it out").
     if (await handleDocsRequest(req, res, pathname)) return true;
+
+    // B7 — identity introspection is the only additive public data route: it
+    // lets the browser discover whether sign-in exists before it has a token.
+    // It exposes no privileged data; a *supplied* invalid credential is still
+    // rejected with the exact B0 envelope, so no auth bypass is introduced.
+    if (req.method === 'GET' && pathname === '/api/auth/me') {
+      const hasCredential = Boolean(
+        bearerTokenFromRequest(req) || apiTokenFromRequest(req),
+      );
+      if (!hasCredential) {
+        return this.dispatchApiCommand('auth.me', { authenticated: false }, projectId, req, res);
+      }
+      const viewed = await this.authenticate(req);
+      if (!viewed.ok) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: UNAUTHORIZED_MESSAGE }));
+        return true;
+      }
+      return this.dispatchApiCommand(
+        'auth.me', { authenticated: true }, projectId, req, res, viewed.principal,
+      );
+    }
 
     // B4/B6 — authenticate BEFORE any other ingress, the FastAPI graph proxy
     // included. Missing/invalid tokens always get the exact B0 envelope.
