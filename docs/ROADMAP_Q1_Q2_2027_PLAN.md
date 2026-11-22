@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (11/23 step: A0 ✅, A1 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (12/23 step: A0 ✅, A1 ✅, A2 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -56,7 +56,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | :--- | :--- | :--- |
 | A0 | ✅ | `src/backend/wikiforge/api/health.py` (`count_cq_gaps`), `tests/python/test_health_gate.py` (8 test) |
 | A1 | ✅ | `src/backend/wikiforge/core/findings.py` (`Finding`, `make_finding`, `findings_envelope`, `print_findings`, schema `wikiforge.finding/v1`), adattatori in 4 script (`--findings`, lazy `load_findings_api()` in `okf_common.py`), docstring `--write` rimossa da `odp_suggester.py`, `tests/python/test_findings.py` (4 test) |
-| A2 | ⬜ | — |
+| A2 | ✅ | `src/backend/server/scheduler/eventQueue.ts` (coda JSONL persistente), `eventTriggers.ts` (restore, dedupe e consumed su disk), `agentServer.ts` (wiring + emitter `note.modified`/`note.deleted`), `tests/eventTriggers.test.ts` (3 nuovi test), `tests/agentScheduleF5F6.test.ts` (2 nuovi test: restart e write-hook) |
 | A3 | ⬜ | — |
 | A4 | ⬜ — **richiede approvazione utente** | — |
 | A5 | ⬜ | — |
@@ -88,7 +88,7 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
+A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
@@ -97,11 +97,11 @@ dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
 | A1 | Scheduler, trigger e stato persistente (F0–F6, S0–S6) | 3 | 3 | 5 |
-| A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 3.5 | 5 |
+| A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 4 | 5 |
 | A3 | ODP proattivi e generazione note | 2.5 | 3 | 5 |
 | A4 | Validazione, auto-repair e rollback | 2 | 2 | 5 |
 | A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
-| — | **Complessivo L4** | **~2.5** | **~3.2** | **4.5–5** |
+| — | **Complessivo L4** | **~2.5** | **~3.4** | **4.5–5** |
 | B1 | Autenticazione / identità del chiamante | 0.5 | 5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 5 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
@@ -331,6 +331,30 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: estensioni a `tests/eventTriggers.test.ts` e
   `tests/agentScheduleF5F6.test.ts` + test di restart della coda.
 - **Grado atteso**: A1 3 → 4.
+- **Risultato (2026-11-22)**: ✅ completato. Nuovo
+  `src/backend/server/scheduler/eventQueue.ts`: coda JSONL append-only in
+  `<root>/.wiki-forge/event-queue.jsonl` con record
+  `{ id, jobId, project, event, enqueuedAt, fireAt, state }`, scrittura
+  sincrona (l'hook `publish()` è sincrono), riscrittura atomica con rename su
+  `consumed` e tolleranza a righe corrotte. `EventTriggerBus` accetta
+  l'opzione additiva `queue`: al publish ogni evento subscribed viene persistito
+  come `pending`, i duplicati per path non creano nuovi record ma azzerano il
+  timer (quiet period sliding), e `restore()` ricostruisce i bucket all'avvio
+  con `max(0, fireAt - now)`. `cancelJob()` chiude i record del job rimosso;
+  `stop()` lascia i record pending di proposito, così il prossimo bus li
+  recupera. `fire()` marca `consumed` prima di invocare `onTrigger`, quindi un
+  restart non può rilanciare lo stesso evento. In `agentServer.ts` la coda è
+  collegata al bus con path `<root>/.wiki-forge/event-queue.jsonl` e gli
+  emitter `note.modified` (save con contenuto cambiato e apply-edit) e
+  `note.deleted` (solo file `.md` soft-deleted) pubblicano tramite lo stesso
+  watcher di `note.created`; `publishNoteCreated` è invariato. I 9 job, gli
+  step F5/F6 e `auto_apply=false` restano invariati; nessun endpoint, envelope
+  o metodo pubblico cambiato. Verifica: 3 nuovi test in
+  `tests/eventTriggers.test.ts` (tipi supportati, restart+consumo una sola
+  volta, duplicato post-restart) e 2 in `tests/agentScheduleF5F6.test.ts`
+  (evento accodato prima del restart consumato dopo, write-hook API che generano
+  i due nuovi tipi); suite Node 434 test (433 pass + 1 skip pre-esistente).
+  Gradi A1 4, L4 ~3.4.
 
 ### A3 — Proposte applicabili via changeset (`propose`)
 
@@ -762,6 +786,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | — | studio iniziale | — | — | Baseline misurata: L4 ~2.5, RBAC ~1, Neo4j ~0.5 su 5. Nessuno step implementato. |
 | 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
 | 2026-11-22 | A1 | A2 / A3 · L4 complessivo | 3 / 2.5 · ~3.0 | 3.5 / 3 · ~3.2 | Modello `Finding` unificato e read-only con schema `wikiforge.finding/v1`, ID deterministici e import lazy; 4 adattatori con `--findings` (nessuna scrittura), 4 test Python (schema, determinismo, snapshot), 91 test Python verdi, registry/safety invariati. |
+| 2026-11-22 | A2 | A1 · L4 complessivo | 3 · ~3.2 | 4 · ~3.4 | Coda eventi JSONL persistente in `.wiki-forge/`, restore dei bucket al riavvio, dedupe su disco e mark `consumed` prima del trigger; emitter `note.modified` / `note.deleted` nelle scritture API. 5 nuovi test Node (8 in `eventTriggers`, 7 in `agentScheduleF5F6`), 434 test totali (433 pass + 1 skip); 9 job e `auto_apply=false` invariati. |
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |

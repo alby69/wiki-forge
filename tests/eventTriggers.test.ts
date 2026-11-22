@@ -1,8 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { parseSchedule } from '@backend/server/scheduler/cron';
 import { JobDef } from '@backend/server/scheduler/jobStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from '@backend/server/scheduler/eventTriggers';
+import { EventQueue } from '@backend/server/scheduler/eventQueue';
 import { SchedulerEvent, TriggerEvent } from '@backend/server/scheduler/scheduler';
 
 function makeJob(overrides: Partial<JobDef> = {}): JobDef {
@@ -29,16 +33,21 @@ interface Timer {
   cleared: boolean;
 }
 
-function makeBus(jobs: JobDef[]) {
+function makeBus(
+  jobs: JobDef[],
+  queue?: EventQueue,
+  now = new Date('2026-11-19T10:00:00.000Z'),
+) {
   const timers: Timer[] = [];
   const events: SchedulerEvent[] = [];
   const triggered: Array<{ jobId: string; event: TriggerEvent; events: TriggerEvent[] }> = [];
   let nextId = 1;
   const bus = new EventTriggerBus({
     jobs,
+    queue,
     onTrigger: async (jobId, event, batched) => { triggered.push({ jobId, event, events: batched }); },
     onEvent: (event) => events.push(event),
-    now: () => new Date('2026-11-19T10:00:00.000Z'),
+    now: () => now,
     setTimeoutFn: (fn, ms) => {
       const timer: Timer = { id: nextId++, callback: fn, ms, cleared: false };
       timers.push(timer);
@@ -126,5 +135,89 @@ describe('F6 — debounced event triggers', () => {
     bus.stop();
     assert.strictEqual(bus.getPending().length, 0);
     assert.strictEqual(timers[0].cleared, true);
+  });
+
+  it('A2: keeps note.modified / note.deleted triggers supported and subscribable', () => {
+    for (const type of ['note.modified', 'note.deleted'] as const) {
+      const { bus, triggered } = makeBus([makeJob({ eventTrigger: type })]);
+      assert.deepStrictEqual(
+        bus.publish({ type, project: 'default', path: 'wiki/a.md', source: 'watcher' }),
+        ['event-review'],
+      );
+      assert.strictEqual(bus.getPending()[0].events[0].type, type);
+      bus.stop();
+      assert.strictEqual(triggered.length, 0);
+    }
+  });
+
+  it('A2: an event queued before a restart is restored and consumed once', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-event-queue-'));
+    const filePath = path.join(dir, 'event-queue.jsonl');
+    try {
+      const first = makeBus([makeJob({ eventTrigger: 'note.modified' })], new EventQueue({ filePath }));
+      first.bus.publish({
+        type: 'note.modified', project: 'default', path: 'wiki/a.md', source: 'watcher',
+      });
+      const lines = () => fs.readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
+      assert.strictEqual(lines().length, 1);
+      assert.strictEqual(JSON.parse(lines()[0]).state, 'pending');
+      first.bus.stop();
+
+      // The restart happens after the original fireAt: the bucket must re-arm
+      // immediately instead of losing the event.
+      const second = makeBus(
+        [makeJob({ eventTrigger: 'note.modified' })],
+        new EventQueue({ filePath }),
+        new Date('2026-11-19T10:10:00.000Z'),
+      );
+      assert.strictEqual(second.bus.getPending().length, 1);
+      assert.strictEqual(second.bus.getPending()[0].events[0].type, 'note.modified');
+      assert.strictEqual(second.timers.length, 1);
+      assert.strictEqual(second.timers[0].ms, 0, 'an overdue event fires immediately');
+
+      second.timers[0].callback();
+      await Promise.resolve();
+      assert.strictEqual(second.triggered.length, 1);
+      assert.strictEqual(JSON.parse(lines()[0]).state, 'consumed');
+
+      const third = makeBus(
+        [makeJob({ eventTrigger: 'note.modified' })],
+        new EventQueue({ filePath }),
+        new Date('2026-11-19T10:11:00.000Z'),
+      );
+      assert.strictEqual(third.bus.getPending().length, 0, 'a consumed event is never replayed');
+      third.bus.stop();
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('A2: a duplicate event after a restart still produces a single run', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-event-queue-'));
+    const filePath = path.join(dir, 'event-queue.jsonl');
+    try {
+      const first = makeBus([makeJob()], new EventQueue({ filePath }));
+      first.bus.publish({ type: 'note.created', project: 'default', path: 'wiki/a.md', source: 'webhook' });
+      first.bus.stop();
+
+      const second = makeBus([makeJob()], new EventQueue({ filePath }));
+      assert.strictEqual(second.bus.getPending()[0].events.length, 1, 'restored bucket dedupes by path');
+      second.bus.publish({ type: 'note.created', project: 'default', path: 'wiki/a.md', source: 'webhook' });
+      assert.strictEqual(second.bus.getPending()[0].events.length, 1);
+      assert.strictEqual(second.timers.length, 2, 'the duplicate resets the quiet period');
+      assert.strictEqual(second.timers[0].cleared, true);
+
+      second.timers[1].callback();
+      await Promise.resolve();
+      assert.strictEqual(second.triggered.length, 1);
+      assert.strictEqual(second.triggered[0].events.length, 1);
+      const records = fs.readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean)
+        .map((line) => JSON.parse(line));
+      assert.strictEqual(records.length, 1, 'the duplicate added no second queue record');
+      assert.strictEqual(records[0].state, 'consumed');
+      second.bus.stop();
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

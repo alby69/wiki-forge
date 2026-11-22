@@ -39,13 +39,13 @@ interface Harness {
   close: () => Promise<void>;
 }
 
-async function createHarness(): Promise<Harness> {
+async function createHarness(scheduleToml = SCHEDULE_TOML): Promise<Harness> {
   const tmpDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-schedule-f5f6-'));
   for (const dir of ['wiki', 'raw', 'output', 'config']) {
     await fs.mkdir(path.join(tmpDir, dir), { recursive: true });
   }
   await fs.cp(path.join(process.cwd(), 'scripts'), path.join(tmpDir, 'scripts'), { recursive: true });
-  await fs.writeFile(path.join(tmpDir, 'config', 'agent_schedule.toml'), SCHEDULE_TOML, 'utf-8');
+  await fs.writeFile(path.join(tmpDir, 'config', 'agent_schedule.toml'), scheduleToml, 'utf-8');
 
   const llmCalls: LlmCompletionParams[] = [];
   const llmClient: LlmClient = {
@@ -241,5 +241,143 @@ describe('KE scheduler F5/F6 — policy, events and approvals', () => {
       body: '{}',
     });
     assert.strictEqual(missing.status, 404);
+  });
+});
+
+/** A2 — a queued event survives a scheduler restart and fires exactly once. */
+const RESTART_TOML = SCHEDULE_TOML.replace('debounce_seconds = 1', 'debounce_seconds = 2');
+
+describe('A2 — persistent event queue', () => {
+  it('consumes an event queued before a restart, exactly once', async () => {
+    const harness = await createHarness(RESTART_TOML);
+    try {
+      const trigger = await json(`${harness.baseUrl}/api/ke/schedule/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'note.created', project: 'default', path: 'wiki/before-restart.md' }),
+      });
+      assert.strictEqual(trigger.status, 200);
+      assert.deepStrictEqual(trigger.body.queued, ['event-review']);
+
+      const queuePath = path.join(harness.tmpDir, '.wiki-forge', 'event-queue.jsonl');
+      const queuedText = await fs.readFile(queuePath, 'utf-8');
+      assert.match(queuedText, /wiki\/before-restart\.md/);
+
+      await harness.agentServer.stopScheduler();
+      // Let the debounce elapse while stopped: the restored bucket must fire
+      // immediately on startup rather than dropping the event.
+      await new Promise((resolve) => setTimeout(resolve, 2_200));
+      await harness.agentServer.startScheduler();
+
+      await waitFor(async () => {
+        const runs = await json(`${harness.baseUrl}/api/ke/schedule/runs?jobId=event-review`);
+        return runs.body.runs.length > 0 ? runs.body.runs : undefined;
+      }, 'event run after restart');
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const runs = await json(`${harness.baseUrl}/api/ke/schedule/runs?jobId=event-review`);
+      const matching = runs.body.runs.filter(
+        (run: any) => run.triggerEvent?.path === 'wiki/before-restart.md',
+      );
+      assert.strictEqual(matching.length, 1, 'the persisted event fired once, not twice');
+
+      const records = (await fs.readFile(queuePath, 'utf-8'))
+        .trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+      assert.ok(records.length >= 1);
+      assert.ok(records.every((record: any) => record.state === 'consumed'));
+    } finally {
+      await harness.close();
+    }
+  });
+
+  it('emits note.modified and note.deleted from API writes', async () => {
+    const writeToml = `
+[agent.policy]
+enabled = false
+
+[agent.scheduler]
+enabled = true
+timezone = "UTC"
+max_concurrency = 1
+default_timeout_seconds = 60
+log_dir = "output/scheduler"
+
+[[agent.scheduler.jobs]]
+id = "modified-review"
+role = "Semantic Publisher"
+use_case = "ke_semantic_export"
+steps = [0]
+schedule = "0 3 1 * *"
+event_trigger = "note.modified"
+debounce_seconds = 1
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 0
+
+[[agent.scheduler.jobs]]
+id = "deleted-review"
+role = "Semantic Publisher"
+use_case = "ke_semantic_export"
+steps = [0]
+schedule = "0 4 1 * *"
+event_trigger = "note.deleted"
+debounce_seconds = 1
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 0
+`;
+    const harness = await createHarness(writeToml);
+    try {
+      await fs.writeFile(
+        path.join(harness.tmpDir, 'wiki', 'modify-me.md'),
+        '# Modify\n\nvecchio contenuto\n',
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(harness.tmpDir, 'wiki', 'delete-me.md'),
+        '# Delete\n',
+        'utf-8',
+      );
+
+      const saved = await json(`${harness.baseUrl}/api/wiki/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'modify-me', title: 'Modify', folder: 'wiki', content: '# Modify\n\nnuovo contenuto\n',
+        }),
+      });
+      assert.strictEqual(saved.status, 200);
+
+      const deleted = await json(`${harness.baseUrl}/api/wiki/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetPath: 'wiki/delete-me.md' }),
+      });
+      assert.strictEqual(deleted.status, 200);
+
+      await waitFor(async () => {
+        const runs = await json(`${harness.baseUrl}/api/ke/schedule/runs`);
+        const types = new Set(runs.body.runs.map((run: any) => run.triggerEvent?.type));
+        return types.has('note.modified') && types.has('note.deleted') ? runs.body.runs : undefined;
+      }, 'note.modified and note.deleted runs');
+
+      const runs = await json(`${harness.baseUrl}/api/ke/schedule/runs`);
+      const modified = runs.body.runs.find(
+        (run: any) => run.triggerEvent?.type === 'note.modified',
+      );
+      const removed = runs.body.runs.find(
+        (run: any) => run.triggerEvent?.type === 'note.deleted',
+      );
+      assert.strictEqual(modified.job, 'modified-review');
+      assert.strictEqual(modified.triggerEvent.path, 'wiki/modify-me.md');
+      assert.strictEqual(modified.trigger, 'event');
+      assert.strictEqual(removed.job, 'deleted-review');
+      assert.strictEqual(removed.triggerEvent.path, 'wiki/delete-me.md');
+      assert.strictEqual(removed.trigger, 'event');
+    } finally {
+      await harness.close();
+    }
   });
 });

@@ -67,6 +67,7 @@ import {
 import { isMutatingScript, PolicyAgent, PolicyStep } from './scheduler/policyAgent';
 import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
+import { EventQueue } from './scheduler/eventQueue';
 import { GENERATED_SCRIPT_REGISTRY } from './generated/scriptRegistry.generated';
 import { resolveToolScript } from './toolPaths';
 import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from './safeFs';
@@ -1055,6 +1056,9 @@ export class AgentServer {
     this.scheduler = scheduler;
     this.eventBus = new EventTriggerBus({
       jobs: loaded.jobs,
+      queue: new EventQueue({
+        filePath: path.join(this.rootDir, '.wiki-forge', 'event-queue.jsonl'),
+      }),
       onTrigger: async (jobId, event) => {
         if (scheduler.isRunning(jobId)) return;
         await scheduler.runJobNow(jobId, 'event', event);
@@ -1231,6 +1235,26 @@ export class AgentServer {
   private publishNoteCreated(projectId: string, notePath: string): void {
     this.eventBus?.publish({
       type: 'note.created',
+      project: projectId,
+      path: notePath,
+      source: 'watcher',
+    });
+  }
+
+  /** A2: an existing note changed through an API write (save or apply-edit). */
+  private publishNoteModified(projectId: string, notePath: string): void {
+    this.eventBus?.publish({
+      type: 'note.modified',
+      project: projectId,
+      path: notePath,
+      source: 'watcher',
+    });
+  }
+
+  /** A2: a markdown note was moved to the recoverable trash through the API. */
+  private publishNoteDeleted(projectId: string, notePath: string): void {
+    this.eventBus?.publish({
+      type: 'note.deleted',
       project: projectId,
       path: notePath,
       source: 'watcher',
@@ -1940,6 +1964,9 @@ export class AgentServer {
     }
 
     await atomicWriteFile(targetPath, contentToWrite, 'utf-8');
+    if (previousContent && previousContent !== contentToWrite) {
+      this.publishNoteModified(projectId, relativePath);
+    }
 
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
@@ -2062,6 +2089,7 @@ export class AgentServer {
 
     const updated = haystack.replace(needle, replacement);
     await atomicWriteFile(targetPath, updated, 'utf-8');
+    this.publishNoteModified(projectId, path.relative(projRoot, targetPath).replace(/\\/g, '/'));
 
     const folderName = path.relative(wikiDir, path.dirname(targetPath)).replace(/\\/g, '/') || 'wiki';
     const stem = path.basename(targetPath, '.md');
@@ -2549,7 +2577,11 @@ export class AgentServer {
     const projRoot = await this.resolveProjectRoot(projectId);
     const absTarget = path.isAbsolute(data.targetPath) ? path.resolve(data.targetPath) : path.resolve(projRoot, data.targetPath);
     await this.validateSafePath(absTarget, projectId);
-    return softDelete(absTarget, projRoot);
+    const entry = await softDelete(absTarget, projRoot);
+    if (absTarget.toLowerCase().endsWith('.md')) {
+      this.publishNoteDeleted(projectId, path.relative(projRoot, absTarget).replace(/\\/g, '/'));
+    }
+    return entry;
   }
 
   public async uploadHandler(data: UploadRequest, projectId: string = 'default'): Promise<void> {
