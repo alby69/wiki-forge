@@ -52,10 +52,17 @@ class WikiForgeGraphRAG:
     Implements Intent Detection -> Hybrid Retrieval (Vector + Subgraph Traversal) -> Self-Correction -> Synthesis.
     """
 
-    def __init__(self, neo4j_uri: Optional[str] = None, neo4j_user: Optional[str] = None, neo4j_password: Optional[str] = None):
+    def __init__(self, neo4j_uri: Optional[str] = None, neo4j_user: Optional[str] = None, neo4j_password: Optional[str] = None, neo4j_client: Optional[Any] = None):
         self.neo4j_uri = neo4j_uri or os.getenv("NEO4J_URI", "bolt://localhost:7687")
         self.neo4j_user = neo4j_user or os.getenv("NEO4J_USER", "neo4j")
         self.neo4j_password = neo4j_password or os.getenv("NEO4J_PASSWORD", "password")
+        # C1 — optional injected client (additive: old constructors unchanged).
+        self.neo4j_client = neo4j_client
+
+    @property
+    def neo4j_driver(self) -> Optional[Any]:
+        """C1 — expose the client's driver without demanding a live connection."""
+        return getattr(self.neo4j_client, "driver", None) if self.neo4j_client else None
 
     def extract_entities_node(self, state: GraphRAGState) -> GraphRAGState:
         """Extract key entities and concepts from user query."""

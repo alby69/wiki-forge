@@ -100,6 +100,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dipendenze**: `neo4j>=5.26,<6.0` vincolato e `networkx>=3.4,<4.0` aggiunto a `requirements.txt` (usato da `graph_analytics.py`).
 - **Inerzia verificata**: nessun modulo importa il driver, nessuna connessione a startup; la validazione config resta un parsing TOML puro. 6 nuovi test in `tests/python/test_config_schema.py` (18 totali in quel file, 79 nella suite Python). Nessun endpoint, envelope o metodo pubblico modificato. Grado Neo4j da ~0.5 a ~0.65/5.
 
+### C1 — Client Neo4j con dependency injection
+
+- **Client**: nuovo `src/backend/wikiforge/semantics/neo4j_client.py`. `Neo4jConfig` è una dataclass frozen che non memorizza mai la password (legge solo la variabile d'ambiente nominata da `passwordEnv`); `from_config()` legge la tabella `[neo4j]` o la config repository, `from_env()` è opt-in (`NEO4J_ENABLED`, default `false`), con risoluzione del database per progetto e upgrade TLS dello schema URI (`bolt://` → `bolt+s://`, `neo4j://` → `neo4j+s://`).
+- **Ciclo di vita**: `Neo4jClient.connect()` crea il driver una sola volta e restituisce `None` senza rete quando è disabilitato o la password manca; `verify_connectivity()` restituisce `False` senza sollevare su database irraggiungibile; `session()` è un comodo accesso per la sincronizzazione C2; `close()` è idempotente. Il driver reale viene importato solo nel factory di default: il modulo si importa anche senza `neo4j` installato. `driver_factory` permette di iniettare un fake in test.
+- **Compatibilità**: `graph_watcher.py` e `graph_rag_pipeline.py` accettano un nuovo parametro opzionale `neo4j_client`; le firme esistenti e i chiamanti attuali restano invariati e il watcher preferisce il driver del client quando disponibile.
+- **Verifica**: 9 test in `tests/python/test_neo4j_client.py` (import senza driver né socket, config/env, TLS, no-op disabilitato e senza password, connect/verify/close con fake, errore di verifica inghiottito, compatibilità costruttori in subprocess con `watchdog` stub); 100 test Python verdi. Nessun endpoint, envelope o metodo pubblico esistente cambiato. Gradi C1 2.5, Neo4j ~0.8/5.
+
 ### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
 
 - **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.

@@ -111,5 +111,6 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > **B4** (bypass auth chiuso), **B5** (provenance vincolata in strict mode),
 > **B6** (adapter IdP OIDC/SAML/OAuth2), **B7** (UI identità via transport
 > tipizzato e `GET /api/auth/me` additiva; autenticazione, ruoli, provenance e
-> UI 5/5, RBAC 5/5 — pilastro completato) e **C0** (config Neo4j inerte,
-> Neo4j ~0.65/5); gli altri step non sono ancora avviati.
+> UI 5/5, RBAC 5/5 — pilastro completato), **C0** (config Neo4j inerte) e
+> **C1** (client Neo4j injettabile con lazy import del driver e test con fake;
+> Neo4j ~0.8/5); gli altri step non sono ancora avviati.

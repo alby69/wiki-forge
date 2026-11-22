@@ -32,10 +32,13 @@ class GraphSyncHandler(FileSystemEventHandler):
     Event handler for incremental graph updates on markdown file events.
     """
 
-    def __init__(self, watch_dir: Path, neo4j_driver: Optional[Any] = None, on_change_callback: Optional[Callable[[str, str], None]] = None):
+    def __init__(self, watch_dir: Path, neo4j_driver: Optional[Any] = None, on_change_callback: Optional[Callable[[str, str], None]] = None, neo4j_client: Optional[Any] = None):
         super().__init__()
         self.watch_dir = Path(watch_dir)
         self.neo4j_driver = neo4j_driver
+        # C1 — optional injected client; the raw-driver argument stays intact so
+        # every existing caller keeps working unchanged.
+        self.neo4j_client = neo4j_client
         self.on_change_callback = on_change_callback
         self.rdf_converter = ZettelToRDFConverter()
         self.cypher_converter = ZettelToCypherConverter()
@@ -91,11 +94,20 @@ class GraphSyncHandler(FileSystemEventHandler):
         except Exception as e:
             print(f"❌ Error processing deleted file {p.name}: {e}")
 
+    def _effective_driver(self) -> Optional[Any]:
+        """C1 — prefer the injected client's driver, keep the raw driver as-is."""
+        if self.neo4j_driver is not None:
+            return self.neo4j_driver
+        if self.neo4j_client is not None:
+            return getattr(self.neo4j_client, "driver", None)
+        return None
+
     def _execute_cypher(self, statements: list) -> None:
         """Executes Cypher statements against Neo4j driver if available."""
-        if self.neo4j_driver:
+        driver = self._effective_driver()
+        if driver:
             try:
-                with self.neo4j_driver.session() as session:
+                with driver.session() as session:
                     for stmt in statements:
                         session.run(stmt)
             except Exception as e:
@@ -107,11 +119,17 @@ class LiveGraphWatcher:
     Live file watcher service managing observer daemon.
     """
 
-    def __init__(self, watch_dir: str | Path = "wiki", neo4j_driver: Optional[Any] = None):
+    def __init__(self, watch_dir: str | Path = "wiki", neo4j_driver: Optional[Any] = None, neo4j_client: Optional[Any] = None):
         self.watch_dir = Path(watch_dir)
         self.neo4j_driver = neo4j_driver
+        # C1 — additive parameter; existing positional calls are unaffected.
+        self.neo4j_client = neo4j_client
         self.observer = Observer()
-        self.handler = GraphSyncHandler(self.watch_dir, neo4j_driver=neo4j_driver)
+        self.handler = GraphSyncHandler(
+            self.watch_dir,
+            neo4j_driver=neo4j_driver,
+            neo4j_client=neo4j_client,
+        )
 
     def start(self, blocking: bool = False) -> None:
         self.watch_dir.mkdir(parents=True, exist_ok=True)
