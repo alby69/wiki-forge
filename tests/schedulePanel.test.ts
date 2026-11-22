@@ -6,6 +6,7 @@ import {
   parseSseEvents,
   POLICY_ACTION_META,
   schedulerEventToLogLine,
+  scriptSafetyBadge,
   statusLabel,
   toApprovalViews,
   toPolicyDecisionViews,
@@ -52,6 +53,55 @@ describe('KE Workbench schedule panel helpers (F4)', () => {
     assert.strictEqual(job.lastStatus, 'success');
     assert.deepStrictEqual(job.steps, [0]);
     assert.strictEqual(job.active, true);
+  });
+
+  it('maps script jobs and their resolved args (S4)', () => {
+    const view = toScheduleSnapshotView({
+      jobs: [{
+        job: {
+          id: 'api-log',
+          role: 'Script Automation',
+          jobKind: 'script',
+          scriptId: 'okf_log',
+          useCaseId: '__script__:okf_log',
+          args: { message: 'S4', type: 'Update' },
+          schedule: { expression: '0 6 * * *', timezone: 'UTC' },
+          enabled: false,
+        },
+        state: {},
+      }],
+    });
+    assert.ok(view);
+    const job = view.jobs[0];
+    assert.strictEqual(job.jobKind, 'script');
+    assert.strictEqual(job.scriptId, 'okf_log');
+    assert.deepStrictEqual(job.args, { message: 'S4', type: 'Update' });
+    assert.strictEqual(job.enabled, false);
+
+    // A legacy fixture without jobKind still gets a scriptId from the synthetic id.
+    const legacy = toScheduleSnapshotView({
+      jobs: [{ job: { useCaseId: '__script__:okf_lint' }, state: {} }],
+    });
+    assert.strictEqual(legacy?.jobs[0].scriptId, 'okf_lint');
+    assert.strictEqual(legacy?.jobs[0].jobKind, undefined);
+  });
+
+  it('derives display-only safety badges from the generated automation metadata', () => {
+    const readOnly = scriptSafetyBadge({ safety: 'read-only', schedulable: true, defaultSchedule: '0 2 * * *', notes: 'lint' });
+    assert.strictEqual(readOnly.key, 'read-only');
+    assert.strictEqual(readOnly.schedulable, true);
+    assert.strictEqual(readOnly.defaultSchedule, '0 2 * * *');
+    assert.match(readOnly.description, /nessuna scrittura/);
+
+    const blocked = scriptSafetyBadge({ safety: 'blocked', schedulable: false });
+    assert.strictEqual(blocked.schedulable, false);
+    assert.strictEqual(blocked.icon, '🔴');
+
+    const mutable = scriptSafetyBadge({ safety: 'wiki-write', schedulable: true });
+    assert.strictEqual(mutable.schedulable, true, 'mutating jobs can be created, but the backend disables them');
+
+    assert.strictEqual(scriptSafetyBadge(undefined).key, 'unknown');
+    assert.strictEqual(scriptSafetyBadge({ safety: 'read-only' }).schedulable, false);
   });
 
   it('rejects malformed snapshots and defaults missing fields', () => {

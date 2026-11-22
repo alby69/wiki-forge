@@ -2,6 +2,7 @@ import { KEUseCaseDef, KEUseCaseStep } from '@backend/server/agentServer';
 import { getActiveProjectId } from '@frontend/storage/ApiStorage';
 import { apiBus } from '@frontend/core/apiBus';
 import { ApiClientError } from '@frontend/api/client';
+import { eventBus } from '@frontend/core/events';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
 import { escapeHtml } from '@frontend/core/utils/html';
@@ -66,6 +67,13 @@ export class KEWorkbenchModal {
 
     this.loadConsolePrefs();
     this.renderBase();
+    // S4: a job created in the Script Control Panel refreshes an open Workbench
+    // without either component calling the other.
+    eventBus.on('schedule:changed', ({ projectId }) => {
+      if (this.activeTab !== 'schedule' || this.overlay.style.display === 'none') return;
+      if (projectId && projectId !== this.requestProjectId()) return;
+      void this.refreshSchedule();
+    });
   }
 
   private loadConsolePrefs(): void {
@@ -677,6 +685,11 @@ export class KEWorkbenchModal {
       pane.querySelector(`#ke-job-cancel-${this.cssId(job.id)}`)?.addEventListener('click', () => {
         void this.cancelJob(job.id);
       });
+      if (job.jobKind === 'script') {
+        pane.querySelector(`#ke-job-delete-${this.cssId(job.id)}`)?.addEventListener('click', () => {
+          void this.removeScriptJob(job.id);
+        });
+      }
       pane.querySelector(`#ke-job-cron-${this.cssId(job.id)}`)?.addEventListener('click', () => {
         const input = pane.querySelector(`#ke-job-cron-input-${this.cssId(job.id)}`) as HTMLInputElement | null;
         if (input?.value) void this.saveJobSchedule(job, input.value.trim());
@@ -801,12 +814,17 @@ export class KEWorkbenchModal {
     const status = statusLabel(job.lastStatus);
     const busy = this.scheduleBusy.has(job.id) || job.active;
     const steps = job.steps && job.steps.length > 0 ? ` · step ${job.steps.join(', ')}` : '';
+    const scriptBadge = job.jobKind === 'script'
+      ? `<span style="font-size:10px; font-weight:700; color:#fbbf24; background:#422006; border:1px solid #92400e; border-radius:10px; padding:2px 8px; margin-left:8px;">🕒 job script${job.scriptId ? ` · ${escapeHtml(job.scriptId)}` : ''}</span>`
+      : '';
+    const resolvedArgs = job.args ? JSON.stringify(job.args) : '';
     return `
       <div class="ke-sched-card" data-job-id="${escapeHtml(job.id)}" style="background:#020617; border:1px solid #334155; border-radius:8px; padding:14px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
           <div>
             <div style="font-weight:700; font-size:14px; color:#f8fafc;">${escapeHtml(job.role)}</div>
-            <div style="font-size:11px; color:#a5b4fc; font-family:monospace;">${escapeHtml(job.useCaseId)}</div>
+            <div style="font-size:11px; color:#a5b4fc; font-family:monospace;">${escapeHtml(job.useCaseId)}${scriptBadge}</div>
+            ${resolvedArgs ? `<div style="font-size:10px; color:#94a3b8; font-family:monospace; margin-top:4px;">Args risolti: ${escapeHtml(resolvedArgs)}</div>` : ''}
           </div>
           <span style="font-size:11px; font-weight:700; color:${status.color}; background:#1e293b; border-radius:12px; padding:3px 10px; white-space:nowrap;">${status.icon} ${status.label}</span>
         </div>
@@ -818,6 +836,7 @@ export class KEWorkbenchModal {
           <button id="ke-job-toggle-${this.cssId(job.id)}" type="button" style="background:${job.enabled ? '#312e81' : '#1e293b'}; color:#c7d2fe; border:1px solid #4338ca; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">${job.enabled ? '⏸ Disabilita' : '▶ Abilita'}</button>
           <button id="ke-job-run-${this.cssId(job.id)}" type="button" style="background:#4f46e5; color:#ffffff; border:none; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;" ${busy ? 'disabled' : ''}>⚡ Esegui ora</button>
           <button id="ke-job-cancel-${this.cssId(job.id)}" type="button" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;" ${job.active ? '' : 'disabled'}>⏹ Annulla</button>
+          ${job.jobKind === 'script' ? `<button id="ke-job-delete-${this.cssId(job.id)}" type="button" title="Rimuove il job da config/script_schedules.toml" style="background:#3f3f46; color:#fecaca; border:1px solid #71717a; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">🗑 Rimuovi</button>` : ''}
           <input id="ke-job-cron-input-${this.cssId(job.id)}" type="text" value="${escapeHtml(job.expression)}" aria-label="Cron di ${escapeHtml(job.id)}" style="background:#0f172a; color:#e2e8f0; border:1px solid #334155; border-radius:4px; padding:4px 6px; font-family:monospace; font-size:11px; width:120px;" />
           <button id="ke-job-cron-${this.cssId(job.id)}" type="button" title="Salva orario (cron o every=...)" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer;">Salva orario</button>
         </div>
@@ -843,6 +862,33 @@ export class KEWorkbenchModal {
             <span style="color:#64748b;">${escapeHtml(formatScheduleTime(run.startedAt))}</span>
           </div>`;
         }).join('');
+  }
+
+  /** S4 — DELETE /api/scripts/schedule/:jobId (Use Case jobs have no remove button). */
+  private async removeScriptJob(jobId: string): Promise<void> {
+    try {
+      const data = await apiBus.dispatch(
+        'scripts.unschedule',
+        { params: { jobId } },
+        this.requestProjectId(),
+      );
+      if (data.success === false) {
+        throw new Error((data as { error?: string }).error ?? 'HTTP 200');
+      }
+      this.logConsole.appendLine({
+        type: 'info',
+        text: `🗑 Job script '${jobId}' rimosso dalla configurazione`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    } catch (err) {
+      const detail = this.requestErrorDetail(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Rimozione di '${jobId}' non riuscita: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
+    await this.refreshSchedule();
   }
 
   private async toggleJob(job: ScheduleJobView, enabled: boolean): Promise<void> {
@@ -996,7 +1042,8 @@ export class KEWorkbenchModal {
               frame.type === 'job_skipped' ||
               frame.type === 'policy_decision' ||
               frame.type === 'approval_required' ||
-              frame.type === 'event_triggered'
+              frame.type === 'event_triggered' ||
+              frame.type === 'jobs_changed'
             ) {
               refreshChain = refreshChain
                 .then(() => this.refreshSchedule())

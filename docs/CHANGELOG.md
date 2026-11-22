@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S4 — Automazione script: UI di scheduling e gestione job
+
+- **Script Control Panel**: badge di sicurezza letto dai metadati `automation` generati (🟢 read-only, 🔵 report, 🟡 workspace, 🟠 wiki-write, 🔴 blocked) e pulsante **🕒 Schedula** accanto a **▶ Run Tool**. Genera l'ID `script-<id>-<timestamp>`, usa l'orario predefinito del catalogo e riusa `collectArgs()` dell'esecuzione manuale; gli script `blocked`/non schedulabili hanno il pulsante disabilitato.
+- **Flusso via bus**: la creazione passa da `apiBus.dispatch('scripts.schedule', …)`, mostra nel log gli avvisi F6 (job mutanti creati disabilitati) ed emette l'evento tipizzato `schedule:changed`; nessun `fetch` diretto e nessuna chiamata diretta fra componenti.
+- **Agenti & Schedule**: le card dei job script mostrano badge "🕒 job script", `scriptId` e argomenti risolti; solo per `jobKind = script` compare **🗑 Rimuovi** (`apiBus.dispatch('scripts.unschedule', …)`), lasciando intatti i 9 job Use Case. La tab si aggiorna su `jobs_changed` e su `schedule:changed`.
+- **View model**: `ScheduleJobView` espone `jobKind`/`scriptId`/`args` e `scriptSafetyBadge()` mappa il catalogo generato senza duplicare la classificazione di sicurezza del backend.
+- **Test**: nuovo `tests/toolsModalScheduling.test.ts` (badge, pulsante disabilitato, payload POST con `X-Project-Id`, avvisi F6, evento `schedule:changed`), più estensioni a `keWorkbenchSchedule` e `schedulePanel`. Nessuna nuova route o modifica agli envelope API.
+
 ### S3 — Automazione script: API di scheduling e hot-reload
 
 - **Nuove route dichiarative**: `POST /api/scripts/schedule` (`scripts.schedule`) e `DELETE /api/scripts/schedule/:jobId` (`scripts.unschedule`) aggiunte a `ROUTES`/`EndpointTypes` (89 id): OpenAPI 3.1 e tipi TS generati dagli stessi costrutti, senza YAML manuale. Envelope, endpoint esistenti e metodi pubblici di `AgentServer` invariati.

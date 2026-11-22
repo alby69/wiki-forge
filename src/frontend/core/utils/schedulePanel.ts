@@ -17,6 +17,10 @@ export interface ScheduleJobView {
   id: string;
   role: string;
   useCaseId: string;
+  /** S3/S4: script jobs are one-step synthetic Use Cases, not KE Use Cases. */
+  jobKind?: 'use_case' | 'script';
+  scriptId?: string;
+  args?: Record<string, unknown>;
   description: string;
   expression: string;
   timezone: string;
@@ -128,6 +132,13 @@ export function toScheduleSnapshotView(raw: unknown): ScheduleSnapshotView | nul
         id: typeof job.id === 'string' ? job.id : '',
         role: typeof job.role === 'string' ? job.role : job.id ?? '',
         useCaseId: typeof job.useCaseId === 'string' ? job.useCaseId : '',
+        jobKind: job.jobKind === 'script' || job.jobKind === 'use_case' ? job.jobKind : undefined,
+        scriptId: typeof job.scriptId === 'string'
+          ? job.scriptId
+          : typeof job.useCaseId === 'string' && job.useCaseId.startsWith('__script__:')
+            ? job.useCaseId.slice('__script__:'.length)
+            : undefined,
+        args: argRecord(job.args),
         description: typeof item.description === 'string' ? item.description : '',
         expression: typeof schedule.expression === 'string' ? schedule.expression : '',
         timezone: typeof schedule.timezone === 'string' ? schedule.timezone : 'UTC',
@@ -181,6 +192,48 @@ function numberList(value: unknown): number[] {
 function argRecord(value: unknown): Record<string, unknown> | undefined {
   const record = asRecord(value);
   return Object.keys(record).length > 0 ? record : undefined;
+}
+
+export type ScriptSafetyClass = 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
+
+export interface ScriptSafetyView {
+  key: ScriptSafetyClass | 'unknown';
+  icon: string;
+  label: string;
+  color: string;
+  description: string;
+  /** Mirrors the generated catalog; the backend still decides what may run. */
+  schedulable: boolean;
+  defaultSchedule?: string;
+  notes?: string;
+}
+
+/** Labels mirrored from `SCRIPT_AUTOMATION_REFERENCE.md` (generated from Python SSOT). */
+export const SCRIPT_SAFETY_META: Record<
+  ScriptSafetyClass | 'unknown',
+  { icon: string; label: string; color: string; description: string }
+> = {
+  'read-only': { icon: '🟢', label: 'read-only', color: '#68d391', description: 'nessuna scrittura rilevante' },
+  report: { icon: '🔵', label: 'report', color: '#63b3ed', description: 'scrive solo in output/' },
+  workspace: { icon: '🟡', label: 'workspace', color: '#f6e05e', description: 'scrive in raw/, sources/ o docs/' },
+  'wiki-write': { icon: '🟠', label: 'wiki-write', color: '#f6ad55', description: 'scrive nella wiki' },
+  blocked: { icon: '🔴', label: 'blocked', color: '#fc8181', description: 'mai automatico' },
+  unknown: { icon: '⚪', label: 'sconosciuta', color: '#94a3b8', description: 'metadati di automazione assenti' },
+};
+
+/** Display-only projection of `ScriptDef.automation`; never a second classifier. */
+export function scriptSafetyBadge(automation: unknown): ScriptSafetyView {
+  const record = asRecord(automation);
+  const safety = record.safety;
+  const keys: ScriptSafetyClass[] = ['read-only', 'report', 'workspace', 'wiki-write', 'blocked'];
+  const key = keys.find((candidate) => candidate === safety) ?? 'unknown';
+  return {
+    key,
+    ...SCRIPT_SAFETY_META[key],
+    schedulable: key !== 'unknown' && key !== 'blocked' && record.schedulable === true,
+    defaultSchedule: typeof record.defaultSchedule === 'string' ? record.defaultSchedule : undefined,
+    notes: typeof record.notes === 'string' ? record.notes : undefined,
+  };
 }
 
 /** Convert `GET /api/ke/schedule/decisions` into render-ready policy cards. */

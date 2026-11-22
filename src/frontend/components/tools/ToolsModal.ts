@@ -3,6 +3,8 @@ import { getActiveProjectId } from '@frontend/storage/ApiStorage';
 import { apiBus } from '@frontend/core/apiBus';
 import { ApiClientError } from '@frontend/api/client';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
+import { eventBus } from '@frontend/core/events';
+import { scriptSafetyBadge } from '@frontend/core/utils/schedulePanel';
 import { LogConsole } from './LogConsole';
 
 export class ToolsModal {
@@ -193,13 +195,20 @@ export class ToolsModal {
     if (!container) return;
 
     const paramFields = script.parameters.map(p => this.renderParamInput(p)).join('');
+    const safety = scriptSafetyBadge(script.automation);
+    const scheduleTitle = safety.schedulable
+      ? `Crea un job ${safety.defaultSchedule ? `con orario ${safety.defaultSchedule}` : 'con l\'orario predefinito'}; i job mutanti restano disabilitati fino a F6.`
+      : 'Script non schedulabile: usa l\'esecuzione manuale.';
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <div>
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <h3 style="margin: 0; font-size: 18px; color: #64b5f6; font-weight: 700;">${script.displayName}</h3>
-            <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 8px; border-radius: 4px;">${script.category}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 11px; background: #2d3748; color: #a0aec0; padding: 2px 8px; border-radius: 4px;">${script.category}</span>
+              ${this.safetyBadgeHtml(script)}
+            </div>
           </div>
           <div style="font-size: 13px; color: #a0aec0; margin-top: 6px;">${script.description}</div>
           <div style="font-size: 11px; font-family: monospace; color: #4a5568; margin-top: 4px;">Script path: ${script.path}</div>
@@ -211,6 +220,9 @@ export class ToolsModal {
           <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
             <button id="run-tool-btn" type="submit" style="background: #3182ce; color: #ffffff; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
               ▶ Run Tool
+            </button>
+            <button id="schedule-tool-btn" type="button" title="${scheduleTitle.replace(/"/g, '&quot;')}" style="background: #4c51bf; color: #ffffff; border: 1px solid #5a67d8; padding: 8px 16px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;" ${safety.schedulable ? '' : 'disabled'}>
+              🕒 Schedula
             </button>
             <span id="exec-status-indicator" style="font-size: 12px; color: #a0aec0;">Ready</span>
           </div>
@@ -224,7 +236,20 @@ export class ToolsModal {
         e.preventDefault();
         void this.executeTool(script, form);
       });
+      container.querySelector('#schedule-tool-btn')?.addEventListener('click', () => {
+        void this.scheduleTool(script, form);
+      });
     }
+  }
+
+  /** Display-only badge from the generated catalog; no safety logic in the UI. */
+  private safetyBadgeHtml(script: ScriptDef): string {
+    const badge = scriptSafetyBadge(script.automation);
+    const title = [badge.description, badge.notes, badge.schedulable ? '' : 'non schedulabile']
+      .filter(Boolean)
+      .join(' · ')
+      .replace(/"/g, '&quot;');
+    return `<span data-safety="${badge.key}" title="${title}" style="font-size: 11px; font-weight: 700; background: #1a202c; color: ${badge.color}; border: 1px solid ${badge.color}; padding: 2px 8px; border-radius: 4px; white-space: nowrap;">${badge.icon} ${badge.label}</span>`;
   }
 
   private renderParamInput(param: ScriptParamDef): string {
@@ -271,14 +296,10 @@ export class ToolsModal {
     `;
   }
 
-  private async executeTool(script: ScriptDef, form: HTMLFormElement): Promise<void> {
-    // Resolve the selected wiki when Run is pressed, not when the modal opened.
-    const projectId = this.getProjectId();
-    this.renderActiveProjectBadge();
-
+  /** Shared by Run and Schedula so both send the same resolved arguments. */
+  private collectArgs(script: ScriptDef, form: HTMLFormElement): Record<string, unknown> {
     const formData = new FormData(form);
     const args: Record<string, unknown> = {};
-
     for (const param of script.parameters) {
       if (param.type === 'boolean') {
         args[param.name] = formData.has(param.name);
@@ -290,6 +311,87 @@ export class ToolsModal {
         args[param.name] = val !== null ? String(val) : param.default ?? '';
       }
     }
+    return args;
+  }
+
+  /** S4 — create a persisted script job from the same form used by Run Tool. */
+  private async scheduleTool(script: ScriptDef, form: HTMLFormElement): Promise<void> {
+    const projectId = this.getProjectId();
+    this.renderActiveProjectBadge();
+    const safety = scriptSafetyBadge(script.automation);
+    if (!safety.schedulable) return;
+
+    const id = `script-${script.id}-${Date.now()}`;
+    const schedule = safety.defaultSchedule || undefined;
+    const args = this.collectArgs(script, form);
+    const scheduleBtn = form.querySelector('#schedule-tool-btn') as HTMLButtonElement | null;
+    const statusInd = form.querySelector('#exec-status-indicator') as HTMLElement | null;
+    if (scheduleBtn) scheduleBtn.disabled = true;
+    if (statusInd) {
+      statusInd.textContent = 'Schedulazione...';
+      statusInd.style.color = '#818cf8';
+    }
+
+    this.logConsole.appendLine({
+      type: 'start',
+      text: `🕒 Creazione job '${id}' per ${script.id} sul progetto '${projectId}'...`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+
+    try {
+      const data = await apiBus.dispatch('scripts.schedule', {
+        body: {
+          id,
+          scriptId: script.id,
+          ...(schedule ? { schedule } : {}),
+          args,
+          project: projectId,
+        },
+      }, projectId);
+      if (data.success === false) {
+        throw new Error((data as { error?: string }).error ?? 'HTTP 200');
+      }
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      for (const warning of warnings) {
+        this.logConsole.appendLine({ type: 'stderr', text: `⚠ ${warning}`, timestamp: new Date().toLocaleTimeString() });
+      }
+      this.logConsole.appendLine({
+        type: 'info',
+        text: `✅ Job '${id}' attivo${warnings.length > 0 ? ' (disabilitato: richiede approvazione F6)' : ''}. Gestiscilo nella tab 🤖 Agenti & Schedule.`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      this.logConsole.setStatus(warnings.length > 0 ? 'Job in attesa F6' : 'Job schedulato', warnings.length > 0 ? '#fbbf24' : '#68d391');
+      if (statusInd) {
+        statusInd.textContent = warnings.length > 0 ? 'Disabilitato (F6)' : 'Schedulato';
+        statusInd.style.color = warnings.length > 0 ? '#fbbf24' : '#68d391';
+      }
+      // Components never call each other: an app event notifies open listeners.
+      eventBus.emit('schedule:changed', { projectId });
+    } catch (err) {
+      const detail = err instanceof ApiClientError
+        ? `Richiesta non riuscita (status ${err.status})`
+        : err instanceof Error ? err.message : String(err);
+      this.logConsole.appendLine({
+        type: 'stderr',
+        text: `Schedulazione non riuscita: ${detail}`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      this.logConsole.setStatus('Error', '#e53e3e');
+      if (statusInd) {
+        statusInd.textContent = 'Failed';
+        statusInd.style.color = '#e53e3e';
+      }
+    } finally {
+      if (scheduleBtn) scheduleBtn.disabled = false;
+    }
+  }
+
+  private async executeTool(script: ScriptDef, form: HTMLFormElement): Promise<void> {
+    // Resolve the selected wiki when Run is pressed, not when the modal opened.
+    const projectId = this.getProjectId();
+    this.renderActiveProjectBadge();
+
+    const args = this.collectArgs(script, form);
 
     const runBtn = form.querySelector('#run-tool-btn') as HTMLButtonElement;
     const statusInd = form.querySelector('#exec-status-indicator') as HTMLElement | null;

@@ -25,6 +25,21 @@ const SNAPSHOT = {
       },
       description: 'ogni giorno alle 02:00 (Europe/Rome)',
     },
+    {
+      job: {
+        id: 'api-log-job',
+        role: 'Script Automation',
+        jobKind: 'script',
+        scriptId: 'okf_log',
+        useCaseId: '__script__:okf_log',
+        args: { message: 'Job S4', type: 'Update' },
+        schedule: { expression: '0 6 * * *', timezone: 'UTC' },
+        enabled: false,
+        steps: [0],
+      },
+      state: { last_status: 'idle' },
+      description: 'ogni giorno alle 06:00 (UTC)',
+    },
   ],
 };
 
@@ -35,10 +50,12 @@ interface MockElement {
   attrs: Record<string, string>;
   children: unknown[];
   selectors: Map<string, MockElement>;
+  listeners: Map<string, Array<() => void>>;
   appendChild: (child: MockElement) => void;
   querySelector: (selector: string) => MockElement;
   querySelectorAll: (selector: string) => MockElement[];
-  addEventListener: () => void;
+  addEventListener: (type: string, listener: () => void) => void;
+  fire: (type: string) => void;
   setAttribute: (key: string, value: string) => void;
   getAttribute: (key: string) => string | null;
   getBoundingClientRect: () => { height: number; bottom: number; top: number };
@@ -72,7 +89,15 @@ describe('KE Workbench schedule tab (F4)', () => {
         querySelectorAll() {
           return [];
         },
-        addEventListener() {},
+        listeners: new Map<string, Array<() => void>>(),
+        addEventListener(type, listener) {
+          const list = element.listeners.get(type) ?? [];
+          list.push(listener);
+          element.listeners.set(type, list);
+        },
+        fire(type) {
+          for (const listener of element.listeners.get(type) ?? []) listener();
+        },
         setAttribute(key, value) {
           element.attrs[key] = value;
         },
@@ -178,6 +203,10 @@ describe('KE Workbench schedule tab (F4)', () => {
           pending: [],
         });
       }
+      if (url.includes('/api/scripts/schedule/')) {
+        assert.strictEqual(init?.method, 'DELETE');
+        return jsonResponse({ success: true, removed: true, errors: [] });
+      }
       if (url.includes('/api/ke/schedule')) {
         return jsonResponse({ success: true, config: null, errors: [], snapshot: SNAPSHOT });
       }
@@ -252,6 +281,30 @@ describe('KE Workbench schedule tab (F4)', () => {
     assert.match(pane.innerHTML, /Args risolti/);
     assert.match(pane.innerHTML, /Approvazione S2 di prova/);
     assert.match(pane.innerHTML, /ke-approve-appr-2/);
+    modal.close();
+  });
+
+  it('marks script jobs and removes them via apiBus (S4)', async () => {
+    const modal = new KEWorkbenchModal();
+    await modal.open();
+    modal.setTab('schedule');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const root = document.getElementById('ke-workbench-modal-root') as unknown as MockElement;
+    const pane = root.querySelector('#ke-schedule-container');
+    assert.match(pane.innerHTML, /🕒 job script/);
+    assert.match(pane.innerHTML, /okf_log/);
+    assert.match(pane.innerHTML, /Args risolti/);
+    assert.match(pane.innerHTML, /Job S4/);
+    assert.match(pane.innerHTML, /id="ke-job-delete-api-log-job"/);
+    assert.ok(!pane.innerHTML.includes('ke-job-delete-nightly_validation'), 'Use Case jobs have no remove control');
+
+    calls = [];
+    fetchInits = [];
+    pane.querySelector('#ke-job-delete-api-log-job').fire('click');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.ok(calls.some((url) => url.endsWith('/api/scripts/schedule/api-log-job')), 'DELETE was dispatched');
+    assert.ok(fetchInits.some((init) => init?.method === 'DELETE'));
     modal.close();
   });
 });
