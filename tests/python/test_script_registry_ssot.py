@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from src.backend.wikiforge.core.script_schema import SCRIPT_SCHEMAS
+from src.backend.wikiforge.core.script_schema import SCRIPT_AUTOMATION, SCRIPT_SCHEMAS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GENERATED_TS = REPO_ROOT / "src" / "backend" / "server" / "generated" / "scriptRegistry.generated.ts"
@@ -16,6 +16,34 @@ def test_python_schema_has_all_29_scripts():
     assert len(SCRIPT_SCHEMAS) == 29
     for required in ("docs_wiki_drift", "wiki_program_change_propose", "wiki_program_change_apply"):
         assert required in SCRIPT_SCHEMAS
+
+
+def test_every_script_has_automation_metadata():
+    assert set(SCRIPT_AUTOMATION) == set(SCRIPT_SCHEMAS)
+    valid_safety = {"read-only", "report", "workspace", "wiki-write", "blocked"}
+    for script_id, schema in SCRIPT_SCHEMAS.items():
+        auto = schema["automation"]
+        assert auto["safety"] in valid_safety
+        assert isinstance(auto["schedulable"], bool)
+        assert isinstance(auto["enabledDefault"], bool)
+        assert isinstance(auto["defaultArgs"], dict)
+        assert isinstance(auto["requires"], list)
+        assert auto["notes"].strip()
+        known_params = {param["name"] for param in schema["parameters"]}
+        assert set(auto["defaultArgs"]).issubset(known_params)
+        if auto["safety"] == "blocked":
+            assert auto["schedulable"] is False
+        else:
+            assert auto["defaultSchedule"]
+
+
+def test_safety_catalog_doc_is_generated():
+    doc = REPO_ROOT / "docs" / "SCRIPT_AUTOMATION_REFERENCE.md"
+    assert doc.is_file()
+    content = doc.read_text(encoding="utf-8")
+    assert "<!-- DOC_BLOCK:script-automation -->" in content
+    for script_id in SCRIPT_SCHEMAS:
+        assert f"`{script_id}`" in content
 
 
 def test_generated_registry_is_in_sync():

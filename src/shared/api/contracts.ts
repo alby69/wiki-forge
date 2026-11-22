@@ -177,6 +177,12 @@ export const SCHEMAS: Record<string, JsonSchema> = {
   }, ['id', 'title', 'icon', 'order', 'group', 'mode', 'keywords', 'context']),
   Skill: obj({ id: str(), name: str(), description: str(), path: str() }, ['id', 'name', 'description', 'path']),
   ScratchpadEntry: obj({ id: str(), timestamp: str(), text: str() }, ['id', 'timestamp', 'text']),
+  ScriptAutomation: obj({
+    safety: str('read-only | report | workspace | wiki-write | blocked', ['read-only', 'report', 'workspace', 'wiki-write', 'blocked']),
+    schedulable: bool(), enabledDefault: bool(), defaultSchedule: str(),
+    defaultArgs: free('Validated against ScriptDef.parameters by the generator'),
+    requires: arr(str('llm | network | pandoc | tty')), notes: str(),
+  }, ['safety', 'schedulable', 'enabledDefault', 'defaultSchedule', 'defaultArgs', 'requires', 'notes']),
   ScriptDef: obj({
     id: str(), path: str(), displayName: str(), category: str(), description: str(),
     parameters: arr(obj({
@@ -185,6 +191,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
       default: free(), required: bool(), options: arr(str()), placeholder: str(),
       description: str(), positional: bool(), cliFlag: str(),
     }, ['name', 'label', 'type'])),
+    automation: ref('ScriptAutomation'),
   }, ['id', 'path', 'displayName', 'category', 'description', 'parameters']),
   UseCaseDef: obj({
     id: str(), name: str(), description: str(), steps: arr(free('Use Case step (scriptId, stage, readOnly …)')),

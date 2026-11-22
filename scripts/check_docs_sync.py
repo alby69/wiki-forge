@@ -116,6 +116,7 @@ HELP_REQUIRED_KEYS = ("id", "title", "icon", "order", "group", "mode", "keywords
 # help topic needs to stay semantically in sync with a canonical section.
 DOC_BLOCKS = {
     "slash-commands": "docs/SLASH_COMMANDS_REFERENCE.md",
+    "script-automation": "docs/SCRIPT_AUTOMATION_REFERENCE.md",
 }
 DOC_BLOCK_REF_RE = re.compile(
     r"<!--\s*DOC_BLOCK_REF:([a-z0-9-]+)\s+(\S+)\s+sha256:([0-9a-f]{64})\s*-->",

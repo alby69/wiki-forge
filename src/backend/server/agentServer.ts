@@ -188,6 +188,19 @@ export interface ScriptParamDef {
   cliFlag?: string;
 }
 
+export type ScriptSafety = 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
+
+/** Generated from SCRIPT_SCHEMAS: the scheduler and the UI must not redefine it. */
+export interface ScriptAutomation {
+  safety: ScriptSafety;
+  schedulable: boolean;
+  enabledDefault: boolean;
+  defaultSchedule: string;
+  defaultArgs: Record<string, unknown>;
+  requires: string[];
+  notes: string;
+}
+
 export interface ScriptDef {
   id: string;
   path: string;
@@ -195,6 +208,8 @@ export interface ScriptDef {
   category: 'Ingestion' | 'OKF Maintenance' | 'Analysis & Metrics' | 'Taxonomy' | 'Thesis & Study' | 'Wizard' | 'Knowledge Engineering';
   description: string;
   parameters: ScriptParamDef[];
+  /** Optional for hand-built test fixtures; every registry entry has it. */
+  automation?: ScriptAutomation;
 }
 
 /**

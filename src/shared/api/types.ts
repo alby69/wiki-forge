@@ -100,6 +100,16 @@ export interface ScriptParamDefDto {
   cliFlag?: string;
 }
 
+export interface ScriptAutomationDto {
+  safety: 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
+  schedulable: boolean;
+  enabledDefault: boolean;
+  defaultSchedule: string;
+  defaultArgs: Record<string, unknown>;
+  requires: string[];
+  notes: string;
+}
+
 export interface ScriptDefDto {
   id: string;
   path: string;
@@ -107,6 +117,7 @@ export interface ScriptDefDto {
   category: string;
   description: string;
   parameters: ScriptParamDefDto[];
+  automation?: ScriptAutomationDto;
 }
 
 export interface UseCaseStepDto {

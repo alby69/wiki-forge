@@ -68,6 +68,7 @@ DOC_MAP: dict[str, str] = {
     "docs/ROADMAP.md": "riferimenti/roadmap",
     "docs/CHANGELOG.md": "riferimenti/changelog",
     "docs/SLASH_COMMANDS_REFERENCE.md": "riferimenti/slash-commands-reference",
+    "docs/SCRIPT_AUTOMATION_REFERENCE.md": "riferimenti/script-automation-reference",
     "docs/AUDIT_BASELINE.md": "riferimenti/audit-baseline",
     "docs/mockups/README.md": "riferimenti/mockups",
 }

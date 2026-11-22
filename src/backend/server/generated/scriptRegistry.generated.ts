@@ -37,7 +37,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--ocr",
           "description": "Note scanned PDFs for OCR extraction."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "workspace",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "0 1 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Scrive in raw/: abilitare solo con approvazione F6."
+      }
     },
     "enrich_cot": {
       "id": "enrich_cot",
@@ -62,7 +71,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output",
           "description": "Destination directory for enriched notes."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "0 2 * * *",
+        "defaultArgs": {},
+        "requires": [
+          "llm"
+        ],
+        "notes": "Scrive note nella wiki: sempre F6."
+      }
     },
     "clip2md": {
       "id": "clip2md",
@@ -88,7 +108,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output",
           "description": "Destination folder for web clips."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "workspace",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "0 1 * * 0",
+        "defaultArgs": {},
+        "requires": [
+          "network"
+        ],
+        "notes": "Scarica URL esterni e scrive in sources/web-clips/."
+      }
     },
     "notebooklm_import": {
       "id": "notebooklm_import",
@@ -122,7 +153,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output-dir",
           "description": "Destination folder for imported note."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "workspace",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "10 1 * * 0",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Crea note in raw/ da export NotebookLM."
+      }
     },
     "migrate_to_okf": {
       "id": "migrate_to_okf",
@@ -149,7 +189,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "placeholder": "auto → wiki del progetto selezionato",
           "description": "Target wiki dir."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "blocked",
+        "schedulable": false,
+        "enabledDefault": false,
+        "defaultSchedule": "",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Migrazione irreversibile del frontmatter: solo manuale."
+      }
     },
     "okf_lint": {
       "id": "okf_lint",
@@ -166,7 +215,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "positional": true,
           "description": "Path to target wiki directory."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Valida frontmatter e bundle OKF v0.2."
+      }
     },
     "okf_log": {
       "id": "okf_log",
@@ -214,7 +272,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "placeholder": "Today (UTC)",
           "description": "Optional override date."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "0 6 * * *",
+        "defaultArgs": {
+          "type": "Update"
+        },
+        "requires": [],
+        "notes": "Accoda a wiki/log.md: richiede F6."
+      }
     },
     "okf_reindex": {
       "id": "okf_reindex",
@@ -231,7 +300,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "positional": true,
           "description": "Path to target wiki directory."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "10 6 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Rigenera wiki/index.md e indici tematici: richiede F6."
+      }
     },
     "okf_stats": {
       "id": "okf_stats",
@@ -248,7 +326,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "positional": true,
           "description": "Path to target wiki directory."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "10 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Report statistiche OKF."
+      }
     },
     "wiki_stats": {
       "id": "wiki_stats",
@@ -256,7 +343,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       "displayName": "Global Wiki Statistics",
       "category": "Analysis & Metrics",
       "description": "Calculates global wiki statistics and updates docs/METRICS.md.",
-      "parameters": []
+      "parameters": [],
+      "automation": {
+        "safety": "workspace",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "20 6 * * 1",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Aggiorna docs/METRICS.md: richiede F6."
+      }
     },
     "maturity_calculator": {
       "id": "maturity_calculator",
@@ -297,15 +393,44 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--min-score",
           "description": "Filter output by minimum maturity score."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "30 6 * * 1",
+        "defaultArgs": {
+          "path": "wiki"
+        },
+        "requires": [],
+        "notes": "Con --write modifica il frontmatter: richiede F6."
+      }
     },
     "check_docs_sync": {
       "id": "check_docs_sync",
       "path": "scripts/check_docs_sync.py",
       "displayName": "Verify Docs & Skills Sync",
       "category": "Analysis & Metrics",
-      "description": "Verifies consistency between agent skills, README, TUTORIAL, and CHANGELOG.",
-      "parameters": []
+      "description": "Verifies consistency between skills, the canonical command catalog, semantic help refs and the docs wiki projection.",
+      "parameters": [
+        {
+          "name": "fix",
+          "label": "Refresh semantic hashes",
+          "type": "boolean",
+          "default": false,
+          "cliFlag": "--fix",
+          "description": "Update stale DOC_BLOCK_REF hashes in docs/help/ before checking."
+        }
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 6 * * 1",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Con --fix riscrive docs/help/: in quel caso diventa workspace."
+      }
     },
     "suggest_tags": {
       "id": "suggest_tags",
@@ -362,7 +487,19 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--semantic",
           "description": "Use KeyBERT semantic embeddings if installed."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "40 6 * * 1",
+        "defaultArgs": {
+          "all": true,
+          "wiki": "wiki"
+        },
+        "requires": [],
+        "notes": "Con --write modifica il frontmatter: richiede F6."
+      }
     },
     "schema_infer": {
       "id": "schema_infer",
@@ -386,7 +523,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--wiki-dir",
           "description": "Override wiki directory path."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "20 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Propone uno schema senza scrivere."
+      }
     },
     "schema_lint": {
       "id": "schema_lint",
@@ -432,7 +578,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--config",
           "description": "Override config.toml path."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "30 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Valida le note rispetto a config.toml."
+      }
     },
     "generate_thesis": {
       "id": "generate_thesis",
@@ -473,7 +628,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--title",
           "description": "Title header for the compiled document."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 4 * * 0",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Scrive output/thesis_compiled.md."
+      }
     },
     "export_thesis_pdf": {
       "id": "export_thesis_pdf",
@@ -520,7 +684,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--no-toc",
           "description": "Disable automatic Table of Contents generation."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "30 4 * * 0",
+        "defaultArgs": {},
+        "requires": [
+          "pandoc"
+        ],
+        "notes": "Scrive output/thesis_final.pdf via Pandoc."
+      }
     },
     "wizard": {
       "id": "wizard",
@@ -545,7 +720,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           ],
           "description": "Scenario preset configuration."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "blocked",
+        "schedulable": false,
+        "enabledDefault": false,
+        "defaultSchedule": "",
+        "defaultArgs": {},
+        "requires": [
+          "tty"
+        ],
+        "notes": "Interattivo: non schedulabile."
+      }
     },
     "voice_ingest": {
       "id": "voice_ingest",
@@ -579,7 +765,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "placeholder": "Voice Note Title",
           "description": "Optional custom title."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "workspace",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "20 1 * * 0",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Crea note da audio/trascrizioni in raw/."
+      }
     },
     "export_semantic": {
       "id": "export_semantic",
@@ -604,7 +799,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output-dir",
           "description": "Destination folder for JSON-LD and TTL files."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 3 * * 0",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Esporta RDF in output/."
+      }
     },
     "ontology_rules": {
       "id": "ontology_rules",
@@ -629,7 +833,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--strict",
           "description": "Return error code if rule violations are found."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "40 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Controlla cicli e coerenza ontologica."
+      }
     },
     "cq_validator": {
       "id": "cq_validator",
@@ -662,7 +875,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output",
           "description": "Destination path for markdown report."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 3 * * 1",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Scrive output/cq_validation_report.md."
+      }
     },
     "odp_suggester": {
       "id": "odp_suggester",
@@ -687,7 +909,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--catalog",
           "description": "Path to JSON ODP catalog."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "50 2 * * *",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Suggerisce ODP senza scrivere."
+      }
     },
     "neuro_symbolic_check": {
       "id": "neuro_symbolic_check",
@@ -712,7 +943,18 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output",
           "description": "Destination path for markdown report."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "20 3 * * 1",
+        "defaultArgs": {},
+        "requires": [
+          "llm"
+        ],
+        "notes": "Scrive output/neuro_symbolic_report.md."
+      }
     },
     "ke_maturity": {
       "id": "ke_maturity",
@@ -737,7 +979,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--output",
           "description": "Destination path for markdown report."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "40 3 * * 1",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Scrive output/ke_maturity_report.md."
+      }
     },
     "graph_analytics": {
       "id": "graph_analytics",
@@ -754,7 +1005,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--wiki-dir",
           "description": "Path to target wiki directory."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "read-only",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "0 2 * * 0",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Analisi Louvain in sola lettura."
+      }
     },
     "docs_wiki_drift": {
       "id": "docs_wiki_drift",
@@ -787,7 +1047,19 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--check",
           "description": "Only report drift, do not write to the wiki."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "wiki-write",
+        "schedulable": true,
+        "enabledDefault": false,
+        "defaultSchedule": "0 7 * * 1",
+        "defaultArgs": {
+          "docs_dir": "docs",
+          "wiki_dir": "projects/wikiforge/wiki"
+        },
+        "requires": [],
+        "notes": "Senza --check riscrive la proiezione OKF: richiede F6."
+      }
     },
     "wiki_program_change_propose": {
       "id": "wiki_program_change_propose",
@@ -820,7 +1092,16 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--project",
           "description": "Project recorded in the proposal provenance."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "report",
+        "schedulable": true,
+        "enabledDefault": true,
+        "defaultSchedule": "30 7 * * 1",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Accoda la proposta in output/program-changes/."
+      }
     },
     "wiki_program_change_apply": {
       "id": "wiki_program_change_apply",
@@ -869,6 +1150,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "cliFlag": "--project",
           "description": "Project scope (accepted for provenance compatibility)."
         }
-      ]
+      ],
+      "automation": {
+        "safety": "blocked",
+        "schedulable": false,
+        "enabledDefault": false,
+        "defaultSchedule": "",
+        "defaultArgs": {},
+        "requires": [],
+        "notes": "Solo F6: richiede --reviewer e --confirm iniettati dal server."
+      }
     }
   };

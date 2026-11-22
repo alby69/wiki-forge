@@ -109,6 +109,7 @@ Provenienza: ogni nota generata ha `generated.by: process:docs-to-wiki`, `genera
 | `docs/ROADMAP.md` | `riferimenti/roadmap.md` | Reference | it |
 | `docs/CHANGELOG.md` | `riferimenti/changelog.md` | Reference | en |
 | `docs/SLASH_COMMANDS_REFERENCE.md` | `riferimenti/slash-commands-reference.md` | Reference | it |
+| `docs/SCRIPT_AUTOMATION_REFERENCE.md` | `riferimenti/script-automation-reference.md` | Reference | it |
 | `docs/AUDIT_BASELINE.md` | `riferimenti/audit-baseline.md` | Reference | it |
 | `docs/mockups/README.md` | `riferimenti/mockups.md` | Reference | it |
 

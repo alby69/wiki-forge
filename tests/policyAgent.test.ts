@@ -36,15 +36,20 @@ describe('F5 — Policy Agent decision log', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('labels scripts that write inside wiki/ as mutating', () => {
+  it('derives mutating scripts from the generated safety catalog (fail-closed)', () => {
     assert.strictEqual(isMutatingScript('okf_reindex'), true);
     assert.strictEqual(isMutatingScript('suggest_tags'), true);
     assert.strictEqual(isMutatingScript('maturity_calculator'), true);
-    assert.strictEqual(isMutatingScript('promote_doc_answer'), true);
+    assert.strictEqual(isMutatingScript('promote_doc_answer'), true); // legacy alias
     assert.strictEqual(isMutatingScript('docs_wiki_drift'), true);
     assert.strictEqual(isMutatingScript('wiki_program_change_apply'), true);
+    assert.strictEqual(isMutatingScript('conv2md'), true); // workspace
+    assert.strictEqual(isMutatingScript('migrate_to_okf'), true); // blocked
+    assert.strictEqual(isMutatingScript('wizard'), true); // blocked
+    assert.strictEqual(isMutatingScript('typo_script'), true); // unknown id
     assert.strictEqual(isMutatingScript('wiki_program_change_propose'), false);
     assert.strictEqual(isMutatingScript('export_semantic'), false);
+    assert.strictEqual(isMutatingScript('okf_lint'), false);
     assert.strictEqual(isMutatingScript(undefined), false);
   });
 

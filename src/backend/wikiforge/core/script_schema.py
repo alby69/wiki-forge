@@ -141,8 +141,10 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         "path": "scripts/check_docs_sync.py",
         "displayName": "Verify Docs & Skills Sync",
         "category": "Analysis & Metrics",
-        "description": "Verifies consistency between agent skills, README, TUTORIAL, and CHANGELOG.",
-        "parameters": [],
+        "description": "Verifies consistency between skills, the canonical command catalog, semantic help refs and the docs wiki projection.",
+        "parameters": [
+            {"name": "fix", "label": "Refresh semantic hashes", "type": "boolean", "default": False, "cliFlag": "--fix", "description": "Update stale DOC_BLOCK_REF hashes in docs/help/ before checking."},
+        ],
     },
     "suggest_tags": {
         "id": "suggest_tags",
@@ -348,6 +350,47 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         ],
     },
 }
+
+# S0 — automation/safety metadata. This mapping is merged into SCRIPT_SCHEMAS so
+# the Python registry, the generated TypeScript registry, the /api/scripts/list
+# payload and docs/SCRIPT_AUTOMATION_REFERENCE.md all share ONE definition.
+# Rule: anything that writes outside output/ is disabled by default and always
+# goes through the F5/F6 approval gate when scheduled.
+SCRIPT_AUTOMATION: Dict[str, Dict[str, Any]] = {
+    "conv2md": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 1 * * *", "defaultArgs": {}, "requires": [], "notes": "Scrive in raw/: abilitare solo con approvazione F6."},
+    "enrich_cot": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 2 * * *", "defaultArgs": {}, "requires": ["llm"], "notes": "Scrive note nella wiki: sempre F6."},
+    "clip2md": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 1 * * 0", "defaultArgs": {}, "requires": ["network"], "notes": "Scarica URL esterni e scrive in sources/web-clips/."},
+    "notebooklm_import": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "10 1 * * 0", "defaultArgs": {}, "requires": [], "notes": "Crea note in raw/ da export NotebookLM."},
+    "migrate_to_okf": {"safety": "blocked", "schedulable": False, "enabledDefault": False, "defaultSchedule": "", "defaultArgs": {}, "requires": [], "notes": "Migrazione irreversibile del frontmatter: solo manuale."},
+    "okf_lint": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Valida frontmatter e bundle OKF v0.2."},
+    "okf_log": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 6 * * *", "defaultArgs": {"type": "Update"}, "requires": [], "notes": "Accoda a wiki/log.md: richiede F6."},
+    "okf_reindex": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "10 6 * * *", "defaultArgs": {}, "requires": [], "notes": "Rigenera wiki/index.md e indici tematici: richiede F6."},
+    "okf_stats": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "10 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Report statistiche OKF."},
+    "wiki_stats": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "20 6 * * 1", "defaultArgs": {}, "requires": [], "notes": "Aggiorna docs/METRICS.md: richiede F6."},
+    "maturity_calculator": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "30 6 * * 1", "defaultArgs": {"path": "wiki"}, "requires": [], "notes": "Con --write modifica il frontmatter: richiede F6."},
+    "check_docs_sync": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 6 * * 1", "defaultArgs": {}, "requires": [], "notes": "Con --fix riscrive docs/help/: in quel caso diventa workspace."},
+    "suggest_tags": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "40 6 * * 1", "defaultArgs": {"all": True, "wiki": "wiki"}, "requires": [], "notes": "Con --write modifica il frontmatter: richiede F6."},
+    "schema_infer": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "20 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Propone uno schema senza scrivere."},
+    "schema_lint": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "30 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Valida le note rispetto a config.toml."},
+    "generate_thesis": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 4 * * 0", "defaultArgs": {}, "requires": [], "notes": "Scrive output/thesis_compiled.md."},
+    "export_thesis_pdf": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "30 4 * * 0", "defaultArgs": {}, "requires": ["pandoc"], "notes": "Scrive output/thesis_final.pdf via Pandoc."},
+    "wizard": {"safety": "blocked", "schedulable": False, "enabledDefault": False, "defaultSchedule": "", "defaultArgs": {}, "requires": ["tty"], "notes": "Interattivo: non schedulabile."},
+    "voice_ingest": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "20 1 * * 0", "defaultArgs": {}, "requires": [], "notes": "Crea note da audio/trascrizioni in raw/."},
+    "export_semantic": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 3 * * 0", "defaultArgs": {}, "requires": [], "notes": "Esporta RDF in output/."},
+    "ontology_rules": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "40 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Controlla cicli e coerenza ontologica."},
+    "cq_validator": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 3 * * 1", "defaultArgs": {}, "requires": [], "notes": "Scrive output/cq_validation_report.md."},
+    "odp_suggester": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "50 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Suggerisce ODP senza scrivere."},
+    "neuro_symbolic_check": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "20 3 * * 1", "defaultArgs": {}, "requires": ["llm"], "notes": "Scrive output/neuro_symbolic_report.md."},
+    "ke_maturity": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "40 3 * * 1", "defaultArgs": {}, "requires": [], "notes": "Scrive output/ke_maturity_report.md."},
+    "graph_analytics": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 2 * * 0", "defaultArgs": {}, "requires": [], "notes": "Analisi Louvain in sola lettura."},
+    "docs_wiki_drift": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 7 * * 1", "defaultArgs": {"docs_dir": "docs", "wiki_dir": "projects/wikiforge/wiki"}, "requires": [], "notes": "Senza --check riscrive la proiezione OKF: richiede F6."},
+    "wiki_program_change_propose": {"safety": "report", "schedulable": True, "enabledDefault": True, "defaultSchedule": "30 7 * * 1", "defaultArgs": {}, "requires": [], "notes": "Accoda la proposta in output/program-changes/."},
+    "wiki_program_change_apply": {"safety": "blocked", "schedulable": False, "enabledDefault": False, "defaultSchedule": "", "defaultArgs": {}, "requires": [], "notes": "Solo F6: richiede --reviewer e --confirm iniettati dal server."},
+}
+
+for _script_id, _automation in SCRIPT_AUTOMATION.items():
+    if _script_id in SCRIPT_SCHEMAS:
+        SCRIPT_SCHEMAS[_script_id]["automation"] = _automation
 
 
 def check_and_handle_json_schema(script_id: str) -> None:

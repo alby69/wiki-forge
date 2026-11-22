@@ -1,7 +1,10 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { LlmClient } from '../llmClient';
+import { isMutatingScript as isMutatingFromRegistry } from './scriptSafety';
 import type { JobStatus } from './runtimeState';
+
+export { MUTATING_SCRIPT_IDS } from './scriptSafety';
 
 /**
  * F5 — LLM Policy Agent.
@@ -68,18 +71,9 @@ export interface PolicyAgentOptions {
   model?: string;
 }
 
-/** Scripts that write inside `wiki/`. They may never run without approval. */
-export const MUTATING_SCRIPT_IDS = new Set([
-  'suggest_tags',
-  'okf_reindex',
-  'maturity_calculator',
-  'promote_doc_answer',
-  'docs_wiki_drift',
-  'wiki_program_change_apply',
-]);
-
+/** Derived from SCRIPT_SCHEMAS; see scheduler/scriptSafety.ts. */
 export function isMutatingScript(scriptId: string | undefined): boolean {
-  return typeof scriptId === 'string' && MUTATING_SCRIPT_IDS.has(scriptId);
+  return isMutatingFromRegistry(scriptId);
 }
 
 const BASELINE_SOURCES = ['config/agent_schedule.toml', 'output/scheduler/audit.jsonl'];

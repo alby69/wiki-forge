@@ -1,12 +1,13 @@
 # Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
 
-> **Stato: piano approvato — F0, F1, F2, F3 e F4 implementati.** Le decisioni
+> **Stato: piano approvato — F0–F6 implementati; S0 completata.** Le decisioni
 > di §12 sono state confermate: orari OK, `auto_apply = false`, parser cron con
-> la libreria leggera `cron-parser`, F5 rimandata dopo F1–F4. F0 è un refactor
-> trasparente, F1 valida la configurazione, F2 espone la classe `Scheduler` con
-> clock, lock, stato e timers iniettati, F3 la avvia dentro `httpServer.ts`
-> collegandola a `runUseCase()` e alle API REST/SSE e F4 aggiunge la tab
-> **🤖 Agenti & Schedule** al KE Workbench. Restano sospese solo F5 e F6.
+> la libreria leggera `cron-parser`. F0 è un refactor trasparente, F1 valida la
+> configurazione, F2 espone la classe `Scheduler` con clock, lock, stato e timer
+> iniettati, F3 la avvia dentro `httpServer.ts` collegandola a `runUseCase()` e
+> alle API REST/SSE, F4 aggiunge la tab **🤖 Agenti & Schedule**, F5/F6 aggiungono
+> Policy Agent, trigger da eventi e approvazione umana. S0 centralizza la
+> classificazione di sicurezza degli script e genera il relativo catalogo.
 >
 > Autore: analisi del codice esistente (`agentServer.ts`, `scripts/`, `config/`).
 > Pubblico: Knowledge Engineer e manutentore del progetto.
@@ -20,7 +21,10 @@
 | F2 | ✅ | `scheduler/scheduler.ts`, `scheduler/runtimeState.ts`, `scheduler/lock.ts`, `tests/agentSchedulerEngine.test.ts`, test abort in `tests/useCaseRunner.test.ts`; supporto `AbortSignal` in `useCaseRunner.ts`, nuove voci in `.gitignore` |
 | F3 | ✅ | `agentServer.ts` (lifecycle, adapter, endpoint REST/SSE), `httpServer.ts` (avvio + `SIGINT`/`SIGTERM`), `scheduler/scheduler.ts` (subscribe, override, cancel, `use_case_event`), `tests/agentScheduleApi.test.ts` |
 | F4 | ✅ | `KEWorkbenchModal.ts` (tab, card, toggle, Esegui ora, annulla, orario, storico), `schedulePanel.ts` (view model e parsing SSE), `tests/schedulePanel.test.ts`, `tests/keWorkbenchSchedule.test.ts` |
-| F5–F6 | ⬜ | Prossime fasi (vedi §9) |
+| F5 | ✅ | `scheduler/policyAgent.ts`, `scheduler/approvalStore.ts`, `tests/policyAgent.test.ts`, `tests/agentScheduleF5F6.test.ts` |
+| F6 | ✅ | `scheduler/eventTriggers.ts`, `tests/eventTriggers.test.ts`, `tests/agentScheduleF5F6.test.ts` |
+| S0 | ✅ | `script_schema.py::SCRIPT_AUTOMATION`, `gen_script_registry.py`, `docs/SCRIPT_AUTOMATION_REFERENCE.md`, `scheduler/scriptSafety.ts`, test SSOT |
+| S1–S6 | ⬜ | Job script, esecuzione/approvazione, nuove route API, UI, proiezione wiki e collaudo (vedi §13) |
 
 ---
 
@@ -354,10 +358,13 @@ una `policy_decision`, un'`approval_required` o un `event_triggered`.
 | **F4** ✅ | Tab UI nel Workbench | 1½ giorno | ✅ Verificato: tab con card per job, toggle e cambio orario persistenti, "Esegui ora" con log SSE, annulla, stream live e storico esiti — 10 test in `tests/schedulePanel.test.ts` e `tests/keWorkbenchSchedule.test.ts` |
 | **F5** ✅ | Policy Agent (LLM) con decision log | 1–2 giorni | ✅ Verificato: 7 test in `tests/policyAgent.test.ts`; ogni decisione ha rationale e fonti, gli step mutanti sono hard-blocked anche se l'LLM li richiede, l'LLM assente/invalido usa il fallback deterministico registrato, i segreti sono redatti |
 | **F6** ✅ | Trigger da eventi (watcher/webhook) + approvazione mutanti | 1 giorno | ✅ Verificato: 5 test in `tests/eventTriggers.test.ts` e 5 in `tests/agentScheduleF5F6.test.ts`; `note.created` → job dopo debounce, step mutante accodato ed eseguito solo dopo `POST .../approve` con snapshot e audit `actor: human` |
+| **S0** ✅ | SSOT di sicurezza e automazione degli script | ½ giorno | ✅ Verificato: i 29 script hanno metadati `automation`; registry TS e `docs/SCRIPT_AUTOMATION_REFERENCE.md` sono generati e confrontati da `--check`; `MUTATING_SCRIPT_IDS` è derivato con fallback legacy e fail-closed |
 
-**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6. La wiki
-viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
+**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0. La
+wiki viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
 (compreso `docs_wiki_drift`) restano sottoposti a decisione umana esplicita F6.
+S0 aggiorna solo la classificazione e la documentazione: nessun comportamento
+runtime dei job esistenti cambia.
 
 ---
 
@@ -444,3 +451,26 @@ viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
 > REST/SSE, adapter a `runUseCase()`, tab **🤖 Agenti & Schedule**, Policy Agent
 > con decision log, trigger da eventi e approvazione umana degli step mutanti
 > nel KE Workbench.
+>
+> S0 è completata: la sicurezza degli script non è più duplicata in TypeScript,
+> ma deriva da `SCRIPT_SCHEMAS` tramite il registry generato e il catalogo
+> `docs/SCRIPT_AUTOMATION_REFERENCE.md`.
+
+---
+
+## 13. Automazione degli script (S0–S6)
+
+| Fase | Contenuto | Stato |
+| :--- | :--- | :--- |
+| **S0** | `automation` in `SCRIPT_SCHEMAS`, catalogo generato, `MUTATING_SCRIPT_IDS` derivato, fail-closed | ✅ |
+| **S1** | `JobDef.scriptId`/`jobKind`, validazione `use_case XOR script`, merge di `config/script_schedules.toml`, classificazione arg-aware | ⬜ |
+| **S2** | Registry combinato, esecuzione e approvazione dei job script | ⬜ |
+| **S3** | Route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId`, contratti OpenAPI generati | ⬜ |
+| **S4** | Pulsante **🕒 Schedula** in `ToolsModal`, badge di sicurezza, gestione nella tab Agenti & Schedule | ⬜ |
+| **S5** | Aggiornamento indici/mapping e rigenerazione della proiezione wiki | ⬜ |
+| **S6** | Collaudo completo, commit e push per fase | ⬜ |
+
+Il catalogo di sicurezza generato è [`SCRIPT_AUTOMATION_REFERENCE.md`](SCRIPT_AUTOMATION_REFERENCE.md):
+le classi `workspace`, `wiki-write` e `blocked` non partono mai in automatico e
+ogni job che scrive resta soggetto alla coda F6. La prossima fase (S1) aggiunge
+i job script senza modificare `Scheduler`, F5 o F6.

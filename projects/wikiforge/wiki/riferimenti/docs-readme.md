@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "Wiki-Forge Documentation Index"
-description: "Indice completo dei documenti in docs/ (26 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/."
+description: "Indice completo dei documenti in docs/ (27 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/."
 resource: docs/README.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/en]
 status: stable
@@ -16,7 +16,7 @@ sources:
 ---
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (26 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (27 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -47,6 +47,7 @@ Indice completo dei documenti in `docs/` (26 file), dei contenuti della guida in
 | [`ARCHITECTURE.md`](../architettura/architecture.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
 | [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
 | [`OPENAPI.md`](../architettura/openapi.md) | Contratto HTTP generato da TypeScript, browser Swagger self-hosted (`/api/docs`), bus backend, client tipizzato e bus UI. |
+| [`SCRIPT_AUTOMATION_REFERENCE.md`](script-automation-reference.md) | Catalogo generato delle classi di sicurezza, dei job schedulabili e degli orari suggeriti per i 29 script. |
 | [`EDITOR_MIGRATION.md`](../architettura/editor-migration.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
 | [`FRONTEND_UIUX_PLAN.md`](../architettura/frontend-uiux-plan.md) | Studio UI/UX del frontend e piano KISS/DRY: azioni uniche, design system, disaccoppiamento e ciclo di vita progetti. |
 | [`KE_PLAYBOOK.md`](../processi/ke-playbook.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
@@ -91,7 +92,7 @@ Indice completo dei documenti in `docs/` (26 file), dei contenuti della guida in
 | `esportare` | `TUTORIAL.md` FASE 5, `THESIS_GUIDE.md` |
 | `problematic` | `TUTORIAL.md` §7 (troubleshooting) |
 | `progetti-config` | `TUTORIAL.md` FASE 1, `STARTUP.md` |
-| `modalita-dev` | `TUTORIAL.md` §3 (KE Workbench), `KE_PLAYBOOK.md` |
+| `modalita-dev` | `SCRIPT_AUTOMATION_REFERENCE.md`, `KE_AGENT_SCHEDULER_PLAN.md`, `TUTORIAL.md` §3 (KE Workbench), `KE_PLAYBOOK.md` |
 | `maturita-metriche` | `TUTORIAL.md` FASE 4, `METRICS.md`, `KE_PLAYBOOK.md` |
 | `wiki-di-wiki-forge` | `SELF_WIKI_PLAN.md` (fasi 70-76), `docs_to_wiki.py`, `KNOWLEDGE_ENGINEERING.md` (UC8), `TUTORIAL.md` §5 |
 

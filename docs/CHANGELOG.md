@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S0 — Automazione script: SSOT di sicurezza e catalogo generato
+
+- **Classificazione centralizzata**: `SCRIPT_SCHEMAS` (`script_schema.py`) contiene ora `automation` per tutti i 29 script: `safety`, `schedulable`, `enabledDefault`, `defaultSchedule`, `defaultArgs`, `requires`, `notes`. Le classi sono `read-only`, `report`, `workspace`, `wiki-write` e `blocked`.
+- **Unica fonte anche in TypeScript e nei documenti**: `gen_script_registry.py` genera `scriptRegistry.generated.ts` e `docs/SCRIPT_AUTOMATION_REFERENCE.md`; `--check` verifica entrambi. Aggiunto il flag `--fix` allo schema di `check_docs_sync.py`, prima non dichiarato.
+- **Policy derivata, non duplicata**: nuovo `scheduler/scriptSafety.ts` deriva `MUTATING_SCRIPT_IDS` dal registry generato, conserva il fallback legacy `promote_doc_answer` e tratta gli id sconosciuti come mutanti (fail-closed). `policyAgent.ts` ri-esporta la costante e usa `isMutatingScript` derivato.
+- **Contratti OpenAPI**: aggiunto lo schema `ScriptAutomation` a `contracts.ts`/`types.ts` e la proprietà opzionale su `ScriptDefDto`. Nessun endpoint, envelope o metodo pubblico di `AgentServer` è cambiato.
+- **Drift semantico**: `check_docs_sync.py` controlla anche il blocco `script-automation`; `docs/help/modalita-dev.md` punta al catalogo generato con hash aggiornato.
+- **Documentazione e test**: aggiornati `docs/README.md`, `docs/SELF_WIKI_PLAN.md`, `ROADMAP.md`, `docs/KE_AGENT_SCHEDULER_PLAN.md` e il mapping della proiezione wiki. Nuovi test SSOT Python e aggiornamento di `tests/policyAgent.test.ts`.
+
 ### Fase 1 KISS/DRY: catalogo slash commands e pulizia documentale
 
 - **Catalogo unico**: nuovo `docs/SLASH_COMMANDS_REFERENCE.md` con tutti i comandi slash, alias, categoria ed equivalente grafico. `README.md`, `TUTORIAL.md`, `docs/help/chat-comandi.md` e `docs/AGENT.md` ora puntano a questo file invece di duplicare la tabella.

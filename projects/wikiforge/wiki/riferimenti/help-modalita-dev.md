@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "Developer Mode e strumenti"
-description: "Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills"
+description: "Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills, automazione, schedulazione, agenti"
 resource: docs/help/modalita-dev.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
@@ -43,7 +43,9 @@ Il **pannello degli script** (Python) del progetto, per categoria:
 - **Knowledge Engineering** — Infer Domain Schema, Lint Schema, Competency Questions, ODP Suggester, Neuro-Symbolic Check, KE Maturity, Semantic RDF Exporter, Ontology Rule Engine
 - **Wizard** — Domain Setup Wizard
 
-Ogni script mostra **parametri con descrizione**, pulsante **Execute** e **console di log** con l'output.
+Ogni script mostra **parametri con descrizione**, pulsante **Execute** e **console di log** con l'output. Il **catalogo unico di sicurezza e automazione** — classe di rischio, orario suggerito, requisiti e argomenti predefiniti — è [`SCRIPT_AUTOMATION_REFERENCE.md`](script-automation-reference.md): non duplicarlo qui.
+
+<!-- DOC_BLOCK_REF:script-automation docs/SCRIPT_AUTOMATION_REFERENCE.md sha256:9985517a7f61280ce2af8ae639e48c1ba43a23eb65ad8026eabcb96e8431079f -->
 
 ### ⚙️ Config
 Impostazioni del progetto (LLM, cartelle, OKF...): vedi *Progetti e configurazione*.
