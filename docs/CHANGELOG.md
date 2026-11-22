@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S5/S6 — Documentazione allineata e collaudo finale
+
+- **Indici e guida**: `docs/README.md` indicizza il piano KE (28 file) e `docs/help/modalita-dev.md` spiega badge di sicurezza, **🕒 Schedula**, avvisi F6 e **🗑 Rimuovi** senza duplicare il catalogo generato.
+- **Conteggi API**: `docs/OPENAPI.md` riporta 89 endpoint, 84 comandi su 15 moduli (`SchedulerModule` 12 dopo S3); i 5 endpoint rimasti nel gateway sono `docs.openapi`, `docs.swagger` e i tre `graph.proxy`.
+- **Collaudo**: verdi `npm test` (339 test: 338 pass, 1 skip pre-esistente), `typecheck`, `build`, pytest (65 pass), `gen_script_registry.py --check`, `check_docs_sync.py`, `docs_to_wiki.py --check`, `docs_wiki_drift.py --check`, `okf_lint.py` e `git diff --check`. Proiezione wiki rigenerata; piano S0–S6 chiuso.
+
 ### S4 — Automazione script: UI di scheduling e gestione job
 
 - **Script Control Panel**: badge di sicurezza letto dai metadati `automation` generati (🟢 read-only, 🔵 report, 🟡 workspace, 🟠 wiki-write, 🔴 blocked) e pulsante **🕒 Schedula** accanto a **▶ Run Tool**. Genera l'ID `script-<id>-<timestamp>`, usa l'orario predefinito del catalogo e riusa `collectArgs()` dell'esecuzione manuale; gli script `blocked`/non schedulabili hanno il pulsante disabilitato.

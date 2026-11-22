@@ -1,6 +1,6 @@
 # Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
 
-> **Stato: piano approvato — F0–F6 implementati; S0, S1, S2, S3 e S4 completate.** Le decisioni
+> **Stato: piano approvato — F0–F6 e S0–S6 implementati e collaudati.** Le decisioni
 > di §12 sono state confermate: orari OK, `auto_apply = false`, parser cron con
 > la libreria leggera `cron-parser`. F0 è un refactor trasparente, F1 valida la
 > configurazione, F2 espone la classe `Scheduler` con clock, lock, stato e timer
@@ -12,7 +12,8 @@
 > di quei job (argomenti visibili, audit dedicato e regressioni UI); S3 aggiunge
 > le route API per creare/rimuovere job script con persistenza TOML e hot-reload;
 > S4 porta quelle operazioni nella UI: badge di sicurezza, pulsante **🕒 Schedula**
-> e gestione dei job script nella tab **🤖 Agenti & Schedule**.
+> e gestione dei job script nella tab **🤖 Agenti & Schedule**; S5 allinea
+> indici, guida in-app e conteggi API, S6 chiude con il collaudo completo.
 >
 > Autore: analisi del codice esistente (`agentServer.ts`, `scripts/`, `config/`).
 > Pubblico: Knowledge Engineer e manutentore del progetto.
@@ -33,7 +34,8 @@
 | S2 | ✅ | `scheduler/approvalStore.ts` (`jobKind`, `scriptArgs`), `agentServer.ts` (registry combinata in `decideApproval`, merge argomenti, audit), `scheduler.ts` (`redactValue`, eventi e audit arricchiti), `schedulePanel.ts` e `KEWorkbenchModal.ts` (badge e args), test di regressione |
 | S3 | ✅ | `shared/api/contracts.ts` e `endpoints.ts` (`scripts.schedule`, `scripts.unschedule`), `scheduler/scriptJobStore.ts` (TOML atomico), `scheduler.ts` (`replaceJobs`, `publishEvent`), `eventTriggers.ts` (`cancelJob`), `agentServer.ts` (`activateSchedule`/`reloadSchedule`), `tests/scriptScheduleApi.test.ts` |
 | S4 | ✅ | `ToolsModal.ts` (badge, **🕒 Schedula**, argomenti condivisi), `KEWorkbenchModal.ts` (badge job script, **🗑 Rimuovi**, refresh su `jobs_changed`), `schedulePanel.ts` (view model `jobKind`/`scriptId`/`args`, `scriptSafetyBadge()`), `tests/toolsModalScheduling.test.ts`, `tests/keWorkbenchSchedule.test.ts`, `tests/schedulePanel.test.ts` |
-| S5–S6 | ⬜ | Proiezione wiki e collaudo finale (vedi §13) |
+| S5 | ✅ | `docs/README.md`, `docs/help/modalita-dev.md`, `docs/OPENAPI.md`, proiezione wiki rigenerata |
+| S6 | ✅ | Collaudo completo: 339 test Node, typecheck, build, 65 test Python, registry/drift/doc sync, `okf_lint.py` e `git diff --check` |
 
 ---
 
@@ -374,14 +376,15 @@ una `policy_decision`, un'`approval_required` o un `event_triggered`.
 | **S3** ✅ | Route API di scheduling e hot-reload | 1 giorno | ✅ Verificato: `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId` nel catalogo (89 id), scrittura atomica del TOML con header preservato, duplicati 409, blocked 400, mutanti forzati disabilitati, job attivi subito e dopo restart; 6 test end-to-end in `tests/scriptScheduleApi.test.ts` |
 | **S4** ✅ | UI di scheduling e gestione dei job script | ½ giorno | ✅ Verificato: badge di sicurezza e pulsante **🕒 Schedula** nel Control Panel con ID automatico e argomenti del form, job script con **🗑 Rimuovi** nella tab Agenti & Schedule, refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto né nuova route; test in `toolsModalScheduling`, `keWorkbenchSchedule` e `schedulePanel` |
 
-**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1 → S2 → S3 → S4.
+**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1 → S2 → S3 → S4 → S5 → S6.
 La wiki viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
 (compreso `docs_wiki_drift` senza `--check`) restano sottoposti a decisione umana
 esplicita F6. S0 aggiorna solo la classificazione; S1 aggiunge i job script senza
 modificare i 9 job Use Case esistenti né il motore dello scheduler; S2 chiude il
 cerchio F6 per quei job; S3 rende i job script creabili/removibili via API con
 effetto immediato, mantenendo il TOML come fonte di verità; S4 espone le stesse
-operazioni nella UI senza duplicare la classificazione di sicurezza.
+operazioni nella UI senza duplicare la classificazione di sicurezza; S5 e S6
+allineano la documentazione e certificano il collaudo finale.
 
 ---
 
@@ -418,7 +421,7 @@ operazioni nella UI senza duplicare la classificazione di sicurezza.
   deduplicazione per percorso, filtro per job/evento/progetto, validazione del
   webhook, coda di approvazione, rifiuto senza esecuzione e approvazione con
   audit umano e snapshot.
-- **Totale**: 229 test, 228 superati, 1 saltato.
+- **Totale finale (S6)**: 339 test, 338 superati, 1 saltato (skip pre-esistente: `opencode CLI not installed`).
 - **Regressone**: i test correnti `tests/keUseCases.test.ts` devono passare
   identici dopo F0.
 - **Python**: `pytest tests/test_*.py` invariato; gli script non cambiano
@@ -489,8 +492,8 @@ operazioni nella UI senza duplicare la classificazione di sicurezza.
 | **S2** | Rifinitura del flusso di approvazione dei job script (messaggi, audit e test di regressione UI) | ✅ |
 | **S3** | Route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId`, persistenza TOML atomica e hot-reload | ✅ |
 | **S4** | Pulsante **🕒 Schedula** in `ToolsModal`, badge di sicurezza, gestione nella tab Agenti & Schedule | ✅ |
-| **S5** | Aggiornamento indici/mapping e rigenerazione della proiezione wiki | ⬜ |
-| **S6** | Collaudo completo, commit e push per fase | ⬜ |
+| **S5** | Aggiornamento indici/mapping e rigenerazione della proiezione wiki | ✅ |
+| **S6** | Collaudo completo, commit e push per fase | ✅ |
 
 ### S1 — job script e classificazione arg-aware
 
@@ -590,3 +593,28 @@ operazioni nella UI senza duplicare la classificazione di sicurezza.
   `X-Project-Id`, avvisi F6 ed evento `schedule:changed`;
   `tests/keWorkbenchSchedule.test.ts` verifica badge/args/DELETE della card e
   `tests/schedulePanel.test.ts` copre mapping e badge.
+
+### S5 — indici, guida e mapping
+
+- `docs/README.md` indicizza `KE_AGENT_SCHEDULER_PLAN.md` (28 file) e la mappa
+  `modalita-dev` → piano KE; `docs/help/modalita-dev.md` descrive badge,
+  **🕒 Schedula**, argomenti del form, avvisi F6 e **🗑 Rimuovi**, senza copiare
+  il catalogo generato (il `DOC_BLOCK_REF` resta invariato).
+- `docs/OPENAPI.md` allinea i conteggi al catalogo reale: 89 endpoint, 84 comandi
+  su 15 moduli (`SchedulerModule` passa da 10 a 12 con `scripts.schedule` e
+  `scripts.unschedule`); i 5 endpoint rimasti nel gateway sono `docs.openapi`,
+  `docs.swagger` e i tre `graph.proxy`.
+- La proiezione wiki è rigenerata da `python scripts/docs_to_wiki.py`; gli indici
+  `projects/wikiforge/wiki/riferimenti/index.md` e `architettura/openapi.md`
+  seguono automaticamente le fonti.
+
+### S6 — collaudo finale
+
+- Verdi: `npm test` (339 test: 338 pass, 1 skip pre-esistente), `npm run typecheck`,
+  `npm run build`, `pytest tests/python/` (65 pass), `gen_script_registry.py --check`
+  (29 script), `check_docs_sync.py`, `docs_to_wiki.py --check`,
+  `docs_wiki_drift.py --check`, `okf_lint.py` e `git diff --check`.
+- Ogni fase S0–S6 è stata committata e pushata separatamente su `main`/`origin`;
+  il TOML `config/script_schedules.toml` resta la fonte di verità dei job e la
+  classificazione di sicurezza resta solo in `SCRIPT_SCHEMAS` Python → registry TS →
+  documentazione generata.
