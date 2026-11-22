@@ -137,3 +137,8 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > proposte staged via `process:neo4j-reconciler`, conflitti su `wf:baseHash` e
 > nessuna scrittura prima di `changesets.apply`; Neo4j ~2.5/5. A4/A5/C6/C7/C8
 > non sono ancora avviati.
+>
+> **Ripresa sessione**: il §12 di
+> [`ROADMAP_Q1_Q2_2027_PLAN.md`](../processi/roadmap-q1-q2-2027-plan.md) contiene il
+> checkpoint di fine sessione (commit `3fa6fb4`, gate verdi, prossimo step C6,
+> dipendenze e vincoli). Aggiornarlo insieme al registro §11 a ogni step.

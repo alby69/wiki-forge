@@ -325,6 +325,8 @@ aggiornato.
   Neo4j ~2.5/5 dopo C0/C1/C2/C3/C4/C5 (config inerte, client con dependency
   injection, sync vault → Neo4j idempotente, query Cypher read-only, tre route
   dichiarative protette dal gate B4 e reverse sync DB → vault come changeset).
+  Il §12 del piano vivo è il checkpoint di ripresa tra sessioni (commit
+  `3fa6fb4`, 18/23 step, gate verdi, prossimo step C6, vincoli).
 - **Sicurezza prima dell'autonomia**: il gate `cq_gaps` di `health.py` è stato
   corretto in A0 (8 test dedicati), prima di qualunque claim L4; la modalità
   `bounded` (A4) resta proposta e richiede approvazione esplicita, senza mai

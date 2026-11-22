@@ -959,3 +959,77 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
 > §2 nello **stesso commit**. Il grado complessivo è la media dei componenti
 > del track; non arrotondare mai verso l'alto in assenza di test verdi.
+
+---
+
+## 12. Checkpoint di ripresa — 2026-11-22 (fine sessione)
+
+Stato da cui riprendere eventualmente domani. Aggiornare questa sezione con la
+stessa disciplina del registro §11: è il punto di passaggio tra sessioni, non
+una dichiarazione di completezza del piano.
+
+### 12.1 Posizione esatta
+
+- **Step chiusi: 18/23** — A0, A1, A2, A3, B0, B1, B2, B3, B4, B5, B6, B7,
+  C0, C1, C2, C3, C4, C5. Tabella viva in §2, gradi in §3, dettagli in §7–§9.
+- **Ultimo commit**: `3fa6fb4 feat(neo4j): reconcile DB changes into reviewable
+  changesets (C5)`, pushato su `origin/main`; `HEAD == origin/main` e albero di
+  lavoro pulito al momento del checkpoint.
+- **Gradi correnti**: L4 ~3.6/5, RBAC 5/5 (pilastro completo), Neo4j ~2.5/5.
+- **Sequenza scelta dall'utente in questa sessione**: A2 → A3 → C1 → C2 → C3 →
+  C4 → C5, un commit/push per step. Non cambiare ordine senza nuova conferma.
+
+### 12.2 Prossimo step e dipendenze
+
+1. **C6 — Riconciliazione e soppressione echo** (prossimo, dipendenza `C6 ⟵ C5`
+   ora soddisfatta). Obiettivo: convergenza senza loop, metadata `wf:origin`
+   (`browser|watcher|neo4j|reconciler`), `wf:baseHash`, `wf:localHash`,
+   `wf:dbHash`, `wf:revision`, dedupe id e checkpoint store; auto-apply solo per
+   modifiche non conflittuali e conflitti in changeset. Accettazione e gate in
+   §9; verifica prevista `tests/graphReconciliation.test.ts` + test checkpoint.
+2. **C7** dopo C6 (SSE `graph:changed`, zero `fetch` diretti), poi **C8** collaudo
+   finale e documentazione.
+3. **A4** resta bloccato: serve `C6` **e** conferma esplicita dell'utente. La
+   modalità `bounded` è solo una proposta (§5), `auto_apply=true` non va mai
+   attivato. **A5** resta bloccato da A4.
+
+### 12.3 Gate verdi al checkpoint (ripetere prima di ogni commit)
+
+| Comando | Esito |
+| :--- | :--- |
+| `npm run typecheck` | OK |
+| `npm test` | 451 test: 450 pass + 1 skip pre-esistente (`opencode CLI not installed`) |
+| `npm run build` | OK (warning non bloccanti: configLoader nativo, chunk >500 kB) |
+| `pytest tests/python/ -q` | 146 pass |
+| `pytest tests/test_graph_rag.py tests/test_graph_watcher.py -q` | 6 pass (legacy invariati) |
+| `python scripts/check_docs_sync.py` · `docs_to_wiki.py --check` · `docs_wiki_drift.py --check` · `okf_lint.py wiki` · `gen_script_registry.py --check` | tutti OK |
+| `git diff --check` | OK (solo warning LF→CRLF su Windows) |
+
+Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM, chunk >500 kB,
+conversione LF→CRLF di Git, 1 test Node skippato.
+
+### 12.4 Vincoli da non perdere riprendendo
+
+- Endpoint, envelope `{ success, ... }` e metodi pubblici esistenti invariati;
+  sole aggiunte già approvate: `GET /api/auth/me` (B7) e le route grafo C4.
+- Nessun `fetch` diretto nell'UI; OpenAPI generata solo da `contracts.ts`.
+- F6 e human approval obbligatori, snapshot/guardrail sempre attivi; nessun
+  `auto_apply=true`, anche dopo C6.
+- B3 opt-in (`enable_rbac=false` byte-identical), B4 token gate prima del bus e
+  del proxy FastAPI (docs pubblici, envelope 401 B0 esatto), B5 provenance
+  server-derived, B6 IdP solo con `enable_rbac=true` + `auth.provider` e zero
+  rete nei test, B7 identità solo da `/api/auth/me`.
+- C0 inerte (nessun import/connection del driver); C1 lazy import e client
+  injettabile; C2 logica di `tests/test_graph_watcher.py:15-35` invariata,
+  ora con `wf:path`/`wf:baseHash` additivi; C3 whitelist read-only con
+  validator che preserva letterali/backtick (serve per ``n.`wf:revision` ``);
+  proxy `/api/v1/graph/sync|validate|rag` byte-compatibile; C4 route protette.
+- C5: il reconciler emette **solo JSON** (`wikiforge.neo4j-reconcile/v1`,
+  `findingId` `neo4j-<id>-r<revision>`), il ponte TS stagea con
+  `process:neo4j-reconciler` e `requireOriginal`; conflitto → 0 proposte,
+  0 changeset, 0 scritture; checkpoint in `.wiki-forge/neo4j-reconciler.json`
+  avanzato solo senza conflitti; `agent.confirm_destructive=true` resta
+  revisione umana obbligatoria, non auto-apply. Nessuna scrittura vault prima
+  di `changesets.apply`.
+- C6 deve riconciliare i metadata introdotti da C2/C5 evitando echo: una
+  revisione applicata dal reconciler non deve tornare come nuovo evento vault.
