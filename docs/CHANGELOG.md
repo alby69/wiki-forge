@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B1 — Principal derivato dal server (additivo, senza enforcement)
+
+- **Nuovo contratto interno**: `Principal { actor, roles, source }` in `bus/messageBus.ts`, aggiunto come campo opzionale di `CommandContext`. Nuovo modulo `auth/principal.ts` con `deriveRequestPrincipal()` e l'attore canonico `process:api-token` per la legacy mode (nessun IdP, `source: 'legacy-token'`, ruoli vuoti).
+- **Popolamento**: `AgentServer.dispatchApiCommand()` deriva il principal esclusivamente dalla richiesta verificata, dopo il controllo del token. Il campo `principal` eventualmente presente nel body viene rimosso prima del dispatch; `reviewer`/`user`/`actor` restano invariati ma non possono sovrascrivere `context.principal`. I caller non-HTTP (CLI, scheduler, test) continuano a non avere principal.
+- **Nessun cambiamento di comportamento**: envelope, status code, endpoint e metodi pubblici invariati; B0 resta 8/8. 6 nuovi test in `tests/principal.test.ts`; suite Node 352 pass + 1 skip pre-esistente. Grado B1 da 0.5 a 1.5/5. L'enforcement resta disattivato fino a B3/B5 dietro `enable_rbac`.
+
 ### C0 — Configurazione Neo4j dichiarativa e inerte
 
 - **Configurazione**: nuova sezione `[neo4j]` in `config/config.toml`, `projects/tesi/config.toml` e `projects/wikiforge/config.toml` con `enabled = false`, `uri`, `user`, `passwordEnv` (nome della variabile d'ambiente, mai la password), `database`, `tls` e la tabella `projects` per il mapping per progetto. Aggiunto lo schema corrispondente in `config_schema.py` come fonte di verità.

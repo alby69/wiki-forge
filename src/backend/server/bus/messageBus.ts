@@ -9,6 +9,20 @@
 
 import { error, json, type ApiResult } from '../api/http';
 
+/**
+ * B1 — identity of the caller, derived exclusively by the server-side adapter.
+ *
+ * `actor` uses the canonical `human:<id>` / `process:<id>` notation. In legacy
+ * mode (no RBAC/IdP configured) every HTTP request is the shared process actor
+ * `process:api-token` with no roles. Client-supplied `reviewer`/`user`/`actor`
+ * body fields can never produce or overwrite a Principal.
+ */
+export interface Principal {
+  actor: string;
+  roles: string[];
+  source: 'legacy-token' | 'idp' | 'process';
+}
+
 export interface CommandContext {
   /** Absolute repository/workspace root. */
   rootDir: string;
@@ -16,6 +30,8 @@ export interface CommandContext {
   projectId: string;
   /** Stable operation id of the originating HTTP route, when applicable. */
   operationId?: string;
+  /** Server-trusted principal. Optional because non-HTTP callers have none. */
+  principal?: Principal;
   /** Correlation id useful for logs and audit trails. */
   correlationId: string;
   /** Optional lifecycle hook supplied by the HTTP adapter for SSE cleanup. */

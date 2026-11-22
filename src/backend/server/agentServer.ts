@@ -81,6 +81,7 @@ import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from '
 import { handleDocsRequest } from './api/docsBrowser';
 import { readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus } from './bus/messageBus';
+import { deriveRequestPrincipal } from './auth/principal';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from './modules/toolsModule';
 import { createReviewModule, type ReviewModule } from './modules/reviewModule';
@@ -903,10 +904,17 @@ export class AgentServer {
     res: http.ServerResponse,
   ): Promise<boolean> {
     if (!this.bus.has(command)) return false;
+    // B1: a body field named `principal` must never reach handlers as if it
+    // were the server-derived identity. Other body fields are untouched so
+    // legacy payloads and envelopes stay byte-identical.
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      delete (payload as Record<string, unknown>).principal;
+    }
     const result = await this.bus.dispatch(command, payload, {
       rootDir: this.rootDir,
       projectId,
       operationId: command,
+      principal: deriveRequestPrincipal(req),
       onClose: (handler) => { req.on('close', handler); },
     });
     sendApiResult(res, result);

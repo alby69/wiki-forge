@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (3/23 step: A0 ✅, B0 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (4/23 step: A0 ✅, B0 ✅, B1 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -77,7 +77,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | A4 | ⬜ — **richiede approvazione utente** | — |
 | A5 | ⬜ | — |
 | B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
-| B1 | ⬜ | — |
+| B1 | ✅ | `Principal` in `bus/messageBus.ts`, `auth/principal.ts`, `agentServer.ts`, `tests/principal.test.ts` (6 test) |
 | B2 | ⬜ | — |
 | B3 | ⬜ | — |
 | B4 | ⬜ | — |
@@ -104,8 +104,8 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, L4 ~3.0; dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono
-ancora con “Oggi”).
+A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo C0: C1 1, Neo4j ~0.65; gli altri
+valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -115,7 +115,7 @@ ancora con “Oggi”).
 | A4 | Validazione, auto-repair e rollback | 2 | 2 | 5 |
 | A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
 | — | **Complessivo L4** | **~2.5** | **~3.0** | **4.5–5** |
-| B1 | Autenticazione / identità del chiamante | 0.5 | 0.5 | 5 |
+| B1 | Autenticazione / identità del chiamante | 0.5 | 1.5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 0 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 2.5 | 5 |
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 3 | 5 |
@@ -407,6 +407,17 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   test esistenti byte-identici.
 - **Verifica**: `tests/principal.test.ts` + `npm test`, `typecheck`.
 - **Grado atteso**: B1 0.5 → 1.5.
+- **Risultato (2026-11-22)**: ✅ completato. `Principal { actor, roles, source }`
+  aggiunto a `CommandContext` come campo opzionale; `auth/principal.ts`
+  deriva l'attore lato server e `dispatchApiCommand()` lo popola per ogni
+  richiesta HTTP. In legacy mode l'attore canonico è `process:api-token`, senza
+  ruoli (`source: 'legacy-token'`). Header client (`X-Principal-*`) e campi body
+  (`principal`, `reviewer`, `user`, `actor`) non possono sovrascriverlo: il
+  campo `principal` del body viene rimosso prima del dispatch, gli altri restano
+  invariati. I caller non-HTTP restano senza principal (additività). 6 nuovi
+  test in `tests/principal.test.ts`; B0 rimane byte-identico (8/8), suite
+  completa 352 pass + 1 skip. Nessun enforcement attivo: B3/B5 lo introdurranno
+  dietro `enable_rbac`.
 
 ### B2 — Config e catalogo ruoli (inerti)
 
@@ -661,6 +672,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
+| 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
