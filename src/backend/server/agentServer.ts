@@ -48,6 +48,7 @@ import {
   JobExecutionContext,
   JobExecutionResult,
   PreflightResult,
+  redactValue,
   Scheduler,
   SchedulerEvent,
   TriggerEvent,
@@ -994,14 +995,24 @@ export class AgentServer {
 
     if (decision.action !== 'skip' && decision.mutatingSteps.length > 0) {
       const approvalIds: string[] = [];
+      const scriptIds: string[] = [];
       for (const stepIndex of decision.mutatingSteps) {
-        const def = ctx.useCase.steps[stepIndex] as { scriptId?: string; title?: string } | undefined;
+        const def = ctx.useCase.steps[stepIndex] as
+          | { scriptId?: string; title?: string; defaultArgs?: Record<string, unknown> }
+          | undefined;
+        // S2: the reviewer must see the exact invocation, not only the script id.
+        const args: Record<string, unknown> = { ...(def?.defaultArgs ?? {}), ...ctx.job.args };
+        if (def?.scriptId) scriptIds.push(def.scriptId);
         const request = await this.approvalStore.stage({
           jobId: ctx.job.id,
           useCaseId: ctx.job.useCaseId,
           project: ctx.job.project,
           stepIndex,
+          jobKind: ctx.job.jobKind ?? 'use_case',
           scriptId: def?.scriptId,
+          scriptArgs: ctx.job.jobKind === 'script'
+            ? redactValue(args) as Record<string, unknown>
+            : undefined,
           title: def?.title,
           trigger: ctx.trigger,
           event: ctx.event?.type,
@@ -1015,6 +1026,8 @@ export class AgentServer {
         jobId: ctx.job.id,
         approvalIds,
         steps: decision.mutatingSteps,
+        jobKind: ctx.job.jobKind ?? 'use_case',
+        ...(scriptIds.length > 0 ? { scriptIds } : {}),
         rationale: decision.rationale,
         sources: decision.sources,
         at: new Date().toISOString(),
@@ -1083,7 +1096,9 @@ export class AgentServer {
       return { approval: await store.update(approvalId, { status: 'rejected', decidedBy: reviewer, reason }) };
     }
 
-    const useCase = KE_USE_CASES[request.useCaseId];
+    // S2: script jobs run through one-step synthetic Use Cases, so the approval
+    // must resolve the combined registry (not only the static KE catalog).
+    const useCase = this.scheduledUseCases[request.useCaseId] ?? KE_USE_CASES[request.useCaseId];
     const job = this.scheduler?.getStatus().jobs.find(item => item.job.id === request.jobId)?.job;
     if (!useCase || !job) {
       return { approval: undefined, error: `Use Case or job not available for '${approvalId}'` };
@@ -1107,9 +1122,15 @@ export class AgentServer {
       // here; a direct run of the Use Case cannot supply them.
       const isProgramApply = stepDef.scriptId === 'wiki_program_change_apply';
       const humanActor = /^human:/.test(reviewer) ? reviewer : `human:${reviewer}`;
+      // Same precedence as the scheduler/runner: step defaults, then job args.
+      // Synthetic script steps carry the resolved defaults; a job override still wins.
+      const stepArgs: Record<string, any> = {
+        ...((stepDef as { defaultArgs?: Record<string, unknown> }).defaultArgs ?? {}),
+        ...(job.args as Record<string, any>),
+      };
       const approvedArgs: Record<string, any> = isProgramApply
-        ? { ...(job.args as Record<string, any>), reviewer: humanActor, confirm: true }
-        : (job.args as Record<string, any>);
+        ? { ...stepArgs, reviewer: humanActor, confirm: true }
+        : stepArgs;
 
       const startedAt = new Date();
       const chunks: string[] = [];
@@ -1137,6 +1158,8 @@ export class AgentServer {
       await this.scheduler?.recordApprovalRun({
         job: request.jobId,
         useCase: request.useCaseId,
+        jobKind: request.jobKind ?? 'use_case',
+        scriptId: request.scriptId,
         attempt: 1,
         startedAt: startedAt.toISOString(),
         endedAt: endedAt.toISOString(),

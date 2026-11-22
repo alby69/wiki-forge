@@ -1,6 +1,6 @@
 # Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
 
-> **Stato: piano approvato — F0–F6 implementati; S0 e S1 completate.** Le decisioni
+> **Stato: piano approvato — F0–F6 implementati; S0, S1 e S2 completate.** Le decisioni
 > di §12 sono state confermate: orari OK, `auto_apply = false`, parser cron con
 > la libreria leggera `cron-parser`. F0 è un refactor trasparente, F1 valida la
 > configurazione, F2 espone la classe `Scheduler` con clock, lock, stato e timer
@@ -8,7 +8,8 @@
 > alle API REST/SSE, F4 aggiunge la tab **🤖 Agenti & Schedule**, F5/F6 aggiungono
 > Policy Agent, trigger da eventi e approvazione umana. S0 centralizza la
 > classificazione di sicurezza degli script; S1 aggiunge i job script con use case
-> sintetici e classificazione arg-aware.
+> sintetici e classificazione arg-aware; S2 completa il flusso F6 di approvazione
+> di quei job (argomenti visibili, audit dedicato e regressioni UI).
 >
 > Autore: analisi del codice esistente (`agentServer.ts`, `scripts/`, `config/`).
 > Pubblico: Knowledge Engineer e manutentore del progetto.
@@ -26,7 +27,8 @@
 | F6 | ✅ | `scheduler/eventTriggers.ts`, `tests/eventTriggers.test.ts`, `tests/agentScheduleF5F6.test.ts` |
 | S0 | ✅ | `script_schema.py::SCRIPT_AUTOMATION`, `gen_script_registry.py`, `docs/SCRIPT_AUTOMATION_REFERENCE.md`, `scheduler/scriptSafety.ts`, test SSOT |
 | S1 | ✅ | `scheduler/jobStore.ts` (`jobKind`, `scriptId`, `use_case XOR script`), `config/script_schedules.toml`, use case sintetici `__script__:<id>`, F5 arg-aware, `tests/agentScriptJobs.test.ts` |
-| S2–S6 | ⬜ | Rifinitura esecuzione/approvazione, nuove route API, UI, proiezione wiki e collaudo (vedi §13) |
+| S2 | ✅ | `scheduler/approvalStore.ts` (`jobKind`, `scriptArgs`), `agentServer.ts` (registry combinata in `decideApproval`, merge argomenti, audit), `scheduler.ts` (`redactValue`, eventi e audit arricchiti), `schedulePanel.ts` e `KEWorkbenchModal.ts` (badge e args), test di regressione |
+| S3–S6 | ⬜ | Nuove route API, UI, proiezione wiki e collaudo (vedi §13) |
 
 ---
 
@@ -363,12 +365,14 @@ una `policy_decision`, un'`approval_required` o un `event_triggered`.
 | **F6** ✅ | Trigger da eventi (watcher/webhook) + approvazione mutanti | 1 giorno | ✅ Verificato: 5 test in `tests/eventTriggers.test.ts` e 5 in `tests/agentScheduleF5F6.test.ts`; `note.created` → job dopo debounce, step mutante accodato ed eseguito solo dopo `POST .../approve` con snapshot e audit `actor: human` |
 | **S0** ✅ | SSOT di sicurezza e automazione degli script | ½ giorno | ✅ Verificato: i 29 script hanno metadati `automation`; registry TS e `docs/SCRIPT_AUTOMATION_REFERENCE.md` sono generati e confrontati da `--check`; `MUTATING_SCRIPT_IDS` è derivato con fallback legacy e fail-closed |
 | **S1** ✅ | Job script, use case sintetici e F5 arg-aware | 1 giorno | ✅ Verificato: `use_case XOR script`, merge dei due file TOML con id duplicati respinti, job mutanti forzati disabilitati, `docs_wiki_drift --check` classificato read-only; 3 test jobStore e 2 test end-to-end in `tests/agentScriptJobs.test.ts` |
+| **S2** ✅ | Approvazione e audit dei job script | ½ giorno | ✅ Verificato: `decideApproval()` risolve anche i use case sintetici; staging con `jobKind`/`scriptArgs` redatti; audit `actor: human` con `scriptId`; badge "job script" e args nella UI; regressioni in `agentScriptJobs`, `schedulePanel`, `keWorkbenchSchedule`, `agentSchedulerEngine` |
 
-**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1.
+**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1 → S2.
 La wiki viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
 (compreso `docs_wiki_drift` senza `--check`) restano sottoposti a decisione umana
 esplicita F6. S0 aggiorna solo la classificazione; S1 aggiunge i job script senza
-modificare i 9 job Use Case esistenti né il motore dello scheduler.
+modificare i 9 job Use Case esistenti né il motore dello scheduler; S2 chiude il
+cerchio F6 per quei job senza introdurre nuove route API.
 
 ---
 
@@ -473,7 +477,7 @@ modificare i 9 job Use Case esistenti né il motore dello scheduler.
 | :--- | :--- | :--- |
 | **S0** | `automation` in `SCRIPT_SCHEMAS`, catalogo generato, `MUTATING_SCRIPT_IDS` derivato, fail-closed | ✅ |
 | **S1** | `JobDef.jobKind`/`scriptId`, `use_case XOR script`, merge di `config/script_schedules.toml`, use case sintetici, F5 arg-aware | ✅ |
-| **S2** | Rifinitura del flusso di approvazione dei job script (messaggi, audit e test di regressione UI) | ⬜ |
+| **S2** | Rifinitura del flusso di approvazione dei job script (messaggi, audit e test di regressione UI) | ✅ |
 | **S3** | Route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId`, contratti OpenAPI generati | ⬜ |
 | **S4** | Pulsante **🕒 Schedula** in `ToolsModal`, badge di sicurezza, gestione nella tab Agenti & Schedule | ⬜ |
 | **S5** | Aggiornamento indici/mapping e rigenerazione della proiezione wiki | ⬜ |
@@ -497,3 +501,25 @@ modificare i 9 job Use Case esistenti né il motore dello scheduler.
   [`SCRIPT_AUTOMATION_REFERENCE.md`](SCRIPT_AUTOMATION_REFERENCE.md): le classi
   `workspace`, `wiki-write` e `blocked` non partono mai in automatico e ogni job
   che scrive resta soggetto alla coda F6.
+
+### S2 — approvazione e audit dei job script
+
+- **Bug risolto**: `decideApproval()` cercava solo in `KE_USE_CASES`, quindi una
+  richiesta F6 nata da un use case sintetico `__script__:<id>` non poteva essere
+  approvata. Ora risolve prima `scheduledUseCases` (registry combinata avviata
+  dallo scheduler) e poi il catalogo statico, senza cambiare l'envelope API.
+- **Argomenti visibili**: la coda F6 espone `jobKind` (`use_case`/`script`) e
+  `scriptArgs` con gli argomenti risolti (default dello step + override del job)
+  redatti con le stesse regole dell'audit (`redactValue`). L'ordine di precedenza
+  è identico a quello usato dal runner durante l'esecuzione.
+- **Log e audit**: l'evento SSE `approval_required` include `scriptIds` e `jobKind`;
+  ogni run — scheduler o umano — registra `jobKind` e `scriptId`, così l'audit
+  distingue i job script dai 9 Use Case originali. L'esecuzione autorizzata
+  resta `actor: human` con `approvalId` e `approvedBy`.
+- **UI**: la card di approvazione mostra il badge "job script" accanto a
+  "use case" e una riga "Args risolti"; il log live nomina gli script invece
+  del solo indice dello step.
+- **Regressioni**: `tests/agentScriptJobs.test.ts` copre lo stage → approve di
+  `okf_log` con scrittura di `wiki/log.md` e audit dedicato; `schedulePanel` e
+  `keWorkbenchSchedule` verificano il mapping dei nuovi campi; `agentSchedulerEngine`
+  verifica la redazione ricorsiva degli argomenti. Nessuna nuova route API.

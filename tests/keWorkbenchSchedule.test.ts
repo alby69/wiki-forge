@@ -162,6 +162,18 @@ describe('KE Workbench schedule tab (F4)', () => {
               sources: ['output/scheduler/audit.jsonl'],
               createdAt: '2026-11-19T02:00:00.000Z',
             },
+            {
+              id: 'appr-2',
+              jobId: 'script-log-job',
+              stepIndex: 0,
+              jobKind: 'script',
+              scriptId: 'okf_log',
+              scriptArgs: { message: 'Approvazione S2 di prova', type: 'Update' },
+              status: 'pending',
+              rationale: 'Script mutante richiede approvazione.',
+              sources: ['docs/SCRIPT_AUTOMATION_REFERENCE.md'],
+              createdAt: '2026-11-19T02:05:00.000Z',
+            },
           ],
           pending: [],
         });
@@ -234,6 +246,12 @@ describe('KE Workbench schedule tab (F4)', () => {
     assert.match(pane.innerHTML, /okf_reindex/);
     assert.match(pane.innerHTML, /ke-approve-appr-1/);
     assert.match(pane.innerHTML, /ke-reject-appr-1/);
+    // S2: script-job approvals are labelled and show the resolved arguments.
+    assert.match(pane.innerHTML, /job script/);
+    assert.match(pane.innerHTML, /use case/);
+    assert.match(pane.innerHTML, /Args risolti/);
+    assert.match(pane.innerHTML, /Approvazione S2 di prova/);
+    assert.match(pane.innerHTML, /ke-approve-appr-2/);
     modal.close();
   });
 });

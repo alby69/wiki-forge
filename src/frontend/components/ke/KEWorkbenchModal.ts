@@ -698,15 +698,22 @@ export class KEWorkbenchModal {
       : `<div style="display:flex; flex-direction:column; gap:8px;">
            ${pending.map((item) => {
              const step = item.title || item.scriptId || `step ${item.stepIndex}`;
+             const isScriptJob = item.jobKind === 'script';
+             const args = item.scriptArgs
+               ? Object.entries(item.scriptArgs)
+                   .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+                   .join(', ')
+               : '';
              return `<div class="ke-approval-card" data-approval-id="${escapeHtml(item.id)}" style="background:#1e1b4b; border:1px solid #4338ca; border-radius:6px; padding:10px 12px;">
                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                 <div style="font-size:12px; font-weight:700; color:#e0e7ff;">⏸ ${escapeHtml(item.jobId)} · ${escapeHtml(step)}</div>
+                 <div style="font-size:12px; font-weight:700; color:#e0e7ff;">⏸ ${escapeHtml(item.jobId)} · ${isScriptJob ? 'job script' : 'use case'} · ${escapeHtml(step)}</div>
                  <div style="display:flex; gap:6px;">
                    <button id="ke-approve-${this.cssId(item.id)}" type="button" title="Esegui lo step mutante" style="background:#14532d; color:#bbf7d0; border:1px solid #166534; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">✅ Approva</button>
                    <button id="ke-reject-${this.cssId(item.id)}" type="button" title="Rifiuta lo step mutante" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">❌ Rifiuta</button>
                  </div>
                </div>
-               <div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Motivazione:</strong> ${escapeHtml(item.rationale || '—')}</div>
+               ${isScriptJob ? `<div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Args risolti:</strong> <code style="color:#a5b4fc;">${escapeHtml(args || '—')}</code></div>` : ''}
+                <div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Motivazione:</strong> ${escapeHtml(item.rationale || '—')}</div>
                <div style="font-size:11px; color:#94a3b8; margin-top:4px;"><strong>Fonti:</strong> ${item.sources.length ? item.sources.map(source => `<code style="color:#a5b4fc;">${escapeHtml(source)}</code>`).join(', ') : '—'}</div>
              </div>`;
            }).join('')}

@@ -26,6 +26,20 @@ enabled = true
 project = "default"
 auto_apply = false
 max_retries = 0
+
+[[agent.scheduler.jobs]]
+id = "test-script-log"
+role = "Script Automation"
+script = "okf_log"
+schedule = "0 4 1 * *"
+enabled = true
+project = "default"
+auto_apply = false
+max_retries = 0
+
+[agent.scheduler.jobs.args]
+message = "Approvazione S2 di prova"
+type = "Update"
 `;
 
 interface Harness {
@@ -97,11 +111,20 @@ describe('Script jobs end-to-end (S1)', () => {
 
   it('exposes the script job and its synthetic Use Case through the scheduler API', async () => {
     const data = await json(`${h.baseUrl}/api/ke/schedule`);
-    assert.deepStrictEqual(data.errors, []);
-    assert.strictEqual(data.snapshot.jobs.length, 1);
-    const job = data.snapshot.jobs[0].job;
+    assert.deepStrictEqual(data.errors, [
+      "Job 'test-script-log': script 'okf_log' is mutating for the resolved args; forcing enabled=false (F6 approval required)",
+    ]);
+    assert.strictEqual(data.snapshot.jobs.length, 2);
+    const job = data.snapshot.jobs.find((entry: any) => entry.job.id === 'test-script-job').job;
     assert.strictEqual(job.scriptId, 'okf_lint');
     assert.strictEqual(job.useCaseId, '__script__:okf_lint');
+
+    // S2: a mutating script job is kept visible but forced disabled, so it can
+    // only run after an explicit human approval.
+    const logJob = data.snapshot.jobs.find((entry: any) => entry.job.id === 'test-script-log').job;
+    assert.strictEqual(logJob.scriptId, 'okf_log');
+    assert.strictEqual(logJob.enabled, false);
+    assert.strictEqual(logJob.useCaseId, '__script__:okf_log');
   });
 
   it('runs the generated one-step Use Case without staging an approval', async () => {
@@ -124,5 +147,45 @@ describe('Script jobs end-to-end (S1)', () => {
 
     const approvals = await json(`${h.baseUrl}/api/ke/schedule/approvals?status=pending`);
     assert.deepStrictEqual(approvals.approvals, []);
+  });
+
+  it('stages, approves and audits a mutating script job (S2)', async () => {
+    // A disabled mutating job can still be started manually; F6 withholds it.
+    const run = await fetch(`${h.baseUrl}/api/ke/schedule/test-script-log/run`, { method: 'POST' });
+    assert.strictEqual(run.status, 200);
+    await run.text();
+
+    const approvals = await json(`${h.baseUrl}/api/ke/schedule/approvals?status=pending`);
+    assert.strictEqual(approvals.approvals.length, 1);
+    const approval = approvals.approvals[0];
+    assert.strictEqual(approval.jobId, 'test-script-log');
+    assert.strictEqual(approval.useCaseId, '__script__:okf_log');
+    assert.strictEqual(approval.jobKind, 'script');
+    assert.strictEqual(approval.scriptId, 'okf_log');
+    assert.strictEqual(approval.scriptArgs.message, 'Approvazione S2 di prova');
+    assert.strictEqual(approval.scriptArgs.type, 'Update');
+
+    // Regression: before S2 the log line was empty (no script args on the view)
+    // and `decideApproval()` could not resolve the synthetic Use Case at all.
+    const approved = await fetch(`${h.baseUrl}/api/ke/schedule/approvals/${approval.id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewer: 'mario' }),
+    });
+    const approvedBody = await approved.json();
+    assert.strictEqual(approved.status, 200, JSON.stringify(approvedBody));
+    assert.strictEqual(approvedBody.approval.status, 'approved');
+    assert.strictEqual(approvedBody.approval.decidedBy, 'mario');
+
+    const log = await fs.readFile(path.join(h.tmpDir, 'wiki', 'log.md'), 'utf-8');
+    assert.match(log, /Approvazione S2 di prova/);
+
+    const runs = await json(`${h.baseUrl}/api/ke/schedule/runs?jobId=test-script-log`);
+    const humanRun = runs.runs.find((entry: any) => entry.actor === 'human');
+    assert.ok(humanRun, 'the human-authorised script execution is audited');
+    assert.strictEqual(humanRun.jobKind, 'script');
+    assert.strictEqual(humanRun.scriptId, 'okf_log');
+    assert.strictEqual(humanRun.approvalId, approval.id);
+    assert.strictEqual(humanRun.status, 'success');
   });
 });

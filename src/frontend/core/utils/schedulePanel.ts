@@ -64,7 +64,10 @@ export interface ApprovalView {
   id: string;
   jobId: string;
   stepIndex: number;
+  /** S2: script-job approvals are labelled differently from Use Case steps. */
+  jobKind?: 'use_case' | 'script';
   scriptId?: string;
+  scriptArgs?: Record<string, unknown>;
   title?: string;
   status: 'pending' | 'approved' | 'rejected' | 'failed';
   rationale: string;
@@ -175,6 +178,11 @@ function numberList(value: unknown): number[] {
     : [];
 }
 
+function argRecord(value: unknown): Record<string, unknown> | undefined {
+  const record = asRecord(value);
+  return Object.keys(record).length > 0 ? record : undefined;
+}
+
 /** Convert `GET /api/ke/schedule/decisions` into render-ready policy cards. */
 export function toPolicyDecisionViews(raw: unknown, limit = 5): PolicyDecisionView[] {
   const payload = asRecord(raw);
@@ -207,7 +215,9 @@ export function toApprovalViews(raw: unknown): ApprovalView[] {
       id: typeof item.id === 'string' ? item.id : '',
       jobId: typeof item.jobId === 'string' ? item.jobId : '',
       stepIndex: typeof item.stepIndex === 'number' ? item.stepIndex : -1,
+      jobKind: item.jobKind === 'script' || item.jobKind === 'use_case' ? item.jobKind : undefined,
       scriptId: typeof item.scriptId === 'string' ? item.scriptId : undefined,
+      scriptArgs: argRecord(item.scriptArgs),
       title: typeof item.title === 'string' ? item.title : undefined,
       status,
       rationale: typeof item.rationale === 'string' ? item.rationale : '',
@@ -346,12 +356,16 @@ export function schedulerEventToLogLine(event: unknown, timestamp: string): Sche
         timestamp,
       };
     }
-    case 'approval_required':
+    case 'approval_required': {
+      const scripts = stringList(item.scriptIds);
+      const target = scripts.length > 0 ? `script ${scripts.join(', ')}` : `step ${numberList(item.steps).join(', ')}`;
+      const kind = item.jobKind === 'script' ? ' · job script' : '';
       return {
         type: 'info',
-        text: `⏸ Approvazione richiesta per '${item.jobId}' (step ${numberList(item.steps).join(', ')}): ${item.rationale ?? ''}`,
+        text: `⏸ Approvazione richiesta per '${item.jobId}'${kind} (${target}): ${item.rationale ?? ''}`,
         timestamp,
       };
+    }
     case 'event_queued': {
       const event = asRecord(item.event);
       return {

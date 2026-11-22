@@ -17,7 +17,11 @@ export interface ApprovalRequest {
   useCaseId: string;
   project: string;
   stepIndex: number;
+  /** S2: distinguishes generated script jobs from the original Use Case jobs. */
+  jobKind?: 'use_case' | 'script';
   scriptId?: string;
+  /** S2: redacted resolved args, so the reviewer sees what will actually run. */
+  scriptArgs?: Record<string, unknown>;
   title?: string;
   trigger: 'cron' | 'manual' | 'event';
   event?: string;

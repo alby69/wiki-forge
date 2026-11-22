@@ -10,6 +10,7 @@ import {
   JobExecutionContext,
   JobExecutionResult,
   redactSecrets,
+  redactValue,
   Scheduler,
   SchedulerEvent,
   SchedulerOptions,
@@ -481,6 +482,21 @@ describe('Scheduler engine (F2)', () => {
     assert.deepStrictEqual(audit.exitCodes, [0]);
     assert.strictEqual(redactSecrets('api_key: leaked'), 'api_key: [REDACTED]');
     await h.scheduler.stop();
+  });
+
+  it('redacts nested approval arguments with the audit redaction rules (S2)', () => {
+    assert.deepStrictEqual(
+      redactValue({
+        message: 'token=abc123 done',
+        nested: { note: 'api_key: leaked' },
+        list: ['password: hunter2', 7],
+      }),
+      {
+        message: 'token=[REDACTED] done',
+        nested: { note: 'api_key: [REDACTED]' },
+        list: ['password: [REDACTED]', 7],
+      }
+    );
   });
 
   it('does not start the loop or take the lock when disabled', async () => {

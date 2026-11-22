@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S2 — Automazione script: approvazione e audit dei job script
+
+- **Approvazione F6 dei job script**: `decideApproval()` risolve ora la registry combinata (`scheduledUseCases`) oltre a `KE_USE_CASES`: le richieste nate da un use case sintetico `__script__:<id>` possono finalmente essere approvate. Envelope e metodi pubblici di `AgentServer` invariati.
+- **Argomenti risolti e redatti**: le approvazioni espongono `jobKind` e `scriptArgs` (default dello step + override del job) con la stessa redazione dell'audit; l'ordine di precedenza è allineato al runner. Gli step `wiki_program_change_apply` continuano a ricevere `reviewer`/`confirm` iniettati dal server.
+- **Eventi e audit**: `approval_required` include `scriptIds` e `jobKind`; i run dello scheduler e quelli autorizzati dall'uomo registrano `jobKind` e `scriptId`, mantenendo `actor: human`, `approvalId` e `approvedBy`.
+- **UI**: la card F6 distingue "job script" da "use case" e mostra "Args risolti"; il log live nomina gli script invece del solo indice dello step. Tutto via `apiBus`, nessun `fetch` diretto.
+- **Regressioni**: nuovi test end-to-end (stage → approve di `okf_log` con scrittura di `wiki/log.md` e audit), mapping view model, render della card e redazione ricorsiva degli argomenti. Nessuna nuova route API.
+
 ### S1 — Automazione script: job script e classificazione arg-aware
 
 - **Job script**: `JobDef` ha `jobKind`/`scriptId`; `parseScheduleConfig()` accetta `use_case` oppure `script` (mai entrambi) e carica anche `config/script_schedules.toml`. Gli id duplicati tra i due file vengono respinti; i 9 job Use Case esistenti restano invariati.

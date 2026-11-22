@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { UseCaseEvent } from '../useCaseRunner';
 import { describeSchedule, nextRunAt, parseSchedule } from './cron';
-import { JobDef, SchedulerConfig, UseCaseRegistryEntry } from './jobStore';
+import { JobDef, JobKind, SchedulerConfig, UseCaseRegistryEntry } from './jobStore';
 import { createPidLock, ProcessLock } from './lock';
 import {
   createFileRuntimeStateStore,
@@ -81,6 +81,9 @@ export type SchedulerEvent =
       jobId: string;
       approvalIds: string[];
       steps: number[];
+      /** S2: script-job approvals name the withheld scripts in the live log. */
+      scriptIds?: string[];
+      jobKind?: JobKind;
       rationale: string;
       sources: string[];
       at: string;
@@ -138,6 +141,9 @@ export interface SchedulerSnapshot {
 export interface AuditEntry {
   job: string;
   useCase: string;
+  /** S2: script jobs are audited with the same fields as Use Case jobs. */
+  jobKind?: JobKind;
+  scriptId?: string;
   attempt: number;
   startedAt: string;
   endedAt: string;
@@ -165,7 +171,8 @@ export function redactSecrets(text: string): string {
     .replace(/(--(?:api-key|token|secret|password)\s+)([^\s]+)/gi, '$1[REDACTED]');
 }
 
-function redactValue(value: unknown): unknown {
+/** S2: exported so approval payloads can be redacted with the same rules as audit logs. */
+export function redactValue(value: unknown): unknown {
   if (typeof value === 'string') return redactSecrets(value);
   if (Array.isArray(value)) return value.map(redactValue);
   if (value && typeof value === 'object') {
@@ -638,6 +645,8 @@ export class Scheduler {
       await this.appendAudit({
         job: job.id,
         useCase: job.useCaseId,
+        jobKind: job.jobKind,
+        scriptId: job.scriptId,
         attempt,
         startedAt: startedAt.toISOString(),
         endedAt: endedAt.toISOString(),
