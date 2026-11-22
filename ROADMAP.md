@@ -92,7 +92,7 @@
 | 82 | Automazione script — S4: UI di scheduling e gestione job | ✅ Done | Badge di sicurezza generato e pulsante **🕒 Schedula** nel Control Panel (ID automatico, argomenti del form, avvisi F6 via `apiBus`), badge "job script" e pulsante **🗑 Rimuovi** nella tab Agenti & Schedule solo per job script. Refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto e nessuna nuova route; test DOM/bus dedicati. |
 | 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
 | 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
-| 85 | Studio e piano incrementale Q1–Q2 2027 | 🔄 Ongoing | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 con criteri di accettazione, test e grado di implementazione aggiornato a ogni step in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Baseline: L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5; completati A0 (gate `cq_gaps` corretto, L4 ~3.0/5), B0 (baseline auth), B1 (Principal server-derived, RBAC ~1.5/5) e C0 (config Neo4j inerte, ~0.65/5). |
+| 85 | Studio e piano incrementale Q1–Q2 2027 | 🔄 Ongoing | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 con criteri di accettazione, test e grado di implementazione aggiornato a ogni step in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Baseline: L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5; completati A0 (gate `cq_gaps` corretto, L4 ~3.0/5), B0 (baseline auth), B1 (Principal server-derived), B2 (catalogo ruoli inerte, RBAC ~2/5) e C0 (config Neo4j inerte, ~0.65/5). |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -320,7 +320,7 @@ aggiornato.
 - **Piano vivo (`docs/ROADMAP_Q1_Q2_2027_PLAN.md`)**: 23 step (A0–A5 autonomia,
   B0–B7 RBAC, C0–C8 Neo4j), dipendenze, criteri di accettazione, test di
   verifica, tabelle di avanzamento e registro dei gradi; baseline L4 ~2.5/5,
-  RBAC ~1/5, Neo4j ~0.5/5, ora L4 ~3.0/5 dopo A0, RBAC ~1.5/5 dopo B1 e
+  RBAC ~1/5, Neo4j ~0.5/5, ora L4 ~3.0/5 dopo A0, RBAC ~2/5 dopo B1/B2 e
   Neo4j ~0.65/5 dopo C0.
 - **Sicurezza prima dell'autonomia**: il gate `cq_gaps` di `health.py` è stato
   corretto in A0 (8 test dedicati), prima di qualunque claim L4; la modalità

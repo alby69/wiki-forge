@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (4/23 step: A0 ✅, B0 ✅, B1 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (5/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -62,7 +62,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | A5 | ⬜ | — |
 | B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
 | B1 | ✅ | `Principal` in `bus/messageBus.ts`, `auth/principal.ts`, `agentServer.ts`, `tests/principal.test.ts` (6 test) |
-| B2 | ⬜ | — |
+| B2 | ✅ | `config_schema.py` (enterprise.auth/roles/projectAcls), 3 config, `auth/rbacConfig.ts`, `tests/rbacConfig.test.ts` (6 test), `test_config_schema.py` (4 nuovi) |
 | B3 | ⬜ | — |
 | B4 | ⬜ | — |
 | B5 | ⬜ | — |
@@ -88,8 +88,8 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo C0: C1 1, Neo4j ~0.65; gli altri
-valori coincidono ancora con “Oggi”).
+A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo C0: C1 1,
+Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -99,8 +99,8 @@ valori coincidono ancora con “Oggi”).
 | A4 | Validazione, auto-repair e rollback | 2 | 2 | 5 |
 | A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
 | — | **Complessivo L4** | **~2.5** | **~3.0** | **4.5–5** |
-| B1 | Autenticazione / identità del chiamante | 0.5 | 1.5 | 5 |
-| B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 0 | 5 |
+| B1 | Autenticazione / identità del chiamante | 0.5 | 2 | 5 |
+| B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 1 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 2.5 | 5 |
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 3 | 5 |
 | B5 | UI identità e sessione | 0 | 0 | 5 |
@@ -414,6 +414,16 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   non cambia alcuna risposta; test carica 4 ruoli e ne verifica i default.
 - **Verifica**: test configurazione Python + `check_docs_sync.py`.
 - **Grado atteso**: B2 0 → 1, B1 1.5 → 2.
+- **Risultato (2026-11-22)**: ✅ completato. Schema `enterprise` esteso con
+  `auth` (issuer/audience/jwksUrl/samlMetadataUrl), `roles` e `projectAcls`;
+  le 3 copie config dichiarano i ruoli canonici Reader, Contributor,
+  KnowledgeEngineer, Admin con permessi e ACL per `default`/`tesi`/`wikiforge`,
+  mentre `[enterprise.auth]` resta commentato in attesa di B6. Nuovo lettore
+  Node `auth/rbacConfig.ts` (`loadRbacConfig`, `normalizeRbacConfig`,
+  `rolesForProject`, `defaultRbacConfig`) con fallback ai 4 ruoli se il file
+  manca. 4 nuovi test Python (22 totali nello schema config) e 6 test Node:
+  il caso `enable_rbac=true` da solo lascia invariati 200/401/docs. Nessun
+  middleware o enforcement: B3 e B6 restano da fare.
 
 ### B3 — Gate RBAC opt-in via middleware del bus
 
@@ -657,6 +667,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |
+| 2026-11-22 | B2 | B1 / B2 · RBAC complessivo | 1.5 · 0 · ~1.5 | 2 · 1 · ~2 | Schema enterprise con auth/roles/projectAcls, 4 ruoli canonici in 3 config, lettore TOML Node con default; 4 test Python + 6 Node, `enable_rbac=true` da solo non cambia risposte. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

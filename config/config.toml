@@ -97,6 +97,27 @@ fields = [ "version", "parent_commit", "generated" ]
 enable_rbac = false
 cloud_backup_webdav = ""
 
+# B2 — catalogo ruoli dichiarato ma NON applicato: impostare
+# `enable_rbac = true` da solo non cambia alcuna risposta. Il gate arriva in B3
+# e l'identity provider in B6.
+[enterprise.roles]
+Reader = [ "wiki.read", "export.read" ]
+Contributor = [ "note.write", "changeset.stage", "upload.write" ]
+KnowledgeEngineer = [ "verify.write", "usecase.run", "script.run", "schedule.write" ]
+Admin = [ "project.write", "approval.decide", "config.write" ]
+
+[enterprise.projectAcls]
+default = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+tesi = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+wikiforge = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+
+# B6 — provider IdP: da valorizzare solo quando l'adapter esiste.
+# [enterprise.auth]
+# issuer = "https://idp.example.com"
+# audience = "wiki-forge"
+# jwksUrl = "https://idp.example.com/.well-known/jwks.json"
+# samlMetadataUrl = "https://idp.example.com/saml/metadata"
+
 # C0: dichiarazione inerte. Nessun codice apre una connessione a startup;
 # `passwordEnv` indica la variabile d'ambiente che conterrà la password.
 [neo4j]

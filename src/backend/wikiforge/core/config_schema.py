@@ -82,7 +82,20 @@ CONFIG_SCHEMA: dict[str, Any] = {
     },
     "tags": {"allowed": (list, str), "blocked": (list, str)},
     "versioning": {"enabled": bool, "fields": (list, str)},
-    "enterprise": {"enable_rbac": bool, "cloud_backup_webdav": str},
+    "enterprise": {
+        "enable_rbac": bool,
+        "cloud_backup_webdav": str,
+        # B2 — declarative catalogue only. No Node middleware reads these yet
+        # (B3), and no IdP exists yet (B6): `enable_rbac=true` alone is inert.
+        "auth": {
+            "issuer": str,
+            "audience": str,
+            "jwksUrl": str,
+            "samlMetadataUrl": str,
+        },
+        "roles": {"*": (list, str)},
+        "projectAcls": {"*": (list, str)},
+    },
     # C0 — declarative only. No runtime code opens a connection yet; the client
     # and the sync services arrive in C1/C2 and must check `enabled` first.
     "neo4j": {

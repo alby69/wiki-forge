@@ -163,3 +163,58 @@ def test_requirements_pin_neo4j_and_declare_networkx():
     lines = [line.strip() for line in (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()]
     assert "neo4j>=5.26,<6.0" in lines
     assert "networkx>=3.4,<4.0" in lines
+
+
+# --- B2: RBAC catalogue is declared but inert -------------------------------
+
+def test_enterprise_schema_declares_the_rbac_catalogue():
+    enterprise = CONFIG_SCHEMA["enterprise"]
+    assert set(enterprise) == {
+        "enable_rbac", "cloud_backup_webdav", "auth", "roles", "projectAcls",
+    }
+    assert set(enterprise["auth"]) == {
+        "issuer", "audience", "jwksUrl", "samlMetadataUrl",
+    }
+
+
+def _enterprise(config_path):
+    with config_path.open("rb") as fh:
+        return tomllib.load(fh)["enterprise"]
+
+
+def test_repo_config_declares_four_inert_roles():
+    assert validate_config_file(REPO_CONFIG) == []
+    enterprise = _enterprise(REPO_CONFIG)
+    assert enterprise["enable_rbac"] is False
+    assert list(enterprise["roles"]) == ["Reader", "Contributor", "KnowledgeEngineer", "Admin"]
+    assert all(
+        isinstance(permissions, list) and all(isinstance(p, str) for p in permissions)
+        for permissions in enterprise["roles"].values()
+    )
+    assert set(enterprise["projectAcls"]) == {"default", "tesi", "wikiforge"}
+    assert all(acl == list(enterprise["roles"]) for acl in enterprise["projectAcls"].values())
+    assert "auth" not in enterprise  # B6: still commented out
+
+
+def test_project_configs_keep_the_same_rbac_catalogue():
+    for name in ("tesi", "wikiforge"):
+        config_path = REPO_ROOT / "projects" / name / "config.toml"
+        assert validate_config_file(config_path) == []
+        enterprise = _enterprise(config_path)
+        assert enterprise["enable_rbac"] is False
+        assert list(enterprise["roles"]) == ["Reader", "Contributor", "KnowledgeEngineer", "Admin"]
+
+
+def test_rbac_wrong_types_are_reported_with_full_path():
+    problems = validate_config_shape({
+        "enterprise": {
+            "enable_rbac": "yes",
+            "auth": {"issuer": 7},
+            "roles": {"Reader": ["read", 3]},
+            "projectAcls": {"default": 7},
+        }
+    })
+    assert any("enterprise.enable_rbac: expected bool, got str" in p for p in problems)
+    assert any("enterprise.auth.issuer: expected str, got int" in p for p in problems)
+    assert any("enterprise.roles.Reader[1]: expected str, got int" in p for p in problems)
+    assert any("enterprise.projectAcls.default: expected list, got int" in p for p in problems)

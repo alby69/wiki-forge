@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B2 — Config RBAC e catalogo ruoli (inerte)
+
+- **Schema**: `config_schema.py` estende `[enterprise]` con `auth` (issuer, audience, jwksUrl, samlMetadataUrl), `roles` e `projectAcls`, mantenendo la validazione come fonte di verità.
+- **Configurazione**: `config/config.toml`, `projects/tesi/config.toml` e `projects/wikiforge/config.toml` dichiarano i quattro ruoli canonici (Reader, Contributor, KnowledgeEngineer, Admin) con permessi e ACL per `default`/`tesi`/`wikiforge`. `[enterprise.auth]` resta commentato fino all'adapter IdP (B6) e `enable_rbac` resta `false`.
+- **Lettore Node**: nuovo `auth/rbacConfig.ts` con `loadRbacConfig()`, `normalizeRbacConfig()`, `rolesForProject()` e `defaultRbacConfig()`; usa `smol-toml`, preferisce `config/config.toml`, tollera il file assente con i quattro ruoli di default.
+- **Inerzia verificata**: 4 nuovi test Python (22 totali nello schema config) e 6 test Node in `tests/rbacConfig.test.ts`, incluso il caso `enable_rbac=true` che lascia invariati 200/401/docs. Nessun middleware o controllo permessi: B3 introduce il gate, B6 l'IdP. Suite Node 358 pass + 1 skip. Gradi B1 1.5 → 2, B2 0 → 1.
+
 ### B1 — Principal derivato dal server (additivo, senza enforcement)
 
 - **Nuovo contratto interno**: `Principal { actor, roles, source }` in `bus/messageBus.ts`, aggiunto come campo opzionale di `CommandContext`. Nuovo modulo `auth/principal.ts` con `deriveRequestPrincipal()` e l'attore canonico `process:api-token` per la legacy mode (nessun IdP, `source: 'legacy-token'`, ruoli vuoti).

@@ -97,6 +97,20 @@ fields = [ "version", "parent_commit", "generated" ]
 enable_rbac = false
 cloud_backup_webdav = ""
 
+# B2 — catalogo ruoli dichiarato ma NON applicato; vedere config/config.toml.
+[enterprise.roles]
+Reader = [ "wiki.read", "export.read" ]
+Contributor = [ "note.write", "changeset.stage", "upload.write" ]
+KnowledgeEngineer = [ "verify.write", "usecase.run", "script.run", "schedule.write" ]
+Admin = [ "project.write", "approval.decide", "config.write" ]
+
+[enterprise.projectAcls]
+default = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+tesi = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+wikiforge = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
+
+# B6 — [enterprise.auth] resta commentato finché non esiste l'adapter IdP.
+
 # C0: dichiarazione inerte; vedere config/config.toml per la documentazione.
 [neo4j]
 enabled = false
