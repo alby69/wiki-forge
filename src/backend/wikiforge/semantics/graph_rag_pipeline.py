@@ -11,6 +11,11 @@ import sys
 from typing import TypedDict, List, Dict, Any, Optional
 from pathlib import Path
 
+from src.backend.wikiforge.semantics.neo4j_query import (
+    CypherQueryError,
+    Neo4jQueryService,
+)
+
 # Ensure project root is in sys.path for direct script execution
 _file_path = Path(__file__).resolve()
 for _parent in _file_path.parents:
@@ -35,10 +40,14 @@ class GraphRAGState(TypedDict):
     question: str
     entities: List[str]
     cypher_query: str
+    cypher_params: Dict[str, Any]
     graph_results: List[Dict[str, Any]]
     vector_results: List[Dict[str, Any]]
     subgraph_triples: List[Dict[str, Any]]
+    mode: str  # C3: "mock" (explicit fixture) or "live" (validated read-only DB)
+    project_id: Optional[str]
     error_message: Optional[str]
+    error_type: Optional[str]
     retry_count: int
     final_answer: str
 
@@ -52,12 +61,14 @@ class WikiForgeGraphRAG:
     Implements Intent Detection -> Hybrid Retrieval (Vector + Subgraph Traversal) -> Self-Correction -> Synthesis.
     """
 
-    def __init__(self, neo4j_uri: Optional[str] = None, neo4j_user: Optional[str] = None, neo4j_password: Optional[str] = None, neo4j_client: Optional[Any] = None):
+    def __init__(self, neo4j_uri: Optional[str] = None, neo4j_user: Optional[str] = None, neo4j_password: Optional[str] = None, neo4j_client: Optional[Any] = None, query_service: Optional[Any] = None):
         self.neo4j_uri = neo4j_uri or os.getenv("NEO4J_URI", "bolt://localhost:7687")
         self.neo4j_user = neo4j_user or os.getenv("NEO4J_USER", "neo4j")
         self.neo4j_password = neo4j_password or os.getenv("NEO4J_PASSWORD", "password")
         # C1 — optional injected client (additive: old constructors unchanged).
         self.neo4j_client = neo4j_client
+        # C3 — read-only query service; injection keeps tests offline.
+        self.query_service = query_service or Neo4jQueryService(client=neo4j_client)
 
     @property
     def neo4j_driver(self) -> Optional[Any]:
@@ -80,7 +91,7 @@ class WikiForgeGraphRAG:
         Phase 2: Ego-Graph Traversal extracts 1-to-k hop neighborhood for each retrieved node.
         Phase 3: Returns fused structure containing vector nodes and subgraph triples.
         """
-        # Mock vector search results (or native Neo4j SHOW VECTOR INDEXES when connected)
+        # C3: static fixtures for the vector layer (not a live vector index).
         vector_chunks = [
             {
                 "id": "validazione-shacl",
@@ -96,7 +107,7 @@ class WikiForgeGraphRAG:
             }
         ]
 
-        # Mock ego-graph traversal triples (MATCH (n)-[r*1..2]-(m) RETURN n, r, m)
+        # C3: static k-hop fixtures; live graph facts come from `execute_cypher_node`.
         subgraph_triples = [
             {
                 "source": "Validazione SHACL per la Conoscenza",
@@ -126,56 +137,98 @@ class WikiForgeGraphRAG:
         }
 
     def generate_cypher_node(self, state: GraphRAGState) -> GraphRAGState:
-        """Translate query intent into Cypher matching wiki-forge schema."""
-        entities_list = state.get("entities") or []
-        entities_str = ", ".join(f"'{e}'" for e in entities_list)
-
-        error_context = ""
-        if state.get("error_message"):
-            error_context = f"\n// Error context: {state['error_message']}"
-
+        """Translate intent into a parameterized, read-only Cypher query (C3)."""
+        entities_list = list(dict.fromkeys(state.get("entities") or []))
         cypher_query = (
-            f"MATCH (n:PermanentNote)-[r:SUPPORTS|CONTRADICTS|REFERS_TO*1..2]-(target:PermanentNote)\n"
-            f"WHERE any(e IN [{entities_str}] WHERE toLower(n.title) CONTAINS toLower(e) OR toLower(n.content) CONTAINS toLower(e))\n"
-            f"OPTIONAL MATCH (n)-[:WAS_ATTRIBUTED_TO]->(a:Agent)\n"
-            f"RETURN n.title AS Nota, a.name AS Autore, type(r) AS Relazione, target.id AS TargetNote{error_context}"
+            "MATCH (n:PermanentNote)-[r:SUPPORTS|CONTRADICTS|REFERS_TO*1..2]-(target:PermanentNote)\n"
+            "WHERE any(e IN $entities WHERE toLower(n.title) CONTAINS toLower(e) OR toLower(n.content) CONTAINS toLower(e))\n"
+            "OPTIONAL MATCH (n)-[:WAS_ATTRIBUTED_TO]->(a:Agent)\n"
+            "RETURN n.title AS Nota, a.name AS Autore, type(r) AS Relazione, target.id AS TargetNote"
         )
-        return {**state, "cypher_query": cypher_query}
+        return {
+            **state,
+            "cypher_query": cypher_query,
+            "cypher_params": {"entities": entities_list},
+        }
 
     def execute_cypher_node(self, state: GraphRAGState) -> GraphRAGState:
-        """Execute Cypher query and hybrid retrieval on database (or return structured mock for testing)."""
-        cypher = state["cypher_query"]
+        """Run validated read-only Cypher in live mode, or explicit mock fixtures.
+
+        C3 — the mode is always written into the returned state: ``"mock"``
+        means no database was contacted, ``"live"`` means the read-only service
+        executed the query. Asking for live mode without a configured driver is
+        an error, never a silent downgrade to fixtures.
+        """
+        requested_mode = state.get("mode")
+        if requested_mode not in ("mock", "live"):
+            requested_mode = "live" if self.query_service.is_live else "mock"
 
         try:
             hybrid = self.hybrid_retrieval(state["question"])
-            mock_results = [
-                {
-                    "Nota": "Validazione SHACL per la Conoscenza",
-                    "Autore": "Elisa Kendall",
-                    "Relazione": "CONTRADICTS",
-                    "TargetNote": "legacy-relational-db"
-                },
-                {
-                    "Nota": "Knowledge Graph Fundamentals",
-                    "Autore": "Guus Schreiber",
-                    "Relazione": "SUPPORTS",
-                    "TargetNote": "note-002"
+            if requested_mode == "live" and not self.query_service.is_live:
+                return {
+                    **state,
+                    "mode": "live",
+                    "graph_results": [],
+                    "error_message": "Live Cypher mode requires a configured Neo4j driver",
+                    "error_type": "query_mode",
+                    "retry_count": state.get("retry_count", 0) + 1,
                 }
-            ]
+
+            if requested_mode == "live":
+                graph_results = self.query_service.execute_read(
+                    state["cypher_query"],
+                    state.get("cypher_params") or {},
+                    project_id=state.get("project_id"),
+                )
+            else:
+                graph_results = self._mock_graph_results()
+
             return {
                 **state,
-                "graph_results": mock_results,
+                "mode": requested_mode,
+                "graph_results": graph_results,
                 "vector_results": hybrid["vector_results"],
                 "subgraph_triples": hybrid["subgraph_triples"],
-                "error_message": None
+                "error_message": None,
+                "error_type": None,
             }
 
+        except CypherQueryError as e:
+            return {
+                **state,
+                "mode": requested_mode,
+                "graph_results": [],
+                "error_message": str(e),
+                "error_type": e.code,
+                "retry_count": state.get("retry_count", 0) + 1,
+            }
         except (RuntimeError, ValueError, OSError) as e:
             return {
                 **state,
+                "mode": requested_mode,
                 "error_message": str(e),
-                "retry_count": state.get("retry_count", 0) + 1
+                "error_type": "pipeline_error",
+                "retry_count": state.get("retry_count", 0) + 1,
             }
+
+    @staticmethod
+    def _mock_graph_results() -> List[Dict[str, Any]]:
+        """Explicit C3 fixtures, used only when `mode="mock"` was selected."""
+        return [
+            {
+                "Nota": "Validazione SHACL per la Conoscenza",
+                "Autore": "Elisa Kendall",
+                "Relazione": "CONTRADICTS",
+                "TargetNote": "legacy-relational-db"
+            },
+            {
+                "Nota": "Knowledge Graph Fundamentals",
+                "Autore": "Guus Schreiber",
+                "Relazione": "SUPPORTS",
+                "TargetNote": "note-002"
+            }
+        ]
 
     def synthesize_answer_node(self, state: GraphRAGState) -> GraphRAGState:
         """Synthesize final grounded response using retrieved vector chunks, graph facts, and provenance."""

@@ -114,4 +114,5 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > UI 5/5, RBAC 5/5 — pilastro completato), **C0** (config Neo4j inerte) e
 > **C1** (client Neo4j injettabile con lazy import del driver e test con fake),
 > **C2** (sync vault → Neo4j reale e idempotente con MERGE parametrizzato ed
-> eventi strutturati; Neo4j ~1.2/5); gli altri step non sono ancora avviati.
+> eventi strutturati), **C3** (Cypher live read-only con whitelist e modi
+> mock/live espliciti; Neo4j ~1.6/5); gli altri step non sono ancora avviati.
