@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
+
+- **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.
+- **Gap noti e non corretti**: il test `KNOWN BYPASS (B4)` dimostra che `/api/v1/graph/{sync,validate,rag}` raggiunge il proxy FastAPI (502 se irraggiungibile) anche con token configurato e header assente; il test `KNOWN PROVENANCE (B5)` fissa `decidedBy` raw dal body con default `'human'`. Saranno corretti rispettivamente in B4 e B5.
+- Nessun file di produzione, endpoint, envelope o metodo pubblico modificato.
+
 ### S5/S6 — Documentazione allineata e collaudo finale
 
 - **Indici e guida**: `docs/README.md` indicizza il piano KE (28 file) e `docs/help/modalita-dev.md` spiega badge di sicurezza, **🕒 Schedula**, avvisi F6 e **🗑 Rimuovi** senza duplicare il catalogo generato.

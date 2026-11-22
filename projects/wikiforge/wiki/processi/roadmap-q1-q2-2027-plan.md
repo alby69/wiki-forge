@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (1/23 step: A0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (2/23 step: A0 ✅, B0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -76,7 +76,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | A3 | ⬜ | — |
 | A4 | ⬜ — **richiede approvazione utente** | — |
 | A5 | ⬜ | — |
-| B0 | ⬜ | — |
+| B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
 | B1 | ⬜ | — |
 | B2 | ⬜ | — |
 | B3 | ⬜ | — |
@@ -385,6 +385,13 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/authCharacterization.test.ts`; tutti i test esistenti
   invariati.
 - **Grado atteso**: nessun cambio (baseline B1 0.5).
+- **Risultato (2026-11-22)**: ✅ completato. `tests/authCharacterization.test.ts`
+  (8 test) fissa: 200 senza token, 401 con envelope esatto con token mancante o
+  errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`,
+  `/api/openapi.json` e `/api/docs` pubblici. Sono inoltre **documentati come
+  noti** (e non corretti) il bypass del proxy graph — 502 senza token quando
+  FastAPI è irraggiungibile, da chiudere in B4 — e il `reviewer` raw del body
+  con default `'human'` (B5). Nessun file di produzione modificato.
 
 ### B1 — Principal derivato dal server (additivo, senza enforcement)
 
@@ -643,6 +650,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | 2026-11-22 | — | studio iniziale | — | — | Baseline misurata: L4 ~2.5, RBAC ~1, Neo4j ~0.5 su 5. Nessuno step implementato. |
 | 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
+| 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
