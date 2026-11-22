@@ -66,6 +66,26 @@ describe('A2/A3 — explicit runtime boundary', () => {
     assert.equal((source.match(/function apiProxy\(/g) || []).length, 1);
   });
 
+  it('Vite exposes every TypeScript path alias to the browser bundler', async () => {
+    const [vite, tsconfigSource] = await Promise.all([
+      read('vite.config.ts'),
+      read('tsconfig.json'),
+    ]);
+    const tsconfig = JSON.parse(tsconfigSource) as {
+      compilerOptions: { paths?: Record<string, string[]> };
+    };
+    const aliases = Object.keys(tsconfig.compilerOptions.paths ?? {})
+      .filter((alias) => alias.endsWith('/*'))
+      .map((alias) => alias.slice(0, -2));
+    assert.ok(aliases.length > 0);
+    for (const alias of aliases) {
+      assert.ok(
+        vite.includes(`'${alias}':`),
+        `vite.config.ts must resolve the '${alias}/*' TypeScript alias`,
+      );
+    }
+  });
+
   it('standalone processes are exposed by npm scripts', async () => {
     const pkg = JSON.parse(await read('package.json')) as { scripts: Record<string, string> };
     assert.match(pkg.scripts.api, /httpServer\.ts/);

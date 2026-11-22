@@ -101,6 +101,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@frontend': path.resolve(__dirname, './src/frontend'),
       '@backend': path.resolve(__dirname, './src/backend'),
+      '@shared': path.resolve(__dirname, './src/shared'),
     },
   },
   server: { host: true, port: 5173, open: false },
