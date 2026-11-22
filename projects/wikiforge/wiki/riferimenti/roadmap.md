@@ -118,7 +118,8 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > la tabella del **grado di implementazione raggiunto** (aggiornata a ogni step)
 > sono in [`ROADMAP_Q1_Q2_2027_PLAN.md`](../processi/roadmap-q1-q2-2027-plan.md). Baseline:
 > L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5. Completati **A0** (gate `cq_gaps`
-> corretto, L4 ~3.0/5), **B0** (baseline auth senza cambi funzionali), **B1**
+> corretto, L4 ~3.0/5), **A1** (modello `Finding` unificato e read-only con
+> ID deterministici, L4 ~3.2/5), **B0** (baseline auth senza cambi funzionali), **B1**
 > (Principal server-derived), **B2** (catalogo ruoli), **B3** (gate RBAC opt-in),
 > **B4** (bypass auth chiuso), **B5** (provenance vincolata in strict mode),
 > **B6** (adapter IdP OIDC/SAML/OAuth2), **B7** (UI identità via transport

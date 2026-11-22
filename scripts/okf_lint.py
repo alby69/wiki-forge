@@ -18,7 +18,7 @@ import re
 import os
 from pathlib import Path
 from datetime import datetime
-from okf_common import resolve_dir
+from okf_common import resolve_dir, load_findings_api
 from actor_provenance import ACTOR_RE
 
 try:
@@ -157,11 +157,34 @@ def lint_file(file_path: Path, wiki_root: Path) -> list[str]:
 
     return errors
 
+
+def findings_from_lint(errors: list[str]) -> list:
+    """A1 adapter: each lint violation becomes an advisory finding.
+
+    The error strings already carry the vault-relative path as a prefix, so no
+    second filesystem walk (and certainly no write) is needed here.
+    """
+
+    api = load_findings_api()
+    findings: list = []
+    for message in sorted(set(errors)):
+        target = message.split(":", 1)[0].strip() if ":" in message else "wiki"
+        findings.append(api.make_finding(
+            kind="inconsistency",
+            confidence=1.0,
+            evidence=[message],
+            targetPath=target or "wiki",
+            proposedAction="fix-okf-frontmatter",
+        ))
+    return sorted(findings, key=lambda finding: finding.findingId)
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="OKF v0.2 Bundle Linter and Validator")
     parser.add_argument("wiki_dir", nargs="?", default="wiki", help="Wiki directory (default: wiki)")
     parser.add_argument("--json", action="store_true", help="Output result as JSON object on stdout.")
+    parser.add_argument("--findings", action="store_true", help="Emit unified read-only findings JSON.")
 
     args = parser.parse_args()
     wiki_root = resolve_dir(args.wiki_dir)
@@ -182,6 +205,10 @@ def main():
         file_count += 1
         file_errors = lint_file(file_path, wiki_root)
         all_errors.extend(file_errors)
+
+    if args.findings:
+        load_findings_api().print_findings(findings_from_lint(all_errors))
+        return
 
     if args.json:
         import json

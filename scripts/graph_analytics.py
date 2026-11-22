@@ -12,7 +12,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from okf_common import resolve_dir
+from okf_common import resolve_dir, load_findings_api
 import networkx as nx
 
 
@@ -94,10 +94,70 @@ def analyze_graph(G: nx.Graph, titles: dict[str, str]) -> dict:
     }
 
 
+def collect_node_paths(wiki_dir: Path) -> dict[str, str]:
+    """Map graph node ids (note stems) to vault-relative paths, read-only."""
+
+    paths: dict[str, str] = {}
+    for md_file in sorted(wiki_dir.rglob("*.md")):
+        if md_file.name in ("index.md", "log.md") or "versions" in md_file.parts:
+            continue
+        paths.setdefault(md_file.stem, md_file.relative_to(wiki_dir).as_posix())
+    return paths
+
+
+def findings_from_graph(result: dict, node_paths: dict[str, str] | None = None) -> list:
+    """A1 adapter: orphan nodes and surprising links become advisory findings."""
+
+    api = load_findings_api()
+    paths = node_paths or {}
+    findings: list = []
+
+    gaps = sorted(result.get("knowledge_gaps", []), key=lambda item: str(item.get("node", "")))
+    for gap in gaps:
+        node = str(gap.get("node", ""))
+        degree = int(gap.get("degree", 0) or 0)
+        findings.append(api.make_finding(
+            kind="orphan_node",
+            confidence=0.9 if degree == 0 else 0.7,
+            evidence=[
+                f"node={node}",
+                f"degree={degree}",
+                f"reason={gap.get('reason', '')}",
+            ],
+            targetPath=paths.get(node, f"wiki/{node}.md"),
+            proposedAction="deep-research",
+            slug_source=node,
+        ))
+
+    connections = sorted(
+        result.get("surprising_connections", []),
+        key=lambda item: (str(item.get("source", "")), str(item.get("target", ""))),
+    )
+    for link in connections:
+        source = str(link.get("source", ""))
+        target = str(link.get("target", ""))
+        findings.append(api.make_finding(
+            kind="inconsistency",
+            confidence=0.5,
+            evidence=[
+                f"source={source}",
+                f"target={target}",
+                f"community_source={link.get('community_source', '')}",
+                f"community_target={link.get('community_target', '')}",
+            ],
+            targetPath=paths.get(source, f"wiki/{source}.md"),
+            proposedAction="review-cross-community-link",
+            slug_source=f"{source}->{target}",
+        ))
+
+    return sorted(findings, key=lambda finding: finding.findingId)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Graph Louvain Analytics & Insights")
     parser.add_argument("--wiki-dir", default="wiki", help="Path to wiki directory")
     parser.add_argument("--json", action="store_true", help="Output JSON results")
+    parser.add_argument("--findings", action="store_true", help="Emit unified read-only findings JSON")
 
     args = parser.parse_args()
     wiki_path = resolve_dir(args.wiki_dir)
@@ -111,6 +171,10 @@ def main() -> None:
 
     G, titles = build_graph(wiki_path)
     res = analyze_graph(G, titles)
+
+    if args.findings:
+        load_findings_api().print_findings(findings_from_graph(res, collect_node_paths(wiki_path)))
+        return
 
     if args.json:
         print(json.dumps(res, indent=2))

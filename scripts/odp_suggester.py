@@ -6,7 +6,8 @@ Ontology Design Pattern (ODP) Suggester for Wiki-Forge Knowledge Base.
 Scans wiki notes containing informal properties or triggers, compares against
 ODP catalog (config/odp_catalog.json), and suggests YAML frontmatter updates
 conforming to formal ODP patterns (e.g. Employment, Time-Indexed Property).
-Supports --json output and --write flag.
+Supports --json output and the read-only --findings envelope. There is no
+--write mode: applying a suggestion requires a reviewed changeset (A3).
 """
 
 import os
@@ -15,7 +16,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from okf_common import resolve_dir, resolve_path
+from okf_common import resolve_dir, resolve_path, load_findings_api
 
 try:
     import yaml
@@ -108,11 +109,36 @@ def analyze_note_for_odp(file_path: Path, patterns: list[dict], repo_root: Path)
         "suggestions": suggestions
     }
 
+
+def findings_from_odp(results: list[dict]) -> list:
+    """A1 adapter: one advisory finding per ODP suggestion, no writes."""
+
+    api = load_findings_api()
+    findings: list = []
+    for result in results:
+        path = str(result.get("path", "unknown"))
+        for suggestion in result.get("suggestions", []):
+            pattern_id = str(suggestion.get("pattern_id", ""))
+            findings.append(api.make_finding(
+                kind="odp_suggestion",
+                confidence=0.75,
+                evidence=[
+                    f"pattern={pattern_id}",
+                    *sorted(str(trigger) for trigger in suggestion.get("triggered_by", [])),
+                ],
+                targetPath=path,
+                proposedAction=f"apply-odp:{pattern_id}",
+                slug_source=f"{path}:{pattern_id}",
+            ))
+    return sorted(findings, key=lambda finding: finding.findingId)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Ontology Design Pattern (ODP) Suggester")
     parser.add_argument("--wiki-dir", default="wiki", help="Path to wiki directory (default: wiki)")
     parser.add_argument("--catalog", default="config/odp_catalog.json", help="Path to ODP catalog")
     parser.add_argument("--json", action="store_true", help="Output result as JSON on stdout")
+    parser.add_argument("--findings", action="store_true", help="Emit unified read-only findings JSON")
 
     args = parser.parse_args()
 
@@ -138,7 +164,9 @@ def main():
         "results": results
     }
 
-    if args.json:
+    if args.findings:
+        load_findings_api().print_findings(findings_from_odp(results))
+    elif args.json:
         print(json.dumps(payload, indent=2))
     else:
         print(f"💡 ODP Analysis complete. Found {payload['total_suggestions']} ODP suggestions across {len(results)} notes.\n")

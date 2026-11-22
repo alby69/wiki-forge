@@ -14,7 +14,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from okf_common import resolve_dir, resolve_path
+from okf_common import resolve_dir, resolve_path, load_findings_api
 
 try:
     import yaml
@@ -185,12 +185,46 @@ def generate_report(results: list[dict], output_path: Path) -> str:
     output_path.write_text(report_content, encoding="utf-8")
     return report_content
 
+
+def findings_from_cq(results: list[dict], cq_file: str = "wiki/competency_questions.md") -> list:
+    """A1 adapter: uncovered/partial CQs become advisory read-only findings.
+
+    Consumes the pure ``evaluate_cq`` results; it never calls ``generate_report``
+    and never touches the filesystem.
+    """
+
+    api = load_findings_api()
+    findings: list = []
+    for result in results:
+        status = result.get("status")
+        if status == "COVERED":
+            continue
+        uncovered = status == "UNCOVERED"
+        evidence = [
+            f"cq={result.get('cq_id', '')}",
+            f"status={status}",
+            f"question={result.get('question', '')}",
+            *(str(item) for item in result.get("missing_elements", [])),
+            *(f"matched={item}" for item in result.get("matched_notes", [])),
+        ]
+        findings.append(api.make_finding(
+            kind="knowledge_gap",
+            confidence=0.9 if uncovered else 0.6,
+            evidence=evidence,
+            targetPath=cq_file,
+            proposedAction="deep-research" if uncovered else "add-structured-relations",
+            slug_source=f"{cq_file}:{result.get('cq_id', '')}",
+        ))
+    return sorted(findings, key=lambda finding: finding.findingId)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Competency Questions (CQ) Validation Engine")
     parser.add_argument("--wiki-dir", default="wiki", help="Path to wiki directory (default: wiki)")
     parser.add_argument("--cq-file", default="wiki/competency_questions.md", help="Path to CQ file")
     parser.add_argument("--output", default="output/cq_validation_report.md", help="Output report path")
     parser.add_argument("--json", action="store_true", help="Output result as JSON on stdout")
+    parser.add_argument("--findings", action="store_true", help="Emit unified read-only findings JSON; never write a report")
 
     args = parser.parse_args()
 
@@ -203,6 +237,11 @@ def main():
     notes = load_wiki_notes(wiki_dir)
 
     results = [evaluate_cq(cq, notes) for cq in cqs]
+
+    # A1 — read-only mode returns before the legacy report write.
+    if args.findings:
+        load_findings_api().print_findings(findings_from_cq(results, cq_file=args.cq_file))
+        return
 
     covered_count = sum(1 for r in results if r["status"] == "COVERED")
     total_count = len(results)

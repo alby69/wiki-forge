@@ -44,6 +44,29 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def ensure_repo_root_on_path() -> None:
+    """Make `src.backend.*` importable from a script launched by the runner.
+
+    The runner spawns `python <installation>/scripts/<tool>.py` with the
+    *project* directory as cwd, so the repository root is not on `sys.path`.
+    This is a side-effect-free path bootstrap shared by the A1 detectors.
+    """
+    root = str(repo_root())
+    if root not in sys.path:
+        sys.path.insert(0, root)
+
+
+def load_findings_api():
+    """Lazily import the A1 read-only model (only used by `--findings`).
+
+    Legacy invocations must not depend on the installation's `src/` tree: some
+    embedders copy only `scripts/` into the project workspace.
+    """
+    ensure_repo_root_on_path()
+    from src.backend.wikiforge.core import findings
+    return findings
+
+
 ACTIVE_PROJECT_ENV = "WIKIFORGE_PROJECT_ID"
 
 

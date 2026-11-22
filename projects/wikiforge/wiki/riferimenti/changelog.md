@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### A1 — Modello `Finding` unificato (solo lettura)
+
+- **Modello condiviso**: nuovo `src/backend/wikiforge/core/findings.py` con dataclass `Finding` immutabile (`findingId`, `kind`, `confidence`, `evidence`, `targetPath`, `proposedAction`), costruttore validato `make_finding()` (4 kind ammessi, confidence 0–1, proposedAction ed evidence non vuote), `findings_envelope()` e `print_findings()`. Schema unico `wikiforge.finding/v1`.
+- **ID deterministici**: `<kind>-<slug>-<sha256[:12]>` calcolato su evidence canonica ordinata e de-duplicata più `target=` e `action=`, quindi indipendente dall'ordine di iterazione del detector (filesystem, set, archi networkx). Due run consecutivi producono gli stessi ID.
+- **Adattatori read-only**: `cq_validator.py`, `graph_analytics.py`, `odp_suggester.py` e `okf_lint.py` espongono il flag additivo `--findings`, che stampa l'envelope unico e ritorna prima di qualunque scrittura. `cq_validator` non genera il report in questa modalità; `--json` e l'output testuale restano byte-identici, nessuna classe di sicurezza o parametro del registry cambia. Il modello è importato in modo lazy (`okf_common.load_findings_api()`) per non rompere gli embedder che copiano solo `scripts/`. Corretta la docstring di `odp_suggester.py` che citava un inesistente `--write`.
+- **Verifica**: `tests/python/test_findings.py` (4 test: schema unico, validazione, determinismo/order-independence, snapshot dell'albero su due run dei quattro comandi); 91 test Python verdi, suite Node verde, `gen_script_registry.py --check` verde (29 script invariati). Gradi A2 3.5, A3 3, L4 ~3.2/5.
+
 ### B7 — UI identità via solo transport tipizzato
 
 - **Nuova route additiva**: `GET /api/auth/me` dichiarata in `src/shared/api/contracts.ts` (operationId `auth.me`, schema `AuthIdentity`, DTO `AuthIdentityDto`). È pubblica per la scoperta anonima (`authenticated=false`, `idpConfigured=true`), ma un Bearer *fornito e invalido* viene respinto con l'envelope 401 esatto di B0 prima del dispatch. Nessun endpoint, metodo pubblico o envelope esistente modificato; i 5 endpoint gateway-only restano invariati.

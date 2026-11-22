@@ -221,6 +221,17 @@ def render_docs(schemas: dict[str, dict[str, Any]]) -> str:
         "- **Override arg**: quando gli argomenti risolti soddisfano la condizione, la classe "
         "di sicurezza cambia (es. `docs_wiki_drift --check` diventa `read-only`). Il Policy "
         "Agent F5 classifica sempre l'invocazione effettiva.\n"
+        "- **A1 — `--findings` (sola lettura)**: `okf_lint`, `graph_analytics`, "
+        "`odp_suggester` e `cq_validator` accettano un flag additivo `--findings` che stampa "
+        "su stdout un envelope unico `{\"schema\": \"wikiforge.finding/v1\", \"count\": N, "
+        "\"findings\": [...]}`. Ogni finding ha `findingId`, `kind`, `confidence`, `evidence`, "
+        "`targetPath` e `proposedAction`; gli ID sono deterministici "
+        "(`<kind>-<slug>-<hash(evidence)>`). La modalità non scrive alcun file: anche per "
+        "`cq_validator` il report `output/cq_validation_report.md` non viene generato. Il "
+        "modello condiviso risiede in `src/backend/wikiforge/core/findings.py` ed è importato "
+        "in modo lazy solo quando il flag è presente, così i percorsi legacy restano invariati "
+        "anche negli embedder che copiano solo `scripts/`. `--json` e l'output testuale restano "
+        "byte-identici.\n"
     )
 
 
