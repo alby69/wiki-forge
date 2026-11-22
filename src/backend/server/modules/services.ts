@@ -14,6 +14,7 @@ import type { ChangesetStore } from '../changesetStore';
 import type { Scheduler } from '../scheduler/scheduler';
 import type { ApprovalStore } from '../scheduler/approvalStore';
 import type { EventTriggerBus } from '../scheduler/eventTriggers';
+import type { ScriptScheduleCreateInput } from '../scheduler/scriptJobStore';
 import type { MessageBus } from '../bus/messageBus';
 import type { PythonTool } from './pythonTool';
 import type { ScriptDef, ChatRequest } from '../agentServer';
@@ -100,6 +101,9 @@ export interface SchedulerServices {
   ): Promise<{ approval?: JsonObject; error?: string }>;
   addScheduleClient(res: import('node:http').ServerResponse): () => void;
   snapshotStatus(): JsonObject | null;
+  /** S3: persist + hot-reload a script job; throws ScriptScheduleError on failure. */
+  createScriptJob(input: ScriptScheduleCreateInput): Promise<{ job: JsonObject; warnings: string[] }>;
+  deleteScriptJob(jobId: string): Promise<{ removed: boolean }>;
 }
 
 /** Everything the extracted modules need; still additive to AgentServer's API. */

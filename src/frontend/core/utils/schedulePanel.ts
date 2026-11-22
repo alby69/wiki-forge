@@ -382,6 +382,15 @@ export function schedulerEventToLogLine(event: unknown, timestamp: string): Sche
         timestamp,
       };
     }
+    case 'jobs_changed': {
+      const added = stringList(item.added);
+      const removed = stringList(item.removed);
+      return {
+        type: 'info',
+        text: `🔄 Scheduler aggiornato: +${added.length} job${added.length ? ` (${added.join(', ')})` : ''}, -${removed.length}${removed.length ? ` (${removed.join(', ')})` : ''}`,
+        timestamp,
+      };
+    }
     case 'job_finished': {
       const status = asStatus(item.status);
       const meta = statusLabel(status);

@@ -31,6 +31,8 @@ test('OpenAPI catalogue is the single source of truth', () => {
   assert.ok(doc.paths['/api/wiki/save']?.post);
   assert.ok(doc.paths['/api/projects/{id}/config']?.put);
   assert.ok(doc.paths['/api/ke/schedule/{jobId}/run']?.post);
+  assert.ok(doc.paths['/api/scripts/schedule']?.post);
+  assert.ok(doc.paths['/api/scripts/schedule/{jobId}']?.delete);
   assert.ok(doc.paths['/api/v1/changesets']?.get);
   assert.ok(doc.paths['/api/docs']?.get);
   assert.equal(Object.keys(SCHEMAS).length > 20, true);

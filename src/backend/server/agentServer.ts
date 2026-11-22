@@ -53,7 +53,17 @@ import {
   SchedulerEvent,
   TriggerEvent,
 } from './scheduler/scheduler';
-import { buildSyntheticUseCases, loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
+import {
+  buildSyntheticUseCases,
+  loadScheduleConfig,
+  SchedulerConfig,
+  type ScheduleConfigResult,
+} from './scheduler/jobStore';
+import {
+  createScriptJob,
+  deleteScriptJob,
+  type ScriptScheduleCreateInput,
+} from './scheduler/scriptJobStore';
 import { isMutatingScript, PolicyAgent, PolicyStep } from './scheduler/policyAgent';
 import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
@@ -741,6 +751,13 @@ export class AgentServer {
   private schedulerConfig?: SchedulerConfig;
   /** KE Use Cases plus the one-step synthetic entries generated for script jobs. */
   private scheduledUseCases: Record<string, KEUseCaseDef> = {};
+  /** Immutable catalog projection; reused on every S3 hot-reload. */
+  private readonly baseUseCases: Record<string, KEUseCaseDef> = Object.fromEntries(
+    Object.values(KE_USE_CASES).map((useCase) => [
+      useCase.id,
+      { id: useCase.id, title: useCase.title, steps: useCase.steps },
+    ])
+  ) as Record<string, KEUseCaseDef>;
   private policyAgent?: PolicyAgent;
   private approvalStore?: ApprovalStore;
   private eventBus?: EventTriggerBus;
@@ -853,6 +870,8 @@ export class AgentServer {
       },
       addScheduleClient: (res) => this.addScheduleClient(res),
       snapshotStatus: () => (this.scheduler?.getStatus() as unknown as Record<string, unknown> | undefined) ?? null,
+      createScriptJob: (input) => this.createScriptJob(input),
+      deleteScriptJob: (jobId) => this.deleteScriptJob(jobId),
     };
 
     const modules = [
@@ -903,18 +922,37 @@ export class AgentServer {
   /** Load both schedule files and start the KE scheduler. Idempotent. */
   public async startScheduler(): Promise<void> {
     if (this.scheduler) return;
-    const useCases = Object.fromEntries(
-      Object.values(KE_USE_CASES).map((useCase) => [
-        useCase.id,
-        { id: useCase.id, title: useCase.title, steps: useCase.steps },
-      ])
-    ) as Record<string, KEUseCaseDef>;
-    const loaded = await loadScheduleConfig(this.rootDir, useCases);
+    const loaded = await loadScheduleConfig(this.rootDir, this.baseUseCases);
+    await this.activateSchedule(loaded, []);
+  }
+
+  /**
+   * S3 — apply a freshly loaded schedule to the live process. `scheduledUseCases`
+   * and `Scheduler.jobs` are mutated in place because both are shared by
+   * reference with the running scheduler and the event trigger bus.
+   */
+  private async activateSchedule(
+    loaded: ScheduleConfigResult,
+    previousIds: string[]
+  ): Promise<{ added: string[]; removed: string[] }> {
     const synthetic = buildSyntheticUseCases(loaded.jobs);
-    this.scheduledUseCases = { ...useCases, ...synthetic };
+    const nextUseCases = { ...this.baseUseCases, ...synthetic };
+    for (const key of Object.keys(this.scheduledUseCases)) delete this.scheduledUseCases[key];
+    Object.assign(this.scheduledUseCases, nextUseCases);
     this.schedulerConfig = loaded.config;
     this.scheduleConfigErrors = loaded.errors;
-    if (loaded.jobs.length === 0) return;
+
+    const before = new Set(previousIds);
+    const after = new Set(loaded.jobs.map((job) => job.id));
+    const added = loaded.jobs.map((job) => job.id).filter((id) => !before.has(id));
+    const removed = [...before].filter((id) => !after.has(id));
+    for (const id of removed) this.eventBus?.cancelJob(id);
+
+    if (this.scheduler) {
+      await this.scheduler.replaceJobs(loaded.jobs);
+      return { added, removed };
+    }
+    if (loaded.jobs.length === 0) return { added, removed };
 
     this.approvalStore = new ApprovalStore({
       filePath: path.join(this.rootDir, '.wiki-forge', 'scheduler-approvals.json'),
@@ -946,6 +984,48 @@ export class AgentServer {
       onEvent: (event) => this.broadcastScheduleEvent(event),
     });
     await scheduler.start();
+    return { added, removed };
+  }
+
+  /** S3: share the persistence + reload flow with the schedule API module. */
+  private async createScriptJob(input: ScriptScheduleCreateInput): Promise<{ job: Record<string, unknown>; warnings: string[] }> {
+    const before = this.scheduler?.getStatus().jobs.map((entry) => entry.job.id as string) ?? [];
+    const timezone = this.schedulerConfig?.timezone ?? 'UTC';
+    const result = await createScriptJob(this.rootDir, input, this.baseUseCases, timezone);
+    const changes = await this.reloadSchedule(before);
+    const job = this.scheduler?.getStatus().jobs
+      .find((entry) => entry.job.id === result.job.id)
+      ?.job as Record<string, unknown> | undefined;
+    this.publishScheduleChange(changes);
+    return { job: job ?? (result.job as unknown as Record<string, unknown>), warnings: result.warnings };
+  }
+
+  /** S3: share the persistence + reload flow with the schedule API module. */
+  private async deleteScriptJob(jobId: string): Promise<{ removed: boolean }> {
+    const before = this.scheduler?.getStatus().jobs.map((entry) => entry.job.id as string) ?? [];
+    const timezone = this.schedulerConfig?.timezone ?? 'UTC';
+    const result = await deleteScriptJob(this.rootDir, jobId, this.baseUseCases, timezone);
+    const changes = await this.reloadSchedule(before);
+    this.publishScheduleChange(changes);
+    return { removed: result.removed };
+  }
+
+  /** Send a schedule mutation to SSE clients and local scheduler subscribers. */
+  private publishScheduleChange(changes: { added: string[]; removed: string[] }): void {
+    const event = {
+      type: 'jobs_changed' as const,
+      at: new Date().toISOString(),
+      added: changes.added,
+      removed: changes.removed,
+    };
+    if (this.scheduler) this.scheduler.publishEvent(event);
+    else this.broadcastScheduleEvent(event);
+  }
+
+  /** Re-read both TOML files after an S3 mutation and reconcile live state. */
+  private async reloadSchedule(previousIds: string[]): Promise<{ added: string[]; removed: string[] }> {
+    const loaded = await loadScheduleConfig(this.rootDir, this.baseUseCases);
+    return this.activateSchedule(loaded, previousIds);
   }
 
   /**

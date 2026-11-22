@@ -91,6 +91,12 @@ export type SchedulerEvent =
   | { type: 'event_queued'; jobId: string; event: TriggerEvent; fireAt: string }
   | { type: 'event_triggered'; jobId: string; event: TriggerEvent; at: string }
   | {
+      type: 'jobs_changed';
+      at: string;
+      added?: string[];
+      removed?: string[];
+    }
+  | {
       type: 'job_retry';
       jobId: string;
       attempt: number;
@@ -240,6 +246,11 @@ export class Scheduler {
       options.clearTimeoutFn ?? ((handle) => clearTimeout(handle as NodeJS.Timeout));
     this.logDir = path.resolve(options.rootDir, this.config.logDir);
     this.auditPath = path.join(this.logDir, 'audit.jsonl');
+  }
+
+  /** Publish an externally generated event (S3 schedule mutations) to all listeners. */
+  publishEvent(event: SchedulerEvent): void {
+    this.emit(event);
   }
 
   /**
@@ -424,6 +435,39 @@ export class Scheduler {
       schedule: expression,
     } };
     await this.persist();
+  }
+
+  /**
+   * S3 — hot-reload the job array in place. `EventTriggerBus` and all callers
+   * hold the same array reference, so no re-wiring is needed after this call.
+   */
+  async replaceJobs(jobs: JobDef[]): Promise<{ added: string[]; removed: string[] }> {
+    const before = new Set(this.jobs.map((job) => job.id));
+    const after = new Set(jobs.map((job) => job.id));
+    const added = jobs.map((job) => job.id).filter((id) => !before.has(id));
+    const removed = [...before].filter((id) => !after.has(id));
+
+    this.jobs.splice(0, this.jobs.length, ...jobs.map((job) => ({ ...job })));
+    for (const job of jobs) {
+      if (!this.state.jobs[job.id]) this.state.jobs[job.id] = this.defaultState(job);
+      if (this.state.overrides?.[job.id]) {
+        const override = this.state.overrides[job.id];
+        if (typeof override.enabled === 'boolean') job.enabled = override.enabled;
+        if (typeof override.schedule === 'string') {
+          try {
+            job.schedule = parseSchedule(override.schedule, this.config.timezone);
+          } catch {
+            // Keep the TOML cron when a persisted override is corrupt.
+          }
+        }
+      }
+    }
+    for (const id of removed) {
+      delete this.state.jobs[id];
+      if (this.state.overrides) delete this.state.overrides[id];
+    }
+    await this.persist();
+    return { added, removed };
   }
 
   /** `POST /api/ke/schedule/:id/cancel` — abort the active run, if any. */

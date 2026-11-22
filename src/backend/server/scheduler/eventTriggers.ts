@@ -108,6 +108,15 @@ export class EventTriggerBus {
     }));
   }
 
+  /** S3: drop pending debounce buckets for a job removed by the schedule API. */
+  public cancelJob(jobId: string): void {
+    for (const [key, bucket] of [...this.pending.entries()]) {
+      if (bucket.job.id !== jobId) continue;
+      this.clearTimeoutFn(bucket.handle);
+      this.pending.delete(key);
+    }
+  }
+
   /** Cancel all quiet-period timers (used on scheduler shutdown). */
   public stop(): void {
     for (const bucket of this.pending.values()) this.clearTimeoutFn(bucket.handle);

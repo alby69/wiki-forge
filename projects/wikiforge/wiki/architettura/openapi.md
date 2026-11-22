@@ -177,7 +177,7 @@ I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (87 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (89 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -202,6 +202,10 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (87 id, assertion c
   contratto (per esempio `wiki.delete { path }`, `wiki.rename { from, to }`,
   `wiki.upload { path, content, encoding }`) e converte i mismatch storici
   lato facciata.
+- Le due route S3 `scripts.schedule` e `scripts.unschedule` seguono lo stesso
+  percorso: dichiarate una sola volta in `contracts.ts`, tipizzate in
+  `endpoints.ts`, esposte in `/api/openapi.json` e servite dal bus tramite
+  `SchedulerModule`. Nessun endpoint è stato aggiunto a mano fuori dal catalogo.
 
 ## 7. Stato del refactoring
 
@@ -209,7 +213,7 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (87 id, assertion c
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
 | 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 82 comandi |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (87 id), client generato, `apiBus`, facciate senza `fetch` diretto |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (89 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

@@ -1,6 +1,6 @@
 # Piano — Agenti schedulati per la manutenzione autonoma della wiki (KE Workbench)
 
-> **Stato: piano approvato — F0–F6 implementati; S0, S1 e S2 completate.** Le decisioni
+> **Stato: piano approvato — F0–F6 implementati; S0, S1, S2 e S3 completate.** Le decisioni
 > di §12 sono state confermate: orari OK, `auto_apply = false`, parser cron con
 > la libreria leggera `cron-parser`. F0 è un refactor trasparente, F1 valida la
 > configurazione, F2 espone la classe `Scheduler` con clock, lock, stato e timer
@@ -9,7 +9,8 @@
 > Policy Agent, trigger da eventi e approvazione umana. S0 centralizza la
 > classificazione di sicurezza degli script; S1 aggiunge i job script con use case
 > sintetici e classificazione arg-aware; S2 completa il flusso F6 di approvazione
-> di quei job (argomenti visibili, audit dedicato e regressioni UI).
+> di quei job (argomenti visibili, audit dedicato e regressioni UI); S3 aggiunge
+> le route API per creare/rimuovere job script con persistenza TOML e hot-reload.
 >
 > Autore: analisi del codice esistente (`agentServer.ts`, `scripts/`, `config/`).
 > Pubblico: Knowledge Engineer e manutentore del progetto.
@@ -28,7 +29,8 @@
 | S0 | ✅ | `script_schema.py::SCRIPT_AUTOMATION`, `gen_script_registry.py`, `docs/SCRIPT_AUTOMATION_REFERENCE.md`, `scheduler/scriptSafety.ts`, test SSOT |
 | S1 | ✅ | `scheduler/jobStore.ts` (`jobKind`, `scriptId`, `use_case XOR script`), `config/script_schedules.toml`, use case sintetici `__script__:<id>`, F5 arg-aware, `tests/agentScriptJobs.test.ts` |
 | S2 | ✅ | `scheduler/approvalStore.ts` (`jobKind`, `scriptArgs`), `agentServer.ts` (registry combinata in `decideApproval`, merge argomenti, audit), `scheduler.ts` (`redactValue`, eventi e audit arricchiti), `schedulePanel.ts` e `KEWorkbenchModal.ts` (badge e args), test di regressione |
-| S3–S6 | ⬜ | Nuove route API, UI, proiezione wiki e collaudo (vedi §13) |
+| S3 | ✅ | `shared/api/contracts.ts` e `endpoints.ts` (`scripts.schedule`, `scripts.unschedule`), `scheduler/scriptJobStore.ts` (TOML atomico), `scheduler.ts` (`replaceJobs`, `publishEvent`), `eventTriggers.ts` (`cancelJob`), `agentServer.ts` (`activateSchedule`/`reloadSchedule`), `tests/scriptScheduleApi.test.ts` |
+| S4–S6 | ⬜ | Pulsante UI, proiezione wiki e collaudo finale (vedi §13) |
 
 ---
 
@@ -366,13 +368,15 @@ una `policy_decision`, un'`approval_required` o un `event_triggered`.
 | **S0** ✅ | SSOT di sicurezza e automazione degli script | ½ giorno | ✅ Verificato: i 29 script hanno metadati `automation`; registry TS e `docs/SCRIPT_AUTOMATION_REFERENCE.md` sono generati e confrontati da `--check`; `MUTATING_SCRIPT_IDS` è derivato con fallback legacy e fail-closed |
 | **S1** ✅ | Job script, use case sintetici e F5 arg-aware | 1 giorno | ✅ Verificato: `use_case XOR script`, merge dei due file TOML con id duplicati respinti, job mutanti forzati disabilitati, `docs_wiki_drift --check` classificato read-only; 3 test jobStore e 2 test end-to-end in `tests/agentScriptJobs.test.ts` |
 | **S2** ✅ | Approvazione e audit dei job script | ½ giorno | ✅ Verificato: `decideApproval()` risolve anche i use case sintetici; staging con `jobKind`/`scriptArgs` redatti; audit `actor: human` con `scriptId`; badge "job script" e args nella UI; regressioni in `agentScriptJobs`, `schedulePanel`, `keWorkbenchSchedule`, `agentSchedulerEngine` |
+| **S3** ✅ | Route API di scheduling e hot-reload | 1 giorno | ✅ Verificato: `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId` nel catalogo (89 id), scrittura atomica del TOML con header preservato, duplicati 409, blocked 400, mutanti forzati disabilitati, job attivi subito e dopo restart; 6 test end-to-end in `tests/scriptScheduleApi.test.ts` |
 
-**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1 → S2.
+**Sequenza completata**: F0 → F1 → F2 → F3 → F4 → collaudo → F5 → F6 → S0 → S1 → S2 → S3.
 La wiki viene rigenerata dalla proiezione di `docs/`; tutti gli step che scrivono
 (compreso `docs_wiki_drift` senza `--check`) restano sottoposti a decisione umana
 esplicita F6. S0 aggiorna solo la classificazione; S1 aggiunge i job script senza
 modificare i 9 job Use Case esistenti né il motore dello scheduler; S2 chiude il
-cerchio F6 per quei job senza introdurre nuove route API.
+cerchio F6 per quei job; S3 rende i job script creabili/removibili via API con
+effetto immediato, mantenendo il TOML come fonte di verità.
 
 ---
 
@@ -478,7 +482,7 @@ cerchio F6 per quei job senza introdurre nuove route API.
 | **S0** | `automation` in `SCRIPT_SCHEMAS`, catalogo generato, `MUTATING_SCRIPT_IDS` derivato, fail-closed | ✅ |
 | **S1** | `JobDef.jobKind`/`scriptId`, `use_case XOR script`, merge di `config/script_schedules.toml`, use case sintetici, F5 arg-aware | ✅ |
 | **S2** | Rifinitura del flusso di approvazione dei job script (messaggi, audit e test di regressione UI) | ✅ |
-| **S3** | Route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId`, contratti OpenAPI generati | ⬜ |
+| **S3** | Route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId`, persistenza TOML atomica e hot-reload | ✅ |
 | **S4** | Pulsante **🕒 Schedula** in `ToolsModal`, badge di sicurezza, gestione nella tab Agenti & Schedule | ⬜ |
 | **S5** | Aggiornamento indici/mapping e rigenerazione della proiezione wiki | ⬜ |
 | **S6** | Collaudo completo, commit e push per fase | ⬜ |
@@ -523,3 +527,33 @@ cerchio F6 per quei job senza introdurre nuove route API.
   `okf_log` con scrittura di `wiki/log.md` e audit dedicato; `schedulePanel` e
   `keWorkbenchSchedule` verificano il mapping dei nuovi campi; `agentSchedulerEngine`
   verifica la redazione ricorsiva degli argomenti. Nessuna nuova route API.
+
+### S3 — API di scheduling e hot-reload
+
+- **Contratti**: `scripts.schedule` (`POST /api/scripts/schedule`) e
+  `scripts.unschedule` (`DELETE /api/scripts/schedule/:jobId`) sono dichiarati
+  una sola volta in `contracts.ts`; `endpoints.ts` aggiunge i tipi request/response
+  (l'assertione copre ora 89 id) e la spec OpenAPI 3.1 li include senza YAML
+  manuale. Nessun endpoint o metodo pubblico esistente è stato cambiato.
+- **Persistenza**: `scriptJobStore.ts` riscrive `config/script_schedules.toml` in
+  modo atomico con `atomicWriteFile`, conservando il commento iniziale scritto a
+  mano. La validazione non è duplicata: si chiama `parseScriptScheduleConfig()`
+  (S1), che verifica script noto/schedulabile, cron, argomenti e classe di
+  sicurezza. Il file resta l'unica fonte di verità, quindi i job sopravvivono al
+  riavvio del processo.
+- **Sicurezza**: id duplicati rispetto a `script_schedules.toml` o
+  `agent_schedule.toml` → 409; script `blocked`, non schedulabili o sconosciuti →
+  400; cron invalido → 400. I job mutanti vengono creati con `enabled = false` e
+  un `warnings` esplicito, senza mai partire in automatico. La DELETE accetta
+  solo `jobKind = script` e respinge i job Use Case del file principale.
+- **Hot-reload**: `AgentServer` rilegge i due file, ricostruisce i use case
+  sintetici mutatendo `scheduledUseCases` nello stesso oggetto e chiama
+  `Scheduler.replaceJobs()`, che sostituisce l'array in place condiviso con
+  l'`EventTriggerBus`. `cancelJob()` elimina i debounce pendenti dei job rimossi.
+  L'evento SSE `jobs_changed` è mostrato nel log live (`schedulerEventToLogLine`),
+  quindi i nuovi job sono attivi immediatamente senza riavvio.
+- **Test**: `tests/scriptScheduleApi.test.ts` (6 test) copre creazione read-only
+  con header preservato, mutanti disabilitati, rifiuti 400/409, evento
+  `jobs_changed`, cancellazione dei trigger in coda e persistenza dopo restart;
+  `openapi.test.ts` e `schedulePanel.test.ts` estendono la copertura alle nuove
+  route e al nuovo evento.

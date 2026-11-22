@@ -258,6 +258,15 @@ describe('KE Workbench schedule panel helpers (F4)', () => {
     assert.strictEqual(triggered?.type, 'start');
     assert.ok(triggered?.text.includes('wiki/a.md'));
 
+    // S3: schedule mutations are visible in the live console.
+    const changed = schedulerEventToLogLine(
+      { type: 'jobs_changed', added: ['api-created-lint'], removed: ['old-job'] },
+      '10:06:00'
+    );
+    assert.strictEqual(changed?.type, 'info');
+    assert.ok(changed?.text.includes('api-created-lint'), changed?.text);
+    assert.ok(changed?.text.includes('old-job'), changed?.text);
+
     const skipped = schedulerEventToLogLine(
       { type: 'job_skipped', jobId: 'j1', reason: 'policy skip' },
       '10:05:01'

@@ -14,6 +14,7 @@ import { error, json, sse, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { ApprovalStatus } from '../scheduler/approvalStore';
 import { isSupportedTriggerEvent } from '../scheduler/eventTriggers';
+import { ScriptScheduleError, type ScriptScheduleCreateInput } from '../scheduler/scriptJobStore';
 import type { TriggerEvent } from '../scheduler/scheduler';
 import type { DomainServices, JsonObject } from './services';
 
@@ -44,6 +45,8 @@ export class SchedulerModule implements DomainModule {
     bus.register<Payload>('schedule.approvals', (payload) => this.approvals(payload));
     bus.register<Payload>('schedule.trigger', (payload) => this.trigger(payload));
     bus.register<Payload>('schedule.approvalDecision', (payload) => this.approvalDecision(payload));
+    bus.register<Payload>('scripts.schedule', (payload) => this.scheduleScript(payload));
+    bus.register<Payload>('scripts.unschedule', (payload) => this.unscheduleScript(payload));
   }
 
   private status(): ApiResult {
@@ -217,6 +220,55 @@ export class SchedulerModule implements DomainModule {
     );
     const status = result.error && !result.approval ? 404 : result.error ? 500 : 200;
     return json({ success: !result.error, ...result }, status);
+  }
+
+  /** S3 — create a persisted script job and hot-reload the live schedule. */
+  private async scheduleScript(payload: Payload): Promise<ApiResult> {
+    const id = asString(payload.id)?.trim();
+    const scriptId = asString(payload.scriptId)?.trim();
+    if (!id || !scriptId) return error('id and scriptId are required', 400);
+    if (payload.args !== undefined && (typeof payload.args !== 'object' || payload.args === null || Array.isArray(payload.args))) {
+      return error('args must be an object', 400);
+    }
+    if (payload.enabled !== undefined && typeof payload.enabled !== 'boolean') {
+      return error('enabled must be a boolean', 400);
+    }
+    for (const key of ['debounceSeconds', 'maxRetries'] as const) {
+      if (payload[key] !== undefined && typeof payload[key] !== 'number') {
+        return error(`${key} must be a number`, 400);
+      }
+    }
+
+    const input: ScriptScheduleCreateInput = { id, scriptId };
+    if (typeof payload.schedule === 'string') input.schedule = payload.schedule;
+    if (payload.args) input.args = payload.args as JsonObject;
+    if (typeof payload.project === 'string') input.project = payload.project;
+    if (typeof payload.role === 'string') input.role = payload.role;
+    if (typeof payload.enabled === 'boolean') input.enabled = payload.enabled;
+    if (typeof payload.eventTrigger === 'string') input.eventTrigger = payload.eventTrigger;
+    if (typeof payload.debounceSeconds === 'number') input.debounceSeconds = payload.debounceSeconds;
+    if (typeof payload.maxRetries === 'number') input.maxRetries = payload.maxRetries;
+
+    try {
+      const result = await this.services.createScriptJob(input);
+      return json({ success: true, job: result.job, errors: [], warnings: result.warnings });
+    } catch (err) {
+      const status = err instanceof ScriptScheduleError ? err.status : 500;
+      return error(err instanceof Error ? err.message : String(err), status);
+    }
+  }
+
+  /** S3 — remove a persisted script job; Use Case jobs are never touched. */
+  private async unscheduleScript(payload: Payload): Promise<ApiResult> {
+    const jobId = asString(payload.jobId)?.trim();
+    if (!jobId) return error('jobId is required', 400);
+    try {
+      const result = await this.services.deleteScriptJob(jobId);
+      return json({ success: true, removed: result.removed, errors: [] });
+    } catch (err) {
+      const status = err instanceof ScriptScheduleError ? err.status : 500;
+      return error(err instanceof Error ? err.message : String(err), status);
+    }
   }
 }
 

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S3 — Automazione script: API di scheduling e hot-reload
+
+- **Nuove route dichiarative**: `POST /api/scripts/schedule` (`scripts.schedule`) e `DELETE /api/scripts/schedule/:jobId` (`scripts.unschedule`) aggiunte a `ROUTES`/`EndpointTypes` (89 id): OpenAPI 3.1 e tipi TS generati dagli stessi costrutti, senza YAML manuale. Envelope, endpoint esistenti e metodi pubblici di `AgentServer` invariati.
+- **Persistenza atomica**: nuovo `scheduler/scriptJobStore.ts` scrive `config/script_schedules.toml` con `atomicWriteFile`, preserva l'header scritto a mano e riutilizza `parseScriptScheduleConfig()` come unica validazione (script noto e schedulabile, cron, argomenti, id duplicati anche rispetto a `agent_schedule.toml`). Il TOML resta la fonte di verità: i job creati sopravvivono al restart.
+- **Sicurezza**: gli script `blocked`/non schedulabili sono respinti con 400, gli id duplicati con 409; i job mutanti vengono accettati ma forzati a `enabled = false` con un `warnings` che ricorda l'approvazione F6. La DELETE opera solo sui job `jobKind = script` e non tocca i 9 job Use Case.
+- **Hot-reload**: `Scheduler.replaceJobs()` aggiorna l'array dei job in place, la registry `scheduledUseCases` viene ricostruita nello stesso oggetto e `EventTriggerBus.cancelJob()` elimina i debounce pendenti dei job rimossi. L'evento SSE `jobs_changed` viene mostrato nel log live del Workbench, così i job sono attivi immediatamente senza riavvio.
+- **Test**: 6 nuovi test end-to-end in `tests/scriptScheduleApi.test.ts` (creazione read-only, mutanti disabilitati, rifiuti, evento bus, cancellazione trigger, restart) più copertura in `openapi.test.ts` e `schedulePanel.test.ts`. Tutte le validazioni Node/Python e i drift check restano verdi.
+
 ### S2 — Automazione script: approvazione e audit dei job script
 
 - **Approvazione F6 dei job script**: `decideApproval()` risolve ora la registry combinata (`scheduledUseCases`) oltre a `KE_USE_CASES`: le richieste nate da un use case sintetico `__script__:<id>` possono finalmente essere approvate. Envelope e metodi pubblici di `AgentServer` invariati.

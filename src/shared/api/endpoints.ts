@@ -120,6 +120,25 @@ export type EndpointTypes = {
     req: WithBody<{ scriptId?: string; script?: string; args?: Json; projectId?: string }>;
     res: StreamResponse;
   };
+  'scripts.schedule': {
+    req: WithBody<{
+      id: string;
+      scriptId: string;
+      schedule?: string;
+      args?: Json;
+      project?: string;
+      role?: string;
+      enabled?: boolean;
+      eventTrigger?: string;
+      debounceSeconds?: number;
+      maxRetries?: number;
+    }>;
+    res: Ok<{ job: SchedulerJobDto; errors?: string[]; warnings?: string[] }>;
+  };
+  'scripts.unschedule': {
+    req: WithParams<{ jobId: string | number }>;
+    res: Ok<{ removed: boolean; errors?: string[] }>;
+  };
   'ke.useCases.list': { req: EmptyRequest; res: Ok<{ useCases: UseCaseDefDto[] }> };
   'ke.useCases.execute': {
     req: WithBody<{ useCaseId: string; stepIndex?: number; args?: Json; projectId?: string }>;
