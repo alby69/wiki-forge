@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (14/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (15/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -70,7 +70,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B7 | ✅ | `shared/api/types.ts` (`AuthIdentityDto`) + `contracts.ts` (`auth.me`, schema `AuthIdentity`), `endpoints.ts`, `agentServer.ts` (handler bus + route pubblica), `auth/rbacMiddleware.ts` (ruolo Reader), `frontend/api/client.ts` (`getBearerToken`), `frontend/core/auth.ts`, `frontend/store/appStore.ts` (slice `auth`), `frontend/core/apiBus.ts`, `storage/ApiStorage.ts`, `components/ui/Header.ts` (chip/gating), `components/review/ReviewStudio.ts` e `components/ke/KEWorkbenchModal.ts` (attore strict), `frontend/index.ts` (refresh), `tests/authUi.test.ts` (13 test), `tests/openapi.test.ts` (4 assert) |
 | C0 | ✅ | `[neo4j]` in 3 config, `config_schema.py`, `requirements.txt`, `tests/python/test_config_schema.py` (6 nuovi test) |
 | C1 | ✅ | `src/backend/wikiforge/semantics/neo4j_client.py` (`Neo4jConfig.from_config`/`from_env`, `Neo4jClient.connect`/`verify_connectivity`/`session`/`close`, lazy import, DI), `graph_watcher.py` e `graph_rag_pipeline.py` (parametri opzionali additivi), `tests/python/test_neo4j_client.py` (9 test) |
-| C2 | ⬜ | — |
+| C2 | ✅ | `watcher/graph_watcher.py` (MERGE parametrizzato, hash/revision, delete con slug annidato, `on_moved` + debounce, `on_event` strutturato, `--project`), `tests/python/test_graph_watcher_neo4j.py` (9 test) |
 | C3 | ⬜ | — |
 | C4 | ⬜ | — |
 | C5 | ⬜ | — |
@@ -92,7 +92,7 @@ A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
-dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; gli altri valori coincidono ancora con “Oggi”).
+dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -109,13 +109,13 @@ dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; gli altri valori coinci
 | B5 | UI identità e sessione | 0 | 5 | 5 |
 | — | **Complessivo RBAC** | **~1** | **5** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 2.5 | 5 |
-| C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 1 | 5 |
+| C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 3.5 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
 | C4 | Interrogazione Cypher live | 0 | 0 | 5 |
 | C5 | Sync Neo4j → vault Markdown | 0 | 0 | 5 |
 | C6 | Riconciliazione e soppressione echo | 0 | 0 | 5 |
 | C7 | Propagazione real-time al browser | 0 | 0 | 5 |
-| — | **Complessivo Neo4j** | **~0.5** | **~0.8** | **5** |
+| — | **Complessivo Neo4j** | **~0.5** | **~1.2** | **5** |
 
 ---
 
@@ -720,6 +720,30 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   resta no-op; avviato con `--project` che risolve `projects/<id>/wiki`.
 - **Verifica**: `tests/python/test_graph_watcher_neo4j.py`, pytest, `npm test`.
 - **Grado atteso**: C2 1 → 3.5.
+- **Risultato (2026-11-22)**: ✅ completato. `graph_watcher.py` ora esegue una
+  sincronizzazione reale e idempotente: ogni nota produce un unico `MERGE` Cypher
+  parametrizzato (`$id`, `$title`, `$content`, `$hash`, `$revision`) con un
+  `session.run()` dedicato e metadata `wf:source`, `wf:origin`,
+  `wf:contentHash`, `wf:lastModified`, `wf:revision`. L'hash SHA-256 del testo e
+  un contatore di revisione eliminano le scritture ripetute (contenuto
+  invariato → zero Cypher e zero eventi), mentre il delete usa lo stesso
+  `base_parser.slugify()` annidato del parser (`folder/sub/nested.md` →
+  `folder-sub-nested`) in una `MATCH … DETACH DELETE $id` parametrizzata.
+  `on_moved()` gestisce i rename come delete + MERGE con un solo paio di
+  eventi, il debounce coalesce i doppi eventi watchdog e il nuovo `on_event`
+  emette `{"event":"graph.changed","origin":"vault","path":…,"id":…,
+  "revision":…,"action":…}` senza toccare la firma legacy
+  `on_change_callback(action, path)` che resta maiuscola. Senza driver il
+  watcher rimane un no-op per Neo4j ma notifica comunque i callback; con un
+  client C1 il `connect()` è lazy e un client disabilitato resta innocuo. La CLI
+  accetta `--project <id>` e risolve `projects/<id>/wiki`; `LiveGraphWatcher`
+  inoltra i nuovi parametri in modo additivo. Verifica: 9 test in
+  `tests/python/test_graph_watcher_neo4j.py` (replica invariata di
+  `tests/test_graph_watcher.py:15-35`, un MERGE per nota, no-op su hash
+  invariato, revision, delete annidato, move, callback strutturati, forwarding
+  e `--project`, errore driver inghiottito); 18 test C1+C2, 109 test Python
+  totali, 441 test Node (440 pass + 1 skip pre-esistente). Nessun endpoint,
+  envelope o metodo pubblico esistente cambiato. Gradi C2 3.5, Neo4j ~1.2.
 
 ### C3 — Cypher live read-only
 
@@ -837,6 +861,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 | 2026-11-22 | C1 | C1 · Neo4j complessivo | 1 · ~0.65 | 2.5 · ~0.8 | Client Neo4j injettabile con lazy import del driver, config/env opt-in, no-op quando disabilitato o senza password, connect/verify/close idempotenti; watcher e RAG accettano il client senza cambiare le firme legacy. 9 nuovi test Python (zero rete), 100 totali; nessun endpoint o metodo pubblico cambiato. |
+| 2026-11-22 | C2 | C2 · Neo4j complessivo | 1 · ~0.8 | 3.5 · ~1.2 | Watcher vault → Neo4j reale: MERGE parametrizzato e metadata `wf:*`, hash/revision idempotenti, delete con slug annidato, `on_moved` + debounce, eventi `graph.changed` strutturati e callback legacy invariato; `--project` risolve `projects/<id>/wiki`. 9 nuovi test Python con fake driver (zero rete), 109 totali, 441 Node; nessun endpoint o metodo pubblico cambiato. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |
 | 2026-11-22 | B2 | B1 / B2 · RBAC complessivo | 1.5 · 0 · ~1.5 | 2 · 1 · ~2 | Schema enterprise con auth/roles/projectAcls, 4 ruoli canonici in 3 config, lettore TOML Node con default; 4 test Python + 6 Node, `enable_rbac=true` da solo non cambia risposte. |
 | 2026-11-22 | B3 | B2 / B3 · RBAC complessivo | 1 · 2.5 · ~2 | 3.5 · 4 · ~3.0 | Gate opt-in sul bus: matrice 84 comandi → 4 ruoli (unknown = Admin), ACL per cartella, 403 con envelope esistente, `context.rbac`, filtri membership su progetti/approvazioni; 28 test Node, B0 invariato. |

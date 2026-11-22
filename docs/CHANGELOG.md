@@ -107,6 +107,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Compatibilità**: `graph_watcher.py` e `graph_rag_pipeline.py` accettano un nuovo parametro opzionale `neo4j_client`; le firme esistenti e i chiamanti attuali restano invariati e il watcher preferisce il driver del client quando disponibile.
 - **Verifica**: 9 test in `tests/python/test_neo4j_client.py` (import senza driver né socket, config/env, TLS, no-op disabilitato e senza password, connect/verify/close con fake, errore di verifica inghiottito, compatibilità costruttori in subprocess con `watchdog` stub); 100 test Python verdi. Nessun endpoint, envelope o metodo pubblico esistente cambiato. Gradi C1 2.5, Neo4j ~0.8/5.
 
+### C2 — Sync vault → Neo4j reale e idempotente
+
+- **MERGE parametrizzato**: `graph_watcher.py` emette un'unica statement per nota con `$id`, `$title`, `$content`, `$hash`, `$revision` e metadata `wf:source/origin/contentHash/lastModified/revision`, eseguita con un `session.run()` dedicato. Nessun valore è interpolato nella stringa Cypher.
+- **Idempotenza**: hash SHA-256 del contenuto e contatore `wf:revision`; una nota invariata non produce scritture né eventi, una modifica incrementa la revisione.
+- **Delete e rename**: `on_deleted()` usa lo stesso `base_parser.slugify()` annidato del parser (es. `folder/sub/nested.md` → `folder-sub-nested`) in una `MATCH … DETACH DELETE $id` parametrizzata; `on_moved()` combina delete + MERGE con un solo paio di eventi e il debounce evita il doppio trigger watchdog.
+- **Eventi e compatibilità**: nuovo `on_event` strutturato `{"event":"graph.changed","origin":"vault","path":…,"id":…,"revision":…,"action":…}`; il legacy `on_change_callback(action, path)` mantiene la firma e l'azione maiuscola. Senza driver non ci sono scritture Cypher ma i callback restano attivi; il client C1 viene connesso in modo lazy e un client disabilitato rimane un no-op. La CLI `--project <id>` risolve `projects/<id>/wiki`.
+- **Verifica**: 9 test in `tests/python/test_graph_watcher_neo4j.py` (replica invariata delle righe 15–35 del test legacy, un MERGE per nota, no-op su hash invariato, revision, delete annidato, move, callback strutturati, forwarding e `--project`, errore driver inghiottito); 109 test Python e 441 Node (440 pass + 1 skip pre-esistente). Nessun endpoint, envelope o metodo pubblico esistente cambiato. Gradi C2 3.5, Neo4j ~1.2/5.
+
 ### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
 
 - **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.
