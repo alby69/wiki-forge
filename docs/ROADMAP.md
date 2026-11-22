@@ -105,7 +105,8 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > corretto, L4 ~3.0/5), **A1** (modello `Finding` unificato e read-only con
 > ID deterministici, L4 ~3.2/5), **A2** (eventi F6 persistenti su disco con
 > restore al restart e dedupe, emitter `note.modified`/`note.deleted`, L4 ~3.4/5),
-> **B0** (baseline auth senza cambi funzionali), **B1**
+> **A3** (finding → changeset proposti con snapshot/rollback e tab Proposte nella
+> Review Studio, L4 ~3.6/5), **B0** (baseline auth senza cambi funzionali), **B1**
 > (Principal server-derived), **B2** (catalogo ruoli), **B3** (gate RBAC opt-in),
 > **B4** (bypass auth chiuso), **B5** (provenance vincolata in strict mode),
 > **B6** (adapter IdP OIDC/SAML/OAuth2), **B7** (UI identità via transport

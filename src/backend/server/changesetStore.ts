@@ -23,6 +23,20 @@ export interface ChangesetEdit {
   proposed_content?: string;
   find?: string;
   replace?: string;
+  /** A3 — refuse to apply when the note changed after staging. */
+  requireOriginal?: boolean;
+  /** A3 — snapshot written by the store just before this edit was applied. */
+  snapshotId?: string;
+}
+
+/** A3 — advisory context copied verbatim from a `wikiforge.finding/v1` item. */
+export interface ChangesetFinding {
+  findingId: string;
+  kind: string;
+  confidence: number;
+  evidence: string[];
+  targetPath: string;
+  proposedAction: string;
 }
 
 export interface Changeset {
@@ -40,6 +54,11 @@ export interface Changeset {
   actor?: string;
   applied_by?: string;
   rejected_by?: string;
+  /** A3 — present only on changesets staged from a Finding. */
+  finding?: ChangesetFinding;
+  /** A3 — set by `rollback()` after restoring the original bytes. */
+  rolled_back_at?: string;
+  rolled_back_by?: string;
 }
 
 export interface StageChangesetInput {
@@ -50,12 +69,22 @@ export interface StageChangesetInput {
   sources?: string[];
   /** B5 — set by the strict-mode HTTP adapter, never from the raw body. */
   actor?: string;
+  /** A3 — advisory context; never drives a write by itself. */
+  finding?: ChangesetFinding;
+}
+
+export interface ChangesetStoreOptions {
+  /** A3 — called before each wiki write; the returned id is kept for audit/UI. */
+  snapshot?: (file: string, content: string, reason: string) => Promise<string | undefined>;
 }
 
 export class ChangesetStore {
   private readonly dir: string;
 
-  constructor(private readonly projectRoot: string) {
+  constructor(
+    private readonly projectRoot: string,
+    private readonly options: ChangesetStoreOptions = {},
+  ) {
     this.dir = path.join(projectRoot, '.wiki-forge', 'changesets');
   }
 
@@ -118,6 +147,7 @@ export class ChangesetStore {
       sources: input.sources,
       edits: processed,
       ...(input.actor ? { actor: input.actor } : {}),
+      ...(input.finding ? { finding: input.finding } : {}),
     };
     await this.write(changeset);
     return changeset;
@@ -159,6 +189,23 @@ export class ChangesetStore {
     const appliedFiles: string[] = [];
     for (const edit of changeset.edits) {
       const absolute = this.resolveWikiPath(edit.file);
+      const current = await fs.readFile(absolute, 'utf-8').catch(() => '');
+
+      // A3 — a Finding proposal is bound to the bytes it was staged against.
+      if (edit.requireOriginal && current !== edit.original_content) {
+        throw new Error(`Changeset '${changeset.id}' is stale: ${edit.file} changed after staging`);
+      }
+
+      // A3 — pre-write snapshot for the Review Studio diff/restore flow. The
+      // hook is best-effort and lives in AgentServer, so this store stays
+      // usable in unit tests without any server wiring.
+      const snapshotId = await this.options.snapshot?.(
+        edit.file,
+        current,
+        `changeset ${changeset.id} (${changeset.finding?.findingId ?? 'apply'})`,
+      );
+      if (snapshotId) edit.snapshotId = snapshotId;
+
       if (edit.action === 'delete') {
         try {
           await softDelete(absolute, this.projectRoot);
@@ -171,11 +218,10 @@ export class ChangesetStore {
 
       let content = edit.proposed_content ?? '';
       if (edit.find !== undefined && edit.replace !== undefined) {
-        const original = await fs.readFile(absolute, 'utf-8').catch(() => '');
-        if (!original.includes(edit.find)) {
+        if (!current.includes(edit.find)) {
           throw new Error(`Find block not found in ${edit.file}`);
         }
-        content = original.replace(edit.find, edit.replace);
+        content = current.replace(edit.find, edit.replace);
       }
       await atomicWriteFile(absolute, content, 'utf-8');
       appliedFiles.push(edit.file);
@@ -201,6 +247,47 @@ export class ChangesetStore {
     if (actor) {
       changeset.actor = actor;
       changeset.rejected_by = actor;
+    }
+    await this.write(changeset);
+    return changeset;
+  }
+
+  /**
+   * A3 — restore the bytes captured at staging time.
+   *
+   * It reuses the changeset's own `original_content`, so it also covers a
+   * created proposal note (original = absence) without inventing a new endpoint:
+   * the UI keeps using the existing changeset/review routes, while this method
+   * is the backend primitive used by the A3 acceptance tests.
+   */
+  async rollback(id: string, actor?: string): Promise<Changeset> {
+    const changeset = await this.get(id);
+    if (changeset.status === 'pending') {
+      throw new Error(`Changeset '${id}' is pending, nothing to roll back`);
+    }
+
+    for (const edit of changeset.edits) {
+      const absolute = this.resolveWikiPath(edit.file);
+      const original = edit.original_content ?? '';
+      if (original) {
+        await atomicWriteFile(absolute, original, 'utf-8');
+      } else {
+        // A created file rolls back to its original state: absent. Keep it
+        // recoverable in the shared trash instead of unlinking it.
+        try {
+          await softDelete(absolute, this.projectRoot);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+        }
+      }
+    }
+
+    changeset.status = 'rejected';
+    changeset.rejected_reason = 'rollback A3';
+    changeset.rolled_back_at = new Date().toISOString();
+    if (actor) {
+      changeset.actor = actor;
+      changeset.rolled_back_by = actor;
     }
     await this.write(changeset);
     return changeset;

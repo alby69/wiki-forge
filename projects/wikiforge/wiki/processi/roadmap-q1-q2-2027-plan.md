@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (12/23 step: A0 ✅, A1 ✅, A2 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (13/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -73,7 +73,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | A0 | ✅ | `src/backend/wikiforge/api/health.py` (`count_cq_gaps`), `tests/python/test_health_gate.py` (8 test) |
 | A1 | ✅ | `src/backend/wikiforge/core/findings.py` (`Finding`, `make_finding`, `findings_envelope`, `print_findings`, schema `wikiforge.finding/v1`), adattatori in 4 script (`--findings`, lazy `load_findings_api()` in `okf_common.py`), docstring `--write` rimossa da `odp_suggester.py`, `tests/python/test_findings.py` (4 test) |
 | A2 | ✅ | `src/backend/server/scheduler/eventQueue.ts` (coda JSONL persistente), `eventTriggers.ts` (restore, dedupe e consumed su disk), `agentServer.ts` (wiring + emitter `note.modified`/`note.deleted`), `tests/eventTriggers.test.ts` (3 nuovi test), `tests/agentScheduleF5F6.test.ts` (2 nuovi test: restart e write-hook) |
-| A3 | ⬜ | — |
+| A3 | ✅ | `src/backend/server/findingChangeset.ts` (ponte Finding → changeset + validazione envelope), `changesetStore.ts` (campi additivi `finding`/`requireOriginal`/`snapshotId`, hook snapshot, `rollback()`), `agentServer.ts` (snapshot hook nel factory), `frontend/core/types/review.ts` (tab `proposte`), `storage/ApiStorage.ts` (`listReviewProposals`), `components/review/ReviewStudio.ts` (tab Proposte via `apiBus`), `tests/findingChangeset.test.ts` (6 test), `tests/reviewProposals.test.ts` (1 test) |
 | A4 | ⬜ — **richiede approvazione utente** | — |
 | A5 | ⬜ | — |
 | B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
@@ -104,7 +104,7 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
+A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3: A3 3.5, A4 3, A5 4.5, L4 ~3.6; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
@@ -112,12 +112,12 @@ dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
-| A1 | Scheduler, trigger e stato persistente (F0–F6, S0–S6) | 3 | 3 | 5 |
+| A1 | Scheduler, trigger e stato persistente (F0–F6, S0–S6) | 3 | 4 | 5 |
 | A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 4 | 5 |
-| A3 | ODP proattivi e generazione note | 2.5 | 3 | 5 |
-| A4 | Validazione, auto-repair e rollback | 2 | 2 | 5 |
+| A3 | ODP proattivi e generazione note | 2.5 | 3.5 | 5 |
+| A4 | Validazione, auto-repair e rollback | 2 | 3 | 5 |
 | A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
-| — | **Complessivo L4** | **~2.5** | **~3.4** | **4.5–5** |
+| — | **Complessivo L4** | **~2.5** | **~3.6** | **4.5–5** |
 | B1 | Autenticazione / identità del chiamante | 0.5 | 5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 5 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
@@ -385,6 +385,32 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/findingChangeset.test.ts` + test UI nella Review Studio
   via `apiBus`; nessun endpoint cambiato.
 - **Grado atteso**: A3 3 → 3.5, A4 2 → 3, A5 4.5 → 5.
+- **Risultato (2026-11-22)**: ✅ completato. Nuovo
+  `src/backend/server/findingChangeset.ts` valida l'envelope
+  `wikiforge.finding/v1` (schema, count, kind, confidence, evidence, path) e
+  converte ogni `Finding` in input per `changesetStore.stage()`: se il target è
+  una nota Markdown esistente viene aggiunta una sezione proposta con
+  `requireOriginal: true` (il changeset rifiuta l'apply se i byte sono cambiati
+  dopo lo staging), altrimenti viene creata una nota OKF sotto `wiki/proposte/`.
+  Il contesto del finding (`findingId`, `kind`, `confidence`, `evidence`,
+  `targetPath`, `proposedAction`) è copiato nel changeset insieme a rationale e
+  sources; lo staging è idempotente (uno changeset per finding, duplication
+  riportata come `skipped`). Lo store ha campi additivi (`finding`,
+  `requireOriginal`, `snapshotId`, `rolled_back_at`, `rolled_back_by`), un hook
+  `snapshot` opzionale e `rollback()`: l'apply scrive solo dopo approvazione
+  umana e lascia uno snapshot pre-write con reason che cita il changeset; il
+  rollback ripristina i byte originali (o rimuove in trash il file creato).
+  `agentServer.ts` collega l'hook snapshot esistente senza nuove route; gli
+  endpoint, le envelope e i metodi pubblici esistenti restano invariati (solo
+  aggiunte additive), la modalità `propose` resta default e `auto_apply` non
+  viene attivato. La Review Studio ha una quinta tab **Proposte** che legge i
+  finding staged tramite `changesets.list` dell'`apiBus` tipizzato (zero
+  `fetch` diretti): mostra id, kind, confidenza, target, azione, evidenze e
+  rationale. Verifica: 6 test in `tests/findingChangeset.test.ts` (validazione
+  envelope, nessuna scrittura prima di apply, snapshot + rollback, reject senza
+  file, stale rejected, idempotenza) e 1 in `tests/reviewProposals.test.ts`
+  (render tab via apiBus); suite Node 441 test (440 pass + 1 skip
+  pre-esistente). Gradi A3 3.5, A4 3, A5 4.5, L4 ~3.6.
 
 ### A4 — Modalità `bounded` (solo dopo approvazione esplicita)
 
@@ -803,6 +829,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
 | 2026-11-22 | A1 | A2 / A3 · L4 complessivo | 3 / 2.5 · ~3.0 | 3.5 / 3 · ~3.2 | Modello `Finding` unificato e read-only con schema `wikiforge.finding/v1`, ID deterministici e import lazy; 4 adattatori con `--findings` (nessuna scrittura), 4 test Python (schema, determinismo, snapshot), 91 test Python verdi, registry/safety invariati. |
 | 2026-11-22 | A2 | A1 · L4 complessivo | 3 · ~3.2 | 4 · ~3.4 | Coda eventi JSONL persistente in `.wiki-forge/`, restore dei bucket al riavvio, dedupe su disco e mark `consumed` prima del trigger; emitter `note.modified` / `note.deleted` nelle scritture API. 5 nuovi test Node (8 in `eventTriggers`, 7 in `agentScheduleF5F6`), 434 test totali (433 pass + 1 skip); 9 job e `auto_apply=false` invariati. |
+| 2026-11-22 | A3 | A3 / A4 / A5 · L4 complessivo | 3 / 2 / 4 · ~3.4 | 3.5 / 3 / 4.5 · ~3.6 | Ponte `Finding → changesetStore.stage()` con envelope validata, staging idempotente, `requireOriginal`, snapshot pre-write in apply e `rollback()` che ripristina i byte originali; nessun file scritto prima dell'approvazione umana. Review Studio con tab Proposte via `changesets.list` dell'apiBus tipizzato, zero fetch diretti e nessun endpoint cambiato. 7 nuovi test Node (6 backend + 1 UI), 441 test totali (440 pass + 1 skip); `propose` resta default, A4 non approvato, `auto_apply=false` invariato. |
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |

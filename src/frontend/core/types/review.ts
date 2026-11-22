@@ -5,7 +5,7 @@
  * types in one module keeps the modal and `ApiStorage` in sync.
  */
 
-export type ReviewTab = 'verify' | 'critique' | 'digest' | 'diff';
+export type ReviewTab = 'verify' | 'critique' | 'digest' | 'diff' | 'proposte';
 
 export type ReviewDepth = 'fast' | 'standard' | 'deep';
 
@@ -138,6 +138,32 @@ export interface ReviewDiffResponse {
   snapshot?: { id: string; at: string; reason: string };
   rows?: ReviewDiffRow[];
   stats?: { added: number; removed: number; context: number };
+}
+
+/** A3 — a Finding staged as a human-reviewable changeset. */
+export interface ReviewProposalFinding {
+  findingId: string;
+  kind: string;
+  confidence: number;
+  evidence: string[];
+  targetPath: string;
+  proposedAction: string;
+}
+
+export interface ReviewProposalEdit {
+  file: string;
+  action: string;
+  snapshotId?: string;
+}
+
+export interface ReviewProposal {
+  id: string;
+  description: string;
+  status: string;
+  rationale?: string;
+  sources?: string[];
+  finding?: ReviewProposalFinding;
+  edits: ReviewProposalEdit[];
 }
 
 export interface ReviewOpenOptions {

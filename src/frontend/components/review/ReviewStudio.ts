@@ -7,6 +7,7 @@ import {
   ReviewDiffResponse,
   ReviewDigest,
   ReviewMetaResponse,
+  ReviewProposal,
   ReviewSnapshot,
   ReviewTab,
 } from '@frontend/core/types/review';
@@ -25,6 +26,7 @@ const TABS: Array<{ id: ReviewTab; label: string; icon: string; hint: string }> 
   { id: 'critique', label: 'Critica', icon: '⚡', hint: 'LLM' },
   { id: 'digest', label: 'Digest', icon: '◷', hint: 'attività' },
   { id: 'diff', label: 'Confronta versioni', icon: '⇄', hint: 'snapshot' },
+  { id: 'proposte', label: 'Proposte', icon: '✦', hint: 'A3 · finding' },
 ];
 
 const FOCUS_OPTIONS = [
@@ -66,6 +68,9 @@ export class ReviewStudio {
   private selectedSnapshotId: string | null = null;
   private diff: ReviewDiffResponse | null = null;
   private diffLoading = false;
+
+  private proposals: ReviewProposal[] = [];
+  private proposalsLoading = false;
 
   constructor(storage: ApiStorage, callbacks: ReviewStudioCallbacks = {}) {
     this.storage = storage;
@@ -150,7 +155,18 @@ export class ReviewStudio {
       if (!this.digest) await this.loadDigest();
     } else if (this.tab === 'diff') {
       await this.loadSnapshots();
+    } else if (this.tab === 'proposte') {
+      await this.loadProposals();
     }
+  }
+
+  /** A3 — findings staged as changesets, read via the typed changeset route. */
+  private async loadProposals(): Promise<void> {
+    this.proposalsLoading = true;
+    this.renderBody();
+    this.proposals = await this.storage.listReviewProposals();
+    this.proposalsLoading = false;
+    this.renderBody();
   }
 
   private async loadMeta(): Promise<void> {
@@ -362,9 +378,59 @@ export class ReviewStudio {
     if (this.tab === 'verify') host.innerHTML = this.renderVerifyTab();
     else if (this.tab === 'critique') host.innerHTML = this.renderCritiqueTab();
     else if (this.tab === 'digest') host.innerHTML = this.renderDigestTab();
+    else if (this.tab === 'proposte') host.innerHTML = this.renderProposteTab();
     else host.innerHTML = this.renderDiffTab();
 
     this.bindBodyEvents();
+  }
+
+  private renderProposteTab(): string {
+    if (this.proposalsLoading) {
+      return '<div class="wf-rs-loading">Lettura dei finding proposti…</div>';
+    }
+
+    const cards = this.proposals.map((proposal) => {
+      const finding = proposal.finding;
+      const evidence = finding?.evidence?.length
+        ? `<ul>${finding.evidence.map((entry) => `<li>${escapeHtml(entry)}</li>`).join('')}</ul>`
+        : '<div class="wf-rs-empty">Nessuna evidenza allegata.</div>';
+      const edits = proposal.edits.map((edit) => `
+        <div class="wf-rs-meta-item">
+          <span class="k">File</span><span class="v">${escapeHtml(edit.file)} · ${escapeHtml(edit.action)}</span>
+        </div>`).join('');
+      return `
+        <div class="wf-rs-panel wf-rs-proposal" data-proposal="${escapeHtml(proposal.id)}">
+          <div class="wf-rs-panel-title">
+            <span>${escapeHtml(finding?.findingId || proposal.id)}</span>
+            <span class="wf-rs-badge">${escapeHtml(proposal.status)}</span>
+          </div>
+          ${finding ? `
+            <div class="wf-rs-meta-list">
+              <div class="wf-rs-meta-item"><span class="k">Kind</span><span class="v">${escapeHtml(finding.kind)}</span></div>
+              <div class="wf-rs-meta-item"><span class="k">Confidenza</span><span class="v">${finding.confidence}</span></div>
+              <div class="wf-rs-meta-item"><span class="k">Target</span><span class="v">${escapeHtml(finding.targetPath)}</span></div>
+              <div class="wf-rs-meta-item"><span class="k">Azione</span><span class="v">${escapeHtml(finding.proposedAction)}</span></div>
+              ${edits}
+            </div>
+            <div class="wf-rs-panel-title">Evidenze</div>
+            ${evidence}`
+          : `<div class="wf-rs-result">${escapeHtml(proposal.description)}</div>`}
+          ${proposal.rationale ? `<div class="wf-rs-result">${escapeHtml(proposal.rationale)}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="wf-rs-panel">
+        <div class="wf-rs-panel-title">
+          <span>Proposte da finding (${this.proposals.length})</span>
+          <button class="wf-rs-btn ghost" id="wf-rs-proposals-refresh" style="padding: 2px 8px; font-size: 10.5px;">Aggiorna</button>
+        </div>
+        <div class="wf-rs-note">
+          Ogni finding è uno changeset: nessun file viene scritto prima dell'approvazione umana.
+          Applica e rifiuta restano nel pannello changeset; qui puoi ispezionare evidenze e rationale.
+        </div>
+      </div>
+      ${cards || '<div class="wf-rs-empty">Nessuna proposta da finding presente in questo progetto.</div>'}`;
   }
 
   private renderNoteBadges(): string {
@@ -729,6 +795,10 @@ export class ReviewStudio {
     this.overlay.querySelector('#wf-rs-snapshots-refresh')?.addEventListener('click', () => {
       this.selectedSnapshotId = null;
       void this.loadSnapshots();
+    });
+
+    this.overlay.querySelector('#wf-rs-proposals-refresh')?.addEventListener('click', () => {
+      void this.loadProposals();
     });
 
     this.overlay.querySelectorAll<HTMLElement>('.wf-rs-snapshot').forEach(row => {

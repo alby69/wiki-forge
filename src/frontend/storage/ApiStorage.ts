@@ -5,6 +5,8 @@ import {
   ReviewDiffResponse,
   ReviewDigest,
   ReviewMetaResponse,
+  ReviewProposal,
+  ReviewProposalFinding,
   ReviewSnapshot,
   ReviewVerifyResponse,
 } from '@frontend/core/types/review';
@@ -581,6 +583,36 @@ export class ApiStorage implements IStorage {
       return await this.request('review.meta', { query: { note: noteRef } });
     } catch (err) {
       return this.failedEnvelope(err, { success: false, error: String(err) });
+    }
+  }
+
+  /**
+   * A3 — read staged Finding proposals through the existing typed changeset
+   * route. No new endpoint and no direct fetch in the UI component.
+   */
+  public async listReviewProposals(): Promise<ReviewProposal[]> {
+    try {
+      const json = await this.request('changesets.list', { query: {} });
+      if (!json.success || !Array.isArray(json.changesets)) return [];
+      return json.changesets.map((changeset) => {
+        const finding = changeset.finding as ReviewProposalFinding | undefined;
+        return {
+          id: changeset.id,
+          description: changeset.description,
+          status: changeset.status,
+          rationale: changeset.rationale,
+          sources: changeset.sources,
+          finding,
+          edits: (changeset.edits || []).map((edit) => ({
+            file: typeof edit.file === 'string' ? edit.file : String(edit.path || ''),
+            action: typeof edit.action === 'string' ? edit.action : 'modify',
+            snapshotId: typeof edit.snapshotId === 'string' ? edit.snapshotId : undefined,
+          })),
+        };
+      });
+    } catch (_err) {
+      // Backend unavailable: proposals are optional view data.
+      return [];
     }
   }
 

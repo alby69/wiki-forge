@@ -851,7 +851,14 @@ export class AgentServer {
       projects: this.projects,
       isStrictProvenance: () => this.strictProvenance,
       provenanceActor: (principal, rawActor) => this.provenanceActorFor(principal, rawActor),
-      changesets: async (projectId) => new ChangesetStore(await this.resolveProjectRoot(projectId)),
+      changesets: async (projectId) => new ChangesetStore(await this.resolveProjectRoot(projectId), {
+        // A3 — every changeset write gets a pre-write snapshot for the Review
+        // Studio diff/restore flow. Best-effort: a snapshot failure never blocks apply.
+        snapshot: async (file, content, reason) => {
+          const projectRoot = await this.resolveProjectRoot(projectId);
+          return this.writeSnapshotFile(projectRoot, file, content, reason);
+        },
+      }),
       rootDir: this.rootDir,
       registry: SCRIPT_REGISTRY,
       useCases: KE_USE_CASES as unknown as Record<string, unknown>,
@@ -3900,10 +3907,19 @@ ${bodyText.slice(0, 500)}
     content: string,
     reason: string = 'salvataggio'
   ): Promise<void> {
-    if (!content.trim()) return;
+    await this.writeSnapshotFile(await this.resolveProjectRoot(projectId), noteRelPath, content, reason);
+  }
+
+  /** Shared implementation; returns the snapshot id for A3 changeset audit. */
+  private async writeSnapshotFile(
+    projectRoot: string,
+    noteRelPath: string,
+    content: string,
+    reason: string
+  ): Promise<string | undefined> {
+    if (!content.trim()) return undefined;
     try {
-      const projRoot = await this.resolveProjectRoot(projectId);
-      const dir = this.getSnapshotDir(projRoot, noteRelPath);
+      const dir = this.getSnapshotDir(projectRoot, noteRelPath);
       await fs.mkdir(dir, { recursive: true });
 
       const now = new Date();
@@ -3922,8 +3938,10 @@ ${bodyText.slice(0, 500)}
         await fs.unlink(path.join(dir, old)).catch(() => undefined);
         await fs.unlink(path.join(dir, old.replace(/\.md$/i, '.json'))).catch(() => undefined);
       }
+      return stamp;
     } catch (_err) {
       // Snapshots are best-effort: never block a note write because history failed.
+      return undefined;
     }
   }
 
