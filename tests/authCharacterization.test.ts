@@ -6,11 +6,11 @@ import * as path from 'node:path';
 import { AgentServer } from '@backend/server/agentServer';
 
 /**
- * B0 — pin the CURRENT auth behaviour before changing it.
+ * Auth characterization — B0 baseline plus the B4 hardening.
  *
- * These assertions intentionally document known gaps (the graph proxy bypass
- * and the raw client-supplied reviewer). They will be updated by B4 and B5;
- * until then this file is the regression baseline, not a specification.
+ * B0 pinned the envelope and the two then-known gaps. B4 closed the graph
+ * proxy bypass; the raw client-supplied reviewer remains documented here and
+ * will be fixed by B5.
  */
 
 const UNAUTHORIZED = {
@@ -135,7 +135,11 @@ describe('Auth characterization (B0)', () => {
     await withEnv({ WIKIFORGE_API_TOKEN: 'secret-token' }, async () => {
       const spec = await fetch(`${h.baseUrl}/api/openapi.json`);
       assert.strictEqual(spec.status, 200);
-      assert.strictEqual((await spec.json() as any).openapi, '3.1.0');
+      const specJson = await spec.json() as any;
+      assert.strictEqual(specJson.openapi, '3.1.0');
+      assert.match(specJson.info.description, /WIKIFORGE_API_TOKEN/);
+      assert.doesNotMatch(specJson.info.description, /WIKIFORGE_TOKEN/);
+      assert.match(specJson.components.securitySchemes.WikiForgeToken.description, /WIKIFORGE_API_TOKEN/);
 
       const docs = await fetch(`${h.baseUrl}/api/docs`);
       assert.strictEqual(docs.status, 200);
@@ -143,23 +147,69 @@ describe('Auth characterization (B0)', () => {
     });
   });
 
-  it('KNOWN BYPASS (B4): the graph proxy is reached before the token check', async () => {
+  it('B4: graph routes require the token with the exact B0 envelope', async () => {
+    await withEnv(
+      { WIKIFORGE_API_TOKEN: 'secret-token', FASTAPI_SERVER_URL: 'http://127.0.0.1:9' },
+      async () => {
+        for (const route of ['/api/v1/graph/sync', '/api/v1/graph/validate', '/api/v1/graph/rag']) {
+          const missing = await fetch(`${h.baseUrl}${route}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          });
+          assert.strictEqual(missing.status, 401, `${route} without token`);
+          assert.deepStrictEqual(await missing.json(), UNAUTHORIZED);
+
+          const wrong = await fetch(`${h.baseUrl}${route}`, {
+            method: 'GET',
+            headers: { 'X-WikiForge-Token': 'wrong-token' },
+          });
+          assert.strictEqual(wrong.status, 401, `${route} with wrong token`);
+          assert.deepStrictEqual(await wrong.json(), UNAUTHORIZED);
+        }
+      },
+    );
+  });
+
+  it('B4: a valid token reaches the graph proxy (502 proves authentication passed)', async () => {
     await withEnv(
       { WIKIFORGE_API_TOKEN: 'secret-token', FASTAPI_SERVER_URL: 'http://127.0.0.1:9' },
       async () => {
         const res = await fetch(`${h.baseUrl}/api/v1/graph/sync`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-WikiForge-Token': 'secret-token' },
           body: JSON.stringify({}),
         });
-        // 502 (upstream unreachable) proves the proxy ran without a token;
-        // after B4 this must become the same 401 envelope as every other route.
         assert.strictEqual(res.status, 502);
         const data = await res.json() as any;
         assert.strictEqual(data.success, false);
         assert.match(data.error, /FastAPI Knowledge Graph Service unavailable/);
       },
     );
+  });
+
+  it('B4: without a configured token the graph proxy stays reachable as before', async () => {
+    await withEnv(
+      { WIKIFORGE_API_TOKEN: undefined, FASTAPI_SERVER_URL: 'http://127.0.0.1:9' },
+      async () => {
+        const res = await fetch(`${h.baseUrl}/api/v1/graph/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        assert.strictEqual(res.status, 502);
+        assert.match((await res.json() as any).error, /FastAPI Knowledge Graph Service unavailable/);
+      },
+    );
+  });
+
+  it('B4: graph CORS preflight is public even when a token is configured', async () => {
+    await withEnv({ WIKIFORGE_API_TOKEN: 'secret-token' }, async () => {
+      const res = await fetch(`${h.baseUrl}/api/v1/graph/sync`, { method: 'OPTIONS' });
+      assert.strictEqual(res.status, 204);
+      assert.strictEqual(res.headers.get('access-control-allow-origin'), '*');
+      assert.match(res.headers.get('access-control-allow-headers') ?? '', /X-WikiForge-Token/);
+    });
   });
 
   it('KNOWN PROVENANCE (B5): reviewer is taken raw from the client body, default human', async () => {

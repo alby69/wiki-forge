@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B4 — Chiusura dei bypass auth
+
+- **Verifica token unificata**: nuovo `auth/apiToken.ts` con `verifyApiToken()` (confronto SHA-256 + `timingSafeEqual`, sicuro anche per valori corti/mancanti) e `apiTokenFromRequest()` (`X-WikiForge-Token` anche ripetuto, `Authorization: Bearer`, bare token; `Bearer` senza valore non diventa un token). `validateApiToken()` usa questo modulo per ogni ingresso.
+- **Ordine di autenticazione**: in `handleRequest()` CORS/`OPTIONS` e la documentazione restano pubblici, poi il token viene verificato **prima** del proxy FastAPI. Con token configurato `/api/v1/graph/{sync,validate,rag}` senza token o con token errato risponde 401 con l'envelope esatto di B0; con token valido raggiunge l'upstream (502 se irraggiungibile). Senza token configurato il comportamento del proxy resta invariato e il preflight graph risponde 204.
+- **OpenAPI**: corretto il drift `WIKIFORGE_TOKEN` → `WIKIFORGE_API_TOKEN` nella descrizione generata e in `docs/OPENAPI.md`; la characterization asserisce la presenza del nome corretto e l'assenza di quello vecchio.
+- **Verifica**: 9 nuovi test in `tests/apiToken.test.ts` e 4 nuovi in `tests/authCharacterization.test.ts` (401 sui tre route graph, proxy con token valido, proxy senza token configurato, preflight pubblico); suite Node 398 pass + 1 skip pre-esistente, typecheck e build verdi. Endpoint, envelope e metodi pubblici invariati. Grado B1 2 → 4.5, RBAC complessivo ~3/5. Dipendenza `C4 ⟵ B4` sbloccata.
+
 ### B3 — Gate RBAC opt-in via middleware del bus
 
 - **Policy**: nuovo `auth/rbacMiddleware.ts` con `OPERATION_ROLES` (mappa esplicita di tutti gli 84 comandi registrati → Reader/Contributor/KnowledgeEngineer/Admin; comandi sconosciuti → Admin, fail closed), `ROLE_RANK`, `decideRbac()` e `createRbacMiddleware()`. Le chiavi `projectAcls["progetto/cartella"]` restringono i ruoli per cartella (prefix matching, chiave più lunga vince); `loadRbacConfigSync()` e `rolesForScope()` estendono il lettore B2.
@@ -66,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
 
 - **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.
-- **Gap noti e non corretti**: il test `KNOWN BYPASS (B4)` dimostra che `/api/v1/graph/{sync,validate,rag}` raggiunge il proxy FastAPI (502 se irraggiungibile) anche con token configurato e header assente; il test `KNOWN PROVENANCE (B5)` fissa `decidedBy` raw dal body con default `'human'`. Saranno corretti rispettivamente in B4 e B5.
+- **Gap noti a B0**: il test `KNOWN BYPASS (B4)` dimostrava che `/api/v1/graph/{sync,validate,rag}` raggiungeva il proxy FastAPI (502 se irraggiungibile) anche con token configurato e header assente — **corretto in B4**; il test `KNOWN PROVENANCE (B5)` fissa ancora `decidedBy` raw dal body con default `'human'`, da correggere in B5.
 - Nessun file di produzione, endpoint, envelope o metodo pubblico modificato.
 
 ### S5/S6 — Documentazione allineata e collaudo finale

@@ -57,7 +57,7 @@ rimasto senza tipi.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
   `SchedulerStatus`, `ResearchAnswer`).
 - `securitySchemes.WikiForgeToken`: header `X-WikiForge-Token`, richiesto solo
-  quando il server è avviato con `WIKIFORGE_TOKEN`. La pagina di documentazione
+  quando il server è avviato con `WIKIFORGE_API_TOKEN`. La pagina di documentazione
   è pubblica; il browser inietta il token e il progetto attivo da
   `localStorage` (`wikiforge.token`, `wikiforge.projectId`).
 - Parametro `X-Project-Id` sui route project-scoped, con fallback a `?projectId=`.

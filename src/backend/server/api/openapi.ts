@@ -242,7 +242,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
         '',
         'Generated at runtime from `src/shared/api/contracts.ts` — never edit a YAML file.',
         'Project-scoped endpoints read `X-Project-Id` (or `?projectId=`). The gateway accepts',
-        '`X-WikiForge-Token` when `WIKIFORGE_TOKEN` is configured on the server.',
+        '`X-WikiForge-Token` when `WIKIFORGE_API_TOKEN` is configured on the server.',
         '',
         'The API browser is served self-hosted at `/api/docs`.',
       ].join('\n'),
@@ -255,7 +255,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       securitySchemes: {
         WikiForgeToken: {
           type: 'apiKey', in: 'header', name: 'X-WikiForge-Token',
-          description: 'Optional when the server has no WIKIFORGE_TOKEN configured.',
+          description: 'Optional when the server has no WIKIFORGE_API_TOKEN configured.',
         },
       },
     },

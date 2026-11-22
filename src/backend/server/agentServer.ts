@@ -82,6 +82,7 @@ import { handleDocsRequest } from './api/docsBrowser';
 import { readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus } from './bus/messageBus';
 import { deriveRequestPrincipal } from './auth/principal';
+import { apiTokenFromRequest, UNAUTHORIZED_MESSAGE, verifyApiToken } from './auth/apiToken';
 import { loadRbacConfigSync } from './auth/rbacConfig';
 import { createRbacMiddleware } from './auth/rbacMiddleware';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
@@ -1507,11 +1508,7 @@ export class AgentServer {
   private validateApiToken(req: http.IncomingMessage): boolean {
     const requiredToken = process.env.WIKIFORGE_API_TOKEN;
     if (!requiredToken) return true;
-
-    const providedToken = (req.headers['x-wikiforge-token'] as string) ||
-      (req.headers['authorization'] ? (req.headers['authorization'] as string).replace(/^Bearer\s+/i, '') : '');
-
-    return providedToken === requiredToken;
+    return verifyApiToken(apiTokenFromRequest(req), requiredToken);
   }
 
   private getProjectIdFromRequest(req: http.IncomingMessage, url: URL): string {
@@ -1621,14 +1618,8 @@ export class AgentServer {
     const pathname = url.pathname;
     const projectId = this.getProjectIdFromRequest(req, url);
 
-    // Reverse Proxy for Knowledge Graph & GraphRAG API endpoints
-    if (
-      (pathname === '/api/v1/graph/sync' || pathname === '/api/v1/graph/validate' || pathname === '/api/v1/graph/rag') &&
-      (req.method === 'POST' || req.method === 'GET')
-    ) {
-      return this.proxyToFastApi(req, res, url.pathname + url.search);
-    }
-
+    // CORS preflight is public on every route, graph proxy included. It must
+    // be answered before the token check or browsers could never call the API.
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Project-Id, X-WikiForge-Token, Authorization');
@@ -1642,10 +1633,20 @@ export class AgentServer {
     // Documentation is public (the browser injects a token for "Try it out").
     if (await handleDocsRequest(req, res, pathname)) return true;
 
+    // B4 — authenticate BEFORE any other ingress, the FastAPI graph proxy
+    // included. Missing/invalid tokens get the exact B0 envelope.
     if (!this.validateApiToken(req)) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: 'Unauthorized: Invalid or missing X-WikiForge-Token' }));
+      res.end(JSON.stringify({ success: false, error: UNAUTHORIZED_MESSAGE }));
       return true;
+    }
+
+    // Reverse Proxy for Knowledge Graph & GraphRAG API endpoints
+    if (
+      (pathname === '/api/v1/graph/sync' || pathname === '/api/v1/graph/validate' || pathname === '/api/v1/graph/rag') &&
+      (req.method === 'POST' || req.method === 'GET')
+    ) {
+      return this.proxyToFastApi(req, res, url.pathname + url.search);
     }
 
     // Every catalogue operation whose command is registered on the bus is now
