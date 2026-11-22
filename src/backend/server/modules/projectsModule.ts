@@ -7,7 +7,7 @@
  */
 
 import { error, json, type ApiResult } from '../api/http';
-import type { DomainModule, MessageBus } from '../bus/messageBus';
+import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { CloneInclude, ProjectBundle, ProjectDeleteMode } from '../projectService';
 import type { DomainServices } from './services';
 
@@ -52,7 +52,7 @@ export class ProjectsModule implements DomainModule {
   constructor(private readonly services: DomainServices) {}
 
   register(bus: MessageBus): void {
-    bus.register<Payload>('projects.list', (payload) => this.list(payload));
+    bus.register<Payload>('projects.list', (payload, context) => this.list(payload, context));
     bus.register<Payload>('projects.create', (payload) => this.create(payload));
     bus.register<Payload>('projects.import', (payload) => this.importBundle(payload));
     bus.register<Payload>('projects.clone', (payload) => this.clone(payload));
@@ -66,11 +66,15 @@ export class ProjectsModule implements DomainModule {
     bus.register<Payload>('projects.delete', (payload) => this.remove(payload));
   }
 
-  private async list(payload: Payload): Promise<ApiResult> {
+  private async list(payload: Payload, context: CommandContext): Promise<ApiResult> {
     try {
-      const projects = await this.services.projects.list({
+      let projects = await this.services.projects.list({
         includeArchived: asString(payload.includeArchived) === 'true',
       });
+      // B3: enumerate only projects visible to the caller. With RBAC off the
+      // decision is absent and the full list is returned exactly as before.
+      const visible = context.rbac?.visibleProjects;
+      if (visible) projects = projects.filter((project) => visible.includes(project.id));
       return json({ success: true, projects });
     } catch (err) {
       return failure(err);

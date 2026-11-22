@@ -42,7 +42,7 @@ export class SchedulerModule implements DomainModule {
     bus.register<Payload>('schedule.cancel', (payload) => this.cancel(payload));
     bus.register<Payload>('schedule.patch', (payload) => this.patch(payload));
     bus.register<Payload>('schedule.decisions', (payload) => this.decisions(payload));
-    bus.register<Payload>('schedule.approvals', (payload) => this.approvals(payload));
+    bus.register<Payload>('schedule.approvals', (payload, context) => this.approvals(payload, context));
     bus.register<Payload>('schedule.trigger', (payload) => this.trigger(payload));
     bus.register<Payload>('schedule.approvalDecision', (payload) => this.approvalDecision(payload));
     bus.register<Payload>('scripts.schedule', (payload) => this.scheduleScript(payload));
@@ -173,15 +173,24 @@ export class SchedulerModule implements DomainModule {
     return json({ success: true, decisions });
   }
 
-  private async approvals(payload: Payload): Promise<ApiResult> {
+  private async approvals(payload: Payload, context: CommandContext): Promise<ApiResult> {
     const rawStatus = asString(payload.status);
     const status = rawStatus && APPROVAL_STATUSES.includes(rawStatus as ApprovalStatus)
       ? rawStatus as ApprovalStatus
       : undefined;
     const store = this.services.getApprovalStore();
-    const approvals = store
-      ? await store.list({ jobId: asString(payload.jobId) || undefined, status })
+    let approvals = store
+      ? await store.list({
+          jobId: asString(payload.jobId) || undefined,
+          status,
+          // Additive query filter; absent in legacy requests.
+          project: asString(payload.project) || undefined,
+        })
       : [];
+    // B3: membership filter comes from the decision on CommandContext; when
+    // RBAC is off `context.rbac` is absent and nothing is filtered.
+    const visible = context.rbac?.visibleProjects;
+    if (visible) approvals = approvals.filter((request) => visible.includes(request.project));
     return json({
       success: true,
       approvals,

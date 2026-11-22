@@ -51,11 +51,18 @@ export class ApprovalStore {
     this.now = options.now ?? (() => new Date());
   }
 
-  public async list(options: { jobId?: string; status?: ApprovalStatus } = {}): Promise<ApprovalRequest[]> {
+  /**
+   * B3 — `project` is an additive filter used by the RBAC membership gate.
+   * Omitting it preserves the historical "all approvals" behaviour.
+   */
+  public async list(
+    options: { jobId?: string; status?: ApprovalStatus; project?: string } = {},
+  ): Promise<ApprovalRequest[]> {
     const requests = await this.read();
     return requests
       .filter((request) => !options.jobId || request.jobId === options.jobId)
       .filter((request) => !options.status || request.status === options.status)
+      .filter((request) => !options.project || request.project === options.project)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 

@@ -8,6 +8,7 @@
  */
 
 import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import * as toml from 'smol-toml';
 
@@ -28,6 +29,23 @@ export interface RbacConfig {
   projectAcls: Record<string, string[]>;
   defaultAcl: string[];
   auth: RbacAuthConfig;
+}
+
+/**
+ * B3 — decision attached to `CommandContext` when enforcement is active.
+ *
+ * Modules read it instead of re-deriving permissions: `visibleProjects` is
+ * used to filter listings. `context.rbac` is absent in legacy mode, where no
+ * filter must be applied at all.
+ */
+export interface RbacDecision {
+  allowed: boolean;
+  /** Effective roles after IdP roles ∩ project/folder ACL. */
+  roles: string[];
+  /** Minimum role required by the operation (unknown commands fail closed). */
+  requiredRole: string;
+  /** Projects whose ACL grants at least one effective role. */
+  visibleProjects: string[];
 }
 
 export function defaultRbacConfig(): RbacConfig {
@@ -89,6 +107,29 @@ export function rolesForProject(config: RbacConfig, projectId: string): string[]
   return config.projectAcls[projectId] ?? config.defaultAcl;
 }
 
+/**
+ * B3 — roles allowed for a note path inside a project.
+ *
+ * A key of `[enterprise.projectAcls]` containing `/` is a folder scope, e.g.
+ * `"wikiforge/wiki/processi" = ["Admin"]`. The longest matching prefix wins;
+ * a plain project key stays the fallback. Folder keys are additive to B2's
+ * schema (`projectAcls` maps arbitrary string keys to string arrays).
+ */
+export function rolesForScope(config: RbacConfig, projectId: string, scopePath?: string): string[] {
+  const base = rolesForProject(config, projectId);
+  if (!scopePath) return base;
+  const normalized = scopePath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  if (!normalized) return base;
+  const segments = normalized.split('/');
+  for (let length = segments.length; length > 0; length -= 1) {
+    const key = `${projectId}/${segments.slice(0, length).join('/')}`;
+    if (Object.prototype.hasOwnProperty.call(config.projectAcls, key)) {
+      return config.projectAcls[key];
+    }
+  }
+  return base;
+}
+
 /** Load the RBAC catalogue from the first config.toml found under `rootDir`. */
 export async function loadRbacConfig(rootDir: string): Promise<RbacConfig> {
   for (const relative of ['config/config.toml', 'config.toml']) {
@@ -98,6 +139,25 @@ export async function loadRbacConfig(rootDir: string): Promise<RbacConfig> {
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
       throw err;
+    }
+  }
+  return defaultRbacConfig();
+}
+
+/**
+ * B3 — constructor-friendly variant used by `AgentServer` to install the
+ * middleware before the first dispatch. An unreadable/malformed file falls
+ * back to the legacy (disabled) catalogue so opt-in stays strictly opt-in:
+ * an invalid file can never turn enforcement on by accident.
+ */
+export function loadRbacConfigSync(rootDir: string): RbacConfig {
+  for (const relative of ['config/config.toml', 'config.toml']) {
+    try {
+      const content = fsSync.readFileSync(path.join(rootDir, relative), 'utf-8');
+      return normalizeRbacConfig(toml.parse(content) as unknown);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
+      return defaultRbacConfig();
     }
   }
   return defaultRbacConfig();

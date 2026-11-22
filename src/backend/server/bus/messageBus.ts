@@ -8,6 +8,7 @@
  */
 
 import { error, json, type ApiResult } from '../api/http';
+import type { RbacDecision } from '../auth/rbacConfig';
 
 /**
  * B1 — identity of the caller, derived exclusively by the server-side adapter.
@@ -32,6 +33,8 @@ export interface CommandContext {
   operationId?: string;
   /** Server-trusted principal. Optional because non-HTTP callers have none. */
   principal?: Principal;
+  /** B3 permission decision, set by the opt-in RBAC middleware only. */
+  rbac?: RbacDecision;
   /** Correlation id useful for logs and audit trails. */
   correlationId: string;
   /** Optional lifecycle hook supplied by the HTTP adapter for SSE cleanup. */

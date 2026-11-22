@@ -13,10 +13,12 @@ import {
 } from '@backend/server/auth/rbacConfig';
 
 /**
- * B2 — the RBAC catalogue is declarative and inert.
+ * B2 — the RBAC catalogue is declarative and readable.
  *
- * `enable_rbac=true` must not change any response until B3 installs the bus
- * middleware and B6 supplies an identity provider.
+ * B3 installs the opt-in bus gate; these tests keep pinning the config shape.
+ * With the full default ACL the gate is permissive, so the HTTP responses
+ * asserted here are unchanged. Actual denial/membership cases live in
+ * `tests/rbacMiddleware.test.ts`.
  */
 
 const REPO_ROOT = process.cwd();
@@ -133,7 +135,10 @@ describe('Config RBAC dichiarativa e inerte (B2)', () => {
     assert.strictEqual(config.auth.audience, 'wiki-forge');
   });
 
-  it('enable_rbac=true alone does not change any HTTP response', async () => {
+  it('enable_rbac=true with the full default ACL keeps 200/401/docs unchanged', async () => {
+    // B3 made the flag effective; the default ACL grants all four roles, so
+    // these responses are still byte-identical. Restricted ACLs are covered in
+    // tests/rbacMiddleware.test.ts (403 + membership filters).
     const configToml = '[enterprise]\nenable_rbac = true\n';
     await withEnv({ WIKIFORGE_API_TOKEN: undefined }, async () => {
       await withHarness(configToml, async (baseUrl) => {

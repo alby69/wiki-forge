@@ -82,6 +82,8 @@ import { handleDocsRequest } from './api/docsBrowser';
 import { readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus } from './bus/messageBus';
 import { deriveRequestPrincipal } from './auth/principal';
+import { loadRbacConfigSync } from './auth/rbacConfig';
+import { createRbacMiddleware } from './auth/rbacMiddleware';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from './modules/toolsModule';
 import { createReviewModule, type ReviewModule } from './modules/reviewModule';
@@ -778,6 +780,10 @@ export class AgentServer {
     this.llmClient = llmClient;
     this.projects = new ProjectService(rootDir);
     this.bus = createMessageBus();
+    // B3 — opt-in gate. With `enable_rbac=false` this middleware returns
+    // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
+    // The catalogue is read once at construction; no connection is opened.
+    this.bus.use(createRbacMiddleware(loadRbacConfigSync(rootDir)));
     this.catalogue = createCatalogueModule(rootDir);
     this.catalogue.register(this.bus);
     this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);

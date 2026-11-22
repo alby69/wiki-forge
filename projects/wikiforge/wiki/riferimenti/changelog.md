@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B3 — Gate RBAC opt-in via middleware del bus
+
+- **Policy**: nuovo `auth/rbacMiddleware.ts` con `OPERATION_ROLES` (mappa esplicita di tutti gli 84 comandi registrati → Reader/Contributor/KnowledgeEngineer/Admin; comandi sconosciuti → Admin, fail closed), `ROLE_RANK`, `decideRbac()` e `createRbacMiddleware()`. Le chiavi `projectAcls["progetto/cartella"]` restringono i ruoli per cartella (prefix matching, chiave più lunga vince); `loadRbacConfigSync()` e `rolesForScope()` estendono il lettore B2.
+- **Attivazione**: `AgentServer` installa il middleware in costruzione. Con `enable_rbac=false` è un no-op su ogni dispatch: nessun processo esterno, nessuna connessione, envelope e status code invariati (B0 resta 8/8). Con il flag acceso la decisione `{ allowed, roles, requiredRole, visibleProjects }` è esposta in `CommandContext.rbac` senza mutare i payload.
+- **Negazione e filtri**: il rifiuto usa `error(..., 403)`, quindi lo stesso envelope `{ success: false, error }`. `projects.list` e `schedule.approvals` filtrano per `visibleProjects`; `ApprovalStore.list()` accetta un `project` opzionale additivo e `schedule.approvals` accetta `?project=`.
+- **Verifica**: 28 nuovi test in `tests/rbacMiddleware.test.ts` — tabella 4 ruoli × comandi rappresentativi, ACL di cartella, unknown fail-closed, 403 HTTP esatto, enumerazione cross-project vuota, approvazioni per progetto e completezza della mappa sui 84 comandi. Test B2 adattato: con ACL piena i 200/401/docs restano invariati; suite Node 386 pass + 1 skip pre-esistente. Gradi B2 1 → 3.5, B3 2.5 → 4, RBAC complessivo ~3/5.
+
 ### B2 — Config RBAC e catalogo ruoli (inerte)
 
 - **Schema**: `config_schema.py` estende `[enterprise]` con `auth` (issuer, audience, jwksUrl, samlMetadataUrl), `roles` e `projectAcls`, mantenendo la validazione come fonte di verità.

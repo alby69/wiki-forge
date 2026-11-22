@@ -16,7 +16,7 @@ sources:
 ---
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (5/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, C0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (6/23 step: A0 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -79,7 +79,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
 | B1 | ✅ | `Principal` in `bus/messageBus.ts`, `auth/principal.ts`, `agentServer.ts`, `tests/principal.test.ts` (6 test) |
 | B2 | ✅ | `config_schema.py` (enterprise.auth/roles/projectAcls), 3 config, `auth/rbacConfig.ts`, `tests/rbacConfig.test.ts` (6 test), `test_config_schema.py` (4 nuovi) |
-| B3 | ⬜ | — |
+| B3 | ✅ | `auth/rbacMiddleware.ts` (policy + `bus.use`), `auth/rbacConfig.ts` (loader sync + ACL cartella), `bus/messageBus.ts` (`context.rbac`), `agentServer.ts`, `approvalStore.ts`, `projectsModule.ts`, `schedulerModule.ts`, `tests/rbacMiddleware.test.ts` (28 test) |
 | B4 | ⬜ | — |
 | B5 | ⬜ | — |
 | B6 | ⬜ | — |
@@ -104,8 +104,9 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo C0: C1 1,
-Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
+A5 4.5, L4 ~3.0; dopo B1: B1 1.5; dopo B2: B1 2, B2 1; dopo B3: B2 3.5,
+B3 4, RBAC ~3.0; dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono
+ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -116,11 +117,11 @@ Neo4j ~0.65; gli altri valori coincidono ancora con “Oggi”).
 | A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
 | — | **Complessivo L4** | **~2.5** | **~3.0** | **4.5–5** |
 | B1 | Autenticazione / identità del chiamante | 0.5 | 2 | 5 |
-| B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 1 | 5 |
-| B3 | Isolamento progetto/cartella e membership | 2.5 | 2.5 | 5 |
+| B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 3.5 | 5 |
+| B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 3 | 5 |
 | B5 | UI identità e sessione | 0 | 0 | 5 |
-| — | **Complessivo RBAC** | **~1** | **~1** | **5** |
+| — | **Complessivo RBAC** | **~1** | **~3.0** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 1 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 1 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
@@ -456,6 +457,21 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/rbacMiddleware.test.ts` + test approvazioni per
   progetto; `npm test`, `typecheck`.
 - **Grado atteso**: B2 1 → 3.5, B3 2.5 → 4.
+- **Risultato (2026-11-22)**: ✅ completato. Il middleware `createRbacMiddleware()`
+  viene installato su ogni `AgentServer` ma è no-op con `enable_rbac=false`:
+  B0 resta 8/8, i 200 attuali e l'envelope 401 sono byte-identici. Con il flag
+  acceso la decisione (`allowed`, `roles`, `requiredRole`, `visibleProjects`)
+  viene scritta in `context.rbac`; `OPERATION_ROLES` mappa esplicitamente tutti
+  gli 84 comandi registrati (sconosciuti → `Admin`, fail closed) e
+  `projectAcls["progetto/cartella"]` restringe i ruoli per cartella. Il 403 usa
+  `error(..., 403)` con envelope `{ success: false, error }` invariato.
+  `projects.list` e `schedule.approvals` filtrano per membership;
+  `ApprovalStore.list()` accetta `project` opzionale. 28 nuovi test in
+  `tests/rbacMiddleware.test.ts` (matrice 4 ruoli × comandi, ACL cartella, 403,
+  cross-project enumeration vuota, approvazioni per progetto); suite Node
+  386 pass + 1 skip pre-esistente. Nessun IdP: il principal legacy
+  `process:api-token` eredita l'ACL di progetto come service account; B5/B6
+  completeranno provenance e identità umana.
 
 ### B4 — Chiusura dei bypass auth
 
@@ -684,6 +700,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 | 2026-11-22 | B1 | B1 · RBAC complessivo | 0.5 · ~1 | 1.5 · ~1.5 | Principal server-derived opzionale nel bus, derivazione in `auth/principal.ts`, popolamento in `dispatchApiCommand`; body/header non possono sovrascriverlo; 6 test dedicati, nessun enforcement. |
 | 2026-11-22 | B2 | B1 / B2 · RBAC complessivo | 1.5 · 0 · ~1.5 | 2 · 1 · ~2 | Schema enterprise con auth/roles/projectAcls, 4 ruoli canonici in 3 config, lettore TOML Node con default; 4 test Python + 6 Node, `enable_rbac=true` da solo non cambia risposte. |
+| 2026-11-22 | B3 | B2 / B3 · RBAC complessivo | 1 · 2.5 · ~2 | 3.5 · 4 · ~3.0 | Gate opt-in sul bus: matrice 84 comandi → 4 ruoli (unknown = Admin), ACL per cartella, 403 con envelope esistente, `context.rbac`, filtri membership su progetti/approvazioni; 28 test Node, B0 invariato. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
