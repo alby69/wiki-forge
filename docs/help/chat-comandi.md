@@ -29,24 +29,11 @@ La risposta dell'agente arriva in **streaming** e può proporre modifiche: se in
 
 Digitando `/` si apre il pannello **⚡ Comandi**: il catalogo completo, diviso per categoria (Ingestione, Curatela, Audit, Ricerca, Studio, Knowledge Engineering, Slide, Utility). I più usati:
 
-| Comando | Cosa fa |
-|---|---|
-| `/help [argomento]` | **Guida in-app** (stessi contenuti di F1, in testo) |
-| `/consult <argomento>` | Sintesi multi-fonte con citazioni |
-| `/compile` | Compila fonti → wiki |
-| `/audit` | Controlla link rotti, orfani, frontmatter |
-| `/trace <argomento>` | Traccia le connessioni di un concetto |
-| `/search <query>` | Ricerca full-text nella wiki |
-| `/backlinks <nota>` | Note che citano quella indicata |
-| `/related <nota>` | Correlazioni suggerite (note non ancora collegate) |
-| `/deep-research <domanda>` | Report esteso con matrice delle fonti |
-| `/verify <nota>` | Segna la nota come verificata da un umano |
-| `/digest` | Riassunto delle attività e della salute della wiki |
-| `/adversarial-review [nota]` | Revisione critica: contraddizioni e citazioni mancanti |
-| `/study-guide [argomento]` | Guida di studio (con `/quiz`, `/mindmap`) |
-| `/wizard [scenario]` | Scenari guidati di onboarding |
+Il catalogo completo e unico è [`SLASH_COMMANDS_REFERENCE.md`](../SLASH_COMMANDS_REFERENCE.md): contiene ogni comando, gli alias, l'equivalente grafico e i comandi dichiarati solo negli skill. Questa guida non duplica la tabella.
 
-L'elenco completo è nel pannello ⚡ Comandi dentro la chat.
+<!-- DOC_BLOCK_REF:slash-commands docs/SLASH_COMMANDS_REFERENCE.md sha256:38c065da0ec0bd8d4210208f4f930f6a56faeaee8c5e988cdb2c5c1a77555dba -->
+
+L'elenco completo è anche nel pannello ⚡ Comandi dentro la chat.
 
 > **Equivalente grafico**: `/verify`, `/digest`, `/adversarial-review` e `/diff` hanno una controparte nella **Review Studio** (tasto destro sulla nota, pulsante **🧐 Revisione** o `Ctrl+Alt+R/C/D/F`), che è il percorso consigliato per controllare qualità, storico e diff della nota aperta.
 >
@@ -60,4 +47,4 @@ L'elenco completo è nel pannello ⚡ Comandi dentro la chat.
 
 Non sai da dove partire? Apri la **guida col tasto F1**: gli argomenti sono già scelti in base a cosa stai facendo, e dal pannello puoi passare la domanda all'agente col pulsante **💬 Chiedi all'agente**.
 
-**Approfondisci:** `docs/AGENT.md` §5 (routing dei comandi), `docs/TUTORIAL.md` §5 (tabella comandi).
+**Approfondisci:** [`SLASH_COMMANDS_REFERENCE.md`](../SLASH_COMMANDS_REFERENCE.md) (catalogo unico), `docs/AGENT.md` §5 (routing dei comandi), `docs/TUTORIAL.md` §5 (manutenzione periodica).

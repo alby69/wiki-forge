@@ -342,35 +342,11 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
 
 ## 5. Comandi di Manutenzione Periodica della Wiki nella Chat UI
 
-Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2, puoi richiamare questi comandi direttamente dalla chat dell'interfaccia grafica:
+Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2, puoi richiamare i comandi direttamente dalla chat dell'interfaccia grafica.
 
-| Comando Chat | Scopo / Azione nell'Interfaccia Grafica UI |
-|--------------|--------------------------------------------|
-| `help [argomento]` / `/help` | Guida in-app: indice completo o un argomento specifico (pannello **?** / tasto **F1**) |
-| `adversarial-review` / `/adversarial-review` | Stress-test e revisione avversaria della tesi per identificare contraddizioni e citazioni mancanti |
-| `digest` / `/digest` | Riassunto in linguaggio naturale delle ultime modifiche e della salute della wiki (analogo alla scheda **Digest** della Review Studio, che però è deterministica) |
-| `diff` / `/diff` | Confronto tra la nota e una versione precedente (analogo alla scheda **Confronta versioni**, che usa gli snapshot locali in modo deterministico) |
-| `consult`, `search`, `backlinks`, `related`, `trace`, `deep-research` | Interrogazione e ricerca: chat e **Research Studio** condividono gli stessi endpoint. Scrivendo uno dei sei comandi nella chat si apre la scheda corrispondente con la query già compilata. |
-| `study-guide`, `quiz`, `mindmap`, `audio-overview`, `note`, `promote-note`, `thesis-chapter` | Studio e sintesi: chat e **Study Studio** condividono gli stessi generatori deterministici (`POST /api/notes/study/*`). Gli artefatti vanno in `output/`, gli appunti in `notes/quick-notes.md`; la scheda **Tesi** aggiorna anche `output/thesis_compiled.md`. |
-| `verify` / `/verify` (alias `human-review` / `/human-review`) | Registra la revisione umana di una nota, promovendola al livello di massima fiducia `human-reviewed` 🟢 (equivalente alla scheda **Verifica**) |
-| `slides` / `/slides` (`/generate-slides`) | Generazione di una presentazione a diapositive (reveal.js) dai capitoli della tesi |
-| `audit` / `/audit` | Controllo generale dell'archivio (link rotti, note isolate, sovrapposizioni) |
-| `reindex` / `/reindex` | Rigenerazione automatica degli indici generali e tematici |
-| `prune` / `/prune` | Pulizia automatica delle note vuote o bozze abbandonate |
-| `schema-lint` / `/schema-lint` | Validazione delle note rispetto allo schema definito |
-| `schema-infer` / `/schema-infer` | Proposta automatica di una configurazione di schema dalla wiki |
-| `lint-frontmatter` / `/lint-frontmatter` | Validazione della sintassi delle intestazioni YAML OKF v0.2 |
-| `validate-cq` / `/validate-cq` | Validazione della copertura rispetto alle Competency Questions |
-| `suggest-odp` / `/suggest-odp` | Suggerimento di schemi di progettazione ontologica (Ontology Design Patterns) |
-| `neuro-check` / `/neuro-check` | Controllo di coerenza logica e inferenza di collegamenti concettuali |
-| `ke-maturity` / `/ke-maturity` | Valutazione della maturità del sistema su 6 dimensioni operative |
-| `ontology-check` / `/ontology-check` | Validazione logica delle regole ontologiche (concetti isolati, cicli) |
-| `stats` / `/stats` | Calcolo delle metriche di crescita della wiki |
-| `merge <a> <b>` / `/merge` | Unione nell'interfaccia di due articoli che trattano lo stesso argomento |
-| `split <art> <sezione>` / `/split` | Divisione di un articolo lungo in due schede distinte |
-| `stub <concetto>` / `/stub` | Creazione di una nota segnaposto per approfondimenti futuri |
-| `retag <art> [+tag]` / `/retag` | Aggiornamento o aggiunta di tag a una scheda |
-| `export-semantic` / `/export-semantic` | Esportazione dei dati nei formati standard W3C (JSON-LD e Turtle) via UI |
+Il **catalogo completo e unico** — con alias, categoria, equivalente grafico e note sui comandi dichiarati solo negli skill — è [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/slash-commands-reference.md). Questa sezione non duplica la tabella: il pannello **⚡ Comandi** della chat, il comando `/help` e la guida in-app fanno riferimento allo stesso catalogo.
+
+Per la manutenzione ricorrente usa soprattutto `/audit`, `/reindex`, `/stats`, `/maturity`, `/verify` e `/digest`; per lo studio e la ricerca usa le schede **📚 Studio** e **🔎 Research**, che condividono gli stessi endpoint dei comandi chat.
 
 ---
 

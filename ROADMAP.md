@@ -54,7 +54,7 @@
 | 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
 | 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 16 Python CLI scripts with real-time SSE log streaming |
 | 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities |
-| 42b | Incremental KB Versioning & Rollback Engine | ✅ Done | Added `scripts/versioning.py`, `wiki/versions/` snapshot backups, and `/rollback` agent command |
+| 42b | Incremental KB Versioning & Rollback Engine | ✅ Done | Added `scripts/versioning.py`, `wiki/versions/` snapshot backups and the UI-only rollback workflow (`VersionTimeline.ts`, Review Studio); chat commands remain planned |
 | 43 | Documentation Overhaul & 5-Phase Operator Workflow | ✅ Done | Streamlined `docs/`, eliminated redundant files, updated architecture and tutorial docs |
 | 44 | Voice & Multimedia Ingestion (No-Code Entry) | ✅ Done | Integrazione di trascrizione/dettatura vocale (`scripts/voice_ingest.py`) per trasformare registrazioni in note OKF strutturate. |
 | 45 | Automated "Thesis Defense" Slide Generation | ✅ Done | Integrazione della skill `slides` e modelli reveal.js (`templates/reveal/`) per generare deck di presentazione offline-ready. |
@@ -96,7 +96,7 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 **Deliverables:**
 - Implemented `scripts/versioning.py` for creating version snapshots in `wiki/versions/`.
-- Updated `AGENT.md` and `skills/wiki-curate/` with the `/rollback note=<note> [to=version]` command contract.
+- Updated `docs/AGENT.md` with the UI-only version history and rollback workflow; chat command support is tracked in `docs/ROADMAP.md`.
 - Integrated logging of version changes into `wiki/log.md` conforming to OKF §9.
 
 ---

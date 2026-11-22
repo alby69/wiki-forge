@@ -4,6 +4,17 @@
 
 ---
 
+## 🧭 Comandi chat pianificati (non implementati)
+
+| Comando | Stato | Alternativa disponibile oggi |
+|---|---|---|
+| `/rollback` | ⬜ Pianificato | **🕐 Cronologia** nell'editor e scheda **Confronta versioni** della Review Studio |
+| `/history` | ⬜ Pianificato | **🕐 Cronologia** nell'editor (`VersionTimeline.ts`) |
+
+I comandi implementati sono nel [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md); questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
+
+---
+
 ## 📐 Filosofia Architetturale: Unix KISS & DRY
 
 Wiki-Forge rispetta rigorosamente i principi di progettazione software **Unix KISS (Keep It Simple, Stupid)** e **DRY (Don't Repeat Yourself)**:

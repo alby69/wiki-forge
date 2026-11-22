@@ -1,6 +1,6 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (25 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (26 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -13,6 +13,7 @@ Indice completo dei documenti in `docs/` (25 file), dei contenuti della guida in
 | [`WORKFLOW.md`](WORKFLOW.md) | Flusso integrato NotebookLM → Wiki-Forge in 5 fasi + checklist operativa settimanale. |
 | [`STARTUP.md`](STARTUP.md) | Da una wiki esistente a un nuovo progetto da zero. |
 | [`SOURCES.md`](SOURCES.md) | Gestione delle fonti (sources/, backup/, conversione). |
+| [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md) | Catalogo unico dei comandi slash: sorgente usata da README, tutorial, guida in-app e agente. |
 
 ## 🎓 Studio e sintesi
 
@@ -63,7 +64,7 @@ Indice completo dei documenti in `docs/` (25 file), dei contenuti della guida in
 | `barra-alto` | `TUTORIAL.md` §2 (viste e pulsanti) |
 | `caricare-documenti` | `TUTORIAL.md` FASE 2, `SOURCES.md` |
 | `compilare` | `TUTORIAL.md` FASE 3, `WORKFLOW.md` |
-| `chat-comandi` | `TUTORIAL.md` §5, `AGENT.md` §5, README (radice) |
+| `chat-comandi` | `SLASH_COMMANDS_REFERENCE.md`, `TUTORIAL.md` §5, `AGENT.md` §5, README (radice) |
 | `viste-grafo` | `TUTORIAL.md` §2 (viste dell'area di lavoro) |
 | `modifica-note` | `USER_GUIDE.md` (toolbar), `TUTORIAL.md` FASE 3 |
 | `review-studio` | `TUTORIAL.md` §2/§5.1, `USER_GUIDE.md` (Review Studio), `TECHNICAL_ARCHITECTURE.md` §2.11 |

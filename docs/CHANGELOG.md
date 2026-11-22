@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fase 1 KISS/DRY: catalogo slash commands e pulizia documentale
+
+- **Catalogo unico**: nuovo `docs/SLASH_COMMANDS_REFERENCE.md` con tutti i comandi slash, alias, categoria ed equivalente grafico. `README.md`, `TUTORIAL.md`, `docs/help/chat-comandi.md` e `docs/AGENT.md` ora puntano a questo file invece di duplicare la tabella.
+- **Niente funzionalità fantasma**: rimossi i riferimenti a `/rollback` e `/history` come comandi chat esistenti; lo storico e il ripristino restano UI-only e i comandi pianificati sono tracciati in `docs/ROADMAP.md`.
+- **Drift semantico**: `scripts/check_docs_sync.py` verifica ora l'hash del blocco `DOC_BLOCK:slash-commands` nei riferimenti delle guide in-app e offre `--fix` per aggiornarlo dopo una modifica al catalogo. Il controllo sostituisce la vecchia verifica dei comandi in `README.md`/`TUTORIAL.md`, ora semplici puntatori.
+- **Proiezione wiki**: aggiunto il nuovo documento al mapping e rigenerata la wiki di self-documentazione da `docs/`.
+
 ### Fase 2 e 3 del refactoring API: bus backend, client tipizzato e bus UI
 
 - **Bus backend disaccoppiato**: `MessageBus` (`src/backend/server/bus/messageBus.ts`) instrada 82 dei 87 comandi dichiarati in `ROUTES` con contesto `rootDir`/`projectId`/`operationId`/`correlationId`, hook `onClose` per gli SSE, middleware ed eventi `command:handled`/`command:failed`. `AgentServer.getBus()` è accessor additivo; `handleRequest()` e gli altri metodi pubblici restano invariati. I soli route non su bus sono i due endpoint docs pubblici e i tre proxy FastAPI `/api/v1/graph/sync|validate|rag`, lasciati prima di CORS/token.

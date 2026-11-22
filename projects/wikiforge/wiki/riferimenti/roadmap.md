@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "🚀 Wiki-Forge: Roadmap di Sviluppo"
-description: "Wiki-Forge rispetta rigorosamente i principi di progettazione software Unix KISS (Keep It Simple, Stupid) e DRY (Don't Repeat Yourself):"
+description: "I comandi implementati sono nel SLASHCOMMANDSREFERENCE.md; questo evita di documentare come esistenti funzionalità ancora assenti dal router chat."
 resource: docs/ROADMAP.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
@@ -17,6 +17,17 @@ sources:
 # 🚀 Wiki-Forge: Roadmap di Sviluppo
 
 > **Nota**: Questo documento definisce gli obiettivi di sviluppo a breve e medio/lungo termine per la piattaforma **Wiki-Forge** (Engine di Knowledge Engineering, RAG Semantico e Compilatore di Conoscenza OKF v0.2).
+
+---
+
+## 🧭 Comandi chat pianificati (non implementati)
+
+| Comando | Stato | Alternativa disponibile oggi |
+|---|---|---|
+| `/rollback` | ⬜ Pianificato | **🕐 Cronologia** nell'editor e scheda **Confronta versioni** della Review Studio |
+| `/history` | ⬜ Pianificato | **🕐 Cronologia** nell'editor (`VersionTimeline.ts`) |
+
+I comandi implementati sono nel [`SLASH_COMMANDS_REFERENCE.md`](slash-commands-reference.md); questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
 
 ---
 

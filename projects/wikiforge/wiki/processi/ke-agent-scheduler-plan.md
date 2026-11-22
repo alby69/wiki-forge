@@ -304,7 +304,8 @@ annullamento per shutdown viene recuperato subito al riavvio.
   `auto_apply = false`. Il report finisce in `output/scheduler/` e la UI mostra
   un pulsante *Applica* che passa da Review Studio.
 - **Snapshot prima della mutazione**: richiamo di `scripts/versioning.py` per
-  le note coinvolte; rollback disponibile con `/rollback`.
+  le note coinvolte; rollback disponibile dalla **🕐 Cronologia** dell'editor o
+  dalla scheda **Confronta versioni** della Review Studio.
 - **Audit log**: `output/scheduler/audit.jsonl` con `{job, useCase, startedAt,
   endedAt, status, exitCodes, filesChanged, actor="scheduler"}`. I file di log
   non contengono token o chiavi (redazione di `api_key`/`token`).

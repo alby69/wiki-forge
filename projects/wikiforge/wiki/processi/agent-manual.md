@@ -212,5 +212,6 @@ Track and maintain wiki quality against key health metrics:
   - **v2.0**: Command Reference system, 15+ atomic commands, modular skill routing.
   - **v1.0**: Initial LLM Wiki Schema (Karpathy pattern).
 
-## /rollback (not implemented)
-> **Status: documented but not implemented.** There is no `/rollback` (or `/history`) chat command in the server. Version history and restore are available from the **Web UI only**: the **🕐 Cronologia** button in the editor header opens the *Version History & Rollback* modal (`src/frontend/components/advanced-mode/VersionTimeline.ts`), whose **🔄 Rollback to vN** action restores the selected snapshot. The **Review Studio → Confronta versioni** tab additionally offers a deterministic diff and restore against the local `.wiki-forge/snapshots/` store.
+- **Command catalog**: the single human-readable reference is [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/slash-commands-reference.md). Do not duplicate command tables in this manual.
+- **Versioning**: history and restore are UI-only (🕐 Cronologia / Review Studio). No chat slash command is exposed for them; planned commands are tracked in `ROADMAP.md`.
+

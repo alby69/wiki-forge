@@ -76,15 +76,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## 💬 Agent Slash Commands Reference
 
-The LLM Knowledge Engineer agent supports the following slash commands:
-
-- Ingestion: `/compile`, `/convert-only`, `/ingest`, `/recompile`
-- Curation & Editing: `/new-article`, `/merge`, `/split`, `/stub`, `/retag`, `/verify` (alias `/human-review`), `/diff`
-- Audit & Maintenance: `/audit`, `/reindex`, `/prune`, `/lint-frontmatter`, `/ontology-check`, `/stats`, `/schema-lint`, `/schema-infer`
-- Query & Research: `/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`
-- Study & Synthesis: `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`, `/adversarial-review`, `/digest`, `/slides` (alias `/generate-slides`)
-- Knowledge Engineering: `/export-semantic`, `/suggest-odp`, `/neuro-check`, `/ke-maturity`, `/validate-cq`, `/tag-suggest`, `/maturity`
-- Utilities & Setup: `/wizard`, `/sources` (`sources regenerate`), `/template` (`template show`), `/export`, `/help [topic]`, `/skill`, `/apply` (alias `/applica`)
+The canonical catalog lives in [`docs/SLASH_COMMANDS_REFERENCE.md`](docs/SLASH_COMMANDS_REFERENCE.md). It is the single human-readable source used by the tutorial, the in-app help and the agent manual; the chat **⚡ Comandi** panel is generated from `skills/*/SKILL.md`.
 
 > In the app, press **F1** (or the **?** button) for the context-sensitive in-app guide; `/help [topic]` in chat returns the same content.
 

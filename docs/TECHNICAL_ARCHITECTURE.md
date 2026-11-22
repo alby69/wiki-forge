@@ -87,7 +87,7 @@ Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/componen
 - **Source/Synthesis Isolation**: Original sources remain untouched in `sources/` (`backup/`) and `raw/`.
 - **Git Auto-Commits**: `scripts/versioning.py` creates an incremental git commit for a note (`version: auto-commit <note> ...`), keeping a repository-level history of changes.
 - **Version Snapshots**: the scan scripts skip a reserved `wiki/versions/` folder (`<note>.vN.md`) when present; the frontend timeline itself is built from the note's `version` frontmatter field.
-- **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Chat commands `/rollback` and `/history` are **not implemented** (docs only); the chat `/diff` command remains LLM best-effort, while the deterministic diff lives in the **Review Studio** (§2.11).
+- **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Version history and rollback are UI-only; the deterministic diff lives in the **Review Studio** (§2.11) and the chat `/diff` command remains LLM best-effort.
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
 Implemented in `src/backend/server/mcp_server.py` and `docker-compose.yml`:

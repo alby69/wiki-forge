@@ -4,6 +4,7 @@
 
 * [AUDIT_BASELINE — Wiki-Forge Repository Baseline Audit (Phase 0 / Task T0.1)](audit-baseline.md) — ├── .claude/                   # Claude Code skills symbolic links (.claude/skills/)
 * [Caricare documenti](help-caricare-documenti.md) — Argomenti: carica, upload, importa, import, file, pdf, docx, drop, trascina, fonti, sorgenti, sources, web clipper, notebooklm
+* [Catalogo unico dei comandi slash](slash-commands-reference.md) — Questo documento è la sorgente umana unica dei comandi slash di Wiki-Forge. README.md, TUTORIAL.md, docs/help/chat-comandi.md e l'agente fanno riferimento a…
 * [Changelog](changelog.md) — All notable changes to the wiki-forge template will be documented in this file.
 * [Compilare le fonti](help-compilare.md) — Argomenti: compila, compile, compilazione, ingesta, ingest, recompile, convert, pipeline, barra avanzamento
 * [Developer Mode e strumenti](help-modalita-dev.md) — Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills
@@ -24,6 +25,6 @@
 * [Study Studio](help-study-studio.md) — Argomenti: study, studio, studio-studio, guida di studio, study-guide, quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast, note…
 * [Viste: File, Editor, Scratchpad, Graph, Split](help-viste-grafo.md) — Argomenti: viste, vista, file, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio
 * [Wiki di wiki-forge](help-wiki-di-wiki-forge.md) — Argomenti: wiki, docs, documentazione, architettura, consult, projectid, self-documentation, sintesi
-* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (25 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
-* [🚀 Wiki-Forge: Roadmap di Sviluppo](roadmap.md) — Wiki-Forge rispetta rigorosamente i principi di progettazione software Unix KISS (Keep It Simple, Stupid) e DRY (Don't Repeat Yourself):
+* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (26 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
+* [🚀 Wiki-Forge: Roadmap di Sviluppo](roadmap.md) — I comandi implementati sono nel SLASHCOMMANDSREFERENCE.md; questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
 
