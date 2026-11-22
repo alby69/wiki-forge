@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (2/23 step: A0 ✅, B0 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (3/23 step: A0 ✅, B0 ✅, C0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -68,7 +68,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B5 | ⬜ | — |
 | B6 | ⬜ | — |
 | B7 | ⬜ | — |
-| C0 | ⬜ | — |
+| C0 | ✅ | `[neo4j]` in 3 config, `config_schema.py`, `requirements.txt`, `tests/python/test_config_schema.py` (6 nuovi test) |
 | C1 | ⬜ | — |
 | C2 | ⬜ | — |
 | C3 | ⬜ | — |
@@ -88,7 +88,8 @@ Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
 La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
-A5 4.5, complessivo L4 ~3.0; gli altri valori coincidono ancora con “Oggi”).
+A5 4.5, L4 ~3.0; dopo C0: C1 1, Neo4j ~0.65; gli altri valori coincidono
+ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -104,14 +105,14 @@ A5 4.5, complessivo L4 ~3.0; gli altri valori coincidono ancora con “Oggi”).
 | B4 | Provenance `human:<id>` / `process:<id>` vincolata | 3 | 3 | 5 |
 | B5 | UI identità e sessione | 0 | 0 | 5 |
 | — | **Complessivo RBAC** | **~1** | **~1** | **5** |
-| C1 | Driver e configurazione Neo4j | 0 | 0 | 5 |
+| C1 | Driver e configurazione Neo4j | 0 | 1 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 1 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
 | C4 | Interrogazione Cypher live | 0 | 0 | 5 |
 | C5 | Sync Neo4j → vault Markdown | 0 | 0 | 5 |
 | C6 | Riconciliazione e soppressione echo | 0 | 0 | 5 |
 | C7 | Propagazione real-time al browser | 0 | 0 | 5 |
-| — | **Complessivo Neo4j** | **~0.5** | **~0.5** | **5** |
+| — | **Complessivo Neo4j** | **~0.5** | **~0.65** | **5** |
 
 ---
 
@@ -493,6 +494,14 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   metodo pubblico cambiato; nessun tentativo di connessione a startup.
 - **Verifica**: test config + `check_docs_sync.py`, `pytest tests/python/`.
 - **Grado atteso**: C1 0 → 1.
+- **Risultato (2026-11-22)**: ✅ completato. `[neo4j]` (`enabled`, `uri`, `user`,
+  `passwordEnv`, `database`, `tls`, tabella `projects`) aggiunto a
+  `config/config.toml` e alle due config di progetto; schema corrispondente in
+  `config_schema.py`; `requirements.txt` vincola `neo4j>=5.26,<6.0` e dichiara
+  `networkx>=3.4,<4.0`. `enabled = false` ovunque e nessun modulo importa il
+  driver: la validazione resta un parsing TOML puro (verificato da test).
+  6 nuovi test in `tests/python/test_config_schema.py`; 18 test totali in quel
+  file, 79 nel suite Python. Nessun endpoint, envelope o metodo pubblico toccato.
 
 ### C1 — Client Neo4j con dependency injection
 
@@ -635,6 +644,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | — | studio iniziale | — | — | Baseline misurata: L4 ~2.5, RBAC ~1, Neo4j ~0.5 su 5. Nessuno step implementato. |
 | 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
 | 2026-11-22 | B0 | — (nessun cambio) | — | — | Baseline auth fissata da 8 test: token opzionale, envelope 401 esatto, docs pubblici; noti e non corretti il bypass graph (B4) e il reviewer raw (B5). |
+| 2026-11-22 | C0 | C1 · Neo4j complessivo | 0 · ~0.5 | 1 · ~0.65 | Config `[neo4j]` dichiarata e disabilitata in 3 file, schema e dipendenze vincolate; 6 test dedicati, nessuna connessione o import del driver. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

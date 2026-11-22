@@ -96,3 +96,20 @@ fields = [ "version", "parent_commit", "generated" ]
 [enterprise]
 enable_rbac = false
 cloud_backup_webdav = ""
+
+# C0: dichiarazione inerte. Nessun codice apre una connessione a startup;
+# `passwordEnv` indica la variabile d'ambiente che conterrà la password.
+[neo4j]
+enabled = false
+uri = "bolt://localhost:7687"
+user = "neo4j"
+passwordEnv = "NEO4J_PASSWORD"
+database = "neo4j"
+tls = false
+
+# Un deployment con una sola database puo' mappare tutti i progetti allo stesso
+# nome e affidare l'isolamento alle label `wf:project` (verra' in C2).
+[neo4j.projects]
+default = "neo4j"
+tesi = "tesi"
+wikiforge = "wikiforge"

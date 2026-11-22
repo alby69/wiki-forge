@@ -117,5 +117,6 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > B0–B7, C0–C8), le dipendenze, i criteri di accettazione, i test di verifica e
 > la tabella del **grado di implementazione raggiunto** (aggiornata a ogni step)
 > sono in [`ROADMAP_Q1_Q2_2027_PLAN.md`](../processi/roadmap-q1-q2-2027-plan.md). Baseline:
-> L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5; **A0 completato** (gate `cq_gaps`
-> corretto, L4 ~3.0/5), altri step non ancora avviati.
+> L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5. Completati **A0** (gate `cq_gaps`
+> corretto, L4 ~3.0/5), **B0** (baseline auth senza cambi funzionali) e **C0**
+> (config Neo4j inerte, Neo4j ~0.65/5); gli altri step non sono ancora avviati.

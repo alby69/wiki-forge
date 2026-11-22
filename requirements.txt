@@ -9,7 +9,8 @@ owlrl
 pytest
 langgraph
 langchain-openai
-neo4j
+neo4j>=5.26,<6.0
+networkx>=3.4,<4.0
 watchdog
 fastapi
 uvicorn

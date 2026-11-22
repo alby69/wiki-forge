@@ -3,6 +3,7 @@
 import json
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -14,7 +15,8 @@ from src.backend.wikiforge.core.config_schema import (
     validate_config_shape,
 )
 
-REPO_CONFIG = Path(__file__).resolve().parents[2] / "config" / "config.toml"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_CONFIG = REPO_ROOT / "config" / "config.toml"
 FIXTURE_CONFIG = Path(__file__).resolve().parents[1] / "fixtures" / "ke_wiki" / "config.toml"
 
 
@@ -108,3 +110,56 @@ def test_cli_contract_is_reusable_from_node(tmp_path):
     assert payload["file"] == str(bad)
     assert payload["valid"] is False
     assert any("project.name" in p for p in payload["problems"])
+
+
+# --- C0: Neo4j configuration is declared but inert -------------------------
+
+def test_neo4j_section_is_part_of_the_schema():
+    assert "neo4j" in CONFIG_SCHEMA
+    assert set(CONFIG_SCHEMA["neo4j"]) == {
+        "enabled", "uri", "user", "passwordEnv", "database", "tls", "projects",
+    }
+
+
+def test_repo_config_declares_disabled_neo4j_connection():
+    assert validate_config_file(REPO_CONFIG) == []
+    with REPO_CONFIG.open("rb") as fh:
+        neo4j = tomllib.load(fh)["neo4j"]
+
+    assert neo4j["enabled"] is False
+    assert neo4j["uri"] == "bolt://localhost:7687"
+    assert neo4j["user"] == "neo4j"
+    assert neo4j["passwordEnv"] == "NEO4J_PASSWORD"
+    assert neo4j["database"] == "neo4j"
+    assert neo4j["tls"] is False
+    assert neo4j["projects"] == {"default": "neo4j", "tesi": "tesi", "wikiforge": "wikiforge"}
+
+
+def test_project_configs_keep_the_same_inert_neo4j_section():
+    for name in ("tesi", "wikiforge"):
+        config_path = REPO_ROOT / "projects" / name / "config.toml"
+        assert validate_config_file(config_path) == []
+        with config_path.open("rb") as fh:
+            assert tomllib.load(fh)["neo4j"]["enabled"] is False
+
+
+def test_neo4j_wrong_types_are_reported_with_full_path():
+    problems = validate_config_shape({
+        "neo4j": {"enabled": "yes", "tls": 1, "projects": {"default": 7}}
+    })
+    assert any("neo4j.enabled: expected bool, got str" in p for p in problems)
+    assert any("neo4j.tls: expected bool, got int" in p for p in problems)
+    assert any("neo4j.projects.default: expected str, got int" in p for p in problems)
+
+
+def test_config_validation_does_not_import_or_connect_to_neo4j():
+    """C0 must stay inert: validation only parses TOML, no driver is loaded."""
+    assert "neo4j" not in sys.modules
+    assert validate_config_file(REPO_CONFIG) == []
+    assert "neo4j" not in sys.modules
+
+
+def test_requirements_pin_neo4j_and_declare_networkx():
+    lines = [line.strip() for line in (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()]
+    assert "neo4j>=5.26,<6.0" in lines
+    assert "networkx>=3.4,<4.0" in lines

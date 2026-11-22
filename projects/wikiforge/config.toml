@@ -96,3 +96,17 @@ fields = [ "version", "parent_commit", "generated" ]
 [enterprise]
 enable_rbac = false
 cloud_backup_webdav = ""
+
+# C0: dichiarazione inerte; vedere config/config.toml per la documentazione.
+[neo4j]
+enabled = false
+uri = "bolt://localhost:7687"
+user = "neo4j"
+passwordEnv = "NEO4J_PASSWORD"
+database = "neo4j"
+tls = false
+
+[neo4j.projects]
+default = "neo4j"
+tesi = "tesi"
+wikiforge = "wikiforge"

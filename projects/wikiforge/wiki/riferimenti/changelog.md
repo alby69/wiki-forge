@@ -37,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### C0 — Configurazione Neo4j dichiarativa e inerte
+
+- **Configurazione**: nuova sezione `[neo4j]` in `config/config.toml`, `projects/tesi/config.toml` e `projects/wikiforge/config.toml` con `enabled = false`, `uri`, `user`, `passwordEnv` (nome della variabile d'ambiente, mai la password), `database`, `tls` e la tabella `projects` per il mapping per progetto. Aggiunto lo schema corrispondente in `config_schema.py` come fonte di verità.
+- **Dipendenze**: `neo4j>=5.26,<6.0` vincolato e `networkx>=3.4,<4.0` aggiunto a `requirements.txt` (usato da `graph_analytics.py`).
+- **Inerzia verificata**: nessun modulo importa il driver, nessuna connessione a startup; la validazione config resta un parsing TOML puro. 6 nuovi test in `tests/python/test_config_schema.py` (18 totali in quel file, 79 nella suite Python). Nessun endpoint, envelope o metodo pubblico modificato. Grado Neo4j da ~0.5 a ~0.65/5.
+
 ### B0 — Caratterizzazione auth (baseline, nessun cambio funzionale)
 
 - **Nuovo test** `tests/authCharacterization.test.ts` (8 test): fissano il comportamento attuale del gateway — 200 senza `WIKIFORGE_API_TOKEN`, 401 con envelope esatto `{"success":false,"error":"Unauthorized: Invalid or missing X-WikiForge-Token"}` per token mancante/errato, token valido via `X-WikiForge-Token` e `Authorization: Bearer`, `/api/openapi.json` e `/api/docs` pubblici.

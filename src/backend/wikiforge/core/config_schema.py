@@ -83,6 +83,17 @@ CONFIG_SCHEMA: dict[str, Any] = {
     "tags": {"allowed": (list, str), "blocked": (list, str)},
     "versioning": {"enabled": bool, "fields": (list, str)},
     "enterprise": {"enable_rbac": bool, "cloud_backup_webdav": str},
+    # C0 — declarative only. No runtime code opens a connection yet; the client
+    # and the sync services arrive in C1/C2 and must check `enabled` first.
+    "neo4j": {
+        "enabled": bool,
+        "uri": str,
+        "user": str,
+        "passwordEnv": str,
+        "database": str,
+        "tls": bool,
+        "projects": {"*": str},
+    },
 }
 
 
