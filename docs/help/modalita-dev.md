@@ -40,7 +40,7 @@ Il **pannello degli script** (Python) del progetto, per categoria:
 
 Ogni script mostra **parametri con descrizione**, pulsante **Execute** e **console di log** con l'output. Il **catalogo unico di sicurezza e automazione** — classe di rischio, orario suggerito, requisiti e argomenti predefiniti — è [`SCRIPT_AUTOMATION_REFERENCE.md`](../SCRIPT_AUTOMATION_REFERENCE.md): non duplicarlo qui.
 
-<!-- DOC_BLOCK_REF:script-automation docs/SCRIPT_AUTOMATION_REFERENCE.md sha256:9985517a7f61280ce2af8ae639e48c1ba43a23eb65ad8026eabcb96e8431079f -->
+<!-- DOC_BLOCK_REF:script-automation docs/SCRIPT_AUTOMATION_REFERENCE.md sha256:4578868ea434b746f5fbe14f5f0f259614699cc9f325335ddf15537336982c6b -->
 
 ### ⚙️ Config
 Impostazioni del progetto (LLM, cartelle, OKF...): vedi *Progetti e configurazione*.

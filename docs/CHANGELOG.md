@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### S1 — Automazione script: job script e classificazione arg-aware
+
+- **Job script**: `JobDef` ha `jobKind`/`scriptId`; `parseScheduleConfig()` accetta `use_case` oppure `script` (mai entrambi) e carica anche `config/script_schedules.toml`. Gli id duplicati tra i due file vengono respinti; i 9 job Use Case esistenti restano invariati.
+- **Use case sintetici**: ogni job script diventa un Use Case a 1 step (`__script__:<scriptId>`) con argomenti risolti dal catalogo; `Scheduler`, F5 e F6 non sono stati riscritti. I job mutanti restano disabilitati e passano dalla coda F6.
+- **F5 arg-aware**: `SCRIPT_SCHEMAS` genera `argSafety`; `docs_wiki_drift` con `check=true` è `read-only`, `check_docs_sync` con `fix=true` diventa `workspace`, `blocked` resta sempre tale. Il Policy Agent classifica gli argomenti effettivi con fallback fail-closed.
+- **Catalogo e test**: la tabella generata mostra gli override arg; nuovi test in `tests/agentScheduler.test.ts`, `tests/policyAgent.test.ts`, `tests/agentScriptJobs.test.ts` e nei test Python SSOT. Nessun endpoint o metodo pubblico di `AgentServer` è cambiato.
+
 ### S0 — Automazione script: SSOT di sicurezza e catalogo generato
 
 - **Classificazione centralizzata**: `SCRIPT_SCHEMAS` (`script_schema.py`) contiene ora `automation` per tutti i 29 script: `safety`, `schedulable`, `enabledDefault`, `defaultSchedule`, `defaultArgs`, `requires`, `notes`. Le classi sono `read-only`, `report`, `workspace`, `wiki-write` e `blocked`.

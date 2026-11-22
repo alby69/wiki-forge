@@ -403,7 +403,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "path": "wiki"
         },
         "requires": [],
-        "notes": "Con --write modifica il frontmatter: richiede F6."
+        "notes": "Con --write modifica il frontmatter: richiede F6.",
+        "argSafety": [
+          {
+            "when": {
+              "write": true
+            },
+            "safety": "wiki-write"
+          }
+        ]
       }
     },
     "check_docs_sync": {
@@ -429,7 +437,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
         "defaultSchedule": "0 6 * * 1",
         "defaultArgs": {},
         "requires": [],
-        "notes": "Con --fix riscrive docs/help/: in quel caso diventa workspace."
+        "notes": "Con --fix riscrive docs/help/: in quel caso diventa workspace.",
+        "argSafety": [
+          {
+            "when": {
+              "fix": true
+            },
+            "safety": "workspace"
+          }
+        ]
       }
     },
     "suggest_tags": {
@@ -498,7 +514,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "wiki": "wiki"
         },
         "requires": [],
-        "notes": "Con --write modifica il frontmatter: richiede F6."
+        "notes": "Con --write modifica il frontmatter: richiede F6.",
+        "argSafety": [
+          {
+            "when": {
+              "write": true
+            },
+            "safety": "wiki-write"
+          }
+        ]
       }
     },
     "schema_infer": {
@@ -1058,7 +1082,15 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
           "wiki_dir": "projects/wikiforge/wiki"
         },
         "requires": [],
-        "notes": "Senza --check riscrive la proiezione OKF: richiede F6."
+        "notes": "Senza --check riscrive la proiezione OKF: richiede F6. Con --check diventa read-only.",
+        "argSafety": [
+          {
+            "when": {
+              "check": true
+            },
+            "safety": "read-only"
+          }
+        ]
       }
     },
     "wiki_program_change_propose": {

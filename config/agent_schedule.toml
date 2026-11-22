@@ -1,5 +1,7 @@
 # Agenti schedulati per il KE Workbench (F1: validazione, F2/F3: esecuzione,
 # F5: policy LLM consultiva, F6: trigger da eventi con approvazione umana).
+# S1: i job script generati dalla UI stanno in config/script_schedules.toml e
+# vengono uniti qui dal parser; qui restano i 9 job Use Case originali.
 # Gli orari sono stati confermati; tutti i job hanno auto_apply = false.
 # I job cron non toccano la wiki: scrivono solo in output/ o in docs/METRICS.md.
 # F5/F6: ogni decisione è registrata con rationale e fonti in

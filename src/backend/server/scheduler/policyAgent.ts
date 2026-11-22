@@ -22,6 +22,8 @@ export interface PolicyStep {
   index: number;
   scriptId?: string;
   title?: string;
+  /** S1: resolved args used for arg-aware safety classification. */
+  args?: Record<string, unknown>;
   mutating: boolean;
 }
 
@@ -72,8 +74,11 @@ export interface PolicyAgentOptions {
 }
 
 /** Derived from SCRIPT_SCHEMAS; see scheduler/scriptSafety.ts. */
-export function isMutatingScript(scriptId: string | undefined): boolean {
-  return isMutatingFromRegistry(scriptId);
+export function isMutatingScript(
+  scriptId: string | undefined,
+  args?: Record<string, unknown>
+): boolean {
+  return isMutatingFromRegistry(scriptId, args);
 }
 
 const BASELINE_SOURCES = ['config/agent_schedule.toml', 'output/scheduler/audit.jsonl'];

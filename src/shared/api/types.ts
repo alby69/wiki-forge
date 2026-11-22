@@ -100,12 +100,18 @@ export interface ScriptParamDefDto {
   cliFlag?: string;
 }
 
+export interface ScriptArgSafetyRuleDto {
+  when: Record<string, unknown>;
+  safety: 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
+}
+
 export interface ScriptAutomationDto {
   safety: 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
   schedulable: boolean;
   enabledDefault: boolean;
   defaultSchedule: string;
   defaultArgs: Record<string, unknown>;
+  argSafety?: ScriptArgSafetyRuleDto[];
   requires: string[];
   notes: string;
 }

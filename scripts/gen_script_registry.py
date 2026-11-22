@@ -94,11 +94,11 @@ def validate_schemas(schemas: dict[str, dict[str, Any]]) -> list[str]:
             problems.append(f"{aprefix}: blocked scripts cannot be schedulable")
         if safety != "blocked" and not schedule:
             problems.append(f"{aprefix}.defaultSchedule: required for schedulable scripts")
+        known_params = {param.get("name") for param in params if isinstance(param, dict)}
         default_args = automation.get("defaultArgs")
         if not isinstance(default_args, dict):
             problems.append(f"{aprefix}.defaultArgs: table required")
         else:
-            known_params = {param.get("name") for param in params if isinstance(param, dict)}
             for name in default_args:
                 if name not in known_params:
                     problems.append(f"{aprefix}.defaultArgs.{name}: unknown script parameter")
@@ -106,6 +106,22 @@ def validate_schemas(schemas: dict[str, dict[str, Any]]) -> list[str]:
             problems.append(f"{aprefix}.requires: list required")
         if not isinstance(automation.get("notes"), str) or not automation["notes"].strip():
             problems.append(f"{aprefix}.notes: non-empty string required")
+        arg_safety = automation.get("argSafety", [])
+        if not isinstance(arg_safety, list):
+            problems.append(f"{aprefix}.argSafety: list required")
+        else:
+            for index, rule in enumerate(arg_safety):
+                rprefix = f"{aprefix}.argSafety[{index}]"
+                when = rule.get("when") if isinstance(rule, dict) else None
+                if not isinstance(when, dict) or not when:
+                    problems.append(f"{rprefix}.when: non-empty table required")
+                    continue
+                if rule.get("safety") not in VALID_SAFETIES:
+                    problems.append(f"{rprefix}.safety: unsupported safety {rule.get('safety')!r}")
+                if not set(when).issubset(known_params):
+                    problems.append(f"{rprefix}.when: unknown script parameter(s)")
+                if safety == "blocked":
+                    problems.append(f"{rprefix}: blocked scripts cannot have arg overrides")
     return problems
 
 
@@ -137,6 +153,20 @@ SAFETY_LABELS = {
 }
 
 
+def render_arg_safety(rules: list[dict[str, Any]]) -> str:
+    """Human-readable form of the arg-dependent safety overrides."""
+    if not rules:
+        return "—"
+    parts: list[str] = []
+    for rule in rules:
+        when = ", ".join(
+            f"{key}={json.dumps(value, ensure_ascii=False, sort_keys=True)}"
+            for key, value in sorted(rule["when"].items())
+        )
+        parts.append(f"{when} → {rule['safety']}")
+    return "; ".join(parts)
+
+
 def render_docs(schemas: dict[str, dict[str, Any]]) -> str:
     """Generate the human catalog from the same SSOT as the TS registry."""
     rows: list[str] = []
@@ -149,8 +179,8 @@ def render_docs(schemas: dict[str, dict[str, Any]]) -> str:
         if not entries:
             continue
         rows.append(f"### {category}\n")
-        rows.append("| Script | Safety | Schedulabile | Default | Orario suggerito | Requisiti | Note |")
-        rows.append("|---|---|---|---|---|---|---|")
+        rows.append("| Script | Safety | Schedulabile | Default | Orario suggerito | Override arg | Requisiti | Note |")
+        rows.append("|---|---|---|---|---|---|---|---|")
         for script_id, schema in sorted(entries, key=lambda item: item[0]):
             auto = schema["automation"]
             schedule = auto["defaultSchedule"] or "—"
@@ -161,10 +191,11 @@ def render_docs(schemas: dict[str, dict[str, Any]]) -> str:
             note = auto["notes"]
             if default_cell != "—":
                 note = f"{note} Args: {default_cell}"
+            arg_rules = render_arg_safety(auto.get("argSafety", []))
             rows.append(
                 f"| `{script_id}` | {SAFETY_LABELS[auto['safety']]} "
                 f"| {'sì' if auto['schedulable'] else 'no'} | {enabled} "
-                f"| `{schedule}` | {requires} | {note} |"
+                f"| `{schedule}` | {arg_rules} | {requires} | {note} |"
             )
         rows.append("")
 
@@ -187,6 +218,9 @@ def render_docs(schemas: dict[str, dict[str, Any]]) -> str:
         "- `requires` indica dipendenze esterne (`llm`, `network`, `pandoc`, `tty`).\n"
         "- `Args` sono gli argomenti precompilati dal catalogo; il parser dei job li valida "
         "contro i parametri dichiarati nello schema.\n"
+        "- **Override arg**: quando gli argomenti risolti soddisfano la condizione, la classe "
+        "di sicurezza cambia (es. `docs_wiki_drift --check` diventa `read-only`). Il Policy "
+        "Agent F5 classifica sempre l'invocazione effettiva.\n"
     )
 
 

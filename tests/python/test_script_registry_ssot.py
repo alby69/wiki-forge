@@ -31,10 +31,26 @@ def test_every_script_has_automation_metadata():
         assert auto["notes"].strip()
         known_params = {param["name"] for param in schema["parameters"]}
         assert set(auto["defaultArgs"]).issubset(known_params)
+        for rule in auto.get("argSafety", []):
+            assert rule["safety"] in valid_safety
+            assert rule["when"], "argSafety rules need at least one arg"
+            assert set(rule["when"]).issubset(known_params)
+            assert auto["safety"] != "blocked", "blocked scripts need no override"
         if auto["safety"] == "blocked":
             assert auto["schedulable"] is False
         else:
             assert auto["defaultSchedule"]
+
+
+def test_arg_safety_overrides_are_in_the_ssot():
+    """Arg-aware classification stays derived from SCRIPT_SCHEMAS (S1)."""
+    assert SCRIPT_AUTOMATION["docs_wiki_drift"]["argSafety"] == [
+        {"when": {"check": True}, "safety": "read-only"}
+    ]
+    assert SCRIPT_AUTOMATION["check_docs_sync"]["argSafety"] == [
+        {"when": {"fix": True}, "safety": "workspace"}
+    ]
+    assert SCRIPT_AUTOMATION["wiki_program_change_apply"].get("argSafety", []) == []
 
 
 def test_safety_catalog_doc_is_generated():

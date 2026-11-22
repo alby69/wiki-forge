@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import { KE_USE_CASES } from '@backend/server/agentServer';
 import {
   describeSchedule,
@@ -8,8 +10,10 @@ import {
   parseSchedule,
 } from '@backend/server/scheduler/cron';
 import {
+  buildSyntheticUseCases,
   loadScheduleConfig,
   parseScheduleConfig,
+  scriptUseCaseId,
   UseCaseRegistryEntry,
 } from '@backend/server/scheduler/jobStore';
 
@@ -75,9 +79,19 @@ describe('Schedule configuration validation (F1)', () => {
     assert.deepStrictEqual(result.errors, []);
     assert.strictEqual(result.config.timezone, 'Europe/Rome');
     assert.strictEqual(result.config.maxConcurrency, 1);
-    assert.strictEqual(result.jobs.length, 9);
+    assert.strictEqual(result.jobs.filter((job) => job.jobKind !== 'script').length, 9,
+      'the original 9 Use Case jobs are unchanged');
+    assert.strictEqual(result.jobs.length, 11);
     assert.ok(result.jobs.every((job) => job.autoApply === false));
-    assert.ok(result.jobs.filter((job) => job.enabled).length === 6);
+    assert.strictEqual(result.jobs.filter((job) => job.enabled).length, 6);
+
+    const scriptJobs = result.jobs.filter((job) => job.jobKind === 'script');
+    assert.deepStrictEqual(
+      scriptJobs.map((job) => job.scriptId),
+      ['okf_lint', 'docs_wiki_drift'],
+      'the shipped script examples are loaded but disabled'
+    );
+    assert.ok(scriptJobs.every((job) => job.enabled === false));
     assert.strictEqual(result.config.policyEnabled, true, 'F5 policy is active by default');
 
     const exportJob = result.jobs.find((job) => job.id === 'weekly-rdf-export');
@@ -149,5 +163,98 @@ describe('Schedule configuration validation (F1)', () => {
     const result = parseScheduleConfig({}, registry);
     assert.deepStrictEqual(result.jobs, []);
     assert.ok(result.errors.some((e) => e.includes('Missing [agent.scheduler]')));
+  });
+});
+
+describe('Script jobs (S1)', () => {
+  it('accepts a script job and generates its one-step Use Case', () => {
+    const result = parseScheduleConfig(
+      {
+        agent: {
+          scheduler: {
+            jobs: [{ id: 'lint-script', script: 'okf_lint' }],
+          },
+        },
+      },
+      registry
+    );
+
+    assert.deepStrictEqual(result.errors, []);
+    const job = result.jobs[0];
+    assert.strictEqual(job.jobKind, 'script');
+    assert.strictEqual(job.scriptId, 'okf_lint');
+    assert.strictEqual(job.useCaseId, scriptUseCaseId('okf_lint'));
+    assert.strictEqual(job.enabled, true, 'read-only scripts may be enabled');
+    assert.deepStrictEqual(job.steps, [0]);
+    assert.strictEqual(job.schedule.kind, 'cron');
+
+    const synthetic = buildSyntheticUseCases(result.jobs);
+    assert.strictEqual(synthetic[job.useCaseId].steps.length, 1);
+    assert.strictEqual(synthetic[job.useCaseId].steps[0].scriptId, 'okf_lint');
+  });
+
+  it('rejects ambiguous, unknown, blocked and mutating-enabled script jobs', () => {
+    const result = parseScheduleConfig(
+      {
+        agent: {
+          scheduler: {
+            timezone: 'UTC',
+            jobs: [
+              { id: 'both', use_case: 'ke_ontological_validation', script: 'okf_lint', schedule: '0 2 * * *' },
+              { id: 'none', schedule: '0 2 * * *' },
+              { id: 'unknown', script: 'nope_script', schedule: '0 2 * * *' },
+              { id: 'blocked', script: 'wizard', schedule: '0 2 * * *' },
+              {
+                id: 'mutating',
+                script: 'docs_wiki_drift',
+                schedule: '0 2 * * *',
+                enabled: true,
+                args: { docs_dir: 'docs', wiki_dir: 'projects/wikiforge/wiki' },
+              },
+            ],
+          },
+        },
+      },
+      registry
+    );
+
+    // Mutating jobs are kept (disabled) so the UI can show and approve them.
+    assert.deepStrictEqual(result.jobs.map((job) => job.id), ['mutating']);
+    assert.strictEqual(result.jobs[0].enabled, false);
+    assert.ok(result.errors.some((e) => e.includes("Job 'both' must define exactly one")));
+    assert.ok(result.errors.some((e) => e.includes("Job 'none' must define exactly one")));
+    assert.ok(result.errors.some((e) => e.includes("unknown script 'nope_script'")));
+    assert.ok(result.errors.some((e) => e.includes("script 'wizard' is not schedulable")));
+    assert.ok(result.errors.some((e) => e.includes("forcing enabled=false (F6 approval required)")));
+  });
+
+  it('merges both config files and rejects ids duplicated across them', async () => {
+    const rootDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-jobstore-'));
+    try {
+      await fs.mkdir(path.join(rootDir, 'config'), { recursive: true });
+      await fs.writeFile(
+        path.join(rootDir, 'config', 'agent_schedule.toml'),
+        '[agent.scheduler]\nenabled = true\ntimezone = "UTC"\n\n' +
+          '[[agent.scheduler.jobs]]\nid = "shared"\nuse_case = "ke_ontological_validation"\nschedule = "0 2 * * *"\n',
+        'utf-8'
+      );
+      await fs.writeFile(
+        path.join(rootDir, 'config', 'script_schedules.toml'),
+        '[[script_jobs]]\nid = "shared"\nscript = "okf_lint"\nschedule = "0 3 * * *"\n\n' +
+          '[[script_jobs]]\nid = "script-only"\nscript = "okf_stats"\n',
+        'utf-8'
+      );
+
+      const result = await loadScheduleConfig(rootDir, registry);
+      assert.deepStrictEqual(result.jobs.map((job) => job.id), ['shared', 'script-only']);
+      assert.ok(
+        result.errors.some((e) => e.includes("Duplicate job id 'shared'")),
+        'main config wins on id collisions'
+      );
+      assert.strictEqual(result.jobs[1].jobKind, 'script');
+      assert.strictEqual(result.jobs[1].useCaseId, scriptUseCaseId('okf_stats'));
+    } finally {
+      await fs.rm(rootDir, { recursive: true, force: true });
+    }
   });
 });

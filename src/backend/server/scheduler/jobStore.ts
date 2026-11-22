@@ -1,7 +1,14 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as toml from 'smol-toml';
+import { GENERATED_SCRIPT_REGISTRY } from '../generated/scriptRegistry.generated';
 import { isValidTimezone, parseSchedule, ParsedSchedule } from './cron';
+import {
+  isBlockedScript,
+  isMutatingScript,
+  isSchedulableScript,
+  resolveScriptArgs,
+} from './scriptSafety';
 
 export interface SchedulerConfig {
   enabled: boolean;
@@ -20,10 +27,42 @@ export interface UseCaseRegistryEntry {
   title?: string;
 }
 
+/** S1: a job either runs a Use Case or a single generated script step. */
+export type JobKind = 'use_case' | 'script';
+
+/** Namespace that keeps generated Use Cases separate from the KE catalog. */
+export const SCRIPT_USE_CASE_PREFIX = '__script__:';
+
+export function scriptUseCaseId(scriptId: string): string {
+  return `${SCRIPT_USE_CASE_PREFIX}${scriptId}`;
+}
+
+export interface SyntheticScriptStep {
+  stepNumber: number;
+  title: string;
+  description: string;
+  scriptId: string;
+  defaultArgs: Record<string, unknown>;
+}
+
+export interface SyntheticUseCaseEntry extends UseCaseRegistryEntry {
+  title: string;
+  role: 'Knowledge Engineer';
+  category: string;
+  summary: string;
+  objective: string;
+  steps: SyntheticScriptStep[];
+}
+
 export interface JobDef {
   id: string;
   role: string;
+  /** S1: `script` for UI-generated jobs; absent means the original `use_case`. */
+  jobKind?: JobKind;
+  /** Always populated: script jobs point to a synthetic Use Case. */
   useCaseId: string;
+  /** Present only for `script` jobs. */
+  scriptId?: string;
   schedule: ParsedSchedule;
   enabled: boolean;
   project: string;
@@ -41,6 +80,11 @@ export interface ScheduleConfigResult {
   config: SchedulerConfig;
   jobs: JobDef[];
   errors: string[];
+}
+
+export interface ParseScheduleOptions {
+  /** Label used in diagnostics when the same parser reads the script job file. */
+  source?: string;
 }
 
 export const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
@@ -81,18 +125,20 @@ function asInteger(value: unknown, fallback: number, min: number, max: number): 
  */
 export function parseScheduleConfig(
   raw: unknown,
-  useCases: Record<string, UseCaseRegistryEntry>
+  useCases: Record<string, UseCaseRegistryEntry>,
+  options: ParseScheduleOptions = {}
 ): ScheduleConfigResult {
   const errors: string[] = [];
   const root = asRecord(raw);
   const agent = root ? asRecord(root.agent) : null;
   const section = agent ? asRecord(agent.scheduler) : null;
+  const source = options.source ?? 'agent_schedule.toml';
 
   if (!section) {
     return {
       config: { ...DEFAULT_SCHEDULER_CONFIG },
       jobs: [],
-      errors: ['Missing [agent.scheduler] section in agent_schedule.toml'],
+      errors: [`Missing [agent.scheduler] section in ${source}`],
     };
   }
 
@@ -136,16 +182,49 @@ export function parseScheduleConfig(
     }
     seenIds.add(id);
 
-    const useCaseId = asString(job.use_case, '');
-    const useCase = useCases[useCaseId];
-    if (!useCase) {
-      errors.push(`Job '${id}' references unknown use_case '${useCaseId}'`);
+    const rawUseCaseId = asString(job.use_case, '');
+    const scriptId = asString(job.script, '');
+    if (Boolean(rawUseCaseId) === Boolean(scriptId)) {
+      errors.push(`Job '${id}' must define exactly one of use_case or script`);
       return;
+    }
+
+    let jobKind: JobKind;
+    let useCaseId: string;
+    let args = asRecord(job.args) ?? {};
+    let defaultSchedule = '';
+    let defaultRole = 'Knowledge Engineer';
+    let defaultEnabled = true;
+
+    if (scriptId) {
+      jobKind = 'script';
+      const scriptDef = GENERATED_SCRIPT_REGISTRY[scriptId];
+      if (!scriptDef?.automation) {
+        errors.push(`Job '${id}' references unknown script '${scriptId}'`);
+        return;
+      }
+      if (!isSchedulableScript(scriptId) || isBlockedScript(scriptId)) {
+        errors.push(`Job '${id}': script '${scriptId}' is not schedulable`);
+        return;
+      }
+      useCaseId = scriptUseCaseId(scriptId);
+      defaultSchedule = scriptDef.automation.defaultSchedule;
+      defaultRole = 'Script Automation';
+      defaultEnabled = scriptDef.automation.enabledDefault;
+      // The F5 policy must see the same values the runner will use.
+      args = resolveScriptArgs(scriptId, args);
+    } else {
+      jobKind = 'use_case';
+      useCaseId = rawUseCaseId;
+      if (!useCases[useCaseId]) {
+        errors.push(`Job '${id}' references unknown use_case '${useCaseId}'`);
+        return;
+      }
     }
 
     let schedule: ParsedSchedule;
     try {
-      schedule = parseSchedule(asString(job.schedule, ''), config.timezone);
+      schedule = parseSchedule(asString(job.schedule, defaultSchedule), config.timezone);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       errors.push(`Job '${id}': ${detail}`);
@@ -157,17 +236,23 @@ export function parseScheduleConfig(
       const validSteps =
         Array.isArray(job.steps) &&
         job.steps.length > 0 &&
-        job.steps.every(
-          (s) => typeof s === 'number' && Number.isInteger(s) && s >= 0 && s < useCase.steps.length
+        job.steps.every((step) =>
+          typeof step === 'number' &&
+          Number.isInteger(step) &&
+          step >= 0 &&
+          step < (scriptId ? 1 : (useCases[useCaseId]?.steps.length ?? 0))
         );
       if (!validSteps) {
         errors.push(
-          `Job '${id}': steps must be 0-based indices in 0..${useCase.steps.length - 1}`
+          scriptId
+            ? `Job '${id}': script jobs have a single step (use steps=[0] or omit it)`
+            : `Job '${id}': steps must be 0-based indices in 0..${useCases[useCaseId]?.steps.length - 1}`
         );
         return;
       }
       steps = job.steps as number[];
     }
+    if (scriptId) steps = steps ?? [0];
 
     if (job.args !== undefined && !asRecord(job.args)) {
       errors.push(`Job '${id}': args must be a table`);
@@ -187,14 +272,24 @@ export function parseScheduleConfig(
       autoApply = false;
     }
 
+    let enabled = asBoolean(job.enabled, defaultEnabled);
+    if (scriptId && enabled && isMutatingScript(scriptId, args)) {
+      errors.push(
+        `Job '${id}': script '${scriptId}' is mutating for the resolved args; forcing enabled=false (F6 approval required)`
+      );
+      enabled = false;
+    }
+
     jobs.push({
       id,
-      role: asString(job.role, 'Knowledge Engineer'),
+      role: asString(job.role, defaultRole),
+      jobKind,
       useCaseId,
+      ...(scriptId ? { scriptId } : {}),
       schedule,
-      enabled: asBoolean(job.enabled, true),
+      enabled,
       project: asString(job.project, 'default'),
-      args: asRecord(job.args) ?? {},
+      args,
       steps,
       autoApply,
       maxRetries: asInteger(job.max_retries, 2, 0, 5),
@@ -211,15 +306,75 @@ export function parseScheduleConfig(
   return { config, jobs, errors };
 }
 
-/** Load and validate `<rootDir>/config/agent_schedule.toml`. */
+/** Wrap `[[script_jobs]]` in the shape shared with the Use Case job parser. */
+export function parseScriptScheduleConfig(
+  raw: unknown,
+  useCases: Record<string, UseCaseRegistryEntry>,
+  timezone: string
+): ScheduleConfigResult {
+  const root = asRecord(raw);
+  const scriptJobs = root?.script_jobs;
+  if (!Array.isArray(scriptJobs)) {
+    return {
+      config: { ...DEFAULT_SCHEDULER_CONFIG, timezone },
+      jobs: [],
+      errors: ['script_schedules.toml: script_jobs must be an array'],
+    };
+  }
+  return parseScheduleConfig(
+    {
+      agent: {
+        scheduler: { jobs: scriptJobs, timezone },
+      },
+    },
+    useCases,
+    { source: 'script_schedules.toml' }
+  );
+}
+
+/**
+ * One script job becomes one Use Case with exactly one step, so the existing
+ * Scheduler, F5 preflight and UseCaseRunner stay untouched.
+ */
+export function buildSyntheticUseCases(
+  jobs: JobDef[]
+): Record<string, SyntheticUseCaseEntry> {
+  const useCases: Record<string, SyntheticUseCaseEntry> = {};
+  for (const job of jobs) {
+    if (job.jobKind !== 'script' || !job.scriptId) continue;
+    const id = scriptUseCaseId(job.scriptId);
+    const args = resolveScriptArgs(job.scriptId, job.args);
+    useCases[id] = {
+      id,
+      title: `Script: ${job.scriptId}`,
+      role: 'Knowledge Engineer',
+      category: 'Script Automation',
+      summary: `Job script '${job.id}' generato da config/script_schedules.toml.`,
+      objective: 'Eseguire un solo script con gli argomenti risolti dal catalogo e dal job.',
+      steps: [
+        {
+          stepNumber: 1,
+          title: `Esegui ${job.scriptId}`,
+          description: `Step sintetico per il job script '${job.id}'.`,
+          scriptId: job.scriptId,
+          defaultArgs: args,
+        },
+      ],
+    };
+  }
+  return useCases;
+}
+
+/** Load and validate both job files, rejecting ids duplicated across them. */
 export async function loadScheduleConfig(
   rootDir: string,
   useCases: Record<string, UseCaseRegistryEntry>
 ): Promise<ScheduleConfigResult> {
   const filePath = path.join(rootDir, 'config', 'agent_schedule.toml');
+  let mainResult: ScheduleConfigResult;
   try {
     const text = await fs.readFile(filePath, 'utf-8');
-    return parseScheduleConfig(toml.parse(text) as unknown, useCases);
+    mainResult = parseScheduleConfig(toml.parse(text) as unknown, useCases);
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -235,4 +390,40 @@ export async function loadScheduleConfig(
       errors: [`Failed to load schedule config ${filePath}: ${detail}`],
     };
   }
+
+  const scriptPath = path.join(rootDir, 'config', 'script_schedules.toml');
+  let scriptText: string;
+  try {
+    scriptText = await fs.readFile(scriptPath, 'utf-8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return mainResult;
+    const detail = err instanceof Error ? err.message : String(err);
+    mainResult.errors.push(`Failed to load script schedule config ${scriptPath}: ${detail}`);
+    return mainResult;
+  }
+
+  try {
+    const scriptResult = parseScriptScheduleConfig(
+      toml.parse(scriptText) as unknown,
+      useCases,
+      mainResult.config.timezone
+    );
+    mainResult.errors.push(...scriptResult.errors);
+    const ids = new Set(mainResult.jobs.map((job) => job.id));
+    for (const job of scriptResult.jobs) {
+      if (ids.has(job.id)) {
+        mainResult.errors.push(
+          `Duplicate job id '${job.id}' across agent_schedule.toml and script_schedules.toml`
+        );
+        continue;
+      }
+      ids.add(job.id);
+      mainResult.jobs.push(job);
+    }
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    mainResult.errors.push(`Failed to parse script schedule config ${scriptPath}: ${detail}`);
+  }
+
+  return mainResult;
 }

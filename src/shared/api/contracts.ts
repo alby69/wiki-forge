@@ -177,10 +177,15 @@ export const SCHEMAS: Record<string, JsonSchema> = {
   }, ['id', 'title', 'icon', 'order', 'group', 'mode', 'keywords', 'context']),
   Skill: obj({ id: str(), name: str(), description: str(), path: str() }, ['id', 'name', 'description', 'path']),
   ScratchpadEntry: obj({ id: str(), timestamp: str(), text: str() }, ['id', 'timestamp', 'text']),
+  ScriptArgSafetyRule: obj({
+    when: free('Arg name -> expected resolved value'),
+    safety: str('read-only | report | workspace | wiki-write | blocked', ['read-only', 'report', 'workspace', 'wiki-write', 'blocked']),
+  }, ['when', 'safety']),
   ScriptAutomation: obj({
     safety: str('read-only | report | workspace | wiki-write | blocked', ['read-only', 'report', 'workspace', 'wiki-write', 'blocked']),
     schedulable: bool(), enabledDefault: bool(), defaultSchedule: str(),
     defaultArgs: free('Validated against ScriptDef.parameters by the generator'),
+    argSafety: arr(ref('ScriptArgSafetyRule')),
     requires: arr(str('llm | network | pandoc | tty')), notes: str(),
   }, ['safety', 'schedulable', 'enabledDefault', 'defaultSchedule', 'defaultArgs', 'requires', 'notes']),
   ScriptDef: obj({

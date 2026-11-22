@@ -52,7 +52,7 @@ import {
   SchedulerEvent,
   TriggerEvent,
 } from './scheduler/scheduler';
-import { loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
+import { buildSyntheticUseCases, loadScheduleConfig, SchedulerConfig } from './scheduler/jobStore';
 import { isMutatingScript, PolicyAgent, PolicyStep } from './scheduler/policyAgent';
 import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
@@ -191,12 +191,19 @@ export interface ScriptParamDef {
 export type ScriptSafety = 'read-only' | 'report' | 'workspace' | 'wiki-write' | 'blocked';
 
 /** Generated from SCRIPT_SCHEMAS: the scheduler and the UI must not redefine it. */
+export interface ScriptArgSafetyRule {
+  when: Record<string, unknown>;
+  safety: ScriptSafety;
+}
+
 export interface ScriptAutomation {
   safety: ScriptSafety;
   schedulable: boolean;
   enabledDefault: boolean;
   defaultSchedule: string;
   defaultArgs: Record<string, unknown>;
+  /** Arg-dependent overrides, evaluated against the resolved invocation args. */
+  argSafety?: ScriptArgSafetyRule[];
   requires: string[];
   notes: string;
 }
@@ -731,6 +738,8 @@ export class AgentServer {
   private systemPromptCache?: string;
   private scheduler?: Scheduler;
   private schedulerConfig?: SchedulerConfig;
+  /** KE Use Cases plus the one-step synthetic entries generated for script jobs. */
+  private scheduledUseCases: Record<string, KEUseCaseDef> = {};
   private policyAgent?: PolicyAgent;
   private approvalStore?: ApprovalStore;
   private eventBus?: EventTriggerBus;
@@ -890,7 +899,7 @@ export class AgentServer {
     return this.scheduler;
   }
 
-  /** Load `config/agent_schedule.toml` and start the KE scheduler. Idempotent. */
+  /** Load both schedule files and start the KE scheduler. Idempotent. */
   public async startScheduler(): Promise<void> {
     if (this.scheduler) return;
     const useCases = Object.fromEntries(
@@ -898,8 +907,10 @@ export class AgentServer {
         useCase.id,
         { id: useCase.id, title: useCase.title, steps: useCase.steps },
       ])
-    );
+    ) as Record<string, KEUseCaseDef>;
     const loaded = await loadScheduleConfig(this.rootDir, useCases);
+    const synthetic = buildSyntheticUseCases(loaded.jobs);
+    this.scheduledUseCases = { ...useCases, ...synthetic };
     this.schedulerConfig = loaded.config;
     this.scheduleConfigErrors = loaded.errors;
     if (loaded.jobs.length === 0) return;
@@ -917,7 +928,7 @@ export class AgentServer {
     const scheduler = new Scheduler({
       config: loaded.config,
       jobs: loaded.jobs,
-      useCases,
+      useCases: this.scheduledUseCases,
       rootDir: this.rootDir,
       executeJob: (ctx) => this.executeScheduledJob(ctx),
       preflight: this.policyAgent ? (ctx) => this.runPolicy(ctx) : undefined,
@@ -945,12 +956,18 @@ export class AgentServer {
 
     const stepIndices = ctx.job.steps ?? ctx.useCase.steps.map((_step, index) => index);
     const stepDetails: PolicyStep[] = stepIndices.map((index) => {
-      const def = ctx.useCase.steps[index] as { scriptId?: string; title?: string } | undefined;
+      const def = ctx.useCase.steps[index] as
+        | { scriptId?: string; title?: string; defaultArgs?: Record<string, unknown> }
+        | undefined;
+      // Same precedence as useCaseRunner: step defaults, then job overrides.
+      // Arg-aware rules (e.g. docs_wiki_drift --check) need the resolved values.
+      const args: Record<string, unknown> = { ...(def?.defaultArgs ?? {}), ...ctx.job.args };
       return {
         index,
         scriptId: def?.scriptId,
         title: def?.title,
-        mutating: isMutatingScript(def?.scriptId),
+        args,
+        mutating: isMutatingScript(def?.scriptId, args),
       };
     });
     const decision = await this.policyAgent.decide({
@@ -1158,12 +1175,13 @@ export class AgentServer {
       await this.scheduler.stop(options);
       this.scheduler = undefined;
     }
+    this.scheduledUseCases = {};
     this.policyAgent = undefined;
   }
 
   /** Adapter between the scheduler engine and the shared Use Case runner. */
   private async executeScheduledJob(ctx: JobExecutionContext): Promise<JobExecutionResult> {
-    const useCase = KE_USE_CASES[ctx.job.useCaseId];
+    const useCase = this.scheduledUseCases[ctx.job.useCaseId] ?? KE_USE_CASES[ctx.job.useCaseId];
     if (!useCase) throw new Error(`Unknown Use Case '${ctx.job.useCaseId}'`);
     const projectRoot = await this.resolveProjectRoot(ctx.job.project);
 

@@ -1,0 +1,35 @@
+# Job script generati dal pulsante "🕒 Schedula" del Script Control Panel (S1).
+# Il parser legge solo `script_jobs`: gli orari e le policy restano in
+# config/agent_schedule.toml. Ogni job ha `script` (non `use_case`) e diventa
+# un Use Case sintetico a 1 step (__script__:<scriptId>) senza toccare Scheduler,
+# F5 o F6.
+#
+# Esempi disabilitati: la UI può creare job analoghi con `enabled = true`
+# soltanto per script read-only/report. Gli script workspace, wiki-write e
+# blocked nascono sempre disabilitati e passano dalla coda di approvazione F6.
+# Le classi e gli override dipendenti dagli argomenti sono generate da
+# src/backend/wikiforge/core/script_schema.py in
+# docs/SCRIPT_AUTOMATION_REFERENCE.md.
+
+[[script_jobs]]
+id = "example-script-okf-lint"
+role = "Script Automation"
+script = "okf_lint"
+schedule = "0 2 * * *"
+enabled = false
+project = "default"
+auto_apply = false
+max_retries = 1
+
+# Mutante: senza `check = true` la classificazione arg-aware resta wiki-write.
+# Il parser forza `enabled = false` anche se la UI lo imposta a true.
+[[script_jobs]]
+id = "example-script-docs-drift"
+role = "Script Automation"
+script = "docs_wiki_drift"
+schedule = "0 7 * * 1"
+enabled = false
+project = "default"
+args = { docs_dir = "docs", wiki_dir = "projects/wikiforge/wiki" }
+auto_apply = false
+max_retries = 1

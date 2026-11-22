@@ -53,6 +53,19 @@ describe('F5 — Policy Agent decision log', () => {
     assert.strictEqual(isMutatingScript(undefined), false);
   });
 
+  it('classifies the resolved invocation, not just the script id (S1)', () => {
+    assert.strictEqual(isMutatingScript('docs_wiki_drift'), true);
+    assert.strictEqual(isMutatingScript('docs_wiki_drift', { check: false }), true);
+    assert.strictEqual(isMutatingScript('docs_wiki_drift', { check: true }), false,
+      '--check is read-only');
+    assert.strictEqual(isMutatingScript('check_docs_sync'), false);
+    assert.strictEqual(isMutatingScript('check_docs_sync', { fix: true }), true,
+      '--fix escalates read-only to workspace');
+    assert.strictEqual(isMutatingScript('maturity_calculator', { write: true }), true);
+    assert.strictEqual(isMutatingScript('wiki_program_change_apply', { reviewer: 'qa', confirm: true }), true,
+      'blocked scripts stay mutating regardless of args');
+  });
+
   it('accepts a valid LLM decision and logs rationale and sources', async () => {
     const logPath = path.join(tmpDir, 'output', 'scheduler', 'decisions.jsonl');
     const agent = new PolicyAgent({
