@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (17/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅).**
+> **Stato: studio completato, piano approvato, implementazione avviata (18/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅, C5 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -73,7 +73,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | C2 | ✅ | `watcher/graph_watcher.py` (MERGE parametrizzato, hash/revision, delete con slug annidato, `on_moved` + debounce, `on_event` strutturato, `--project`), `tests/python/test_graph_watcher_neo4j.py` (9 test) |
 | C3 | ✅ | `semantics/neo4j_query.py` (`Neo4jQueryService.execute_read`, whitelist, timeout/limit, binding, errori tipizzati), `graph_rag_pipeline.py` ($entities, modi mock/live espliciti, `error_type`, commenti fuorvianti rimossi), `docs/GRAPH_RAG.md`, `tests/python/test_graph_rag_live.py` (19 test) |
 | C4 | ✅ | `contracts.ts`/`endpoints.ts` (3 route additive e tipi), `modules/graphModule.ts` (3 handler bus), `modules/pythonTool.ts` (stdin opzionale), `semantics/neo4j_api_tool.py` (status/query/sync), `watcher/graph_watcher.py` (watchdog lazy + `sync_note()`), `auth/rbacMiddleware.ts` (ruoli), `docs/OPENAPI.md`, `tests/graphRoutes.test.ts` (5 test), `tests/python/test_neo4j_api_tool.py` (11 test) |
-| C5 | ⬜ | — |
+| C5 | ✅ | `semantics/neo4j_reconciler.py` (query C3 read-only `wf:revision > checkpoint`, frontmatter OKF, conflitto `wf:baseHash`), `neo4j_api_tool.py` (`reconcile` con stdin JSON), `watcher/graph_watcher.py` (`wf:path` + `wf:baseHash`), `server/neo4jReverseSync.ts` (stage con `process:neo4j-reconciler`, dedupe e checkpoint), `tests/neo4jReverseSync.test.ts` (5 test), `tests/python/test_neo4j_reconciler.py` (7 test) |
 | C6 | ⬜ | — |
 | C7 | ⬜ | — |
 | C8 | ⬜ | — |
@@ -92,7 +92,7 @@ A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
-dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; gli altri valori coincidono ancora con “Oggi”).
+dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; dopo C5: C3 3, C5 3, Neo4j ~2.5; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -110,12 +110,12 @@ dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j 
 | — | **Complessivo RBAC** | **~1** | **5** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 3.5 | 5 |
 | C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 3.5 | 5 |
-| C3 | Export Cypher/RDF batch | 2.5 | 2.5 | 4 |
+| C3 | Export Cypher/RDF batch | 2.5 | 3 | 4 |
 | C4 | Interrogazione Cypher live | 0 | 4 | 5 |
-| C5 | Sync Neo4j → vault Markdown | 0 | 0 | 5 |
+| C5 | Sync Neo4j → vault Markdown | 0 | 3 | 5 |
 | C6 | Riconciliazione e soppressione echo | 0 | 0 | 5 |
 | C7 | Propagazione real-time al browser | 0 | 0 | 5 |
-| — | **Complessivo Neo4j** | **~0.5** | **~1.9** | **5** |
+| — | **Complessivo Neo4j** | **~0.5** | **~2.5** | **5** |
 
 ---
 
@@ -837,6 +837,22 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/neo4jReverseSync.test.ts`, pytest, `okf_lint.py`.
 - **Grado atteso**: C5 0 → 3, C3 2.5 → 3.
 
+**Risultato (2026-11-22).** Chiuso. `neo4j_reconciler.reconcile()` legge una
+statement read-only con `wf:revision > $checkpoint` tramite C3, ricostruisce il
+path vault da `wf:path` (con fallback sicuro all'id) e produce solo JSON:
+proposal con frontmatter OKF (`title`, `type`, `tags`, `wf.origin/revision/hash`)
+oppure conflict quando l'hash locale non coincide con `wf:baseHash`. C2 ora
+scrive `wf:path` e `wf:baseHash` senza cambiare il contratto legacy. Il ponte
+`neo4jReverseSync.ts` valida l'envelope, stagea ogni revisione una sola volta in
+`ChangesetStore` con `actor: process:neo4j-reconciler` (B5), `requireOriginal` e
+sources tipizzate, e avanza il checkpoint solo in assenza di conflitti. Nessun
+file vault viene scritto prima di `changesets.apply`; `confirm_destructive=true`
+viene rispettato come obbligo di revisione umana, mai come auto-apply. Il
+validator C3 ora preserva letterali e nomi di proprietà tra backtick durante la
+validazione (necessario per ``n.`wf:revision` ``). 5 test Node e 7 test Python
+nuovi (451 Node totali: 450 pass + 1 skip; 146 Python), C2/C4 e GraphRAG legacy
+invariati. Nessun endpoint, envelope o metodo pubblico esistente cambiato.
+
 ### C6 — Riconciliazione e soppressione echo
 
 - **Obiettivo**: convergenza senza loop infiniti.
@@ -921,6 +937,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B5 | B4 · RBAC complessivo | 3 · ~3.0 | 4.5 · ~3.5 | Attore canonico condiviso TS/Python; strict mode vincola verify, F6 e changeset al Principal, flag `--allow-process-actor` F6-only, guard `stable-requires-human-actor`; legacy invariato. 10 test Node + 4 Python, suite 408 pass + 1 skip. |
 | 2026-11-22 | B6 | B1 / B2 · RBAC complessivo | 4.5 / 3.5 · ~3.5 | 5 / 5 · ~4.5 | Adapter OIDC/JWKS, SAML e OAuth2 dietro `enable_rbac` + `auth.provider`; bearer dedicato, 401 B0 invariato, ruoli claim nella matrice B3 senza inheritance ACL; 10 test mock zero-rete, suite 418 pass + 1 skip. |
 | 2026-11-22 | B7 | B5 · RBAC complessivo | 0 · ~4.5 | 5 · 5 | Identità UI via solo transport tipizzato: `GET /api/auth/me` additiva e pubblica in modalità anonima, bearer dedicato dall'app-store, chip/gating solo per IdP verificato, attore strict negli strumenti di review; 13 test UI/auth + 4 assert OpenAPI, suite 428 pass + 1 skip. Pilastro RBAC completo. |
+| 2026-11-22 | C5 | C3 / C5 · Neo4j complessivo | 2.5 / 0 · ~1.9 | 3 / 3 · ~2.5 | Reverse sync DB → vault come proposta: query read-only `wf:revision > checkpoint`, frontmatter OKF e conflitto su `wf:baseHash`; C2 aggiunge `wf:path`/`wf:baseHash`, CLI `reconcile` emette solo JSON e il ponte TS stagea con `process:neo4j-reconciler`, dedupe e checkpoint. Nessun file vault prima di `changesets.apply`, `confirm_destructive` come revisione obbligatoria; 5 test Node + 7 Python (451 Node: 450 pass + 1 skip, 146 Python), legacy invariati. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

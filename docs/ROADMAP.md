@@ -117,5 +117,7 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > eventi strutturati), **C3** (Cypher live read-only con whitelist e modi
 > mock/live espliciti) e **C4** (tre route Neo4j additive dichiarate in TS,
 > protette da B4 con ruoli RBAC espliciti e proxy FastAPI legacy invariato;
-> OpenAPI 93 endpoint/88 comandi; Neo4j ~1.9/5); gli altri step non sono ancora
-> avviati.
+> OpenAPI 93 endpoint/88 comandi). **C5** chiude la direzione DB → vault con
+> proposte staged via `process:neo4j-reconciler`, conflitti su `wf:baseHash` e
+> nessuna scrittura prima di `changesets.apply`; Neo4j ~2.5/5. A4/A5/C6/C7/C8
+> non sono ancora avviati.

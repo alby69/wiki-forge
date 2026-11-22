@@ -1,13 +1,15 @@
-"""C4 — thin CLI adapter exposing Neo4j status/query/sync to the Node gateway.
+"""C4/C5 — thin CLI adapter exposing Neo4j operations to the Node gateway.
 
 The gateway never imports Python modules directly: it spawns this tool with a
-subcommand and, for ``query``, a JSON request on stdin. Every reply is one JSON
-object on stdout using the usual ``{"success": ...}`` envelope.
+subcommand and, for ``query``/``reconcile``, a JSON request on stdin. Every
+reply is one JSON object on stdout using the usual ``{"success": ...}``
+envelope.
 
 Nothing here opens a socket when Neo4j is not configured: ``status`` is purely
 declarative, ``query`` validates the Cypher before deciding whether a driver is
-needed, and ``sync`` uses the idempotent C2 handler with an injected C1 client
-that is a no-op when disabled. No vault file is ever written.
+needed, ``sync`` uses the idempotent C2 handler, and ``reconcile`` only emits
+C5 JSON proposals. All of them are no-ops when disabled. No vault file is ever
+written by this adapter.
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ for _parent in Path(__file__).resolve().parents:
 
 from src.backend.wikiforge.semantics.neo4j_client import Neo4jClient, Neo4jConfig
 from src.backend.wikiforge.semantics.neo4j_query import CypherQueryError, Neo4jQueryService
+from src.backend.wikiforge.semantics.neo4j_reconciler import reconcile as reconcile_notes
 from src.backend.wikiforge.watcher.graph_watcher import GraphSyncHandler, resolve_project_wiki
 
 
@@ -53,6 +56,20 @@ def is_configured(config: Neo4jConfig) -> bool:
 
 def effective_mode(config: Neo4jConfig) -> str:
     return "live" if is_configured(config) and driver_installed() else "mock"
+
+
+def repo_config() -> Mapping[str, Any]:
+    """Load the full TOML settings (Neo4jConfig only carries its own table)."""
+    from src.backend.wikiforge.core.config import get_project_config  # noqa: PLC0415
+
+    return get_project_config()
+
+
+def confirm_destructive() -> bool:
+    """C5 — inherit the repository's conservative default for destructive edits."""
+    agent = repo_config().get("agent", {})
+    section = agent if isinstance(agent, Mapping) else {}
+    return bool(section.get("confirm_destructive", True))
 
 
 def emit(payload: Mapping[str, Any]) -> int:
@@ -160,9 +177,47 @@ def command_sync(project_id: str | None) -> int:
     })
 
 
+def command_reconcile(project_id: str | None) -> int:
+    """C5 — read ``{checkpoint, confirmDestructive}`` from stdin and propose patches.
+
+    The Python side only emits JSON; staging and any vault write stay on the
+    Node side behind `changesets.apply`. In mock mode no client is injected, so
+    no driver is ever created and the reconciler is a safe no-op.
+    """
+    try:
+        request = json.loads(sys.stdin.read() or "{}")
+    except json.JSONDecodeError as exc:
+        return fail(f"Invalid JSON request: {exc}", "invalid_request")
+    if not isinstance(request, dict):
+        return fail("Request must be a JSON object", "validation_error")
+
+    config = config_for(project_id)
+    checkpoint = request.get("checkpoint", 0)
+    if isinstance(checkpoint, bool) or not isinstance(checkpoint, (int, float)):
+        return fail("checkpoint must be a number", "validation_error")
+    confirm = request.get("confirmDestructive")
+    if confirm is not None and not isinstance(confirm, bool):
+        return fail("confirmDestructive must be a boolean", "validation_error")
+
+    mode = effective_mode(config)
+    client = Neo4jClient(config) if mode == "live" else None
+    try:
+        result = reconcile_notes(
+            client=client,
+            project_id=project_id,
+            checkpoint=int(checkpoint),
+            wiki_dir=resolve_project_wiki(project_id),
+            confirm_destructive=confirm if confirm is not None else confirm_destructive(),
+        )
+    finally:
+        if client is not None:
+            client.close()
+    return emit(result)
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Wiki-Forge Neo4j gateway tool (C4)")
-    parser.add_argument("command", choices=("status", "query", "sync"))
+    parser = argparse.ArgumentParser(description="Wiki-Forge Neo4j gateway tool (C4/C5)")
+    parser.add_argument("command", choices=("status", "query", "sync", "reconcile"))
     parser.add_argument("--project", default=None, help="project id selecting wiki and database")
     args = parser.parse_args(argv)
 
@@ -170,7 +225,9 @@ def main(argv: list[str] | None = None) -> int:
         return command_status(args.project)
     if args.command == "query":
         return command_query(args.project)
-    return command_sync(args.project)
+    if args.command == "sync":
+        return command_sync(args.project)
+    return command_reconcile(args.project)
 
 
 if __name__ == "__main__":

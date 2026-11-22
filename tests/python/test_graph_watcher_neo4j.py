@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _install_watchdog_stub() -> None:
-    if importlib.util.find_spec("watchdog") is not None:
+    if "watchdog" in sys.modules or importlib.util.find_spec("watchdog") is not None:
         return
     watchdog = types.ModuleType("watchdog")
     observers = types.ModuleType("watchdog.observers")
@@ -153,15 +153,17 @@ def test_one_parametrized_merge_per_note(tmp_path: Path) -> None:
     assert len(driver.calls) == 1
     statement, params = driver.calls[0]
     assert statement.startswith("MERGE (n:PermanentNote {id: $id})")
-    for token in ("$id", "$title", "$content", "$hash", "$revision"):
+    for token in ("$id", "$title", "$content", "$hash", "$revision", "$path", "$baseHash"):
         assert token in statement
-    for key in ("wf:source", "wf:origin", "wf:contentHash", "wf:lastModified", "wf:revision"):
+    for key in ("wf:source", "wf:origin", "wf:contentHash", "wf:baseHash", "wf:lastModified", "wf:revision", "wf:path"):
         assert key in statement
     assert params["id"] == "alpha"
     assert params["title"] == "Alpha"
     assert params["source"] == "wikiforge"
     assert params["origin"] == "vault"
+    assert params["path"] == "alpha.md"
     assert len(params["hash"]) == 64
+    assert params["baseHash"] == params["hash"]
     assert params["revision"] == 1
     assert "Testo." in params["content"]
 
@@ -200,6 +202,7 @@ def test_changed_content_bumps_revision(tmp_path: Path) -> None:
     assert [event["revision"] for event in events] == [1, 2]
     assert [event["action"] for event in events] == ["CREATED", "MODIFIED"]
     assert driver.calls[0][1]["hash"] != driver.calls[1][1]["hash"]
+    assert driver.calls[1][1]["baseHash"] == driver.calls[0][1]["hash"]
 
 
 def test_delete_uses_nested_slugify_and_parametrized_delete(tmp_path: Path) -> None:
@@ -216,6 +219,7 @@ def test_delete_uses_nested_slugify_and_parametrized_delete(tmp_path: Path) -> N
     merge_statement, merge_params = driver.calls[0]
     delete_statement, delete_params = driver.calls[1]
     assert merge_params["id"] == "folder-sub-nested"
+    assert merge_params["path"] == "folder/sub/nested.md"
     assert delete_params["id"] == merge_params["id"]
     assert delete_statement.startswith("MATCH (n:PermanentNote {id: $id}) DETACH DELETE n")
     assert "'" not in delete_statement  # no interpolated value

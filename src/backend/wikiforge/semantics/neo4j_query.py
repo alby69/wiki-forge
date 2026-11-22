@@ -50,15 +50,22 @@ class QueryExecutionError(CypherQueryError):
     code = "query_execution_error"
 
 
-def strip_cypher_noise(cypher: str) -> str:
-    """Remove comments and quoted literals, replacing them with a space.
+def _blank(match: re.Match[str]) -> str:
+    """Blank a match without shifting offsets (backticks/literals stay intact)."""
+    return " " * len(match.group(0))
 
-    This keeps keyword checks honest: a title containing the word ``SET`` is
-    data, not a clause, while ``SET n.x = 1`` is a mutation.
+
+def strip_cypher_noise(cypher: str) -> str:
+    """Mask comments and quoted literals for keyword checks.
+
+    The mask preserves string length so the caller can return the original
+    executable statement: a title containing ``SET`` is data, while
+    ``SET n.x = 1`` is a mutation. Backticked property names such as
+    ``n.`wf:revision``` survive in the statement sent to the driver.
     """
-    cleaned = _COMMENT_BLOCK.sub(" ", cypher)
-    cleaned = _COMMENT_LINE.sub(" ", cleaned)
-    return _STRING_LITERAL.sub(" ", cleaned)
+    cleaned = _COMMENT_BLOCK.sub(_blank, cypher)
+    cleaned = _COMMENT_LINE.sub(_blank, cleaned)
+    return _STRING_LITERAL.sub(_blank, cleaned)
 
 
 def validate_read_only(cypher: str) -> str:
@@ -75,15 +82,21 @@ def validate_read_only(cypher: str) -> str:
     statements = [part.strip() for part in cleaned.split(";") if part.strip()]
     if len(statements) != 1:
         raise ReadOnlyViolation("Exactly one Cypher statement is allowed")
-    statement = statements[0]
-    if not _READ_CLAUSE.match(statement):
+    masked = statements[0]
+    if not _READ_CLAUSE.match(masked):
         raise ReadOnlyViolation("Only MATCH / OPTIONAL MATCH read queries are allowed")
-    if not _RETURN_CLAUSE.search(statement):
+    if not _RETURN_CLAUSE.search(masked):
         raise ReadOnlyViolation("A read query must contain a RETURN clause")
-    forbidden = _FORBIDDEN.search(statement)
+    forbidden = _FORBIDDEN.search(masked)
     if forbidden:
         raise ReadOnlyViolation(f"Write/procedure clause not allowed: {forbidden.group(1).upper()}")
-    return statement
+
+    # Return the original statement (comments blanked, literals/backticks kept)
+    # so escaped property names are not destroyed before reaching the driver.
+    start = next((index for index, char in enumerate(cleaned) if not char.isspace()), 0)
+    semicolon = cleaned.find(";", start)
+    end = len(cleaned) if semicolon < 0 else semicolon
+    return cypher[start:end].strip()
 
 
 class Neo4jQueryService:

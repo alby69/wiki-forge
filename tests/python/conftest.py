@@ -1,7 +1,59 @@
+import importlib.machinery
+import importlib.util
 import os
+import sys
 import tempfile
+import types
+
 import pytest
 from pathlib import Path
+
+
+def _install_optional_watchdog_stub() -> None:
+    """Make optional `watchdog` imports deterministic during test collection.
+
+    Several modules import `graph_watcher` at module scope. Stubbing at conftest
+    time avoids an import-order-dependent `Observer is None` state when only a
+    subset of files is selected.
+    """
+    if importlib.util.find_spec("watchdog") is not None:
+        return
+    watchdog = types.ModuleType("watchdog")
+    observers = types.ModuleType("watchdog.observers")
+    events = types.ModuleType("watchdog.events")
+
+    class Observer:  # pragma: no cover - only used by LiveGraphWatcher.start()
+        def schedule(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def stop(self) -> None:
+            pass
+
+        def join(self) -> None:
+            pass
+
+    class FileSystemEventHandler:
+        pass
+
+    class FileSystemEvent:
+        pass
+
+    observers.Observer = Observer
+    events.FileSystemEventHandler = FileSystemEventHandler
+    events.FileSystemEvent = FileSystemEvent
+    watchdog.__spec__ = importlib.machinery.ModuleSpec("watchdog", None)  # type: ignore[assignment]
+    observers.__spec__ = importlib.machinery.ModuleSpec("watchdog.observers", None)  # type: ignore[assignment]
+    events.__spec__ = importlib.machinery.ModuleSpec("watchdog.events", None)  # type: ignore[assignment]
+    sys.modules["watchdog"] = watchdog
+    sys.modules["watchdog.observers"] = observers
+    sys.modules["watchdog.events"] = events
+
+
+_install_optional_watchdog_stub()
+
 
 @pytest.fixture
 def temp_wiki_dir(tmp_path):

@@ -8,8 +8,9 @@ and incrementally updates Neo4j or RDF graph representations.
 C2 — the vault -> Neo4j direction is real and idempotent:
   * one parametrized MERGE per note (``$id``, ``$title``, ``$content``,
     ``$hash``, ``$revision`` ...), one ``session.run()`` per statement;
-  * ``wf:source`` / ``wf:origin`` / ``wf:contentHash`` / ``wf:lastModified`` /
-    ``wf:revision`` metadata;
+  * ``wf:source`` / ``wf:origin`` / ``wf:contentHash`` / ``wf:baseHash`` /
+    ``wf:path`` / ``wf:lastModified`` / ``wf:revision`` metadata (C5 uses
+    ``baseHash`` and ``path`` for conflict-safe reverse sync);
   * unchanged content is a no-op (no Cypher, no events);
   * deletes use the very same nested ``base_parser.slugify()`` convention as
     the parser, so notes in subfolders resolve to the correct node id;
@@ -181,6 +182,9 @@ class GraphSyncHandler(FileSystemEventHandler):
             print(f"❌ Error processing {path.name}: {exc}")
             return
 
+        # C5 — keep the last vault hash as the reconciler's base: a DB edit must
+        # not silently overwrite a note that changed locally since that sync.
+        base_hash = self._hashes.get(note_id, content_hash)
         self._hashes[note_id] = content_hash
         revision = self._revisions.get(note_id, 0) + 1
         self._revisions[note_id] = revision
@@ -194,8 +198,9 @@ class GraphSyncHandler(FileSystemEventHandler):
             "MERGE (n:PermanentNote {id: $id}) "
             "SET n.title = $title, n.content = $content, n.author = $author, "
             "n.`wf:source` = $source, n.`wf:origin` = $origin, "
-            "n.`wf:contentHash` = $hash, n.`wf:lastModified` = $lastModified, "
-            "n.`wf:revision` = $revision"
+            "n.`wf:contentHash` = $hash, n.`wf:baseHash` = $baseHash, "
+            "n.`wf:lastModified` = $lastModified, n.`wf:revision` = $revision, "
+            "n.`wf:path` = $path"
         )
         params = {
             "id": note_id,
@@ -205,8 +210,10 @@ class GraphSyncHandler(FileSystemEventHandler):
             "source": "wikiforge",
             "origin": "vault",
             "hash": content_hash,
+            "baseHash": base_hash,
             "lastModified": modified,
             "revision": revision,
+            "path": self._relative_path(path),
         }
         self._execute_cypher([(statement, params)])
         self._emit(action, path, note_id, revision)
