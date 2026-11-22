@@ -25,6 +25,12 @@ Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy 
 │  │ 3. Review Studio API & Snapshot Store (agentServer.ts)            │  │
 │  │    - /api/notes/review/*, .wiki-forge/snapshots/ (25 per note)    │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ 4. API Contract Layer (src/shared/api/, api/openapi.ts)          │  │
+│  │    - ROUTES -> OpenAPI 3.1 + /api/docs (Swagger self-hosted)      │  │
+│  │ 5. MessageBus + domain modules (bus/, modules/)                  │  │
+│  │    - catalogue, tools, reviews, ingestion, graph (14 commands)    │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
 └───────────────┬──────────────────────────────────────┬──────────────────┘
                 │ proxy /api/v1/graph/*                │ spawn python3
                 │ (FASTAPI_SERVER_URL)                 │ (project-scoped env)
@@ -52,9 +58,41 @@ Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critiqu
 ### 5. Research Studio API & Query Helpers (`src/backend/server/agentServer.ts`, `researchHelpers.ts`)
 Serves the six-tab Research Studio (`/api/notes/research/search|backlinks|related|trace` on `GET`, `consult|deep-research` on `POST`). Search, backlinks, related and trace are pure deterministic functions over the loaded notes (`researchHelpers.ts`, unit-tested); consult and deep-research use the configured LLM with a deterministic fallback. Deep research writes `output/research-*.md` and `wiki/synthesis/<slug>.md` with a source-attribution matrix and knowledge gaps.
 
+### 6. API Contract Layer & Documentation Browser (`src/shared/api/`, `src/backend/server/api/`)
+`ROUTES` in `contracts.ts` is the single source of truth for method, path,
+validation schemas, operation ids and bus command names. `openapi.ts` renders it
+as OpenAPI 3.1, merges the FastAPI graph service (live spec or checked-in
+snapshot) and adds MCP tool metadata. `docsBrowser.ts` serves
+`GET /api/openapi.json` and `GET /api/docs` with Swagger UI assets from the
+`swagger-ui-dist` npm package: the browser works offline and in Docker, with no
+CDN. Existing endpoints and `AgentServer`'s public methods are unchanged. See
+`docs/OPENAPI.md`.
+
+### 6.1 Backend MessageBus & Domain Modules (`src/backend/server/bus/`, `modules/`)
+`AgentServer.handleRequest()` matches the request against `ROUTES` and dispatches
+the resulting command to an in-process `MessageBus`. Fifteen modules own 82 of
+the 87 catalogue commands (catalogue, tools, reviews, ingestion, graph, projects,
+changesets, files, scheduler, execution, vault, review studio, research, study
+and chat); the remaining routes are the public docs endpoints and the three
+FastAPI graph proxies, which stay in the gateway before CORS/token validation.
+Handlers return `json`, `binary` or `sse` results and never receive
+`http.IncomingMessage` or `ServerResponse`. The gateway is the only HTTP adapter,
+which keeps the facade and every existing endpoint intact while allowing the
+same commands to be called from a scheduler or a test. See `docs/OPENAPI.md`.
+
+### 6.2 Typed API Client & Frontend Bus (`src/shared/api/`, `src/frontend/api/`, `core/apiBus.ts`)
+`endpoints.ts` attaches request/response types to every `EndpointId` and fails
+`typecheck` if a catalogue route is left untyped. `createApiClient()` generates
+one method per endpoint from `ROUTES`, handles path interpolation, query
+serialization, project/token headers, `ApiClientError` and incremental SSE
+parsing. `apiBus.dispatch()/stream()` adds typed UI events so features react to
+API results without calling each other; `ApiStorage` keeps its 51 public methods
+as a compatibility facade and no UI component builds an API URL or calls
+`fetch` directly. See `docs/OPENAPI.md`.
+
 ## Key Frontend Components
 
-### 6. Adapter-based Note Editor (`src/frontend/components/editor/`)
+### 7. Adapter-based Note Editor (`src/frontend/components/editor/`)
 `MarkdownEditor.ts` is the stable shell; the editing surface sits behind the `NoteEditorAdapter` interface (`EditorAdapter.ts`) with two implementations: `CodeMirrorAdapter.ts` (source view / fallback) and `milkdown/MilkdownAdapter.ts` (Crepe 7.23 WYSIWYG, vanilla TS, no React). `resolveEngine()` auto-selects Milkdown in browsers and CodeMirror under mock DOMs/tests; the Milkdown module is dynamically imported so Crepe's ESM-only subpaths never reach the Node test runner. Toolbar actions are semantic (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`) with shared pure helpers in `editorMarkdownOps.ts`. OKF frontmatter is preserved byte-for-byte via `WikiNote.frontmatterRaw` and the `rawContent` save path. A custom remark plugin + inline atom (`milkdown/wikilink*.ts`) keeps `[[wikilinks]]` unescaped through serialisation and bridges clicks to navigation. See `docs/EDITOR_MIGRATION.md`.
 
 ## Shared Frontend Foundations (Fase 78)
@@ -68,7 +106,8 @@ reimplement the same behaviour in each component:
 | `styles/primitives.css` | Reusable `.wf-btn`, `.wf-field`, `.wf-modal*`, `.wf-menu*`, `.wf-toast*`, `.wf-tab*`, `.wf-palette*` classes. |
 | `core/actions.ts` | **Single action catalogue** (`global`, `note`, `studio` groups). Header, note header, context menu and command palette render from it; handlers are bound once in `WikiForgeApp.bindGlobalActions()`. |
 | `core/shortcuts.ts` | **One** global `keydown` listener, all combos registered through `registerShortcut()`. Fixed the old `Ctrl+Alt+D` collision (digest = `Ctrl+Alt+D`, wiki docs = `Ctrl+Alt+W`). |
-| `core/events.ts` | Typed `eventBus` (`project:changed`, `vault:changed`, `note:selected`, `note:saved`). |
+| `core/events.ts` | Typed `eventBus` (`project:changed`, `vault:changed`, `note:selected`, `note:saved`, API lifecycle and studio-change events). |
+| `core/apiBus.ts` | Frontend command bus: components dispatch catalogue ids instead of calling APIs or each other. |
 | `core/i18n/strings.ts` | IT/EN dictionary with `t(key, vars)`, persisted language selection, updates `document.documentElement.lang`. |
 | `core/ui/resizer.ts` | Shared `bindResizer()` — replaces four separate drag implementations. |
 | `services/notificationService.ts` | Styled toasts + accessible `confirm()` / `prompt()` dialogs. No native `alert`/`confirm`/`prompt` remains in the frontend. |

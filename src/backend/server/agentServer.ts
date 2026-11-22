@@ -67,6 +67,28 @@ import {
   type ProjectEntry,
 } from './projectService';
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
+import { handleDocsRequest } from './api/docsBrowser';
+import { readJsonBody, sendApiResult } from './api/http';
+import { createMessageBus, type MessageBus } from './bus/messageBus';
+import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
+import { createToolsModule, type ToolsModule } from './modules/toolsModule';
+import { createReviewModule, type ReviewModule } from './modules/reviewModule';
+import { createIngestionModule, type IngestionModule } from './modules/ingestionModule';
+import { createGraphModule, type GraphModule } from './modules/graphModule';
+import { createProjectsModule } from './modules/projectsModule';
+import { createChangesetsModule } from './modules/changesetsModule';
+import { createFilesModule } from './modules/filesModule';
+import { createSchedulerModule } from './modules/schedulerModule';
+import { createExecutionModule } from './modules/executionModule';
+import { createVaultModule } from './modules/vaultModule';
+import { createReviewStudioModule } from './modules/reviewStudioModule';
+import { createResearchModule } from './modules/researchModule';
+import { createStudyModule } from './modules/studyModule';
+import { createChatModule } from './modules/chatModule';
+import type { DomainServices } from './modules/services';
+import type { PythonTool } from './modules/pythonTool';
+import { matchRoute } from '../../shared/api/router';
+import { ROUTES as API_ROUTES } from '../../shared/api/contracts';
 
 // Backwards-compatible type exports: callers may still import ProjectEntry here.
 export type { ProjectBundle, ProjectDeleteMode, ProjectEntry } from './projectService';
@@ -257,16 +279,8 @@ export interface ChatRequest {
   stream?: boolean;
 }
 
-export interface HelpTopicMeta {
-  id: string;
-  title: string;
-  icon: string;
-  order: number;
-  group: string;
-  mode: 'focus' | 'dev' | 'both';
-  keywords: string[];
-  context: string[];
-}
+/** Re-export kept for existing imports; the type now lives in the domain module. */
+export type { HelpTopicMeta } from './modules/catalogueModule';
 
 export interface SaveNoteRequest {
   id: string;
@@ -709,11 +723,150 @@ export class AgentServer {
   private readonly scheduleClients = new Set<http.ServerResponse>();
   private scheduleHeartbeat?: NodeJS.Timeout;
   private readonly projects: ProjectService;
+  private readonly bus: MessageBus;
+  private readonly catalogue: CatalogueModule;
+  private readonly tools: ToolsModule;
+  private readonly reviews: ReviewModule;
+  private readonly ingestion: IngestionModule;
+  private readonly graph: GraphModule;
 
   constructor(rootDir: string = process.cwd(), llmClient?: LlmClient) {
     this.rootDir = rootDir;
     this.llmClient = llmClient;
     this.projects = new ProjectService(rootDir);
+    this.bus = createMessageBus();
+    this.catalogue = createCatalogueModule(rootDir);
+    this.catalogue.register(this.bus);
+    this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);
+    this.tools.register(this.bus);
+    this.reviews = createReviewModule((projectId) => this.resolveProjectRoot(projectId));
+    this.reviews.register(this.bus);
+
+    const pythonTool: PythonTool = {
+      resolveRoot: (projectId) => this.resolveProjectRoot(projectId),
+      pathFor: (relativePath) => resolveToolScript(this.rootDir, relativePath),
+      pythonCmd: PYTHON_CMD,
+    };
+    this.ingestion = createIngestionModule(pythonTool);
+    this.ingestion.register(this.bus);
+    this.graph = createGraphModule(pythonTool);
+    this.graph.register(this.bus);
+
+    const jsonRecord = (value: unknown): Record<string, unknown> => value as Record<string, unknown>;
+    const services: DomainServices = {
+      bus: this.bus,
+      projects: this.projects,
+      changesets: async (projectId) => new ChangesetStore(await this.resolveProjectRoot(projectId)),
+      rootDir: this.rootDir,
+      registry: SCRIPT_REGISTRY,
+      useCases: KE_USE_CASES as unknown as Record<string, unknown>,
+      pythonTool,
+      resolveRoot: (projectId) => this.resolveProjectRoot(projectId),
+      buildCliArgs: (scriptDef, args) => buildCliArgs(scriptDef, args),
+      withoutApprovalFlags: (args) => withoutApprovalFlags(args),
+
+      readAllWikiNotes: (projectId) => this.readAllWikiNotes(projectId),
+      readScratchpadEntries: (projectId) => this.readScratchpadEntries(projectId),
+      deleteScratchpadEntry: (id, projectId) => this.deleteScratchpadEntry(id, projectId),
+      getAllFolders: (projectId) => this.getAllFolders(projectId),
+      saveWikiNote: (data, projectId) => this.saveWikiNote(data as any, projectId),
+      applyWikiEdit: (data, projectId) => this.applyWikiEdit(data as any, projectId),
+      attachToNote: (data, projectId) => this.attachToNote(data as any, projectId),
+      createFolderHandler: (data, projectId) => this.createFolderHandler(data as any, projectId),
+      createFileHandler: (data, projectId) => this.createFileHandler(data as any, projectId),
+      renameHandler: (data, projectId) => this.renameHandler(data as any, projectId),
+      moveHandler: (data, projectId) => this.moveHandler(data as any, projectId),
+      deleteHandler: (data, projectId) => this.deleteHandler(data as any, projectId),
+      uploadHandler: (data, projectId) => this.uploadHandler(data as any, projectId),
+      ingestMarkdownHandler: (data, projectId) => this.ingestMarkdownHandler(data as any, projectId),
+      listTrash: async (projectId) => listTrash(await this.resolveProjectRoot(projectId)),
+      restoreTrash: async (id, projectId) => restoreFromTrash(await this.resolveProjectRoot(projectId), id),
+      downloadFile: async (filePath, projectId) => {
+        const projRoot = await this.resolveProjectRoot(projectId);
+        const absPath = path.resolve(projRoot, filePath);
+        return { filename: path.basename(absPath), data: await fs.readFile(absPath) };
+      },
+      publishNoteCreated: (projectId, notePath) => this.publishNoteCreated(projectId, notePath),
+
+      getReviewMeta: (noteRef, projectId) => this.getReviewMeta(noteRef, projectId).then(jsonRecord),
+      recordHumanVerification: (options) => this.recordHumanVerification(options as any).then(jsonRecord),
+      getReviewDigest: (projectId, days, scope, noteRef) =>
+        this.getReviewDigest(projectId, days, scope as any, noteRef).then(jsonRecord),
+      critiqueNote: (options) => this.critiqueNote(options as any).then(jsonRecord),
+      listReviewSnapshots: (noteRef, projectId) => this.listReviewSnapshots(noteRef, projectId).then((rows) => rows.map(jsonRecord)),
+      getReviewDiff: (noteRef, snapshotId, projectId) =>
+        this.getReviewDiff(noteRef, snapshotId, projectId).then(jsonRecord),
+      restoreReviewSnapshot: (noteRef, snapshotId, projectId) =>
+        this.restoreReviewSnapshot(noteRef, snapshotId, projectId),
+
+      resolveReviewTarget: (noteRef, notes) => this.resolveReviewTarget(noteRef, notes),
+      traceClaim: (query, projectId) => this.traceClaim(query, projectId).then(jsonRecord),
+      consultWiki: (question, projectId) => this.consultWiki(question, projectId).then(jsonRecord),
+      promoteConsultAnswer: (input, projectId) => this.promoteConsultAnswer(input as any, projectId).then(jsonRecord),
+      generateDeepResearch: (question, projectId) => this.generateDeepResearch(question, projectId).then(jsonRecord),
+
+      generateStudyGuide: (topic, projectId) => this.generateStudyGuide(topic, projectId).then(jsonRecord),
+      generateQuiz: (topic, count, projectId) => this.generateQuiz(topic, count, projectId).then(jsonRecord),
+      generateMindmap: (target, projectId) => this.generateMindmap(target, projectId).then(jsonRecord),
+      generateAudioOverview: (topic, projectId) => this.generateAudioOverview(topic, projectId).then(jsonRecord),
+      addQuickNote: (text, projectId) => this.addQuickNote(text, projectId).then(jsonRecord),
+      promoteQuickNote: (noteId, folder, projectId) => this.promoteQuickNote(noteId, folder, projectId).then(jsonRecord),
+      generateThesisChapter: (input, projectId) => this.generateThesisChapter(input as any, projectId).then(jsonRecord),
+
+      processChatCommand: (req, projectId) => this.processChatCommand(req, projectId),
+      processChatCommandStream: (req, onChunk, projectId) => this.processChatCommandStream(req, onChunk, projectId),
+
+      getScheduler: () => this.scheduler,
+      getSchedulerConfig: () => this.schedulerConfig as unknown as Record<string, unknown> | null,
+      getScheduleErrors: () => this.scheduleConfigErrors,
+      getEventBus: () => this.eventBus,
+      getApprovalStore: () => this.approvalStore,
+      readDecisionLog: async (options) => (await this.readDecisionLog(options)).map(jsonRecord),
+      decideApproval: async (approvalId, decision, reviewer, reason) => {
+        const result = await this.decideApproval(approvalId, decision, reviewer, reason);
+        return { approval: result.approval ? jsonRecord(result.approval) : undefined, error: result.error };
+      },
+      addScheduleClient: (res) => this.addScheduleClient(res),
+      snapshotStatus: () => (this.scheduler?.getStatus() as unknown as Record<string, unknown> | undefined) ?? null,
+    };
+
+    const modules = [
+      createProjectsModule(services),
+      createChangesetsModule(services),
+      createFilesModule(services),
+      createSchedulerModule(services),
+      createExecutionModule(services),
+      createVaultModule(services),
+      createReviewStudioModule(services),
+      createResearchModule(services),
+      createStudyModule(services),
+      createChatModule(services),
+    ];
+    for (const module of modules) module.register(this.bus);
+  }
+
+  /** Backend components communicate through this bus (additive public accessor). */
+  public getBus(): MessageBus {
+    return this.bus;
+  }
+
+  /** Dispatch a catalogue command and write its transport-neutral result. */
+  private async dispatchApiCommand(
+    command: string,
+    payload: unknown,
+    projectId: string,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<boolean> {
+    if (!this.bus.has(command)) return false;
+    const result = await this.bus.dispatch(command, payload, {
+      rootDir: this.rootDir,
+      projectId,
+      operationId: command,
+      onClose: (handler) => { req.on('close', handler); },
+    });
+    sendApiResult(res, result);
+    return true;
   }
 
   // ---------------------------------------------------------------- scheduler
@@ -1336,1587 +1489,46 @@ export class AgentServer {
       return true;
     }
 
+    // Documentation is public (the browser injects a token for "Try it out").
+    if (await handleDocsRequest(req, res, pathname)) return true;
+
     if (!this.validateApiToken(req)) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: false, error: 'Unauthorized: Invalid or missing X-WikiForge-Token' }));
       return true;
     }
 
-    // Skills Scanner Endpoints
-    if (pathname === '/api/skills' && req.method === 'GET') {
-      try {
-        const skillsDir = path.resolve(this.rootDir, 'skills');
-        const skillFolders = await fs.readdir(skillsDir, { withFileTypes: true });
-        const skillsList = [];
-
-        for (const folder of skillFolders) {
-          if (folder.isDirectory()) {
-            const skillMdPath = path.join(skillsDir, folder.name, 'SKILL.md');
-            try {
-              const content = await fs.readFile(skillMdPath, 'utf-8');
-              const nameMatch = content.match(/name:\s*([^\n]+)/);
-              const descMatch = content.match(/description:\s*> ?\n?([\s\S]*?)(?=\ntriggers:|\n---)/);
-              skillsList.push({
-                id: folder.name,
-                name: nameMatch ? nameMatch[1].trim() : folder.name,
-                description: descMatch ? descMatch[1].trim().replace(/\n\s*/g, ' ') : 'Agent skill package',
-                path: `skills/${folder.name}/SKILL.md`
-              });
-            } catch (_e) {
-              // SKILL.md missing
-            }
-          }
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, skills: skillsList }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
+    // Every catalogue operation whose command is registered on the bus is now
+    // an HTTP-neutral dispatch. The adapter only translates transport details
+    // (path/query/body/headers) into a flat payload and writes the ApiResult.
+    const catalogueMatch = matchRoute(API_ROUTES, req.method ?? '', pathname);
+    if (catalogueMatch && this.bus.has(catalogueMatch.route.command)) {
+      const payload: Record<string, unknown> = {};
+      for (const [key, value] of url.searchParams) payload[key] = value;
+      for (const header of catalogueMatch.route.request.headers ?? []) {
+        const value = req.headers[header.name.toLowerCase()];
+        if (value !== undefined) payload[header.name] = value;
       }
-      return true;
-    }
-
-    // Help System Endpoints (deterministic, content from docs/help/*.md — no LLM)
-    if (pathname === '/api/help' && req.method === 'GET') {
-      try {
-        const topics = await this.loadHelpTopics();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, topics }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname.startsWith('/api/help/') && req.method === 'GET') {
-      const topicId = decodeURIComponent(pathname.slice('/api/help/'.length));
-      const topic = await this.loadHelpTopic(topicId);
-      if (!topic) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: `Help topic not found: ${topicId}` }));
-        return true;
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, topic: { ...topic.meta, markdown: topic.body } }));
-      return true;
-    }
-
-    // Review Queue Endpoints
-    if (pathname === '/api/reviews' && req.method === 'GET') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const reviewFile = path.resolve(projRoot, '.llm-wiki/reviews.json');
-        let reviews = [];
+      const accept = req.headers.accept ?? '';
+      if (accept.includes('text/event-stream')) payload.stream = true;
+      if (catalogueMatch.route.request.body) {
         try {
-          const raw = await fs.readFile(reviewFile, 'utf-8');
-          reviews = JSON.parse(raw);
-        } catch (_e) {
-          // File missing
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, reviews }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/reviews/add' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ title: string; sourceFile: string; recommendedAction: string; reason: string }>(req);
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const reviewDir = path.resolve(projRoot, '.llm-wiki');
-        await fs.mkdir(reviewDir, { recursive: true });
-        const reviewFile = path.join(reviewDir, 'reviews.json');
-
-        let reviews = [];
-        try {
-          const raw = await fs.readFile(reviewFile, 'utf-8');
-          reviews = JSON.parse(raw);
-        } catch (_e) {
-          reviews = [];
-        }
-
-        const newItem = {
-          id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          title: body.title,
-          sourceFile: body.sourceFile,
-          recommendedAction: body.recommendedAction || 'Create Page',
-          reason: body.reason || 'Flagged for human review',
-          status: 'pending',
-          createdAt: new Date().toISOString().slice(0, 10)
-        };
-
-        reviews.push(newItem);
-        await atomicWriteFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, review: newItem }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/reviews/action' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ id: string; action: 'approve' | 'reject' }>(req);
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const reviewFile = path.resolve(projRoot, '.llm-wiki/reviews.json');
-
-        let reviews = [];
-        try {
-          const raw = await fs.readFile(reviewFile, 'utf-8');
-          reviews = JSON.parse(raw);
-        } catch (_e) {
-          reviews = [];
-        }
-
-        reviews = reviews.filter((r: { id: string }) => r.id !== body.id);
-        await atomicWriteFile(reviewFile, JSON.stringify(reviews, null, 2), 'utf-8');
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // Ingestion Queue Endpoints
-    if (pathname === '/api/ingest/queue' && req.method === 'GET') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = resolveToolScript(this.rootDir, 'scripts/ingest_queue.py');
-        const child = spawn(PYTHON_CMD, [scriptPath, 'list', '--json'], { cwd: projRoot });
-        let out = '';
-        child.stdout.on('data', d => { out += d.toString('utf-8'); });
-        await new Promise(r => child.on('close', r));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(out || JSON.stringify({ items: [] }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/ingest/queue/add' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ filePath: string }>(req);
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = resolveToolScript(this.rootDir, 'scripts/ingest_queue.py');
-        const child = spawn(PYTHON_CMD, [scriptPath, 'enqueue', '--file', body.filePath, '--json'], { cwd: projRoot });
-        let out = '';
-        child.stdout.on('data', d => { out += d.toString('utf-8'); });
-        await new Promise(r => child.on('close', r));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(out || JSON.stringify({ success: true }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/ingest/queue/process' && req.method === 'POST') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = resolveToolScript(this.rootDir, 'scripts/conv2md.py');
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-        });
-
-        res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting two-step CoT queue processing...' })}\n\n`);
-        const child = spawn(PYTHON_CMD, [scriptPath, '--cot', '--json'], { cwd: projRoot });
-
-        child.stdout.on('data', d => {
-          res.write(`data: ${JSON.stringify({ type: 'stdout', text: d.toString('utf-8') })}\n\n`);
-        });
-        child.stderr.on('data', d => {
-          res.write(`data: ${JSON.stringify({ type: 'stderr', text: d.toString('utf-8') })}\n\n`);
-        });
-        child.on('close', code => {
-          res.write(`data: ${JSON.stringify({ type: 'exit', code: code ?? 0 })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        });
-      } catch (err) {
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-      }
-      return true;
-    }
-
-    // Graph Insights & Louvain Endpoints
-    if (pathname === '/api/v1/graph/clusters' && req.method === 'GET') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = resolveToolScript(this.rootDir, 'scripts/graph_analytics.py');
-        const child = spawn(PYTHON_CMD, [scriptPath, '--json'], { cwd: projRoot });
-        let out = '';
-        child.stdout.on('data', d => { out += d.toString('utf-8'); });
-        await new Promise(r => child.on('close', r));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(out || JSON.stringify({ clusters: {} }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/v1/graph/insights' && req.method === 'GET') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const scriptPath = resolveToolScript(this.rootDir, 'scripts/graph_analytics.py');
-        const child = spawn(PYTHON_CMD, [scriptPath, '--json'], { cwd: projRoot });
-        let out = '';
-        child.stdout.on('data', d => { out += d.toString('utf-8'); });
-        await new Promise(r => child.on('close', r));
-        const parsed = JSON.parse(out || '{}');
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: true,
-          surprisingConnections: parsed.surprising_connections || [],
-          knowledgeGaps: parsed.knowledge_gaps || [],
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // Knowledge Engineer Use Cases Endpoints
-    if (pathname === '/api/ke/use-cases' && req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, useCases: Object.values(KE_USE_CASES) }));
-      return true;
-    }
-
-    if (pathname === '/api/ke/use-cases/execute' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ useCaseId?: string; stepIndex?: number; args?: Record<string, any>; projectId?: string }>(req);
-        const useCaseId = body.useCaseId;
-        if (!useCaseId || !KE_USE_CASES[useCaseId]) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Invalid or unregistered Knowledge Engineer Use Case ID '${useCaseId}'` }));
-          return true;
-        }
-
-        const useCase = KE_USE_CASES[useCaseId];
-        const bodyProjectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
-        const effectiveProjectId = projectId !== 'default' ? projectId : (bodyProjectId || 'default');
-        const projRoot = await this.resolveProjectRoot(effectiveProjectId);
-        const needsF6 = useCase.steps.some(step => step.scriptId === 'wiki_program_change_apply');
-        const safeArgs = needsF6 ? withoutApprovalFlags(body.args) : body.args;
-
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-        });
-
-        await runUseCase({
-          useCase,
-          stepIndex: body.stepIndex,
-          args: safeArgs,
-          onEvent: (event: UseCaseEvent) => {
-            res.write(`data: ${JSON.stringify(event)}\n\n`);
-          },
-          rootDir: this.rootDir,
-          projectRoot: projRoot,
-          projectId: effectiveProjectId,
-          pythonCmd: PYTHON_CMD,
-          scriptRegistry: SCRIPT_REGISTRY,
-          buildCliArgs,
-        });
-
-        res.write('data: [DONE]\n\n');
-        res.end();
-      } catch (err) {
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-      }
-      return true;
-    }
-
-    // ---- KE Agent Schedule Endpoints (F3) ----
-    if (pathname === '/api/ke/schedule' && req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        config: this.schedulerConfig ?? null,
-        errors: this.scheduleConfigErrors,
-        snapshot: this.scheduler?.getStatus() ?? null,
-      }));
-      return true;
-    }
-
-    if (pathname === '/api/ke/schedule/events' && req.method === 'GET') {
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-      });
-      const removeClient = this.addScheduleClient(res);
-      req.on('close', removeClient);
-      res.write(`data: ${JSON.stringify({ type: 'snapshot', snapshot: this.scheduler?.getStatus() ?? null })}\n\n`);
-      return true;
-    }
-
-    if (pathname === '/api/ke/schedule/runs' && req.method === 'GET') {
-      const logDir = path.resolve(this.rootDir, this.schedulerConfig?.logDir ?? 'output/scheduler');
-      try {
-        const text = await fs.readFile(path.join(logDir, 'audit.jsonl'), 'utf-8');
-        const jobId = url.searchParams.get('jobId');
-        const requestedLimit = Number(url.searchParams.get('limit') ?? 100);
-        const limit = Number.isFinite(requestedLimit)
-          ? Math.max(1, Math.min(Math.floor(requestedLimit), 1_000))
-          : 100;
-        let runs = text.split('\n').filter(Boolean).map((line) => JSON.parse(line));
-        if (jobId) runs = runs.filter((run) => run.job === jobId);
-        runs = runs.slice(-limit).reverse();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, runs }));
-      } catch (err) {
-        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, runs: [] }));
-        } else {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-      }
-      return true;
-    }
-
-    const scheduleRunMatch = /^\/api\/ke\/schedule\/([^/]+)\/run$/.exec(pathname);
-    if (scheduleRunMatch && req.method === 'POST') {
-      const jobId = decodeURIComponent(scheduleRunMatch[1]);
-      const scheduler = this.scheduler;
-      if (!scheduler) {
-        res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Scheduler is not running' }));
-        return true;
-      }
-      if (!scheduler.getStatus().jobs.some((entry) => entry.job.id === jobId)) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: `Unknown scheduler job '${jobId}'` }));
-        return true;
-      }
-      if (scheduler.getStatus().activeJobs.includes(jobId)) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: `Job '${jobId}' is already running` }));
-        return true;
-      }
-
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-      });
-      let finished = false;
-      const closeRun = (): void => {
-        if (finished) return;
-        finished = true;
-        unsubscribe();
-      };
-      const unsubscribe = scheduler.subscribe((event) => {
-        if (finished || !('jobId' in event) || event.jobId !== jobId) return;
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
-        if (event.type === 'job_finished') {
-          res.write('data: [DONE]\n\n');
-          res.end();
-          unsubscribe();
-          finished = true;
-        }
-      });
-      req.on('close', closeRun);
-
-      try {
-        await scheduler.runJobNow(jobId);
-      } catch (err) {
-        if (!finished) {
-          res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-          closeRun();
-        }
-      }
-      return true;
-    }
-
-    const scheduleCancelMatch = /^\/api\/ke\/schedule\/([^/]+)\/cancel$/.exec(pathname);
-    if (scheduleCancelMatch && req.method === 'POST') {
-      const jobId = decodeURIComponent(scheduleCancelMatch[1]);
-      const cancelled = this.scheduler?.cancelJob(jobId) ?? false;
-      res.writeHead(cancelled ? 200 : 409, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: cancelled,
-        error: cancelled ? undefined : `No active run for job '${jobId}'`,
-      }));
-      return true;
-    }
-
-    const schedulePatchMatch = /^\/api\/ke\/schedule\/([^/]+)$/.exec(pathname);
-    if (schedulePatchMatch && req.method === 'PATCH') {
-      const jobId = decodeURIComponent(schedulePatchMatch[1]);
-      const scheduler = this.scheduler;
-      if (!scheduler) {
-        res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Scheduler is not running' }));
-        return true;
-      }
-      try {
-        const body = await this.parseJsonBody<{ enabled?: boolean; schedule?: string }>(req);
-        if (!scheduler.getStatus().jobs.some((entry) => entry.job.id === jobId)) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Unknown scheduler job '${jobId}'` }));
-          return true;
-        }
-        if (typeof body.enabled === 'boolean') {
-          await scheduler.setJobEnabled(jobId, body.enabled);
-        }
-        if (typeof body.schedule === 'string') {
-          await scheduler.setJobSchedule(jobId, body.schedule);
-        }
-        const job = scheduler.getStatus().jobs.find((entry) => entry.job.id === jobId)!;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, job }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // ---- F5/F6: policy decisions, event triggers and approval queue ----
-
-    if (pathname === '/api/ke/schedule/decisions' && req.method === 'GET') {
-      const limit = Number.parseInt(url.searchParams.get('limit') || '50', 10);
-      const decisions = await this.readDecisionLog({
-        jobId: url.searchParams.get('jobId') || undefined,
-        limit: Number.isFinite(limit) ? limit : 50,
-      });
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, decisions }));
-      return true;
-    }
-
-    if (pathname === '/api/ke/schedule/approvals' && req.method === 'GET') {
-      const status = url.searchParams.get('status') as ApprovalRequest['status'] | null;
-      const approvals = this.approvalStore
-        ? await this.approvalStore.list({
-            jobId: url.searchParams.get('jobId') || undefined,
-            status: status && ['pending', 'approved', 'rejected', 'failed'].includes(status)
-              ? status
-              : undefined,
-          })
-        : [];
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, approvals, pending: this.eventBus?.getPending() ?? [] }));
-      return true;
-    }
-
-    if (pathname === '/api/ke/schedule/trigger' && req.method === 'POST') {
-      const body = await this.parseJsonBody<{ event?: string; project?: string; path?: string }>(req);
-      if (!isSupportedTriggerEvent(body.event)) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          success: false,
-          error: `event must be one of: ${['note.created', 'note.modified', 'note.deleted'].join(', ')}`,
-        }));
-        return true;
-      }
-      const event: TriggerEvent = {
-        type: body.event,
-        project: typeof body.project === 'string' && body.project ? body.project : 'default',
-        path: typeof body.path === 'string' ? body.path : undefined,
-        source: 'webhook',
-      };
-      const queued = this.eventBus?.publish(event) ?? [];
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, queued, pending: this.eventBus?.getPending() ?? [] }));
-      return true;
-    }
-
-    const approvalMatch = pathname.match(/^\/api\/ke\/schedule\/approvals\/([^/]+)\/(approve|reject)$/);
-    if (approvalMatch && req.method === 'POST') {
-      const approvalId = decodeURIComponent(approvalMatch[1]);
-      const action = approvalMatch[2];
-      const body = await this.parseJsonBody<{ reviewer?: string; reason?: string }>(req);
-      const reviewer = typeof body.reviewer === 'string' && body.reviewer.trim()
-        ? body.reviewer.trim()
-        : 'human';
-      const result = await this.decideApproval(
-        approvalId,
-        action === 'approve' ? 'approved' : 'rejected',
-        reviewer,
-        typeof body.reason === 'string' ? body.reason : undefined
-      );
-      const status = result.error && !result.approval ? 404 : result.error ? 500 : 200;
-      res.writeHead(status, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: !result.error, ...result }));
-      return true;
-    }
-
-    // ---- A7: changesets (Plan -> Review -> Apply) -------------------------
-    // LLM/programmatic writes are staged here; only a human review applies
-    // them. The store reuses safeFs so durability is defined in one place.
-    const changesetMatch = /^\/api\/v1\/changesets\/([^/]+)\/(apply|reject)$/.exec(pathname);
-    const changesetGetMatch = /^\/api\/v1\/changesets\/([^/]+)$/.exec(pathname);
-
-    if (pathname === '/api/v1/changesets' && req.method === 'GET') {
-      try {
-        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
-        const status = url.searchParams.get('status') as ChangesetStatus | null;
-        const valid = status && ['pending', 'applied', 'rejected'].includes(status) ? status : undefined;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, changesets: await store.list(valid ?? undefined) }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/v1/changesets' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<StageChangesetInput>(req);
-        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
-        const changeset = await store.stage(body);
-        res.writeHead(201, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, changeset }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (changesetGetMatch && req.method === 'GET') {
-      try {
-        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, changeset: await store.get(changesetGetMatch[1]) }));
-      } catch (err) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (changesetMatch && req.method === 'POST') {
-      try {
-        const store = new ChangesetStore(await this.resolveProjectRoot(projectId));
-        const id = changesetMatch[1];
-        if (changesetMatch[2] === 'apply') {
-          const result = await store.apply(id);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, ...result }));
-        } else {
-          const body = await this.parseJsonBody<{ reason?: string }>(req);
-          const changeset = await store.reject(id, body.reason || '');
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, changeset }));
-        }
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // Script Control Panel Endpoints
-    if ((pathname === '/api/scripts/list' || pathname === '/api/scripts/registry') && req.method === 'GET') {
-      const registry = await this.fetchDynamicScriptRegistry();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, registry, scripts: Object.values(registry) }));
-      return true;
-    }
-
-    if (pathname === '/api/scripts/execute' && req.method === 'POST') {
-      try {
-        const registry = await this.fetchDynamicScriptRegistry();
-        const body = await this.parseJsonBody<{ scriptId?: string; script?: string; args?: Record<string, any>; projectId?: string }>(req);
-        const scriptId = body.scriptId || body.script;
-        if (!scriptId || !registry[scriptId]) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Invalid or unregistered script ID '${scriptId}'` }));
-          return true;
-        }
-
-        const scriptDef = registry[scriptId];
-        const supportsProject = scriptDef.parameters.some(p => p.name === 'project');
-        const safeArgs = scriptId === 'wiki_program_change_apply'
-          ? withoutApprovalFlags(body.args)
-          : body.args;
-
-        // The header/query is authoritative; the body is a fallback for
-        // clients that cannot set X-Project-Id. Never silently fall back to
-        // the repo-root "default" project when the caller sent a project.
-        const bodyProjectId = typeof body.projectId === 'string' ? body.projectId.trim() : '';
-        const effectiveProjectId = projectId !== 'default' ? projectId : (bodyProjectId || 'default');
-
-        // The selected project wins over form defaults: a stale `project: ''`
-        // (or `project: 'tesi'`) in the panel form must not re-scope the run.
-        const projectArgs: Record<string, any> =
-          effectiveProjectId !== 'default' && supportsProject ? { project: effectiveProjectId } : {};
-        const userArgs = { ...(safeArgs || {}), ...projectArgs };
-        const cliArgs = buildCliArgs(scriptDef, userArgs);
-        const projRoot = await this.resolveProjectRoot(effectiveProjectId);
-        const scriptPath = resolveToolScript(this.rootDir, scriptDef.path);
-
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-        });
-
-        res.write(`data: ${JSON.stringify({ type: 'start', script: scriptDef.displayName, projectId: effectiveProjectId, cwd: projRoot, cmd: `python3 ${scriptDef.path} ${cliArgs.join(' ')}` })}\n\n`);
-
-        const scriptEnv: NodeJS.ProcessEnv = {
-          ...process.env,
-          PYTHONUNBUFFERED: '1',
-          PYTHONIOENCODING: 'utf-8',
-        };
-        if (effectiveProjectId !== 'default') {
-          // Python helpers use these to resolve bare paths such as `wiki` to
-          // the selected project even when they do not rely on cwd.
-          scriptEnv.WIKIFORGE_PROJECT_ID = effectiveProjectId;
-          scriptEnv.WIKI_FORGE_WIKI_DIR = path.join(projRoot, 'wiki');
-        }
-        const child = spawn(PYTHON_CMD, [scriptPath, ...cliArgs], {
-          cwd: projRoot,
-          env: scriptEnv,
-        });
-
-        child.stdout.on('data', (data: Buffer) => {
-          res.write(`data: ${JSON.stringify({ type: 'stdout', text: data.toString('utf-8') })}\n\n`);
-        });
-
-        child.stderr.on('data', (data: Buffer) => {
-          res.write(`data: ${JSON.stringify({ type: 'stderr', text: data.toString('utf-8') })}\n\n`);
-        });
-
-        child.on('error', (err: Error) => {
-          res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Failed to start process: ${err.message}` })}\n\n`);
-          res.write(`data: ${JSON.stringify({ type: 'exit', code: -1 })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        });
-
-        child.on('close', (code: number | null) => {
-          res.write(`data: ${JSON.stringify({ type: 'exit', code: code ?? 0 })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        });
-      } catch (err) {
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-      }
-      return true;
-    }
-
-    if (pathname === '/api/files/download' && req.method === 'GET') {
-      try {
-        const fileParam = url.searchParams.get('path');
-        if (!fileParam) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Missing path parameter' }));
-          return true;
-        }
-
-        const projRoot = await this.resolveProjectRoot(projectId);
-        const absPath = path.resolve(projRoot, fileParam);
-        const rel = path.relative(projRoot, absPath);
-        if (rel.startsWith('..') || path.isAbsolute(rel)) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Access denied' }));
-          return true;
-        }
-
-        const fileData = await fs.readFile(absPath);
-        const filename = path.basename(absPath);
-        res.writeHead(200, {
-          'Content-Type': 'application/octet-stream',
-          'Content-Disposition': `attachment; filename="${filename}"`,
-        });
-        res.end(fileData);
-      } catch (err) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'File not found' }));
-      }
-      return true;
-    }
-
-    // Projects CRUD API — every operation is delegated to ProjectService.
-    if (pathname === '/api/projects' && req.method === 'GET') {
-      try {
-        const projects = await this.projects.list({
-          includeArchived: url.searchParams.get('includeArchived') === 'true',
-        });
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, projects }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/projects' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ id: string; name: string }>(req);
-        const project = await this.projects.create(body.id, body.name);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, project }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/projects/import' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ bundle?: ProjectBundle } & ProjectBundle>(req);
-        const bundle = body.bundle ?? body;
-        const project = await this.projects.import(bundle);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, project }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    const projectActionMatch = pathname.match(/^\/api\/projects\/([^/]+)\/(clone|archive|restore|export|stats)$/);
-    if (projectActionMatch) {
-      const pId = projectActionMatch[1];
-      const action = projectActionMatch[2];
-      try {
-        if (action === 'clone' && req.method === 'POST') {
-          const body = await this.parseJsonBody<{ id?: string; name?: string; include?: Record<string, boolean> }>(req);
-          const project = await this.projects.clone(pId, {
-            id: String(body.id ?? ''),
-            name: String(body.name ?? ''),
-            include: body.include,
-          });
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, project }));
-        } else if (action === 'archive' && req.method === 'POST') {
-          const result = await this.projects.archive(pId);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, project: result.project, trashed: result.entry }));
-        } else if (action === 'restore' && req.method === 'POST') {
-          const project = await this.projects.restore(pId);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, project }));
-        } else if (action === 'export' && req.method === 'GET') {
-          const bundle = JSON.parse(await this.projects.export(pId)) as ProjectBundle;
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, bundle }));
-        } else if (action === 'stats' && req.method === 'GET') {
-          const stats = await this.projects.stats(pId);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, stats }));
-        } else {
-          res.writeHead(405, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Method ${req.method} not allowed on ${pathname}` }));
-        }
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    const configMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config$/);
-    if (configMatch) {
-      const pId = configMatch[1];
-      if (req.method === 'GET') {
-        try {
-          const config = await this.projects.readProjectConfig(pId);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, config }));
+          const body = await readJsonBody(req);
+          Object.assign(payload, body);
+          payload.body = body;
         } catch (err) {
-          const status = (err as { status?: number }).status || 500;
-          res.writeHead(status, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-        return true;
-      }
-
-      if (req.method === 'PUT') {
-        try {
-          const body = await this.parseJsonBody<Record<string, unknown>>(req);
-          const config = await this.projects.mergeProjectConfig(pId, body);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, config }));
-        } catch (err) {
-          const status = (err as { status?: number }).status || 500;
-          res.writeHead(status, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: String(err) }));
-        }
-        return true;
-      }
-    }
-
-    const renameMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
-    if (renameMatch && req.method === 'PATCH') {
-      try {
-        const body = await this.parseJsonBody<{ name?: string }>(req);
-        const project = await this.projects.rename(renameMatch[1], String(body.name ?? ''));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, project }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    const deleteMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
-    if (deleteMatch && req.method === 'DELETE') {
-      try {
-        const pId = deleteMatch[1];
-        const explicitMode = url.searchParams.get('mode');
-        const legacyFlag = url.searchParams.get('deleteFolder');
-        const mode: ProjectDeleteMode = explicitMode
-          ? (explicitMode as ProjectDeleteMode)
-          : legacyFlag === 'true'
-            ? 'trash'
-            : legacyFlag === 'false'
-              ? 'unregister'
-              : 'trash';
-        const confirm = url.searchParams.get('confirm') ??
-          (typeof req.headers['x-confirm-token'] === 'string' ? req.headers['x-confirm-token'] : undefined);
-        const result = await this.projects.remove(pId, mode, confirm ?? undefined);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, mode: result.mode, trashed: result.trashed }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // -------------------------------------------------------------------------
-    // Review Studio endpoints
-    // -------------------------------------------------------------------------
-
-    if (pathname === '/api/notes/review/meta' && req.method === 'GET') {
-      try {
-        const noteRef = url.searchParams.get('note') || '';
-        if (!noteRef) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
-          return true;
-        }
-        const meta = await this.getReviewMeta(noteRef, projectId);
-        res.writeHead(meta.success ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(meta));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/verify' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{
-          note?: string;
-          reviewer?: string;
-          comment?: string;
-          setStable?: boolean;
-        }>(req);
-        if (!body.note) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Campo "note" mancante' }));
-          return true;
-        }
-        const result = await this.recordHumanVerification({
-          noteRef: body.note,
-          reviewer: body.reviewer,
-          comment: body.comment,
-          setStable: body.setStable,
-          projectId,
-        });
-        const meta = result.success ? await this.getReviewMeta(result.path!, projectId) : null;
-        res.writeHead(result.success ? 200 : result.error === 'not-found' ? 404 : 400, {
-          'Content-Type': 'application/json',
-        });
-        res.end(
-          JSON.stringify({
-            success: result.success,
-            error: result.error,
-            note: result.note
-              ? {
-                  id: result.note.id,
-                  title: result.note.title,
-                  path: result.note.path,
-                  status: result.note.status,
-                  trustTier: result.note.trustTier,
-                }
-              : undefined,
-            actor: result.actor,
-            timestamp: result.timestamp,
-            changed: result.changed,
-            alreadyVerified: result.alreadyVerified,
-            changedStable: result.changedStable,
-            logUpdated: result.logUpdated,
-            meta,
-          })
-        );
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/digest' && req.method === 'GET') {
-      try {
-        const days = Number(url.searchParams.get('days') || 7);
-        const scopeParam = url.searchParams.get('scope') || 'all';
-        const scope = scopeParam === 'note' || scopeParam === 'folder' ? scopeParam : 'all';
-        const noteRef = url.searchParams.get('note') || undefined;
-        const digest = await this.getReviewDigest(projectId, days, scope, noteRef);
-        res.writeHead(digest.success ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(digest));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/critique' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{
-          note?: string;
-          depth?: 'fast' | 'standard' | 'deep';
-          focus?: string[];
-          instructions?: string;
-        }>(req);
-        if (!body.note) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, markdown: '', fallback: false, error: 'Campo "note" mancante' }));
-          return true;
-        }
-        const critique = await this.critiqueNote({
-          noteRef: body.note,
-          projectId,
-          depth: body.depth,
-          focus: body.focus,
-          instructions: body.instructions,
-        });
-        res.writeHead(critique.success ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(critique));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', fallback: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/snapshots' && req.method === 'GET') {
-      try {
-        const noteRef = url.searchParams.get('note') || '';
-        if (!noteRef) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
-          return true;
-        }
-        const snapshots = await this.listReviewSnapshots(noteRef, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, snapshots }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/diff' && req.method === 'GET') {
-      try {
-        const noteRef = url.searchParams.get('note') || '';
-        const snapshotId = url.searchParams.get('snapshot') || '';
-        if (!noteRef || !snapshotId) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametri "note" e "snapshot" obbligatori' }));
-          return true;
-        }
-        const diff = await this.getReviewDiff(noteRef, snapshotId, projectId);
-        res.writeHead(diff.success ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(diff));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/review/restore' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ note?: string; snapshot?: string }>(req);
-        if (!body.note || !body.snapshot) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Campi "note" e "snapshot" obbligatori' }));
-          return true;
-        }
-        const restored = await this.restoreReviewSnapshot(body.note, body.snapshot, projectId);
-        if (!restored) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Snapshot o nota non trovati' }));
-          return true;
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: restored }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    // -------------------------------------------------------------------------
-    // Research Studio endpoints
-    // -------------------------------------------------------------------------
-
-    if (pathname === '/api/notes/research/search' && req.method === 'GET') {
-      try {
-        const query = url.searchParams.get('q') || '';
-        if (!query.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "q" mancante' }));
-          return true;
-        }
-        const parsedLimit = Number(url.searchParams.get('limit') || 30);
-        const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(100, parsedLimit)) : 30;
-        const notes = await this.readAllWikiNotes(projectId);
-        const result = searchNotes(notes, query, limit);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ...result }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/backlinks' && req.method === 'GET') {
-      try {
-        const noteRef = url.searchParams.get('note') || '';
-        if (!noteRef) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
-          return true;
-        }
-        const notes = await this.readAllWikiNotes(projectId);
-        const target = this.resolveReviewTarget(noteRef, notes);
-        if (!target) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Nota non trovata: ${noteRef}` }));
-          return true;
-        }
-        const result = findBacklinks(notes, target, (ref, list) => this.resolveReviewTarget(ref, list));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ...result }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/related' && req.method === 'GET') {
-      try {
-        const noteRef = url.searchParams.get('note') || '';
-        if (!noteRef) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "note" mancante' }));
-          return true;
-        }
-        const parsedLimit = Number(url.searchParams.get('limit') || 12);
-        const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(50, parsedLimit)) : 12;
-        const notes = await this.readAllWikiNotes(projectId);
-        const target = this.resolveReviewTarget(noteRef, notes);
-        if (!target) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: `Nota non trovata: ${noteRef}` }));
-          return true;
-        }
-        const result = suggestRelated(notes, target, (ref, list) => this.resolveReviewTarget(ref, list), limit);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ...result }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/trace' && req.method === 'GET') {
-      try {
-        const query = url.searchParams.get('q') || '';
-        if (!query.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Parametro "q" mancante' }));
-          return true;
-        }
-        const trace = await this.traceClaim(query, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ...trace }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/consult' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ question?: string }>(req);
-        if (!body.question || !body.question.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Campo "question" mancante' }));
-          return true;
-        }
-        const answer = await this.consultWiki(body.question, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(answer));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, fallback: true, markdown: '', citations: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/promote-answer' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<Partial<ConsultAnswerInput> & { markdown?: string }>(req);
-        // The API contract uses `markdown` (same name as the consult response);
-        // accept `answer` too for direct callers of the builder.
-        const question = body.question?.trim();
-        const answer = (body.answer ?? body.markdown)?.trim();
-        if (!question || !answer) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: false, validation: [], error: 'Campi "question" e "markdown" obbligatori',
-          }));
-          return true;
-        }
-        const result = await this.promoteConsultAnswer({
-          question,
-          answer,
-          citations: body.citations ?? [],
-          fallback: body.fallback ?? false,
-        }, projectId);
-        res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, validation: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/research/deep-research' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ question?: string }>(req);
-        if (!body.question || !body.question.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, error: 'Campo "question" mancante' }));
-          return true;
-        }
-        const report = await this.generateDeepResearch(body.question, projectId);
-        res.writeHead(report.success ? 200 : 400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(report));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, articles: 0, fallback: true, markdown: '', error: String(err) }));
-      }
-      return true;
-    }
-
-    // -------------------------------------------------------------------------
-    // Study Studio endpoints
-    // -------------------------------------------------------------------------
-
-    if (pathname === '/api/notes/study/guide' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ topic?: string }>(req);
-        const result = await this.generateStudyGuide(body.topic || '', projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', outputPath: '', sources: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/quiz' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ topic?: string; count?: number }>(req);
-        const result = await this.generateQuiz(body.topic || '', body.count, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', outputPath: '', sources: [], count: 0, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/mindmap' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ target?: string }>(req);
-        const result = await this.generateMindmap(body.target || '', projectId);
-        res.writeHead(result.success ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', outputPath: '', sources: [], nodes: [], links: [], headings: 0, wikilinks: 0, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/audio-overview' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ topic?: string }>(req);
-        const result = await this.generateAudioOverview(body.topic || '', projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', outputPath: '', sources: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/note' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ text?: string }>(req);
-        const result = await this.addQuickNote(body.text || '', projectId);
-        res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', entries: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/promote-note' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ noteId?: string; folder?: string }>(req);
-        const result = await this.promoteQuickNote(body.noteId || '', body.folder || 'general', projectId);
-        res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/notes/study/thesis-chapter' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ topic?: string; title?: string; minMaturity?: number }>(req);
-        const result = await this.generateThesisChapter(
-          { topic: body.topic || '', title: body.title || '', minMaturity: body.minMaturity },
-          projectId
-        );
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, markdown: '', outputPath: '', sources: [], title: '', chapters: [], syntheses: [], error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/notes' && req.method === 'GET') {
-      try {
-        const notes = await this.readAllWikiNotes(projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, notes }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/scratchpad' && req.method === 'GET') {
-      try {
-        const entries = await this.readScratchpadEntries(projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, entries }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/scratchpad/delete' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<DeleteScratchpadRequest>(req);
-        const ok = await this.deleteScratchpadEntry(body.id, projectId);
-        res.writeHead(ok ? 200 : 404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: ok }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/save' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<SaveNoteRequest>(req);
-        const result = await this.saveWikiNote(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/apply-edit' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<ApplyEditRequest>(req);
-        const result = await this.applyWikiEdit(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/attach' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<AttachNoteRequest>(req);
-        const result = await this.attachToNote(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/chat' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<ChatRequest>(req);
-        const isStream = body.stream === true || (req.headers.accept && req.headers.accept.includes('text/event-stream'));
-
-        if (isStream) {
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
-          });
-          await this.processChatCommandStream(body, chunk => {
-            res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-          }, projectId);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        } else {
-          const response = await this.processChatCommand(body, projectId);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, response }));
-        }
-      } catch (err) {
-        if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, error: String(err) }));
-        } else {
-          res.write(`data: ${JSON.stringify({ error: String(err) })}\n\n`);
-          res.end();
+          return true;
         }
       }
-      return true;
+      // Path parameters are authoritative: a body field named `id` (e.g. the
+      // new project id on clone) must never shadow the source `:id` in the URL.
+      Object.assign(payload, catalogueMatch.params);
+      if (await this.dispatchApiCommand(catalogueMatch.route.command, payload, projectId, req, res)) return true;
     }
 
-    if (pathname === '/api/wiki/folder/create' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<CreateFolderRequest>(req);
-        const result = await this.createFolderHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, folder: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/file/create' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<CreateFileRequest>(req);
-        const result = await this.createFileHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, note: result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/rename' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<RenameRequest>(req);
-        const result = await this.renameHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/move' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<MoveRequest>(req);
-        const result = await this.moveHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/delete' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<DeleteRequest>(req);
-        const entry = await this.deleteHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, trashed: entry }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/trash' && req.method === 'GET') {
-      try {
-        const projRoot = await this.resolveProjectRoot(projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, entries: await listTrash(projRoot) }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/trash/restore' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<{ id?: string }>(req);
-        const projRoot = await this.resolveProjectRoot(projectId);
-        if (!body.id) throw new Error('A trash entry id is required');
-        const originalPath = await restoreFromTrash(projRoot, body.id);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, originalPath }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/upload' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<UploadRequest>(req);
-        await this.uploadHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/ingest' && req.method === 'POST') {
-      try {
-        const body = await this.parseJsonBody<IngestRequest>(req);
-        const result = await this.ingestMarkdownHandler(body, projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ...result }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
-    if (pathname === '/api/wiki/folders' && req.method === 'GET') {
-      try {
-        const folders = await this.getAllFolders(projectId);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, folders }));
-      } catch (err) {
-        const status = (err as { status?: number }).status || 500;
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: String(err) }));
-      }
-      return true;
-    }
-
+    // All catalogue routes are dispatched to domain modules through the bus.
     return false;
   }
 
@@ -3747,76 +2359,15 @@ export class AgentServer {
   }
 
   private parseHelpTopicFile(raw: string, fileName: string): { meta: HelpTopicMeta; body: string } | null {
-    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-    const frontmatter = match ? match[1] : '';
-    const body = match ? match[2] : raw;
-    const get = (key: string): string => {
-      const m = frontmatter.match(new RegExp(`^${key}:[ \t]*(.*)$`, 'm'));
-      return m ? m[1].trim() : '';
-    };
-    const getList = (key: string): string[] => {
-      const value = get(key);
-      if (!value) return [];
-      return value
-        .replace(/^\[/, '')
-        .replace(/\]$/, '')
-        .split(',')
-        .map(s => s.trim().replace(/^['"]|['"]$/g, ''))
-        .filter(Boolean);
-    };
-    const id = get('id') || fileName.replace(/\.md$/, '');
-    const mode = get('mode');
-    return {
-      meta: {
-        id,
-        title: get('title') || id,
-        icon: get('icon') || '📖',
-        order: Number(get('order')) || 999,
-        group: get('group') || 'Guida',
-        mode: mode === 'focus' || mode === 'dev' ? mode : 'both',
-        keywords: getList('keywords'),
-        context: getList('context'),
-      },
-      body,
-    };
+    return this.catalogue.help.parse(raw, fileName);
   }
 
   private async loadHelpTopics(): Promise<HelpTopicMeta[]> {
-    const helpDir = path.resolve(this.rootDir, 'docs', 'help');
-    let fileNames: string[];
-    try {
-      fileNames = await fs.readdir(helpDir);
-    } catch {
-      return [];
-    }
-    const topics: HelpTopicMeta[] = [];
-    for (const fileName of fileNames) {
-      if (!/^[a-z0-9-]+\.md$/.test(fileName)) continue;
-      try {
-        const raw = await fs.readFile(path.join(helpDir, fileName), 'utf-8');
-        const parsed = this.parseHelpTopicFile(raw, fileName);
-        if (parsed && parsed.meta.id === fileName.replace(/\.md$/, '')) {
-          topics.push(parsed.meta);
-        }
-      } catch {
-        // Unreadable topic file: skip.
-      }
-    }
-    topics.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
-    return topics;
+    return this.catalogue.help.list();
   }
 
   private async loadHelpTopic(topicId: string): Promise<{ meta: HelpTopicMeta; body: string } | null> {
-    if (!/^[a-z0-9-]+$/.test(topicId)) return null;
-    const helpDir = path.resolve(this.rootDir, 'docs', 'help');
-    try {
-      const raw = await fs.readFile(path.join(helpDir, `${topicId}.md`), 'utf-8');
-      const parsed = this.parseHelpTopicFile(raw, `${topicId}.md`);
-      if (!parsed || parsed.meta.id !== topicId) return null;
-      return parsed;
-    } catch {
-      return null;
-    }
+    return this.catalogue.help.get(topicId);
   }
 
   private async renderHelpCommand(query: string): Promise<string> {

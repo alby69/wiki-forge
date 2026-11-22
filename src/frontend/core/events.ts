@@ -7,6 +7,15 @@ export interface AppEvents {
   'note:selected': { id: string };
   'note:saved': { id: string };
   'language:changed': { language: Language };
+  /** API bus observability: components subscribe instead of calling each other. */
+  'api:request': { id: string; projectId?: string };
+  'api:result': { id: string; projectId?: string };
+  'api:error': { id: string; error: string };
+  'api:stream': { id: string; event: string };
+  'reviews:changed': { projectId?: string };
+  'changesets:changed': { projectId?: string };
+  'schedule:changed': { projectId?: string };
+  'scripts:executed': { scriptId: string; projectId?: string };
 }
 
 type EventName = keyof AppEvents;

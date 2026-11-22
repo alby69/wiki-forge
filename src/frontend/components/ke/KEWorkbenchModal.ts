@@ -1,12 +1,13 @@
 import { KEUseCaseDef, KEUseCaseStep } from '@backend/server/agentServer';
-import { getActiveProjectId, resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { getActiveProjectId } from '@frontend/storage/ApiStorage';
+import { apiBus } from '@frontend/core/apiBus';
+import { ApiClientError } from '@frontend/api/client';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { clampConsoleHeight } from '@frontend/core/utils/consolePanel';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { bindResizer } from '@frontend/core/ui/resizer';
 import {
   formatScheduleTime,
-  parseSseEvents,
   POLICY_ACTION_META,
   schedulerEventToLogLine,
   statusLabel,
@@ -28,7 +29,6 @@ export class KEWorkbenchModal {
   private selectedUseCase: KEUseCaseDef | null = null;
   private logConsole!: LogConsole;
   private onVaultRefreshCb?: () => void;
-  private apiBaseUrl: string = resolveApiBaseUrl();
   /** Reads the project selected in the header picker at request time. */
   private projectIdProvider: () => string;
   private consoleHeight = 280;
@@ -285,9 +285,22 @@ export class KEWorkbenchModal {
     return id || 'default';
   }
 
-  /** Every KE request must carry the selected wiki, including use-case runs. */
-  private projectHeaders(extra: Record<string, string> = {}): Record<string, string> {
-    return { ...extra, 'X-Project-Id': this.getProjectId() };
+  /** Every KE request must carry the selected wiki, including use-case runs.
+   * The bus applies it as `X-Project-Id` via its third `dispatch`/`stream` argument. */
+  private requestProjectId(): string {
+    return this.getProjectId();
+  }
+
+  /** Reproduce the legacy error text: JSON `error` envelope or bare HTTP status. */
+  private requestErrorDetail(err: unknown): string {
+    if (err instanceof ApiClientError) {
+      const body = err.body as { error?: unknown } | null;
+      if (body && typeof body === 'object' && typeof body.error === 'string' && body.error) {
+        return body.error;
+      }
+      return `HTTP ${err.status}`;
+    }
+    return err instanceof Error ? err.message : String(err);
   }
 
   private renderActiveProjectBadge(): void {
@@ -296,15 +309,10 @@ export class KEWorkbenchModal {
   }
 
   private async fetchUseCases(): Promise<void> {
-    const url = `${this.apiBaseUrl}/api/ke/use-cases`;
     try {
-      const res = await fetch(url, { headers: this.projectHeaders() });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      }
-      const data = await res.json();
+      const data = await apiBus.dispatch('ke.useCases.list', {}, this.requestProjectId());
       if (data.success && Array.isArray(data.useCases)) {
-        this.useCases = data.useCases;
+        this.useCases = data.useCases as unknown as KEUseCaseDef[];
       }
     } catch (err) {
       // Surface the failure instead of silently rendering an empty menu.
@@ -315,7 +323,7 @@ export class KEWorkbenchModal {
           <div style="font-size: 12px; color: #feb2b2; background: #742a2a; border: 1px solid #9b2c2c; border-radius: 4px; padding: 10px; line-height: 1.4;">
             <strong style="display: block; margin-bottom: 4px;">Impossibile caricare gli Use Case</strong>
             <span style="font-family: monospace; font-size: 11px;">${detail}</span>
-            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: ${url}</div>
+            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: ke.useCases.list</div>
           </div>
         `;
       }
@@ -462,90 +470,80 @@ export class KEWorkbenchModal {
     });
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/use-cases/execute`, {
-        method: 'POST',
-        headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
-        // projectId is repeated in the body for proxies that strip headers.
-        body: JSON.stringify({ useCaseId: useCase.id, stepIndex, projectId }),
-        signal: abortController.signal,
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error(`Execution request failed with status ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const rawData = trimmed.slice(6);
-            if (rawData === '[DONE]') break;
-
-            try {
-              const event = JSON.parse(rawData);
-              if (event.type === 'start') {
-                this.logConsole.appendLine({
-                  type: 'start',
-                  text: `★ Objective: ${event.objective}`,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'step_start') {
-                this.logConsole.appendLine({
-                  type: 'start',
-                  text: `[Step ${event.stepNumber}] ${event.title} ($ ${event.cmd})`,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'stdout') {
-                this.logConsole.appendLine({
-                  type: 'stdout',
-                  text: event.text,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'stderr') {
-                this.logConsole.appendLine({
-                  type: 'stderr',
-                  text: event.text,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'step_end') {
-                this.logConsole.appendLine({
-                  type: 'exit',
-                  text: `✓ Step ${event.stepNumber} completed with code ${event.code}`,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'exit') {
-                this.logConsole.setStatus('Success', '#34d399');
-                if (statusInd) {
-                  statusInd.textContent = 'Use Case Completato con Successo';
-                  statusInd.style.color = '#34d399';
-                }
+      // projectId is repeated in the body for proxies that strip headers.
+      await apiBus.stream(
+        'ke.useCases.execute',
+        { body: { useCaseId: useCase.id, stepIndex, projectId } },
+        (event) => {
+          try {
+            const frame = JSON.parse(event.data) as {
+              type?: string;
+              objective?: string;
+              stepNumber?: number | string;
+              title?: string;
+              cmd?: string;
+              text: string;
+              code?: number;
+            };
+            if (frame.type === 'start') {
+              this.logConsole.appendLine({
+                type: 'start',
+                text: `★ Objective: ${frame.objective}`,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'step_start') {
+              this.logConsole.appendLine({
+                type: 'start',
+                text: `[Step ${frame.stepNumber}] ${frame.title} ($ ${frame.cmd})`,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'stdout') {
+              this.logConsole.appendLine({
+                type: 'stdout',
+                text: frame.text,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'stderr') {
+              this.logConsole.appendLine({
+                type: 'stderr',
+                text: frame.text,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'step_end') {
+              this.logConsole.appendLine({
+                type: 'exit',
+                text: `✓ Step ${frame.stepNumber} completed with code ${frame.code}`,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'exit') {
+              this.logConsole.setStatus('Success', '#34d399');
+              if (statusInd) {
+                statusInd.textContent = 'Use Case Completato con Successo';
+                statusInd.style.color = '#34d399';
               }
-            } catch (_err) {
-              // Ignore invalid JSON
             }
+          } catch (_err) {
+            // Ignore invalid JSON
           }
-        }
-      }
+        },
+        abortController.signal,
+        projectId,
+      );
 
       if (this.onVaultRefreshCb) {
         this.onVaultRefreshCb();
       }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
+        // Keep the legacy wording for HTTP failures raised by the bus.
+        const detail = err instanceof ApiClientError
+          ? `Execution request failed with status ${err.status}`
+          : err instanceof Error
+            ? err.message
+            : String(err);
         this.logConsole.appendLine({
           type: 'stderr',
-          text: `Execution error: ${err.message}`,
+          text: `Execution error: ${detail}`,
           timestamp: new Date().toLocaleTimeString(),
         });
         this.logConsole.setStatus('Error', '#ef4444');
@@ -598,12 +596,10 @@ export class KEWorkbenchModal {
   /** GET /api/ke/schedule — refresh cards, health badge and run history. */
   public async refreshSchedule(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule`, { headers: this.projectHeaders() });
-      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-      const data = await response.json();
+      const data = await apiBus.dispatch('schedule.status', {}, this.requestProjectId());
       this.scheduleSnapshot = toScheduleSnapshotView(data.snapshot);
       this.scheduleErrors = Array.isArray(data.errors)
-        ? data.errors.filter((error: unknown): error is string => typeof error === 'string')
+        ? data.errors.filter((error): error is string => typeof error === 'string')
         : [];
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
@@ -743,11 +739,12 @@ export class KEWorkbenchModal {
 
   private async fetchScheduleDecisions(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/decisions?limit=5`, {
-        headers: this.projectHeaders(),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      this.scheduleDecisions = toPolicyDecisionViews(await response.json());
+      const data = await apiBus.dispatch(
+        'schedule.decisions',
+        { query: { limit: 5 } },
+        this.requestProjectId(),
+      );
+      this.scheduleDecisions = toPolicyDecisionViews(data);
     } catch {
       this.scheduleDecisions = [];
     }
@@ -755,11 +752,12 @@ export class KEWorkbenchModal {
 
   private async fetchScheduleApprovals(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/approvals?status=pending`, {
-        headers: this.projectHeaders(),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      this.scheduleApprovals = toApprovalViews(await response.json());
+      const data = await apiBus.dispatch(
+        'schedule.approvals',
+        { query: { status: 'pending' } },
+        this.requestProjectId(),
+      );
+      this.scheduleApprovals = toApprovalViews(data);
     } catch {
       this.scheduleApprovals = [];
     }
@@ -768,23 +766,21 @@ export class KEWorkbenchModal {
   /** F6 — a mutating step runs only after this explicit human decision. */
   private async decideApproval(id: string, action: 'approve' | 'reject'): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/api/ke/schedule/approvals/${encodeURIComponent(id)}/${action}`,
-        {
-          method: 'POST',
-          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ reviewer: 'utente workbench' }),
-        }
+      const data = await apiBus.dispatch(
+        'schedule.approvalDecision',
+        { params: { id, action }, body: { reviewer: 'utente workbench' } },
+        this.requestProjectId(),
       );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || data.success === false) throw new Error(data.error ?? `HTTP ${response.status}`);
+      if (data.success === false) {
+        throw new Error((data as { error?: string }).error ?? 'HTTP 200');
+      }
       this.logConsole.appendLine({
         type: 'info',
         text: `${action === 'approve' ? '✅ Approvato' : '❌ Rifiutato'} step mutante '${id}'`,
         timestamp: new Date().toLocaleTimeString(),
       });
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = this.requestErrorDetail(err);
       this.logConsole.appendLine({
         type: 'stderr',
         text: `Decisione su '${id}' non riuscita: ${detail}`,
@@ -825,11 +821,8 @@ export class KEWorkbenchModal {
     const host = this.overlay.querySelector('#ke-schedule-history') as HTMLElement | null;
     if (!host) return;
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/runs?limit=8`, {
-        headers: this.projectHeaders(),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      this.scheduleRuns = toScheduleRunViews(await response.json());
+      const data = await apiBus.dispatch('schedule.runs', { query: { limit: 8 } }, this.requestProjectId());
+      this.scheduleRuns = toScheduleRunViews(data);
     } catch {
       this.scheduleRuns = [];
     }
@@ -847,18 +840,14 @@ export class KEWorkbenchModal {
 
   private async toggleJob(job: ScheduleJobView, enabled: boolean): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
-        {
-          method: 'PATCH',
-          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ enabled }),
-        }
+      await apiBus.dispatch(
+        'schedule.patch',
+        { params: { jobId: job.id }, body: { enabled } },
+        this.requestProjectId(),
       );
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await this.refreshSchedule();
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = this.requestErrorDetail(err);
       this.logConsole.appendLine({
         type: 'stderr',
         text: `Aggiornamento job '${job.id}' non riuscito: ${detail}`,
@@ -869,19 +858,14 @@ export class KEWorkbenchModal {
 
   private async saveJobSchedule(job: ScheduleJobView, expression: string): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(job.id)}`,
-        {
-          method: 'PATCH',
-          headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ schedule: expression }),
-        }
+      await apiBus.dispatch(
+        'schedule.patch',
+        { params: { jobId: job.id }, body: { schedule: expression } },
+        this.requestProjectId(),
       );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
       await this.refreshSchedule();
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = this.requestErrorDetail(err);
       this.logConsole.appendLine({
         type: 'stderr',
         text: `Orario di '${job.id}' non valido: ${detail}`,
@@ -909,39 +893,33 @@ export class KEWorkbenchModal {
 
     let finalStatus = 'cancelled';
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/run`,
-        { method: 'POST', headers: this.projectHeaders(), signal: controller.signal }
-      );
-      if (!response.ok || !response.body) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error ?? `HTTP ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let ended = false;
-      while (!ended) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const parsed = parseSseEvents(decoder.decode(value, { stream: true }), buffer);
-        buffer = parsed.rest;
-        for (const rawEvent of parsed.events) {
-          const event = rawEvent as { type?: string; jobId?: string; status?: string };
-          const line = schedulerEventToLogLine(rawEvent, new Date().toLocaleTimeString());
-          if (line) this.logConsole.appendLine(line);
-          if (event.type === 'job_finished' && event.jobId === jobId) {
-            finalStatus = event.status ?? 'cancelled';
-            ended = true;
+      let finished = false;
+      await apiBus.stream(
+        'schedule.run',
+        { params: { jobId } },
+        (event) => {
+          if (finished) return;
+          let frame: Record<string, unknown>;
+          try {
+            frame = JSON.parse(event.data) as Record<string, unknown>;
+          } catch (_err) {
+            return; // Ignore malformed frames like the previous reader did.
           }
-        }
-      }
+          const line = schedulerEventToLogLine(frame, new Date().toLocaleTimeString());
+          if (line) this.logConsole.appendLine(line);
+          if (frame.type === 'job_finished' && frame.jobId === jobId) {
+            finalStatus = typeof frame.status === 'string' ? frame.status : 'cancelled';
+            finished = true;
+          }
+        },
+        controller.signal,
+        this.requestProjectId(),
+      );
       const meta = statusLabel(finalStatus as any);
       this.logConsole.setStatus(meta.label, meta.color);
     } catch (err) {
       if (!(err instanceof Error && err.name === 'AbortError')) {
-        const detail = err instanceof Error ? err.message : String(err);
+        const detail = this.requestErrorDetail(err);
         this.logConsole.appendLine({
           type: 'stderr',
           text: `Esecuzione job '${jobId}' non riuscita: ${detail}`,
@@ -961,19 +939,14 @@ export class KEWorkbenchModal {
 
   private async cancelJob(jobId: string): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/api/ke/schedule/${encodeURIComponent(jobId)}/cancel`,
-        { method: 'POST', headers: this.projectHeaders() }
-      );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+      await apiBus.dispatch('schedule.cancel', { params: { jobId } }, this.requestProjectId());
       this.logConsole.appendLine({
         type: 'info',
         text: `⏹ Annullamento richiesto per '${jobId}'`,
         timestamp: new Date().toLocaleTimeString(),
       });
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = this.requestErrorDetail(err);
       this.logConsole.appendLine({
         type: 'stderr',
         text: `Annullamento di '${jobId}' non riuscito: ${detail}`,
@@ -989,42 +962,44 @@ export class KEWorkbenchModal {
     const controller = new AbortController();
     this.scheduleEventsAbort = controller;
 
+    // The bus delivers parsed SSE frames synchronously; keep refreshes ordered.
+    let refreshChain: Promise<void> = Promise.resolve();
     void (async () => {
       try {
-        const response = await fetch(`${this.apiBaseUrl}/api/ke/schedule/events`, {
-          headers: this.projectHeaders(),
-          signal: controller.signal,
-        });
-        if (!response.ok || !response.body) return;
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          const parsed = parseSseEvents(decoder.decode(value, { stream: true }), buffer);
-          buffer = parsed.rest;
-          for (const rawEvent of parsed.events) {
-            const event = rawEvent as { type?: string; snapshot?: unknown };
-            if (event.type === 'snapshot') {
-              const view = toScheduleSnapshotView(event.snapshot);
+        await apiBus.stream(
+          'schedule.events',
+          {},
+          (event) => {
+            let frame: Record<string, unknown>;
+            try {
+              frame = JSON.parse(event.data) as Record<string, unknown>;
+            } catch (_err) {
+              return; // Ignore malformed frames like the previous reader did.
+            }
+            if (frame.type === 'snapshot') {
+              const view = toScheduleSnapshotView(frame.snapshot);
               if (view) {
                 this.scheduleSnapshot = view;
                 this.renderSchedule();
               }
             } else if (
-              event.type === 'job_started' ||
-              event.type === 'job_finished' ||
-              event.type === 'job_retry' ||
-              event.type === 'job_skipped' ||
-              event.type === 'policy_decision' ||
-              event.type === 'approval_required' ||
-              event.type === 'event_triggered'
+              frame.type === 'job_started' ||
+              frame.type === 'job_finished' ||
+              frame.type === 'job_retry' ||
+              frame.type === 'job_skipped' ||
+              frame.type === 'policy_decision' ||
+              frame.type === 'approval_required' ||
+              frame.type === 'event_triggered'
             ) {
-              await this.refreshSchedule();
+              refreshChain = refreshChain
+                .then(() => this.refreshSchedule())
+                .catch(() => { /* keep the stream alive */ });
             }
-          }
-        }
+          },
+          controller.signal,
+          this.requestProjectId(),
+        );
+        await refreshChain;
       } catch (err) {
         // Closing the tab or the modal aborts this stream on purpose.
         if (!(err instanceof Error && err.name === 'AbortError')) {

@@ -1,5 +1,8 @@
+import { apiBus } from '@frontend/core/apiBus';
 import { eventBus } from '@frontend/core/events';
+import { ApiClientError } from '@frontend/api/client';
 import { getActiveProjectId, resolveApiBaseUrl, type ProjectInfo } from '@frontend/storage/ApiStorage';
+import type { EndpointId, EndpointRequest, EndpointResponse } from '@shared/api/contracts';
 
 /** A registry entry as returned by the backend (archived entries opt-in). */
 export interface ProjectInfoExtended extends ProjectInfo {
@@ -58,6 +61,8 @@ type Envelope<T> = T & { success?: boolean; error?: string };
  * project: callers own that decision and react to `project:changed` as needed.
  */
 export class ProjectService {
+  /** Kept for constructor compatibility; transport is now the generated client
+   * reached through `apiBus`, where the base URL is configured. */
   private readonly baseUrl: string;
 
   constructor(baseUrl: string = resolveApiBaseUrl()) {
@@ -65,26 +70,29 @@ export class ProjectService {
   }
 
   public async list(includeArchived = true): Promise<ProjectInfoExtended[]> {
-    const json = await this.request<Envelope<{ projects?: ProjectInfoExtended[] }>>(
-      `/api/projects?includeArchived=${includeArchived ? 'true' : 'false'}`
+    const json = await this.request(
+      'projects.list',
+      { query: { includeArchived } },
+      getActiveProjectId()
     );
-    return json.projects ?? [];
+    return (json.projects ?? []) as unknown as ProjectInfoExtended[];
   }
 
   public async create(id: string, name: string): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>('/api/projects', {
-      method: 'POST',
-      body: JSON.stringify({ id, name }),
-    });
+    const json = await this.request(
+      'projects.create',
+      { body: { id, name } },
+      getActiveProjectId()
+    );
     const project = this.requireProject(json.project, id);
     eventBus.emit('project:changed', { id: project.id });
     return project;
   }
 
   public async rename(id: string, name: string): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>(
-      `/api/projects/${encodeURIComponent(id)}`,
-      { method: 'PATCH', body: JSON.stringify({ name }) },
+    const json = await this.request(
+      'projects.rename',
+      { params: { id }, body: { name } },
       id
     );
     const project = this.requireProject(json.project, id);
@@ -93,11 +101,15 @@ export class ProjectService {
   }
 
   public async clone(sourceId: string, options: CloneProjectOptions): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>(
-      `/api/projects/${encodeURIComponent(sourceId)}/clone`,
+    const json = await this.request(
+      'projects.clone',
       {
-        method: 'POST',
-        body: JSON.stringify({ id: options.id, name: options.name, include: options.include }),
+        params: { id: sourceId },
+        body: {
+          id: options.id,
+          name: options.name,
+          include: options.include as unknown as Record<string, unknown> | undefined,
+        },
       },
       sourceId
     );
@@ -107,94 +119,91 @@ export class ProjectService {
   }
 
   public async archive(id: string): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>(
-      `/api/projects/${encodeURIComponent(id)}/archive`,
-      { method: 'POST' },
-      id
-    );
+    const json = await this.request('projects.archive', { params: { id } }, id);
     const project = this.requireProject(json.project, id);
     eventBus.emit('project:changed', { id: project.id });
     return project;
   }
 
   public async restore(id: string): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>(
-      `/api/projects/${encodeURIComponent(id)}/restore`,
-      { method: 'POST' },
-      id
-    );
+    const json = await this.request('projects.restore', { params: { id } }, id);
     const project = this.requireProject(json.project, id);
     eventBus.emit('project:changed', { id: project.id });
     return project;
   }
 
   public async remove(id: string, mode: ProjectDeleteMode = 'trash', confirm?: string): Promise<void> {
-    const query = new URLSearchParams({ mode });
-    if (confirm !== undefined) query.set('confirm', confirm);
-    await this.request<Envelope<Record<string, unknown>>>(
-      `/api/projects/${encodeURIComponent(id)}?${query.toString()}`,
-      { method: 'DELETE' },
+    await this.request(
+      'projects.delete',
+      { params: { id }, query: { mode, confirm } },
       id
     );
     eventBus.emit('project:changed', { id });
   }
 
   public async exportBundle(id: string): Promise<ProjectBundle> {
-    const json = await this.request<Envelope<{ bundle?: ProjectBundle }>>(
-      `/api/projects/${encodeURIComponent(id)}/export`,
-      {},
-      id
-    );
+    const json = await this.request('projects.export', { params: { id } }, id);
     if (!json.bundle) throw new Error(`Missing export bundle for project ${id}`);
-    return json.bundle;
+    return json.bundle as unknown as ProjectBundle;
   }
 
   public async importBundle(bundle: unknown): Promise<ProjectInfoExtended> {
-    const json = await this.request<Envelope<{ project?: ProjectInfoExtended }>>('/api/projects/import', {
-      method: 'POST',
-      body: JSON.stringify({ bundle }),
-    });
+    const json = await this.request(
+      'projects.import',
+      { body: { bundle } as unknown as EndpointRequest<'projects.import'>['body'] },
+      getActiveProjectId()
+    );
     const project = this.requireProject(json.project, '');
     eventBus.emit('project:changed', { id: project.id });
     return project;
   }
 
   public async stats(id: string): Promise<ProjectStats> {
-    const json = await this.request<Envelope<{ stats?: ProjectStats }>>(
-      `/api/projects/${encodeURIComponent(id)}/stats`,
-      {},
-      id
-    );
+    const json = await this.request('projects.stats', { params: { id } }, id);
     return (json.stats ?? {}) as ProjectStats;
   }
 
-  private requireProject(project: ProjectInfoExtended | undefined, fallbackId: string): ProjectInfoExtended {
+  private requireProject(project: unknown, fallbackId: string): ProjectInfoExtended {
     if (!project) throw new Error(`Missing project in response${fallbackId ? ` (${fallbackId})` : ''}`);
-    return project;
+    return project as ProjectInfoExtended;
   }
 
-  private async request<T>(path: string, init: RequestInit = {}, projectId?: string): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Project-Id': projectId ?? getActiveProjectId(),
-      ...((init.headers as Record<string, string> | undefined) ?? {}),
-    };
-    let response: Response;
+  /** Single transport entry point: catalogue id + typed request through the bus. */
+  private async request<K extends EndpointId>(
+    id: K,
+    req: EndpointRequest<K> = {} as EndpointRequest<K>,
+    projectId?: string,
+  ): Promise<EndpointResponse<K>> {
+    let response: EndpointResponse<K>;
     try {
-      response = await fetch(`${this.baseUrl}${path}`, { ...init, headers });
+      response = await apiBus.dispatch(id, req, projectId);
     } catch (err) {
-      throw err instanceof Error ? err : new Error(String(err));
+      throw this.toError(err);
     }
 
-    let json: Envelope<Record<string, unknown>> | null = null;
-    try {
-      json = (await response.json()) as Envelope<Record<string, unknown>> | null;
-    } catch (_err) {
-      // Non-JSON errors still need a useful message.
+    // The generated client rejects non-2xx responses; keep the legacy
+    // rejection of 2xx responses carrying an error envelope as well.
+    const envelope = response as unknown as Envelope<Record<string, unknown>> | null;
+    if (envelope?.success === false) {
+      throw new Error(envelope.error || 'API request failed');
     }
-    if (!response.ok || json?.success === false) {
-      throw new Error(json?.error || response.statusText || `HTTP ${response.status}`);
+    return response;
+  }
+
+  /** Preserve the legacy plain-Error messages (body.error, then statusText). */
+  private toError(err: unknown): Error {
+    if (err instanceof ApiClientError) {
+      const body = err.body;
+      if (body && typeof body === 'object' && 'error' in body) {
+        const message = (body as { error?: unknown }).error;
+        if (typeof message === 'string' && message) return new Error(message);
+      }
+      const prefix = `HTTP ${err.status}`;
+      if (err.message.startsWith(`${prefix} `)) {
+        return new Error(err.message.slice(prefix.length + 1) || err.message);
+      }
+      return new Error(err.message);
     }
-    return (json ?? {}) as T;
+    return err instanceof Error ? err : new Error(String(err));
   }
 }

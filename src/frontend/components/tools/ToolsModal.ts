@@ -1,5 +1,7 @@
 import { ScriptDef, ScriptParamDef } from '@backend/server/agentServer';
-import { getActiveProjectId, resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { getActiveProjectId } from '@frontend/storage/ApiStorage';
+import { apiBus } from '@frontend/core/apiBus';
+import { ApiClientError } from '@frontend/api/client';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { LogConsole } from './LogConsole';
 
@@ -10,7 +12,6 @@ export class ToolsModal {
   private logConsole!: LogConsole;
   private onVaultRefreshCb?: () => void;
   private activeCategory: string = 'Ingestion';
-  private apiBaseUrl: string = resolveApiBaseUrl();
   /** Reads the project selected in the header picker at execution time. */
   private projectIdProvider: () => string;
 
@@ -107,20 +108,14 @@ export class ToolsModal {
   }
 
   private async fetchScriptRegistry(): Promise<void> {
-    const url = `${this.apiBaseUrl}/api/scripts/registry`;
     try {
-      const res = await fetch(url, {
-        headers: { 'X-Project-Id': this.getProjectId() },
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      }
-      const data = await res.json();
+      const data = await apiBus.dispatch('scripts.registry', {}, this.getProjectId());
       if (data.success) {
-        if (data.registry && typeof data.registry === 'object') {
-          this.scripts = Object.values(data.registry as Record<string, ScriptDef>);
+        const registry = data.registry as Record<string, ScriptDef> | undefined;
+        if (registry && typeof registry === 'object') {
+          this.scripts = Object.values(registry);
         } else if (Array.isArray(data.scripts)) {
-          this.scripts = data.scripts;
+          this.scripts = data.scripts as unknown as ScriptDef[];
         }
       }
     } catch (err) {
@@ -132,7 +127,7 @@ export class ToolsModal {
           <div style="font-size: 12px; color: #feb2b2; background: #742a2a; border: 1px solid #9b2c2c; border-radius: 4px; padding: 10px; line-height: 1.4;">
             <strong style="display: block; margin-bottom: 4px;">Impossibile caricare gli script</strong>
             <span style="font-family: monospace; font-size: 11px;">${detail}</span>
-            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: ${url}</div>
+            <div style="margin-top: 6px; font-size: 11px; color: #fbd5d5;">Endpoint: scripts.registry</div>
           </div>
         `;
       }
@@ -282,7 +277,7 @@ export class ToolsModal {
     this.renderActiveProjectBadge();
 
     const formData = new FormData(form);
-    const args: Record<string, any> = {};
+    const args: Record<string, unknown> = {};
 
     for (const param of script.parameters) {
       if (param.type === 'boolean') {
@@ -328,96 +323,82 @@ export class ToolsModal {
     });
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/scripts/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Project-Id': projectId,
-        },
-        // projectId is also in the body as a fallback for proxies that strip headers.
-        body: JSON.stringify({ scriptId: script.id, projectId, args }),
-        signal: abortController.signal,
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error(`Execution request failed with status ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const rawData = trimmed.slice(6);
-            if (rawData === '[DONE]') break;
-
-            try {
-              const event = JSON.parse(rawData);
-              if (event.type === 'start') {
-                this.logConsole.appendLine({
-                  type: 'start',
-                  text: `$ ${event.cmd}`,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-                // Backend reports the resolved project root: makes it obvious
-                // which wiki the script is actually operating on.
-                if (event.cwd) {
-                  this.logConsole.appendLine({
-                    type: 'stdout',
-                    text: `cwd: ${event.cwd}${event.projectId ? `  (project: ${event.projectId})` : ''}`,
-                    timestamp: new Date().toLocaleTimeString(),
-                  });
-                }
-              } else if (event.type === 'stdout') {
+      // projectId is also in the body as a fallback for proxies that strip headers.
+      await apiBus.stream(
+        'scripts.execute',
+        { body: { scriptId: script.id, projectId, args } },
+        (event) => {
+          try {
+            const frame = JSON.parse(event.data) as {
+              type?: string;
+              cmd?: string;
+              cwd?: string;
+              projectId?: string;
+              text: string;
+              code?: number;
+            };
+            if (frame.type === 'start') {
+              this.logConsole.appendLine({
+                type: 'start',
+                text: `$ ${frame.cmd}`,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+              // Backend reports the resolved project root: makes it obvious
+              // which wiki the script is actually operating on.
+              if (frame.cwd) {
                 this.logConsole.appendLine({
                   type: 'stdout',
-                  text: event.text,
+                  text: `cwd: ${frame.cwd}${frame.projectId ? `  (project: ${frame.projectId})` : ''}`,
                   timestamp: new Date().toLocaleTimeString(),
                 });
-              } else if (event.type === 'stderr') {
-                this.logConsole.appendLine({
-                  type: 'stderr',
-                  text: event.text,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-              } else if (event.type === 'exit') {
-                const isSuccess = event.code === 0;
-                this.logConsole.appendLine({
-                  type: 'exit',
-                  text: `Process finished with exit code ${event.code}`,
-                  timestamp: new Date().toLocaleTimeString(),
-                });
-                this.logConsole.setStatus(isSuccess ? 'Success' : `Failed (code ${event.code})`, isSuccess ? '#68d391' : '#e53e3e');
-                if (statusInd) {
-                  statusInd.textContent = isSuccess ? 'Completed' : 'Error';
-                  statusInd.style.color = isSuccess ? '#68d391' : '#e53e3e';
-                }
               }
-            } catch (_err) {
-              // Ignore invalid JSON chunks
+            } else if (frame.type === 'stdout') {
+              this.logConsole.appendLine({
+                type: 'stdout',
+                text: frame.text,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'stderr') {
+              this.logConsole.appendLine({
+                type: 'stderr',
+                text: frame.text,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            } else if (frame.type === 'exit') {
+              const isSuccess = frame.code === 0;
+              this.logConsole.appendLine({
+                type: 'exit',
+                text: `Process finished with exit code ${frame.code}`,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+              this.logConsole.setStatus(isSuccess ? 'Success' : `Failed (code ${frame.code})`, isSuccess ? '#68d391' : '#e53e3e');
+              if (statusInd) {
+                statusInd.textContent = isSuccess ? 'Completed' : 'Error';
+                statusInd.style.color = isSuccess ? '#68d391' : '#e53e3e';
+              }
             }
+          } catch (_err) {
+            // Ignore invalid JSON chunks
           }
-        }
-      }
+        },
+        abortController.signal,
+        projectId,
+      );
 
       if (this.onVaultRefreshCb) {
         this.onVaultRefreshCb();
       }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
+        // Keep the legacy wording for HTTP failures raised by the bus.
+        const detail = err instanceof ApiClientError
+          ? `Execution request failed with status ${err.status}`
+          : err instanceof Error
+            ? err.message
+            : String(err);
         this.logConsole.appendLine({
           type: 'stderr',
-          text: `Execution error: ${err.message}`,
+          text: `Execution error: ${detail}`,
           timestamp: new Date().toLocaleTimeString(),
         });
         this.logConsole.setStatus('Error', '#e53e3e');

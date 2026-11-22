@@ -29,6 +29,9 @@ import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { appStore } from '@frontend/store/appStore';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
+import { FrontendApiBus } from '@frontend/core/apiBus';
+import { ApiClientError, createApiClient } from '@frontend/api/client';
+import type { EndpointId, EndpointRequest, EndpointResponse } from '@shared/api/contracts';
 
 export interface AttachOptions {
   noteId?: string;
@@ -108,10 +111,17 @@ export function resolveApiBaseUrl(fallback: string = ''): string {
 
 export class ApiStorage implements IStorage {
   private fallback = new FileStorage();
+  /** Kept as an explicit client option for callers that supply a custom origin. */
   private baseUrl: string;
+  /** Per-instance bus: same transport, but honours the constructor's base URL. */
+  private readonly api: FrontendApiBus;
 
   constructor(baseUrl: string = '') {
     this.baseUrl = resolveApiBaseUrl(baseUrl);
+    this.api = new FrontendApiBus(createApiClient({
+      baseUrl: this.baseUrl,
+      getProjectId: () => getActiveProjectId(),
+    }), { scopeQuery: true });
   }
 
   public getActiveProjectId(): string {
@@ -122,23 +132,29 @@ export class ApiStorage implements IStorage {
     appStore.setActiveProjectId(id);
   }
 
-  private getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      'X-Project-Id': this.getActiveProjectId(),
-    };
+  /** The single transport entry point: URL, headers and lifecycle events are the bus'. */
+  private async request<K extends EndpointId>(
+    id: K,
+    req: EndpointRequest<K> = {} as EndpointRequest<K>,
+    projectId?: string
+  ): Promise<EndpointResponse<K>> {
+    return this.api.dispatch(id, req, projectId);
+  }
+
+  /** Keep the legacy JSON error envelope when the client throws on a non-2xx response. */
+  private failedEnvelope<T extends { success?: boolean; error?: string }>(err: unknown, fallback: T): T {
+    if (err instanceof ApiClientError && err.body && typeof err.body === 'object') {
+      const envelope = err.body as { success?: boolean; error?: string };
+      return { ...envelope, error: envelope.error || `HTTP ${err.status}` } as unknown as T;
+    }
+    return { ...fallback, error: String(err) } as unknown as T;
   }
 
   public async getProjects(): Promise<ProjectInfo[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/projects`, {
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; projects?: ProjectInfo[] };
-        if (json.success && json.projects) {
-          return json.projects;
-        }
+      const json = await this.request('projects.list', { query: {} });
+      if (json.success && json.projects) {
+        return json.projects;
       }
     } catch (_err) {
       // Fallback
@@ -148,16 +164,9 @@ export class ApiStorage implements IStorage {
 
   public async createProject(id: string, name: string): Promise<ProjectInfo | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/projects`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ id, name }),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; project?: ProjectInfo };
-        if (json.success && json.project) {
-          return json.project;
-        }
+      const json = await this.request('projects.create', { body: { id, name } });
+      if (json.success && json.project) {
+        return json.project;
       }
     } catch (_err) {
       // Fallback
@@ -168,14 +177,9 @@ export class ApiStorage implements IStorage {
   public async getProjectConfig(projectId?: string): Promise<Record<string, unknown> | null> {
     const id = projectId || this.getActiveProjectId();
     try {
-      const res = await fetch(`${this.baseUrl}/api/projects/${id}/config`, {
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; config?: Record<string, unknown> };
-        if (json.success && json.config) {
-          return json.config;
-        }
+      const json = await this.request('projects.config.get', { params: { id } });
+      if (json.success && json.config) {
+        return json.config;
       }
     } catch (_err) {
       // Fallback
@@ -186,15 +190,8 @@ export class ApiStorage implements IStorage {
   public async updateProjectConfig(config: Record<string, unknown>, projectId?: string): Promise<boolean> {
     const id = projectId || this.getActiveProjectId();
     try {
-      const res = await fetch(`${this.baseUrl}/api/projects/${id}/config`, {
-        method: 'PUT',
-        headers: this.getHeaders(),
-        body: JSON.stringify(config),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      const json = await this.request('projects.config.put', { params: { id }, body: config });
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -203,14 +200,11 @@ export class ApiStorage implements IStorage {
 
   public async deleteProject(projectId: string, deleteFolder: boolean = false): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/projects/${projectId}?deleteFolder=${deleteFolder}`, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
+      const json = await this.request('projects.delete', {
+        params: { id: projectId },
+        query: { deleteFolder },
       });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -219,14 +213,9 @@ export class ApiStorage implements IStorage {
 
   public async getAllNotes(projectId?: string): Promise<WikiNote[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/notes${this.withProjectScope('', projectId)}`, {
-        headers: this.headersForProject(projectId),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; notes?: WikiNote[] };
-        if (json.success && Array.isArray(json.notes) && json.notes.length > 0) {
-          return json.notes;
-        }
+      const json = await this.request('wiki.notes.list', {}, projectId);
+      if (json.success && Array.isArray(json.notes) && json.notes.length > 0) {
+        return json.notes;
       }
     } catch (_err) {
       // Backend unavailable; fallback to static FileStorage only for the active project
@@ -236,14 +225,9 @@ export class ApiStorage implements IStorage {
 
   public async getScratchpad(): Promise<ScratchpadEntry[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/scratchpad`, {
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; entries?: ScratchpadEntry[] };
-        if (json.success && Array.isArray(json.entries)) {
-          return json.entries;
-        }
+      const json = await this.request('wiki.scratchpad.list');
+      if (json.success && Array.isArray(json.entries)) {
+        return json.entries;
       }
     } catch (_err) {
       // Backend unavailable
@@ -253,15 +237,8 @@ export class ApiStorage implements IStorage {
 
   public async deleteScratchpad(id: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/scratchpad/delete`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ id }),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success === true;
-      }
+      const json = await this.request('wiki.scratchpad.delete', { body: { id } });
+      return json.success === true;
     } catch (_err) {
       // Backend unavailable
     }
@@ -278,24 +255,18 @@ export class ApiStorage implements IStorage {
 
   public async saveNote(note: Partial<WikiNote> & { id: string }): Promise<WikiNote> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/save`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
+      const json = await this.request('wiki.note.save', {
+        body: {
           id: note.id,
           content: note.content ?? '',
           rawContent: note.rawContent,
           path: note.path,
           folder: note.folder,
           title: note.title,
-        }),
+        },
       });
-
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; note?: WikiNote };
-        if (json.success && json.note) {
-          return json.note;
-        }
+      if (json.success && json.note) {
+        return json.note;
       }
     } catch (_err) {
       // Backend unavailable; fallback
@@ -306,17 +277,9 @@ export class ApiStorage implements IStorage {
 
   public async attachNote(options: AttachOptions): Promise<WikiNote> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/attach`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(options),
-      });
-
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; note?: WikiNote };
-        if (json.success && json.note) {
-          return json.note;
-        }
+      const json = await this.request('wiki.note.attach', { body: options });
+      if (json.success && json.note) {
+        return json.note;
       }
     } catch (_err) {
       // Backend unavailable
@@ -328,19 +291,15 @@ export class ApiStorage implements IStorage {
 
   public async applyEdit(edit: WikiEdit): Promise<ApplyEditResult> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/apply-edit`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(edit),
+      const json = await this.request('wiki.note.applyEdit', {
+        body: { file: edit.file, find: edit.find, replace: edit.replace },
       });
-
-      const json = (await res.json()) as { success: boolean; note?: WikiNote; error?: string };
-      if (res.ok && json.success && json.note) {
+      if (json.success && json.note) {
         return { success: true, note: json.note };
       }
-      return { success: false, error: json.error || `HTTP ${res.status}` };
+      return { success: false, error: (json as { error?: string }).error || 'HTTP 200' };
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
@@ -350,43 +309,34 @@ export class ApiStorage implements IStorage {
     description: string
   ): Promise<{ success: boolean; changesetId?: string; error?: string }> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/v1/changesets`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          description,
-          author: 'agent:chat',
-          rationale: 'Proposta generata dall’agente, in attesa di revisione umana.',
-          sources: ['chat'],
-          edits: edits.map(edit => ({
-            file: edit.file,
-            action: 'modify',
-            find: edit.find,
-            replace: edit.replace,
-          })),
-        }),
-      });
-      const json = await res.json() as { success: boolean; changeset?: { id: string }; error?: string };
-      if (res.ok && json.success && json.changeset) {
+      // The catalogue DTO calls the edited file `path`; the backend still expects
+      // the legacy `file` key, so keep the body and narrow-cast to the contract type.
+      const body = {
+        description,
+        author: 'agent:chat',
+        rationale: 'Proposta generata dall’agente, in attesa di revisione umana.',
+        sources: ['chat'],
+        edits: edits.map(edit => ({
+          file: edit.file,
+          action: 'modify',
+          find: edit.find,
+          replace: edit.replace,
+        })),
+      } as unknown as EndpointRequest<'changesets.stage'>['body'];
+      const json = await this.request('changesets.stage', { body });
+      if (json.success && json.changeset) {
         return { success: true, changesetId: json.changeset.id };
       }
-      return { success: false, error: json.error || `HTTP ${res.status}` };
+      return { success: false, error: (json as { error?: string }).error || 'HTTP 200' };
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
   public async deleteNote(id: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/delete`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ targetPath: id }),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      const json = await this.request('wiki.delete', { body: { path: id, type: 'file' } });
+      return json.success;
     } catch (_err) {
       // Backend unavailable
     }
@@ -395,15 +345,8 @@ export class ApiStorage implements IStorage {
 
   public async createFolder(folderPath: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/folder/create`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ folderPath }),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      const json = await this.request('wiki.folder.create', { body: { path: folderPath } });
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -412,15 +355,12 @@ export class ApiStorage implements IStorage {
 
   public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/file/create`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ folderPath, fileName, content }),
+      // An absent body field was previously omitted by JSON.stringify; keep that
+      // behaviour so a missing content still fails over to FileStorage.
+      const json = await this.request('wiki.file.create', {
+        body: { folder: folderPath, name: fileName, content: content as string },
       });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; note?: WikiNote };
-        if (json.success && json.note) return json.note;
-      }
+      if (json.success && json.note) return json.note;
     } catch (_err) {
       // Fallback
     }
@@ -429,15 +369,10 @@ export class ApiStorage implements IStorage {
 
   public async renameItem(oldPath: string, newName: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/rename`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ oldPath, newName }),
+      const json = await this.request('wiki.rename', {
+        body: { from: oldPath, to: newName, newName, dryRun: false },
       });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -456,38 +391,30 @@ export class ApiStorage implements IStorage {
 
   private async requestRename(oldPath: string, newTitle: string, dryRun: boolean): Promise<RenameResult | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/rename`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ oldPath, newTitle, dryRun }),
+      return await this.request('wiki.rename', {
+        body: { from: oldPath, to: newTitle, newTitle, dryRun },
       });
-      const json = (await res.json()) as RenameResult;
-      if (res.ok) return json;
-
+    } catch (err) {
+      const body = err instanceof ApiClientError && err.body && typeof err.body === 'object'
+        ? err.body as { error?: string }
+        : undefined;
       return {
         success: false,
         dryRun,
         renamed: { from: oldPath, to: oldPath, oldTitle: '', newTitle, id: '' },
         updatedFiles: [],
         totalReplacements: 0,
-        error: json.error ?? `HTTP ${res.status}`,
+        error: body?.error || (err instanceof ApiClientError ? `HTTP ${err.status}` : String(err)),
       };
-    } catch (_err) {
-      return null;
     }
   }
 
   public async moveItem(sourcePath: string, targetFolder: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/move`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ sourcePath, targetFolder }),
+      const json = await this.request('wiki.move', {
+        body: { from: sourcePath, to: targetFolder, dryRun: false },
       });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -508,16 +435,15 @@ export class ApiStorage implements IStorage {
         payloadContent = btoa(binary);
       }
 
-      const res = await fetch(`${this.baseUrl}/api/wiki/upload`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ folderPath, fileName, content: payloadContent, isBase64: typeof content !== 'string' }),
+      const joinedPath = folderPath ? `${folderPath.replace(/\/+$/, '')}/${fileName}` : fileName;
+      const json = await this.request('wiki.upload', {
+        body: {
+          path: joinedPath,
+          content: payloadContent,
+          encoding: typeof content !== 'string' ? 'base64' : 'utf-8',
+        },
       });
-
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean };
-        return json.success;
-      }
+      return json.success;
     } catch (_err) {
       // Fallback
     }
@@ -535,24 +461,21 @@ export class ApiStorage implements IStorage {
     targetFolder: string
   ): Promise<IngestResult> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/ingest`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ fileName, content, targetFolder }),
+      const json = await this.request('wiki.ingest', {
+        body: { folder: targetFolder, fileName, content },
       });
-      const json = (await res.json().catch(() => ({}))) as Partial<IngestResult> & { error?: string };
-      if (res.ok && json.success) {
+      if (json.success) {
         return {
           success: true,
-          note: json.note as WikiNote | undefined,
+          note: json.note,
           compiled: json.compiled,
           targetFolder: json.targetFolder,
           message: json.message,
         };
       }
-      return { success: false, error: json.error || `HTTP ${res.status}` };
+      return { success: false, error: (json as { error?: string }).error || 'HTTP 200' };
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
@@ -566,14 +489,9 @@ export class ApiStorage implements IStorage {
 
   public async getAllFolders(): Promise<string[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/wiki/folders`, {
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; folders?: string[] };
-        if (json.success && Array.isArray(json.folders)) {
-          return json.folders;
-        }
+      const json = await this.request('wiki.folders.list');
+      if (json.success && Array.isArray(json.folders)) {
+        return json.folders;
       }
     } catch (_err) {
       // Backend unavailable
@@ -583,17 +501,11 @@ export class ApiStorage implements IStorage {
 
   public async sendChat(message: string, command?: string, contextNoteId?: string): Promise<string> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ message, command, contextNoteId }),
+      const json = await this.request('chat.send', {
+        body: { message, command, contextNoteId },
       });
-
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; response?: string };
-        if (json.success && json.response) {
-          return json.response;
-        }
+      if (json.success && json.response) {
+        return json.response;
       }
     } catch (_err) {
       // Offline simulation fallback
@@ -609,56 +521,23 @@ export class ApiStorage implements IStorage {
     contextNoteId?: string
   ): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: {
-          ...this.getHeaders(),
-          'Accept': 'text/event-stream',
-        },
-        body: JSON.stringify({ message, command, contextNoteId, stream: true }),
-      });
-
-      if (res.ok && res.body) {
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith('data: ')) {
-              const dataStr = trimmed.slice(6).trim();
-              if (dataStr === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(dataStr) as { chunk?: string };
-                if (parsed.chunk) {
-                  onChunk(parsed.chunk);
-                }
-              } catch (_e) {
-                // ignore
-              }
+      await this.api.stream(
+        'chat.send',
+        { body: { message, command, contextNoteId, stream: true } },
+        (event) => {
+          if (event.data === '[DONE]') return;
+          try {
+            const parsed = JSON.parse(event.data) as { chunk?: string; error?: string };
+            if (parsed.chunk) {
+              onChunk(parsed.chunk);
             }
+            // In-stream `{ error }` frames were parsed and ignored by the legacy reader.
+          } catch (_e) {
+            // ignore
           }
         }
-
-        if (buffer.trim().startsWith('data: ')) {
-          const dataStr = buffer.trim().slice(6).trim();
-          if (dataStr !== '[DONE]') {
-            try {
-              const parsed = JSON.parse(dataStr) as { chunk?: string };
-              if (parsed.chunk) onChunk(parsed.chunk);
-            } catch (_e) {}
-          }
-        }
-        return;
-      }
+      );
+      return;
     } catch (_err) {
       // Offline fallback
     }
@@ -669,12 +548,9 @@ export class ApiStorage implements IStorage {
 
   public async getHelpTopics(): Promise<HelpTopicMeta[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/help`, { headers: this.getHeaders() });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; topics?: HelpTopicMeta[] };
-        if (json.success && Array.isArray(json.topics)) {
-          return json.topics;
-        }
+      const json = await this.request('help.list');
+      if (json.success && Array.isArray(json.topics)) {
+        return json.topics;
       }
     } catch (_err) {
       // Backend unavailable
@@ -684,14 +560,9 @@ export class ApiStorage implements IStorage {
 
   public async getHelpTopic(id: string): Promise<HelpTopic | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/help/${encodeURIComponent(id)}`, {
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; topic?: HelpTopic };
-        if (json.success && json.topic) {
-          return json.topic;
-        }
+      const json = await this.request('help.get', { params: { topicId: id } });
+      if (json.success && json.topic) {
+        return json.topic as HelpTopic;
       }
     } catch (_err) {
       // Backend unavailable
@@ -703,25 +574,11 @@ export class ApiStorage implements IStorage {
   // Review Studio
   // ---------------------------------------------------------------------------
 
-  private reviewQuery(params: Record<string, string | number | undefined>): string {
-    const search = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== '') search.set(key, String(value));
-    }
-    const query = search.toString();
-    return query ? `?${query}` : '';
-  }
-
   public async getReviewMeta(noteRef: string): Promise<ReviewMetaResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/review/meta${this.reviewQuery({ note: noteRef })}`,
-        { headers: this.getHeaders() }
-      );
-      const json = (await res.json()) as ReviewMetaResponse;
-      return json;
+      return await this.request('review.meta', { query: { note: noteRef } });
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
@@ -732,14 +589,9 @@ export class ApiStorage implements IStorage {
     setStable?: boolean;
   }): Promise<ReviewVerifyResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/review/verify`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(options),
-      });
-      return (await res.json()) as ReviewVerifyResponse;
+      return await this.request('review.verify', { body: options });
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
@@ -747,17 +599,11 @@ export class ApiStorage implements IStorage {
     options: { days?: number; scope?: 'all' | 'folder' | 'note'; note?: string } = {}
   ): Promise<ReviewDigest> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/review/digest${this.reviewQuery({
-          days: options.days,
-          scope: options.scope,
-          note: options.note,
-        })}`,
-        { headers: this.getHeaders() }
-      );
-      return (await res.json()) as ReviewDigest;
+      return await this.request('review.digest', {
+        query: { days: options.days, scope: options.scope, note: options.note },
+      });
     } catch (err) {
-      return {
+      return this.failedEnvelope(err, {
         success: false,
         error: String(err),
         rangeDays: options.days ?? 7,
@@ -768,7 +614,7 @@ export class ApiStorage implements IStorage {
         health: { score: 0, label: 'n/d', summary: '' },
         nextActions: [],
         markdown: '',
-      };
+      });
     }
   }
 
@@ -779,27 +625,16 @@ export class ApiStorage implements IStorage {
     instructions?: string;
   }): Promise<ReviewCritiqueResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/review/critique`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(options),
-      });
-      return (await res.json()) as ReviewCritiqueResponse;
+      return await this.request('review.critique', { body: options });
     } catch (err) {
-      return { success: false, markdown: '', fallback: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, markdown: '', fallback: false, error: String(err) });
     }
   }
 
   public async listReviewSnapshots(noteRef: string): Promise<ReviewSnapshot[]> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/review/snapshots${this.reviewQuery({ note: noteRef })}`,
-        { headers: this.getHeaders() }
-      );
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; snapshots?: ReviewSnapshot[] };
-        if (json.success && Array.isArray(json.snapshots)) return json.snapshots;
-      }
+      const json = await this.request('review.snapshots', { query: { note: noteRef } });
+      if (json.success && Array.isArray(json.snapshots)) return json.snapshots;
     } catch (_err) {
       // Backend unavailable
     }
@@ -808,27 +643,20 @@ export class ApiStorage implements IStorage {
 
   public async getReviewDiff(noteRef: string, snapshotId: string): Promise<ReviewDiffResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/review/diff${this.reviewQuery({ note: noteRef, snapshot: snapshotId })}`,
-        { headers: this.getHeaders() }
-      );
-      return (await res.json()) as ReviewDiffResponse;
+      return await this.request('review.diff', {
+        query: { note: noteRef, snapshot: snapshotId },
+      });
     } catch (err) {
-      return { success: false, error: String(err) };
+      return this.failedEnvelope(err, { success: false, error: String(err) });
     }
   }
 
   public async restoreReviewSnapshot(noteRef: string, snapshotId: string): Promise<WikiNote | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/review/restore`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ note: noteRef, snapshot: snapshotId }),
+      const json = await this.request('review.restore', {
+        body: { note: noteRef, snapshot: snapshotId },
       });
-      if (res.ok) {
-        const json = (await res.json()) as { success: boolean; note?: WikiNote };
-        if (json.success && json.note) return json.note;
-      }
+      if (json.success && json.note) return json.note;
     } catch (_err) {
       // Backend unavailable
     }
@@ -839,81 +667,49 @@ export class ApiStorage implements IStorage {
   // Research Studio
   // ---------------------------------------------------------------------------
 
-  /**
-   * Research Studio can query a different project without switching the active
-   * vault. The backend gives the `X-Project-Id` header precedence over the
-   * query parameter, so both are set when an explicit scope is requested.
-   */
-  private withProjectScope(query: string, projectId?: string): string {
-    if (!projectId) return query;
-    const param = `projectId=${encodeURIComponent(projectId)}`;
-    return query ? `${query}&${param}` : `?${param}`;
-  }
-
-  private headersForProject(projectId?: string): Record<string, string> {
-    const headers = this.getHeaders();
-    if (projectId) headers['X-Project-Id'] = projectId;
-    return headers;
-  }
-
+  /** Research Studio can query a different project without switching the active
+   * vault. The explicit scope is handed to the bus, which sets `X-Project-Id`. */
   public async researchSearch(query: string, limit: number = 30, projectId?: string): Promise<ResearchSearchResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/research/search${this.withProjectScope(this.reviewQuery({ q: query, limit }), projectId)}`,
-        { headers: this.headersForProject(projectId) }
-      );
-      return (await res.json()) as ResearchSearchResponse;
+      return await this.request('research.search', { query: { q: query, limit } }, projectId);
     } catch (err) {
-      return { success: false, error: String(err), query, total: 0, totalMatches: 0, scanned: 0, tookMs: 0, results: [] };
+      return this.failedEnvelope(err, {
+        success: false, error: String(err), query, total: 0, totalMatches: 0, scanned: 0, tookMs: 0, results: [],
+      });
     }
   }
 
   public async researchBacklinks(noteRef: string, projectId?: string): Promise<ResearchBacklinksResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/research/backlinks${this.withProjectScope(this.reviewQuery({ note: noteRef }), projectId)}`,
-        { headers: this.headersForProject(projectId) }
-      );
-      return (await res.json()) as ResearchBacklinksResponse;
+      return await this.request('research.backlinks', { query: { note: noteRef } }, projectId);
     } catch (err) {
-      return { success: false, error: String(err), items: [], scanned: 0 };
+      return this.failedEnvelope(err, { success: false, error: String(err), items: [], scanned: 0 });
     }
   }
 
   public async researchRelated(noteRef: string, limit: number = 12, projectId?: string): Promise<ResearchRelatedResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/research/related${this.withProjectScope(this.reviewQuery({ note: noteRef, limit }), projectId)}`,
-        { headers: this.headersForProject(projectId) }
-      );
-      return (await res.json()) as ResearchRelatedResponse;
+      return await this.request('research.related', { query: { note: noteRef, limit } }, projectId);
     } catch (err) {
-      return { success: false, error: String(err), suggestions: [], scanned: 0 };
+      return this.failedEnvelope(err, { success: false, error: String(err), suggestions: [], scanned: 0 });
     }
   }
 
   public async researchTrace(query: string, projectId?: string): Promise<ResearchTraceResponse> {
     try {
-      const res = await fetch(
-        `${this.baseUrl}/api/notes/research/trace${this.withProjectScope(this.reviewQuery({ q: query }), projectId)}`,
-        { headers: this.headersForProject(projectId) }
-      );
-      return (await res.json()) as ResearchTraceResponse;
+      return await this.request('research.trace', { query: { q: query } }, projectId);
     } catch (err) {
-      return { success: false, error: String(err), query, notes: [], scanned: 0 };
+      return this.failedEnvelope(err, { success: false, error: String(err), query, notes: [], scanned: 0 });
     }
   }
 
   public async researchConsult(question: string, projectId?: string): Promise<ResearchConsultResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/research/consult${this.withProjectScope('', projectId)}`, {
-        method: 'POST',
-        headers: this.headersForProject(projectId),
-        body: JSON.stringify({ question }),
-      });
-      return (await res.json()) as ResearchConsultResponse;
+      return await this.request('research.consult', { body: { question } }, projectId);
     } catch (err) {
-      return { success: false, markdown: '', fallback: true, citations: [], error: String(err) };
+      return this.failedEnvelope(err, {
+        success: false, markdown: '', fallback: true, citations: [], error: String(err),
+      });
     }
   }
 
@@ -926,27 +722,21 @@ export class ApiStorage implements IStorage {
     projectId?: string
   ): Promise<ResearchPromoteAnswerResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/research/promote-answer${this.withProjectScope('', projectId)}`, {
-        method: 'POST',
-        headers: this.headersForProject(projectId),
-        body: JSON.stringify({ question, markdown, citations, fallback }),
-      });
-      return (await res.json()) as ResearchPromoteAnswerResponse;
+      return await this.request('research.promoteAnswer', {
+        body: { question, markdown, citations, fallback },
+      }, projectId);
     } catch (err) {
-      return { success: false, validation: [], error: String(err) };
+      return this.failedEnvelope(err, { success: false, validation: [], error: String(err) });
     }
   }
 
   public async researchDeepResearch(question: string, projectId?: string): Promise<ResearchDeepResearchResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/research/deep-research${this.withProjectScope('', projectId)}`, {
-        method: 'POST',
-        headers: this.headersForProject(projectId),
-        body: JSON.stringify({ question }),
-      });
-      return (await res.json()) as ResearchDeepResearchResponse;
+      return await this.request('research.deepResearch', { body: { question } }, projectId);
     } catch (err) {
-      return { success: false, markdown: '', articles: 0, fallback: true, error: String(err) };
+      return this.failedEnvelope(err, {
+        success: false, markdown: '', articles: 0, fallback: true, error: String(err),
+      });
     }
   }
 
@@ -954,21 +744,21 @@ export class ApiStorage implements IStorage {
   // Study Studio
   // ---------------------------------------------------------------------------
 
-  private async studyPost<T>(path: string, body: Record<string, unknown>, fallback: T): Promise<T> {
+  private async studyPost<T extends { success?: boolean; error?: string }>(
+    id: EndpointId,
+    body: Record<string, unknown>,
+    fallback: T
+  ): Promise<T> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/notes/study/${path}`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(body),
-      });
-      return (await res.json()) as T;
+      const json = await this.request(id, { body } as unknown as EndpointRequest<EndpointId>);
+      return json as unknown as T;
     } catch (err) {
-      return { ...fallback, error: String(err) } as T;
+      return this.failedEnvelope(err, fallback);
     }
   }
 
   public async studyGuide(topic: string): Promise<StudyOutputResponse> {
-    return this.studyPost<StudyOutputResponse>('guide', { topic }, {
+    return this.studyPost<StudyOutputResponse>('study.guide', { topic }, {
       success: false,
       markdown: '',
       outputPath: '',
@@ -977,7 +767,7 @@ export class ApiStorage implements IStorage {
   }
 
   public async studyQuiz(topic: string, count: number = 5): Promise<StudyQuizResponse> {
-    return this.studyPost<StudyQuizResponse>('quiz', { topic, count }, {
+    return this.studyPost<StudyQuizResponse>('study.quiz', { topic, count }, {
       success: false,
       markdown: '',
       outputPath: '',
@@ -987,7 +777,7 @@ export class ApiStorage implements IStorage {
   }
 
   public async studyMindmap(target: string): Promise<StudyMindmapResponse> {
-    return this.studyPost<StudyMindmapResponse>('mindmap', { target }, {
+    return this.studyPost<StudyMindmapResponse>('study.mindmap', { target }, {
       success: false,
       markdown: '',
       outputPath: '',
@@ -1000,7 +790,7 @@ export class ApiStorage implements IStorage {
   }
 
   public async studyAudioOverview(topic: string): Promise<StudyOutputResponse> {
-    return this.studyPost<StudyOutputResponse>('audio-overview', { topic }, {
+    return this.studyPost<StudyOutputResponse>('study.audioOverview', { topic }, {
       success: false,
       markdown: '',
       outputPath: '',
@@ -1009,7 +799,7 @@ export class ApiStorage implements IStorage {
   }
 
   public async studyQuickNote(text: string): Promise<StudyQuickNoteResponse> {
-    return this.studyPost<StudyQuickNoteResponse>('note', { text }, {
+    return this.studyPost<StudyQuickNoteResponse>('study.note', { text }, {
       success: false,
       markdown: '',
       entries: [],
@@ -1017,7 +807,7 @@ export class ApiStorage implements IStorage {
   }
 
   public async studyPromoteNote(noteId: string, folder: string): Promise<StudyPromoteResponse> {
-    return this.studyPost<StudyPromoteResponse>('promote-note', { noteId, folder }, {
+    return this.studyPost<StudyPromoteResponse>('study.promoteNote', { noteId, folder }, {
       success: false,
       markdown: '',
     });
@@ -1027,7 +817,7 @@ export class ApiStorage implements IStorage {
     topic: string,
     options: { title?: string; minMaturity?: number } = {}
   ): Promise<StudyThesisResponse> {
-    return this.studyPost<StudyThesisResponse>('thesis-chapter', {
+    return this.studyPost<StudyThesisResponse>('study.thesisChapter', {
       topic,
       title: options.title || '',
       minMaturity: options.minMaturity ?? 0,

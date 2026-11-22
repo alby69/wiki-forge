@@ -12,7 +12,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@frontend/*": ["src/frontend/*"],
-      "@backend/*": ["src/backend/*"]
+      "@backend/*": ["src/backend/*"],
+      "@shared/*": ["src/shared/*"]
     },
     "types": ["vite/client", "node"]
   },

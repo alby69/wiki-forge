@@ -42,6 +42,8 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
+- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for 70+ endpoints; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/OPENAPI.md`](docs/OPENAPI.md).
+- **🚌 Bus backend e API tipizzate**: il gateway instrada 82 comandi del catalogo a 15 moduli di dominio tramite `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il frontend usa un client generato da `ROUTES` e un bus UI: nessun componente chiama `fetch` o un altro componente per raggiungere le API. Vedi [`docs/OPENAPI.md`](docs/OPENAPI.md).
 
 ---
 
@@ -62,6 +64,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
 - **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Analisi tecnica approfondita**: moduli, versioning, API della Review Studio e snapshot store, MCP, export RDF.
+- **[`docs/OPENAPI.md`](docs/OPENAPI.md)** — **Contratto API e browser Swagger**: specifica generata da TypeScript, `/api/docs` self-hosted, security e piano del refactoring a bus.
 - **[`docs/EDITOR_MIGRATION.md`](docs/EDITOR_MIGRATION.md)** — **Editor note**: architettura ad adapter (CodeMirror/Milkdown-Crepe), conservazione frontmatter OKF e wikilink.
 - **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
 - **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.

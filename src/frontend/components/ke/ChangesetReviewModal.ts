@@ -1,4 +1,6 @@
-import { getActiveProjectId, resolveApiBaseUrl } from '../../storage/ApiStorage';
+import { getActiveProjectId } from '../../storage/ApiStorage';
+import { apiBus } from '@frontend/core/apiBus';
+import { ApiClientError } from '@frontend/api/client';
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
 
@@ -18,7 +20,6 @@ export interface ChangesetData {
 
 export class ChangesetReviewModal {
   private overlay: HTMLElement;
-  private apiBaseUrl: string = resolveApiBaseUrl();
   private projectIdProvider: () => string;
   private changesets: ChangesetData[] = [];
   private selectedChangeset: ChangesetData | null = null;
@@ -85,19 +86,19 @@ export class ChangesetReviewModal {
     this.overlay.style.display = 'none';
   }
 
-  private projectHeaders(extra: Record<string, string> = {}): Record<string, string> {
-    return { ...extra, 'X-Project-Id': this.projectIdProvider().trim() || 'default' };
+  /** The bus adds X-Project-Id when the selected project is passed explicitly. */
+  private getProjectId(): string {
+    return this.projectIdProvider().trim() || 'default';
   }
 
   private async fetchChangesets(): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets?status=pending`, {
-        headers: this.projectHeaders(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        this.changesets = data.changesets || [];
-      }
+      const data = await apiBus.dispatch(
+        'changesets.list',
+        { query: { status: 'pending' } },
+        this.getProjectId(),
+      );
+      this.changesets = (data.changesets || []) as unknown as ChangesetData[];
     } catch (_e) {
       // Ignore
     }
@@ -194,33 +195,31 @@ export class ChangesetReviewModal {
 
   private async applyChangeset(csId: string): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/apply`, {
-        method: 'POST',
-        headers: this.projectHeaders(),
-      });
-      if (res.ok) {
-        notifications.translated('changesetApplied', 'success');
-        if (this.onAppliedCb) this.onAppliedCb();
-        await this.open();
-      }
-    } catch (err: any) {
-      notifications.translated('operationFailed', 'error', { error: err.message });
+      await apiBus.dispatch('changesets.apply', { params: { id: csId } }, this.getProjectId());
+      notifications.translated('changesetApplied', 'success');
+      if (this.onAppliedCb) this.onAppliedCb();
+      await this.open();
+    } catch (err) {
+      // A non-2xx response was previously ignored; only transport errors notify.
+      if (err instanceof ApiClientError) return;
+      const detail = err instanceof Error ? err.message : String(err);
+      notifications.translated('operationFailed', 'error', { error: detail });
     }
   }
 
   private async rejectChangeset(csId: string): Promise<void> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/v1/changesets/${csId}/reject`, {
-        method: 'POST',
-        headers: this.projectHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ reason: 'rejected from review queue' }),
-      });
-      if (res.ok) {
-        notifications.translated('changesetRejected', 'success');
-        await this.open();
-      }
-    } catch (err: any) {
-      notifications.translated('operationFailed', 'error', { error: err.message });
+      await apiBus.dispatch(
+        'changesets.reject',
+        { params: { id: csId }, body: { reason: 'rejected from review queue' } },
+        this.getProjectId(),
+      );
+      notifications.translated('changesetRejected', 'success');
+      await this.open();
+    } catch (err) {
+      if (err instanceof ApiClientError) return;
+      const detail = err instanceof Error ? err.message : String(err);
+      notifications.translated('operationFailed', 'error', { error: detail });
     }
   }
 }

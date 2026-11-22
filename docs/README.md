@@ -1,6 +1,6 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (25 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -29,6 +29,7 @@ Indice completo dei documenti in `docs/` (24 file), dei contenuti della guida in
 |---|---|
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
 | [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
+| [`OPENAPI.md`](OPENAPI.md) | Contratto HTTP generato da TypeScript, browser Swagger self-hosted (`/api/docs`), bus backend, client tipizzato e bus UI. |
 | [`EDITOR_MIGRATION.md`](EDITOR_MIGRATION.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
 | [`FRONTEND_UIUX_PLAN.md`](FRONTEND_UIUX_PLAN.md) | Studio UI/UX del frontend e piano KISS/DRY: azioni uniche, design system, disaccoppiamento e ciclo di vita progetti. |
 | [`KE_PLAYBOOK.md`](KE_PLAYBOOK.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |

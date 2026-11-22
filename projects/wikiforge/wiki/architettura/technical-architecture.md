@@ -138,6 +138,80 @@ Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpS
 - **Standalone Python API (A2)**: `src/backend/wikiforge/api/api_server.py` (`/api/v1/health`, `/api/v1/graph/sync|validate|rag`) runs as the compose service `kg-api` on internal port `:8000`; the Node gateway sets `FASTAPI_SERVER_URL=http://kg-api:8000` and proxies `/api/v1/graph/*` there, preserving a single public API surface.
 - **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts. `scripts/devAll.mjs` provides the equivalent two-process launcher for local `npm run dev:all`.
 
+#### 2.10.1 Declarative API contracts & OpenAPI browser (Fase 1)
+
+Implemented in `src/shared/api/{types,contracts,router}.ts` and
+`src/backend/server/api/{openapi,docsBrowser}.ts`:
+
+- `defineRoute<Req, Res>()` declares each endpoint once (method, `:param` path,
+  `operationId`, tag, request/response JSON Schema, `x-command`, SSE/binary flag,
+  project scope). `ROUTES` currently describes 70+ Node operations.
+- `buildOpenApiDocument()` emits OpenAPI 3.1 with `components.schemas`,
+  `X-WikiForge-Token` security and reusable DTOs. `loadOpenApiDocument()` merges
+  the FastAPI service spec from `FASTAPI_SERVER_URL` (default
+  `http://localhost:8000`) with a checked-in Pydantic snapshot; conflicting
+  operations are preserved and the upstream definition is attached under
+  `x-upstream-contract`. MCP tools are described in `x-wikiforge.mcp`.
+- `handleDocsRequest()` is called after CORS and before token validation, so
+  `GET /api/docs` and `GET /api/openapi.json` are always reachable. Swagger UI
+  is served from `swagger-ui-dist` via a strict asset allowlist; no CDN is used.
+  The browser injects `X-WikiForge-Token` / `X-Project-Id` from `localStorage`.
+- Fase 1 was purely additive and moved no handler, preserving the gateway
+  dispatch order and the public facade. The catalogue now drives request
+  validation, the backend bus and the typed frontend client. Full details in
+  `docs/OPENAPI.md`.
+
+#### 2.10.2 Backend bus and domain modules (Fase 2)
+
+Implemented in `src/backend/server/bus/messageBus.ts`,
+`src/backend/server/api/{http,validation}.ts` and
+`src/backend/server/modules/`:
+
+- `MessageBus.dispatch(command, payload, context)` resolves a `command` name
+  from `ROUTES` through `matchRoute()`. It supports middlewares, multiple
+  handlers, and `command:handled` / `command:failed` events carrying a
+  correlation id. `AgentServer.getBus()` exposes the instance without changing
+  the existing HTTP facade. `CommandContext.onClose()` lets SSE handlers remove
+  scheduler/chat clients when the connection closes.
+- Fifteen modules are wired in the constructor and own 82 of the 87 commands:
+  catalogue, tools, review queue, ingestion, graph, projects, changesets,
+  files, scheduler, execution, vault, review studio, research, study and chat.
+  `docs.openapi`, `docs.swagger` and the three `graph.proxy` operations remain
+  in the gateway: the docs are public and the FastAPI proxies run before
+  CORS/token validation.
+- Handlers return transport-neutral results: `json`, `binary` (verbatim bytes)
+  or `sse`. `sendApiResult()` is the single place that writes `ServerResponse`,
+  including the SSE headers and the `[DONE]` terminator. Streamed ingestion,
+  script execution, KE use cases, scheduler run/events and chat keep their
+  original frame sequence.
+- Dependencies are injected through `DomainServices` (project resolution,
+  changeset stores, scheduler, approval/event stores, Python tool adapter,
+  vault/studio services and the bus), so no module imports `AgentServer` at
+  runtime and there are no circular dependencies.
+- `validation.ts` compiles the catalogue's JSON Schemas with Ajv. It is used by
+  tests and remains non-blocking to avoid changing legacy client behaviour.
+
+#### 2.10.3 Typed client and frontend bus (Fase 3)
+
+- `src/shared/api/endpoints.ts` maps all 87 `EndpointId`s to request/response
+  types. An `IsExact<keyof EndpointTypes, EndpointId>` assertion makes a missing
+  endpoint a compile-time error; stream/binary/document routes resolve to the
+  raw fetch `Response`.
+- `src/frontend/api/client.ts` builds a lookup from `ROUTES` and generates one
+  method per id plus `call()`/`stream()`. It interpolates `:params`, serialises
+  query values (including repeated arrays), sends `X-Project-Id` and the optional
+  `X-WikiForge-Token`, throws `ApiClientError` with status/body on non-2xx and
+  parses SSE frames incrementally from `response.body.getReader()`.
+- `src/frontend/core/apiBus.ts` is the only API entry point for UI features: it
+  delegates to the typed client and publishes `api:request` / `api:result` /
+  `api:error` / `api:stream`, plus `reviews:changed`, `changesets:changed`,
+  `schedule:changed` and `scripts:executed`. The composition root wires UI
+  callbacks; features do not call one another.
+- `ApiStorage` (51 public methods), `projectService` and the Tools, Review Queue,
+  Changeset Review and KE Workbench modals no longer contain direct `fetch`
+  calls. Legacy body field names are still accepted by the backend, while the
+  facade sends the contract shapes.
+
 ### 2.11 Review Studio API & Local Snapshot Store
 Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextMenu.ts`, `src/frontend/core/types/review.ts`, `src/frontend/storage/ApiStorage.ts`, `src/frontend/styles/review-studio.css`, and `src/backend/server/agentServer.ts`.
 

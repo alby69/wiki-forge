@@ -1,4 +1,4 @@
-import { resolveApiBaseUrl } from '@frontend/storage/ApiStorage';
+import { apiBus } from '@frontend/core/apiBus';
 
 export interface ReviewItem {
   id: string;
@@ -61,11 +61,9 @@ export class ReviewQueueModal {
     if (!listEl) return;
 
     try {
-      const baseUrl = resolveApiBaseUrl();
-      const res = await fetch(`${baseUrl}/api/reviews`);
-      const data = await res.json();
+      const data = await apiBus.dispatch('reviews.list');
 
-      const items: ReviewItem[] = data.reviews || [];
+      const items = (data.reviews || []) as unknown as ReviewItem[];
       if (items.length === 0) {
         listEl.innerHTML = `<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 32px 0;">🎉 No pending review items in queue!</div>`;
         return;
@@ -92,11 +90,13 @@ export class ReviewQueueModal {
           const id = target.getAttribute('data-id');
           const action = target.getAttribute('data-action');
           if (id && action) {
-            await fetch(`${baseUrl}/api/reviews/action`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id, action })
-            });
+            try {
+              await apiBus.dispatch('reviews.action', {
+                body: { id, action: action as 'approve' | 'reject' },
+              });
+            } catch (_err) {
+              // The legacy handler ignored action failures and reloaded the queue.
+            }
             this.fetchReviews();
           }
         });
