@@ -120,7 +120,7 @@ AgentServer.handleRequest()
        ├─ ProjectsModule    12    CRUD progetti, config, import/export
        ├─ ChangesetsModule   5    stages plan → review → apply
        ├─ FilesModule        1    download binario con containment check
-       ├─ SchedulerModule   10    F3/F5/F6, SSE events/run, approvali
+       ├─ SchedulerModule   12    F3/F5/F6, SSE events/run, approvali, job script (S3)
        ├─ ExecutionModule    2    script SSE e KE use case SSE
        ├─ VaultModule       16    note, cartelle, trash, upload, ingest
        ├─ ReviewStudioModule 7    meta/verify/digest/critica/snapshot
@@ -129,7 +129,7 @@ AgentServer.handleRequest()
        └─ ChatModule         1    chat JSON e SSE
 ```
 
-Degli **87 endpoint** del catalogo, **82 comandi** sono instradati sul bus.
+Degli **89 endpoint** del catalogo, **84 comandi** sono instradati sul bus.
 I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 `docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
 `graph.proxy` restano prima di CORS/token per preservare il proxy FastAPI
@@ -196,7 +196,7 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (89 id, assertion c
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 82 comandi |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 84 comandi |
 | 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (89 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 

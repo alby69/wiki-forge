@@ -26,6 +26,6 @@
 * [Study Studio](help-study-studio.md) — Argomenti: study, studio, studio-studio, guida di studio, study-guide, quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast, note…
 * [Viste: File, Editor, Scratchpad, Graph, Split](help-viste-grafo.md) — Argomenti: viste, vista, file, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio
 * [Wiki di wiki-forge](help-wiki-di-wiki-forge.md) — Argomenti: wiki, docs, documentazione, architettura, consult, projectid, self-documentation, sintesi
-* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (27 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
+* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (28 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
 * [🚀 Wiki-Forge: Roadmap di Sviluppo](roadmap.md) — I comandi implementati sono nel SLASHCOMMANDSREFERENCE.md; questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
 
