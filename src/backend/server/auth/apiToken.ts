@@ -43,3 +43,18 @@ export function apiTokenFromRequest(
   const bearer = /^Bearer(?:\s+|$)/i.exec(value);
   return (bearer ? value.slice(bearer[0].length) : value).trim() || undefined;
 }
+
+/**
+ * B6 — IdP tokens are accepted only as `Authorization: Bearer <token>`.
+ * Keeping this separate from `apiTokenFromRequest()` prevents a shared API
+ * token in the same header from being mistaken for an IdP credential.
+ */
+export function bearerTokenFromRequest(
+  req: Pick<http.IncomingMessage, 'headers'>,
+): string | undefined {
+  const raw = req.headers.authorization;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== 'string') return undefined;
+  const match = /^Bearer\s+(.+)$/i.exec(value.trim());
+  return match?.[1].trim() || undefined;
+}

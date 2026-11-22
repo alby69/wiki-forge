@@ -111,12 +111,23 @@ default = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 tesi = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 wikiforge = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 
-# B6 — provider IdP: da valorizzare solo quando l'adapter esiste.
+# B6 — adapter IdP opzionale: valorizzare solo con enable_rbac = true.
+# `provider` vuoto = legacy; "oidc" | "saml" | "oauth2" attiva l'adapter.
+# Nessuna connessione viene aperta a startup: JWKS/metadata/token sono
+# risolti lazily al primo Bearer token verificato.
 # [enterprise.auth]
+# provider = "oidc"
 # issuer = "https://idp.example.com"
 # audience = "wiki-forge"
 # jwksUrl = "https://idp.example.com/.well-known/jwks.json"
 # samlMetadataUrl = "https://idp.example.com/saml/metadata"
+# clientId = ""
+# authorizationUrl = "https://idp.example.com/authorize"
+# tokenUrl = "https://idp.example.com/token"
+# actorClaim = "sub"
+# rolesClaim = "roles"
+# [enterprise.auth.roleMap]
+# "wf-admin" = "Admin"
 
 # C0: dichiarazione inerte. Nessun codice apre una connessione a startup;
 # `passwordEnv` indica la variabile d'ambiente che conterrà la password.

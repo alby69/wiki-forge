@@ -81,9 +81,10 @@ import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from '
 import { handleDocsRequest } from './api/docsBrowser';
 import { readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus, type Principal } from './bus/messageBus';
-import { deriveRequestPrincipal } from './auth/principal';
-import { apiTokenFromRequest, UNAUTHORIZED_MESSAGE, verifyApiToken } from './auth/apiToken';
+import { authenticateRequest, deriveRequestPrincipal } from './auth/principal';
+import { UNAUTHORIZED_MESSAGE } from './auth/apiToken';
 import { actorKind, canonicalActor, PROCESS_FALLBACK_ACTOR } from './auth/actor';
+import { createIdpAdapter, defaultIdpDependencies, type IdpAdapter, type IdpDependencies } from './auth/idp';
 import { loadRbacConfigSync, type RbacConfig } from './auth/rbacConfig';
 import { createRbacMiddleware } from './auth/rbacMiddleware';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
@@ -773,6 +774,8 @@ export class AgentServer {
   private readonly projects: ProjectService;
   private readonly rbacConfig: RbacConfig;
   private readonly strictProvenance: boolean;
+  /** B6 — absent unless `[enterprise.auth].provider` is configured. */
+  private readonly idp?: IdpAdapter;
   private readonly bus: MessageBus;
   private readonly catalogue: CatalogueModule;
   private readonly tools: ToolsModule;
@@ -780,12 +783,28 @@ export class AgentServer {
   private readonly ingestion: IngestionModule;
   private readonly graph: GraphModule;
 
-  constructor(rootDir: string = process.cwd(), llmClient?: LlmClient) {
+  constructor(
+    rootDir: string = process.cwd(),
+    llmClient?: LlmClient,
+    idpAdapter?: IdpAdapter,
+    idpDependencies?: IdpDependencies,
+  ) {
     this.rootDir = rootDir;
     this.llmClient = llmClient;
     this.projects = new ProjectService(rootDir);
     this.rbacConfig = loadRbacConfigSync(rootDir);
     this.strictProvenance = this.rbacConfig.enabled;
+    // B6 — the IdP shares the B3 opt-in flag: `enable_rbac=false` keeps every
+    // legacy response byte-identical even if a provider was pre-configured.
+    // Adapter creation is pure/config-only; discovery/JWKS/metadata are fetched
+    // lazily on the first verified request, never at startup.
+    this.idp = this.rbacConfig.enabled
+      ? idpAdapter ?? createIdpAdapter(
+          this.rbacConfig.auth,
+          this.rbacConfig.roles,
+          idpDependencies ?? defaultIdpDependencies(),
+        )
+      : undefined;
     this.bus = createMessageBus();
     // B3 — opt-in gate. With `enable_rbac=false` this middleware returns
     // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
@@ -936,6 +955,7 @@ export class AgentServer {
     projectId: string,
     req: http.IncomingMessage,
     res: http.ServerResponse,
+    principal?: Principal,
   ): Promise<boolean> {
     if (!this.bus.has(command)) return false;
     // B1: a body field named `principal` must never reach handlers as if it
@@ -948,7 +968,7 @@ export class AgentServer {
       rootDir: this.rootDir,
       projectId,
       operationId: command,
-      principal: deriveRequestPrincipal(req),
+      principal: principal ?? deriveRequestPrincipal(req),
       onClose: (handler) => { req.on('close', handler); },
     });
     sendApiResult(res, result);
@@ -1549,10 +1569,13 @@ export class AgentServer {
     });
   }
 
-  private validateApiToken(req: http.IncomingMessage): boolean {
-    const requiredToken = process.env.WIKIFORGE_API_TOKEN;
-    if (!requiredToken) return true;
-    return verifyApiToken(apiTokenFromRequest(req), requiredToken);
+  /**
+   * B0–B5 used only the shared token here; B6 keeps the same 401 envelope but
+   * lets the configured IdP produce a verified Principal. No network call is
+   * made unless an IdP is explicitly configured.
+   */
+  private authenticate(req: http.IncomingMessage) {
+    return authenticateRequest(req, this.idp);
   }
 
   private getProjectIdFromRequest(req: http.IncomingMessage, url: URL): string {
@@ -1677,9 +1700,10 @@ export class AgentServer {
     // Documentation is public (the browser injects a token for "Try it out").
     if (await handleDocsRequest(req, res, pathname)) return true;
 
-    // B4 — authenticate BEFORE any other ingress, the FastAPI graph proxy
-    // included. Missing/invalid tokens get the exact B0 envelope.
-    if (!this.validateApiToken(req)) {
+    // B4/B6 — authenticate BEFORE any other ingress, the FastAPI graph proxy
+    // included. Missing/invalid tokens always get the exact B0 envelope.
+    const authentication = await this.authenticate(req);
+    if (!authentication.ok) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: false, error: UNAUTHORIZED_MESSAGE }));
       return true;
@@ -1720,7 +1744,14 @@ export class AgentServer {
       // Path parameters are authoritative: a body field named `id` (e.g. the
       // new project id on clone) must never shadow the source `:id` in the URL.
       Object.assign(payload, catalogueMatch.params);
-      if (await this.dispatchApiCommand(catalogueMatch.route.command, payload, projectId, req, res)) return true;
+      if (await this.dispatchApiCommand(
+        catalogueMatch.route.command,
+        payload,
+        projectId,
+        req,
+        res,
+        authentication.principal,
+      )) return true;
     }
 
     // All catalogue routes are dispatched to domain modules through the bus.

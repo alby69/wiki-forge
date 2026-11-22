@@ -7,9 +7,10 @@
  * `operationId × projectId × folder`, attaches it to `CommandContext.rbac` and
  * denies with the existing `error(..., 403)` envelope.
  *
- * No IdP exists until B6. A server-derived legacy principal (`process:api-token`,
- * no roles) inherits the project ACL as a service account; an IdP principal in
- * B6 will instead intersect its own roles with that ACL.
+ * A legacy principal (`process:api-token`) inherits the project ACL as a
+ * service account; a B6 IdP principal instead intersects its own trusted roles
+ * with that ACL. An IdP principal with no mapped roles gets no access: it must
+ * never silently inherit the full service-account ACL.
  */
 
 import { error, type ApiResult } from '../api/http';
@@ -162,11 +163,15 @@ export function effectiveRoles(
   scopePath?: string,
 ): string[] {
   const acl = rolesForScope(config, projectId, scopePath);
+  if (principal?.source === 'idp') {
+    // B6: trusted claims are authoritative; empty roles must not inherit ACL.
+    return principal.roles.filter((role) => acl.includes(role));
+  }
   if (principal?.roles.length) {
     return principal.roles.filter((role) => acl.includes(role));
   }
-  // Legacy service account: until B6 there is no human identity, so the
-  // project/folder ACL is the only source of truth for `process:api-token`.
+  // Legacy service account: the project/folder ACL is the only source of
+  // truth for `process:api-token`.
   return acl;
 }
 

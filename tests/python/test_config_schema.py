@@ -174,6 +174,8 @@ def test_enterprise_schema_declares_the_rbac_catalogue():
     }
     assert set(enterprise["auth"]) == {
         "issuer", "audience", "jwksUrl", "samlMetadataUrl",
+        "provider", "clientId", "authorizationUrl", "tokenUrl",
+        "actorClaim", "rolesClaim", "roleMap",
     }
 
 

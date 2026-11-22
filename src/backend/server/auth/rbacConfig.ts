@@ -15,11 +15,25 @@ import * as toml from 'smol-toml';
 /** Canonical roles mirrored by the Python schema and the config catalogue. */
 export const DEFAULT_ROLES = ['Reader', 'Contributor', 'KnowledgeEngineer', 'Admin'] as const;
 
+/** B6 — provider scelto in `[enterprise.auth]`; vuoto disattiva l'adapter. */
+export type IdpProvider = 'oidc' | 'saml' | 'oauth2';
+
 export interface RbacAuthConfig {
   issuer: string;
   audience: string;
   jwksUrl: string;
   samlMetadataUrl: string;
+  /** B6 — `""` keeps the B0–B5 behaviour; the other values select an adapter. */
+  provider: IdpProvider | '';
+  clientId: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  /** Claim containing the canonical actor (`sub` by default). */
+  actorClaim: string;
+  /** Claim containing IdP roles/groups (`roles` by default). */
+  rolesClaim: string;
+  /** IdP role → canonical RBAC role mapping. */
+  roleMap: Record<string, string>;
 }
 
 export interface RbacConfig {
@@ -55,7 +69,11 @@ export function defaultRbacConfig(): RbacConfig {
     permissionsByRole: {},
     projectAcls: {},
     defaultAcl: [...DEFAULT_ROLES],
-    auth: { issuer: '', audience: '', jwksUrl: '', samlMetadataUrl: '' },
+    auth: {
+      issuer: '', audience: '', jwksUrl: '', samlMetadataUrl: '',
+      provider: '', clientId: '', authorizationUrl: '', tokenUrl: '',
+      actorClaim: '', rolesClaim: '', roleMap: {},
+    },
   };
 }
 
@@ -94,9 +112,19 @@ export function normalizeRbacConfig(raw: unknown): RbacConfig {
   if (config.projectAcls.default) config.defaultAcl = [...config.projectAcls.default];
 
   const auth = asRecord(enterprise.auth);
-  for (const key of Object.keys(config.auth) as Array<keyof RbacAuthConfig>) {
+  for (const key of [
+    'issuer', 'audience', 'jwksUrl', 'samlMetadataUrl',
+    'clientId', 'authorizationUrl', 'tokenUrl', 'actorClaim', 'rolesClaim',
+  ] as const) {
     const value = auth[key];
     if (typeof value === 'string') config.auth[key] = value;
+  }
+  const provider = auth.provider;
+  if (provider === 'oidc' || provider === 'saml' || provider === 'oauth2') {
+    config.auth.provider = provider;
+  }
+  for (const [from, to] of Object.entries(asRecord(auth.roleMap))) {
+    if (typeof to === 'string' && to.trim()) config.auth.roleMap[from] = to.trim();
   }
 
   return config;

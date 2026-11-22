@@ -109,7 +109,7 @@ default = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 tesi = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 wikiforge = [ "Reader", "Contributor", "KnowledgeEngineer", "Admin" ]
 
-# B6 — [enterprise.auth] resta commentato finché non esiste l'adapter IdP.
+# B6 — [enterprise.auth] opzionale; vedere config/config.toml per il modello.
 
 # C0: dichiarazione inerte; vedere config/config.toml per la documentazione.
 [neo4j]

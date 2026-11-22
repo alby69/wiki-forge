@@ -85,13 +85,20 @@ CONFIG_SCHEMA: dict[str, Any] = {
     "enterprise": {
         "enable_rbac": bool,
         "cloud_backup_webdav": str,
-        # B2 — declarative catalogue only. No Node middleware reads these yet
-        # (B3), and no IdP exists yet (B6): `enable_rbac=true` alone is inert.
+        # B2/B6 — declarative catalogue. `enable_rbac=true` alone is inert;
+        # an IdP adapter is active only with a declared `auth.provider`.
         "auth": {
             "issuer": str,
             "audience": str,
             "jwksUrl": str,
             "samlMetadataUrl": str,
+            "provider": str,
+            "clientId": str,
+            "authorizationUrl": str,
+            "tokenUrl": str,
+            "actorClaim": str,
+            "rolesClaim": str,
+            "roleMap": {"*": str},
         },
         "roles": {"*": (list, str)},
         "projectAcls": {"*": (list, str)},

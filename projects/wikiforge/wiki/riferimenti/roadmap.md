@@ -120,6 +120,7 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > L4 ~2.5/5, RBAC ~1/5, Neo4j ~0.5/5. Completati **A0** (gate `cq_gaps`
 > corretto, L4 ~3.0/5), **B0** (baseline auth senza cambi funzionali), **B1**
 > (Principal server-derived), **B2** (catalogo ruoli), **B3** (gate RBAC opt-in),
-> **B4** (bypass auth chiuso; autenticazione ~4.5/5), **B5** (provenance
-> vincolata in strict mode, RBAC ~3.5/5) e **C0** (config Neo4j inerte, Neo4j
-> ~0.65/5); gli altri step non sono ancora avviati.
+> **B4** (bypass auth chiuso), **B5** (provenance vincolata in strict mode),
+> **B6** (adapter IdP OIDC/SAML/OAuth2; autenticazione e ruoli 5/5, RBAC
+> ~4.5/5) e **C0** (config Neo4j inerte, Neo4j ~0.65/5); gli altri step non
+> sono ancora avviati.

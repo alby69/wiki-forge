@@ -83,6 +83,8 @@ describe('Config RBAC dichiarativa e inerte (B2)', () => {
     assert.deepStrictEqual(config.permissionsByRole.Admin, ['project.write', 'approval.decide', 'config.write']);
     assert.deepStrictEqual(config.auth, {
       issuer: '', audience: '', jwksUrl: '', samlMetadataUrl: '',
+      provider: '', clientId: '', authorizationUrl: '', tokenUrl: '',
+      actorClaim: '', rolesClaim: '', roleMap: {},
     });
   });
 

@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
 - **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
 
+### B6 — Adapter IdP pluggabili (OIDC / SAML / OAuth2)
+
+- **Opt-in rigoroso**: l'adapter viene costruito solo con `enterprise.enable_rbac=true` **e** `[enterprise.auth].provider` valorizzato (`oidc`, `saml`, `oauth2`). Senza provider, o con RBAC spento, il percorso B0–B5 resta byte-identico: nessuna rete, nessuna nuova route, envelope 401 e docs pubblici invariati.
+- **Provider**: nuovo `src/backend/server/auth/idp.ts`. OIDC verifica JWT RS256/384/512 con discovery/JWKS iniettati, issuer/audience/exp/nbf e firma; SAML 2.0 carica metadata e delega la validazione dell'assertion a un verifier iniettato; OAuth2 authorization-code usa uno scambio iniettato e verifica l'`id_token` con lo stesso percorso OIDC. Tutte le dipendenze di rete sono injection point: i test girano con IdP mockati e zero chiamate esterne.
+- **Principal e ruoli**: il claim attore (default `sub`) passa dalla grammatica canonica B5, i ruoli/gruppi vengono tradotti da `[enterprise.auth.roleMap]` e filtrati sui ruoli canonici. I ruoli IdP alimentano direttamente la matrice B3; un principal IdP senza ruoli mappati **non** eredita più l'ACL del service account. Il token condiviso resta accettato come `process:api-token`.
+- **AutenticazioneHTTP**: `bearerTokenFromRequest()` separa il Bearer IdP dal token condiviso; un Bearer invalido (audience/expiry/firma) dà sempre 401 con l'envelope esatto di B0 e nessun dispatch, anche se è presente un token condiviso valido. CORS e documentazione restano pubblici.
+- **Config**: `RbacAuthConfig`, `config_schema.py` e le 3 config dichiarano i nuovi campi `provider`, `clientId`, `authorizationUrl`, `tokenUrl`, `actorClaim`, `rolesClaim`, `roleMap`; i valori restano commentati e `enable_rbac=false`.
+- **Verifica**: 10 test Node in `tests/idp.test.ts` (10/10 verdi, zero rete); suite Node 418 pass + 1 skip pre-esistente, Python 87 pass, typecheck e build verdi. Gradi B1 5, B2 5, RBAC complessivo ~4.5; la UI identità resta a B7.
+
 ### B5 — Provenance vincolata al Principal (dual-mode)
 
 - **Grammatica condivisa**: nuovi `src/backend/server/auth/actor.ts` e `scripts/actor_provenance.py` mirror TS/Python della regex OKF (`human:<id>`, `process:<id>`, `<producer>/<version>`). `okf_lint.py`, `promote_doc_answer.py` e `program_change_common.py` la riusano; i messaggi di errore e i default human-only restano invariati.
