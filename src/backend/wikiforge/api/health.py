@@ -9,6 +9,7 @@ and appends historical snapshots to .wikiforge/metrics/history.jsonl.
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -21,6 +22,45 @@ try:
     from scripts.ke_maturity import assess_ke_maturity
 except ImportError:
     assess_ke_maturity = None
+
+
+# A0 — labels actually emitted by scripts/cq_validator.py. The old parser only
+# looked for "❌ Unanswered" / "[FAILED]" and could report cq_gaps = 0 with real
+# knowledge gaps, letting the L4 gate pass falsely.
+_CQ_SUMMARY_RE = re.compile(r"uncovered\s*\(knowledge gaps\)[^0-9]{0,16}(\d+)", re.IGNORECASE)
+_CQ_SUMMARY_LINE_RE = re.compile(r"uncovered\s*\(knowledge gaps\).*:", re.IGNORECASE)
+_CQ_GAP_MARKERS = (
+    "scoperte (knowledge gap)",
+    "uncovered (knowledge gaps)",
+    "unanswered",
+    "[failed]",
+    "uncovered",
+)
+
+
+def count_cq_gaps(report_text: str) -> int:
+    """Count unanswered competency questions in a CQ validation report.
+
+    The validator summary (`- ❌ **Uncovered (Knowledge Gaps)**: N`) is
+    authoritative. Without it, each detailed status line carrying a known gap
+    label counts once. Matching is case-insensitive and emoji-independent, so
+    cosmetic changes to the report cannot silently disable the L4 gate.
+    """
+    lines = report_text.splitlines()
+
+    for line in lines:
+        match = _CQ_SUMMARY_RE.search(line)
+        if match:
+            return int(match.group(1))
+
+    count = 0
+    for line in lines:
+        if _CQ_SUMMARY_LINE_RE.search(line):
+            continue  # summary without a parseable number, not a finding
+        lowered = line.lower()
+        if any(marker in lowered for marker in _CQ_GAP_MARKERS):
+            count += 1
+    return count
 
 
 def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> Dict[str, Any]:
@@ -124,7 +164,7 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
     if cq_report.exists():
         try:
             rep_text = cq_report.read_text(encoding="utf-8")
-            cq_gaps = rep_text.count("❌ Unanswered") + rep_text.count("[FAILED]")
+            cq_gaps = count_cq_gaps(rep_text)
         except Exception:
             cq_gaps = 0
     elif cq_file.exists():

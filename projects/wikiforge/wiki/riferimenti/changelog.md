@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dipendenze esplicite**: `A4 ⟵ A0, A3, B5, C6`; `C4 ⟵ B4` (nessun endpoint Cypher prima della chiusura del bypass del proxy graph); provenance server-trusted (`human:<id>` / `process:<id>`) prima della riconciliazione automatica.
 - **Documentazione**: puntatori in `docs/ROADMAP.md`, indice `docs/README.md` (29 file), `ROADMAP.md` (task 85) e proiezione wiki rigenerata. Nessuna API, envelope o metodo pubblico modificato.
 
+### A0 — Gate L4 veritiero
+
+- **Parsing corretto**: `health.py` riconosce le etichette reali di `cq_validator.py` (`Uncovered (Knowledge Gaps): N` nella sintesi, `Scoperte (knowledge gap)` nelle righe di dettaglio, più i legacy `Unanswered`/`[FAILED]`). La riga di sintesi è autoritativa; in assenza si contano le righe di dettaglio, case-insensitive e indipendenti dall'emoji. Il campo `cq_gaps` e l'envelope REST restano invariati.
+- **Effetto sul gate**: con gap reali il livello L4 non è più raggiungibile, viene proposta l'azione `ke.validate-cq` e l'health score viene penalizzato; con report pulito il gate può arrivare a L4.
+- **Test**: nuovo `tests/python/test_health_gate.py` (8 test, incluso uno generato con il vero `generate_report()` di `cq_validator.py`); 73 test Python totali verdi. Grado L4 aggiornato da ~2.5 a ~3.0/5 nel piano vivo.
+
 ### S5/S6 — Documentazione allineata e collaudo finale
 
 - **Indici e guida**: `docs/README.md` indicizza il piano KE (28 file) e `docs/help/modalita-dev.md` spiega badge di sicurezza, **🕒 Schedula**, avvisi F6 e **🗑 Rimuovi** senza duplicare il catalogo generato.

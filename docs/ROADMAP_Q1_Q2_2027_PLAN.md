@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione NON avviata (0/23 step).**
+> **Stato: studio completato, piano approvato, implementazione avviata (1/23 step: A0 ✅).**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -54,7 +54,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 
 | Step | Stato | Artefatti |
 | :--- | :--- | :--- |
-| A0 | ⬜ | — |
+| A0 | ✅ | `src/backend/wikiforge/api/health.py` (`count_cq_gaps`), `tests/python/test_health_gate.py` (8 test) |
 | A1 | ⬜ | — |
 | A2 | ⬜ | — |
 | A3 | ⬜ | — |
@@ -87,17 +87,17 @@ Legend: ⬜ Todo · 🔄 In corso · ✅ Implementato e verificato · ⛔ Blocca
 Scala: **0** assente · **1** bozza/flag inerte · **2** parziale/read-only ·
 **3** advisory strutturato · **4** autonomo limitato e governato · **5** completo
 secondo la roadmap. I valori “Oggi” sono la baseline di questo studio.
-La colonna **Dopo step** va aggiornata a ogni step chiuso (oggi coincide con
-“Oggi” perché nessuno step è stato implementato).
+La colonna **Dopo step** va aggiornata a ogni step chiuso (dopo A0: A2 3,
+A5 4.5, complessivo L4 ~3.0; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
 | A1 | Scheduler, trigger e stato persistente (F0–F6, S0–S6) | 3 | 3 | 5 |
-| A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 2 | 5 |
+| A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 3 | 5 |
 | A3 | ODP proattivi e generazione note | 2.5 | 2.5 | 5 |
 | A4 | Validazione, auto-repair e rollback | 2 | 2 | 5 |
-| A5 | Guardrail, approvazione e audit | 4 | 4 | 5 |
-| — | **Complessivo L4** | **~2.5** | **~2.5** | **4.5–5** |
+| A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
+| — | **Complessivo L4** | **~2.5** | **~3.0** | **4.5–5** |
 | B1 | Autenticazione / identità del chiamante | 0.5 | 0.5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 0 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 2.5 | 5 |
@@ -271,6 +271,12 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: nuovo `tests/python/test_health_gate.py`; `pytest tests/python/`,
   `okf_lint.py`, `npm test` (nessun cambio envelope).
 - **Grado atteso**: A2 2 → 3, A5 4 → 4.5 (gate attendibile).
+- **Risultato (2026-11-22)**: ✅ completato. `count_cq_gaps()` usa la riga di
+  riepilogo `Uncovered (Knowledge Gaps): N` come fonte autoritativa e, in
+  assenza, conta le righe di dettaglio con le etichette note; 8 test in
+  `tests/python/test_health_gate.py` (incluso uno sull'output reale di
+  `generate_report()`), 73 test Python totali verdi. Nessun campo o envelope
+  API modificato.
 
 ### A1 — Modello `Finding` unificato (solo lettura)
 
@@ -620,6 +626,7 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | Data | Step | Capacità | Da | A | Note |
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | 2026-11-22 | — | studio iniziale | — | — | Baseline misurata: L4 ~2.5, RBAC ~1, Neo4j ~0.5 su 5. Nessuno step implementato. |
+| 2026-11-22 | A0 | A2 / A5 · L4 complessivo | 2 / 4 · ~2.5 | 3 / 4.5 · ~3.0 | Gate `cq_gaps` corretto: parsing delle etichette reali di `cq_validator.py`, 8 test dedicati verdi, L4 non raggiungibile con gap aperti. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
