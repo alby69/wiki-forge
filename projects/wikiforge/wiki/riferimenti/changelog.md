@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Audit post-23/23 — indurimento A4/A5, B7, C2/C4
+
+- **A4**: la rivalidazione usa davvero `okf_lint + shacl + cq_validator`; nuovo CLI `shacl_validator.py` con exit 0/1, finding strutturato su fallimento pre/post in `.wiki-forge/autonomy-findings.jsonl`, allowlist estesa a script/percorsi/finding-kind e wiring dell'engine solo dopo job riusciti. `auto_apply=false` e default `off` invariati.
+- **A5**: fixture letterale con 3 orfani → 3 riparazioni, secondo giro a 0 finding e `okf_lint.py --json` con `status: success`.
+- **B7**: `GET /api/auth/me` senza credenziali resta pubblica anche con ACL restrittivi; commenti B2/B3 e conteggio test allineati.
+- **C2/C4**: checkpoint hash/revisione persistito in `.wiki-forge/graph-sync-state/` tra invocazioni; contratto TS `graph.reconcile` allineato a `skippedEvents`; commenti e conteggi corretti.
+- **Verifica**: 488 test Node (488 pass), 154 test Python, 6 test legacy, typecheck, build, registry/docs sync, OKF lint e `git diff --check` verdi. Nessun endpoint, envelope o metodo pubblico modificato; registry SSOT resta a 29 script.
+
 ### Q1–Q2 2027 — Piano incrementale (studio)
 
 - **Studio completo dei tre pilastri**: L4 Fully-Autonomous (~2.5/5), RBAC multi-utente (~1/5), Neo4j bidirezionale (~0.5/5), con evidenze puntuali su codice, config e test esistenti.
@@ -64,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sessione tipizzata**: `createApiClient()` accetta `getBearerToken` separato dal legacy `getToken`: il primo emette `Authorization: Bearer <token>` solo quando lo slice additivo `auth` dell'app-store contiene un token; il secondo continua a inviare `X-WikiForge-Token`. Zero `fetch(` nei componenti UI; bus e `ApiStorage` condividono la stessa sorgente.
 - **UI**: header con chip identità/roles, form sign-in e sign-out solo quando il server segnala un IdP; azioni `global:changesets`/`config`/`wizard` (Admin) e `global:keWorkbench` (KnowledgeEngineer) gated solo per identità IdP verificate. In legacy mode non viene renderizzato alcun markup aggiuntivo.
 - **Provenance strict**: Review Studio e KE Workbench usano l'attore restituito dal server al posto di `localStorage['wiki-forge:reviewer']` e di `'utente workbench'`; il token viene persistito in `wiki-forge:auth-token` e l'identità viene sempre ri-risolta via `auth.me` all'avvio.
-- **Verifica**: 13 test in `tests/authUi.test.ts` + 4 assert in `tests/openapi.test.ts`; suite Node 429 test (428 pass + 1 skip pre-esistente), Python 87 pass, typecheck e build verdi. Grado B5 5, RBAC 5/5: pilastro RBAC completato.
+- **Verifica**: 11 test in `tests/authUi.test.ts` + 4 assert in `tests/openapi.test.ts`; suite Node 429 test (428 pass + 1 skip pre-esistente), Python 87 pass, typecheck e build verdi. Grado B5 5, RBAC 5/5: pilastro RBAC completato.
 
 ### B6 — Adapter IdP pluggabili (OIDC / SAML / OAuth2)
 

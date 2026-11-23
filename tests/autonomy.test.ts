@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { AutonomyEngine, AUTONOMY_ACTOR, type AutonomyConfig, type SafetyClass } from '@backend/server/autonomy';
+import {
+  AutonomyEngine,
+  AUTONOMY_ACTOR,
+  AUTONOMY_FINDINGS_FILE,
+  defaultAutonomyConfig,
+  resolveAutonomySafety,
+  validatorCommand,
+  type AutonomyConfig,
+  type SafetyClass,
+} from '@backend/server/autonomy';
 import { ChangesetStore } from '@backend/server/changesetStore';
 import type { Finding } from '@backend/server/findingChangeset';
 
@@ -94,6 +103,33 @@ describe('A4 — autonomy modes and safety classes', () => {
     }
   }
 
+  it('uses the real SHACL validator and classifies the internal planner as read-only', () => {
+    assert.deepEqual(defaultAutonomyConfig().revalidation, ['okf_lint', 'shacl', 'cq_validator']);
+    assert.deepEqual(
+      validatorCommand('shacl', { wikiRel: 'wiki', configRel: 'config/config.toml' }),
+      ['-W', 'ignore', '-m', 'src.backend.wikiforge.semantics.shacl_validator', '--wiki-dir', 'wiki'],
+    );
+    assert.equal(resolveAutonomySafety('orphan_repair'), 'read-only');
+    assert.equal(resolveAutonomySafety('wiki_program_change_apply', 'wiki-write'), 'wiki-write');
+  });
+
+  it('bounded honours script, path and finding-kind allowlists', async () => {
+    const variants: Array<[string, Partial<AutonomyConfig>]> = [
+      ['script', { scripts: [] }],
+      ['path', { paths: ['wiki/other'] }],
+      ['finding kind', { findingKinds: ['knowledge_gap'] }],
+    ];
+    for (const [label, patch] of variants) {
+      const store = new ChangesetStore(rootDir);
+      const engine = new AutonomyEngine(rootDir, { ...config('bounded'), ...patch }, store, {
+        revalidate: async () => ({ ok: true, failures: [] }),
+      });
+      const result = await engine.process(candidate('read-only'), rootDir);
+      assert.equal(result.outcome, 'skipped', label);
+      assert.equal((await store.list()).length, 0, label);
+    }
+  });
+
   it('rejects and rolls back when pre-validation fails', async () => {
     const store = new ChangesetStore(rootDir);
     const engine = new AutonomyEngine(rootDir, config('bounded'), store, {
@@ -103,6 +139,11 @@ describe('A4 — autonomy modes and safety classes', () => {
     assert.equal(result.outcome, 'rolled_back');
     assert.match(result.reason, /okf_lint/);
     assert.equal((await store.list())[0].status, 'rejected');
+    assert.equal(result.finding?.kind, 'inconsistency');
+    assert.match(result.finding?.evidence.join(' ') ?? '', /autonomy=pre-revalidation-failure/);
+    const findings = await fs.readFile(path.join(rootDir, AUTONOMY_FINDINGS_FILE), 'utf-8');
+    const recorded = JSON.parse(findings.trim().split('\n').at(-1) ?? '{}') as Record<string, unknown>;
+    assert.equal(recorded.findingId, result.finding?.findingId);
     const fileExists = await fs.access(path.join(rootDir, 'wiki', 'target.md'))
       .then(() => true)
       .catch(() => false);
@@ -123,6 +164,8 @@ describe('A4 — autonomy modes and safety classes', () => {
     const result = await engine.process(candidate('read-only'), rootDir);
     assert.equal(result.outcome, 'rolled_back');
     assert.equal(calls, 2);
+    assert.equal(result.finding?.kind, 'inconsistency');
+    assert.match(result.finding?.evidence.join(' ') ?? '', /autonomy=post-revalidation-failure/);
     const fileExists = await fs.access(path.join(rootDir, 'wiki', 'target.md'))
       .then(() => true)
       .catch(() => false);

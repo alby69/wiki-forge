@@ -1,11 +1,17 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { PYTHON_CMD } from '@backend/server/agentServer';
 import { ChangesetStore } from '@backend/server/changesetStore';
 import type { FindingsEnvelope, Finding } from '@backend/server/findingChangeset';
-import { AUTONOMY_ACTOR, stageRepairChangesets } from '@backend/server/orphanRepair';
+import {
+  AUTONOMY_ACTOR,
+  collectRepairFindings,
+  stageRepairChangesets,
+} from '@backend/server/orphanRepair';
 
 function findings(): Finding[] {
   return [
@@ -80,6 +86,40 @@ describe('A5 — deterministic orphan and frontmatter repair', () => {
 
     const reapplied = await stageRepairChangesets(store, envelope(), rootDir);
     assert.equal(reapplied.created.length, 0);
+  });
+
+  it('repairs three orphans idempotently and keeps okf_lint green', async () => {
+    const wikiDir = path.join(rootDir, 'wiki');
+    await fs.writeFile(
+      path.join(wikiDir, 'source.md'),
+      '---\ntitle: Source\ntype: Concept\nstatus: draft\n---\n\n'
+        + '# Source\n\n[[Missing One]] [[deep/nested/target]] [[Third Page]]\n',
+      'utf-8',
+    );
+
+    const firstEnvelope = collectRepairFindings(
+      process.cwd(), wikiDir, 'wiki', PYTHON_CMD,
+    );
+    assert.equal(firstEnvelope.count, 3);
+    const first = await stageRepairChangesets(store, firstEnvelope, rootDir);
+    assert.equal(first.created.length, 3);
+    for (const changeset of first.created) await store.apply(changeset.id, AUTONOMY_ACTOR);
+
+    const secondEnvelope = collectRepairFindings(
+      process.cwd(), wikiDir, 'wiki', PYTHON_CMD,
+    );
+    assert.equal(secondEnvelope.count, 0);
+    const second = await stageRepairChangesets(store, secondEnvelope, rootDir);
+    assert.equal(second.created.length, 0);
+
+    const lint = spawnSync(
+      PYTHON_CMD,
+      [path.resolve('scripts/okf_lint.py'), '--json', wikiDir],
+      { cwd: process.cwd(), encoding: 'utf-8' },
+    );
+    assert.equal(lint.status, 0, lint.stderr);
+    const report = JSON.parse(lint.stdout || '{}') as { status?: string };
+    assert.equal(report.status, 'success');
   });
 
   it('stages zero writes on conflict', async () => {

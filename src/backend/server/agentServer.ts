@@ -69,6 +69,7 @@ import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
 import { EventQueue } from './scheduler/eventQueue';
 import { GENERATED_SCRIPT_REGISTRY } from './generated/scriptRegistry.generated';
+import { getScriptSafety } from './scheduler/scriptSafety';
 import { resolveToolScript } from './toolPaths';
 import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from './safeFs';
 import {
@@ -79,6 +80,8 @@ import {
   type ProjectEntry,
 } from './projectService';
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
+import { AutonomyEngine, loadAutonomyConfigSync } from './autonomy';
+import { collectRepairFindings, repairFindingToStageInput } from './orphanRepair';
 import { GraphEventHub } from './graphEvents';
 import { handleDocsRequest } from './api/docsBrowser';
 import { json, readJsonBody, sendApiResult } from './api/http';
@@ -1444,10 +1447,48 @@ export class AgentServer {
       buildCliArgs,
     });
 
+    if (result.failedSteps.length === 0) {
+      await this.runAutonomyAfterJob(ctx, projectRoot);
+    }
+
     return {
       failedSteps: result.failedSteps,
       exitCodes: result.failedSteps.length > 0 ? [1] : [0],
     };
+  }
+
+  private async runAutonomyAfterJob(ctx: JobExecutionContext, projectRoot: string): Promise<void> {
+    const config = loadAutonomyConfigSync(this.rootDir);
+    if (config.mode === 'off') return;
+
+    const scriptId = ctx.job.scriptId ?? 'orphan_repair';
+    const safety = scriptId === 'orphan_repair' ? 'read-only' : getScriptSafety(scriptId);
+    try {
+      const envelope = collectRepairFindings(
+        this.rootDir,
+        path.join(projectRoot, 'wiki'),
+        'wiki',
+        PYTHON_CMD,
+      );
+      const store = new ChangesetStore(projectRoot, {
+        snapshot: async (file, content, reason) => this.writeSnapshotFile(projectRoot, file, content, reason),
+      });
+      const engine = new AutonomyEngine(this.rootDir, config, store);
+      for (const finding of envelope.findings) {
+        await engine.process({
+          finding,
+          scriptId,
+          safety,
+          stage: await repairFindingToStageInput(finding, projectRoot),
+        }, projectRoot);
+      }
+    } catch (error) {
+      ctx.notify({
+        type: 'job_output',
+        jobId: ctx.job.id,
+        text: `[autonomy] ${error instanceof Error ? error.message : String(error)}\n`,
+      });
+    }
   }
 
   private broadcastScheduleEvent(event: SchedulerEvent): void {

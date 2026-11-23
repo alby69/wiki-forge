@@ -33,7 +33,11 @@ for _parent in Path(__file__).resolve().parents:
 from src.backend.wikiforge.semantics.neo4j_client import Neo4jClient, Neo4jConfig
 from src.backend.wikiforge.semantics.neo4j_query import CypherQueryError, Neo4jQueryService
 from src.backend.wikiforge.semantics.neo4j_reconciler import reconcile as reconcile_notes
-from src.backend.wikiforge.watcher.graph_watcher import GraphSyncHandler, resolve_project_wiki
+from src.backend.wikiforge.watcher.graph_watcher import (
+    GraphSyncHandler,
+    default_sync_state_path,
+    resolve_project_wiki,
+)
 
 
 def driver_installed() -> bool:
@@ -154,6 +158,7 @@ def command_sync(project_id: str | None) -> int:
         neo4j_client=client,
         on_event=events.append,
         debounce_seconds=0.0,
+        state_path=default_sync_state_path(wiki_dir),
     )
 
     notes = 0

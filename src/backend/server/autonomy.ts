@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
@@ -8,6 +9,7 @@ import type { Finding } from './findingChangeset';
 
 export const AUTONOMY_ACTOR = 'process:wiki-forge-autonomy';
 export const AUTONOMY_AUDIT_FILE = '.wiki-forge/autonomy-audit.jsonl';
+export const AUTONOMY_FINDINGS_FILE = '.wiki-forge/autonomy-findings.jsonl';
 export const AUTONOMY_MODES = ['off', 'propose', 'bounded'] as const;
 
 export type AutonomyMode = typeof AUTONOMY_MODES[number];
@@ -54,6 +56,8 @@ export interface AutonomyAuditEntry {
 export interface AutonomyResult {
   outcome: AutonomyOutcome;
   changeset?: Changeset;
+  /** Structured advisory left behind when bounded revalidation fails. */
+  finding?: Finding;
   reason: string;
   audit: AutonomyAuditEntry;
 }
@@ -64,7 +68,7 @@ export function defaultAutonomyConfig(): AutonomyConfig {
     scripts: [],
     paths: [],
     findingKinds: [],
-    revalidation: ['okf_lint', 'schema_lint', 'cq_validator'],
+    revalidation: ['okf_lint', 'shacl', 'cq_validator'],
   };
 }
 
@@ -124,6 +128,24 @@ function safeScripts(safety: SafetyClass): boolean {
   return safety === 'read-only' || safety === 'report';
 }
 
+const INTERNAL_SAFETY: Record<string, SafetyClass> = {
+  orphan_repair: 'read-only',
+};
+
+/** Classify registered scripts and the internal A5 planner without widening the registry. */
+export function resolveAutonomySafety(
+  scriptId: string | undefined,
+  registrySafety: string | undefined = undefined,
+): SafetyClass {
+  if (!scriptId) return 'unknown';
+  const internal = INTERNAL_SAFETY[scriptId];
+  if (internal) return internal;
+  if (registrySafety === 'read-only' || registrySafety === 'report'
+    || registrySafety === 'workspace' || registrySafety === 'wiki-write'
+    || registrySafety === 'blocked') return registrySafety;
+  return 'unknown';
+}
+
 export function isBoundedAllowed(config: AutonomyConfig, candidate: AutonomyCandidate): boolean {
   const scriptId = candidate.scriptId ?? candidate.stage.author ?? '';
   return config.mode === 'bounded'
@@ -139,12 +161,28 @@ export function decideAutonomy(config: AutonomyConfig, candidate: AutonomyCandid
   return isBoundedAllowed(config, candidate) ? 'applied' : 'skipped';
 }
 
-const VALIDATOR_SCRIPTS: Record<string, string> = {
-  okf_lint: 'scripts/okf_lint.py',
-  schema_lint: 'scripts/schema_lint.py',
-  shacl: 'scripts/schema_lint.py',
-  cq_validator: 'scripts/cq_validator.py',
+interface ValidatorPaths {
+  wikiRel: string;
+  configRel: string;
+}
+
+const VALIDATOR_COMMANDS: Record<string, (paths: ValidatorPaths) => string[]> = {
+  okf_lint: ({ wikiRel }) => ['scripts/okf_lint.py', '--json', wikiRel],
+  schema_lint: ({ wikiRel, configRel }) => [
+    'scripts/schema_lint.py', '--strict', '--json', '--wiki-dir', wikiRel, '--config', configRel,
+  ],
+  shacl: ({ wikiRel }) => [
+    '-W', 'ignore', '-m', 'src.backend.wikiforge.semantics.shacl_validator', '--wiki-dir', wikiRel,
+  ],
+  cq_validator: ({ wikiRel }) => [
+    'scripts/cq_validator.py', '--findings', '--wiki-dir', wikiRel,
+    '--cq-file', path.join(wikiRel, 'competency_questions.md'),
+  ],
 };
+
+export function validatorCommand(name: string, paths: ValidatorPaths): string[] | undefined {
+  return VALIDATOR_COMMANDS[name]?.(paths);
+}
 
 function pythonCommand(): string {
   return process.env.WIKIFORGE_PYTHON || 'python3';
@@ -155,15 +193,26 @@ function relativeToRoot(rootDir: string, absolute: string): string {
 }
 
 function parseValidator(name: string, output: string): RevalidationResult {
-  if (name !== 'cq_validator') return { ok: true, failures: [] };
   try {
-    const parsed = JSON.parse(output) as { count?: number };
-    if (typeof parsed.count === 'number' && parsed.count > 0) {
-      return { ok: false, failures: [`cq_validator: ${parsed.count} finding(s)`] };
+    const parsed = JSON.parse(output) as Record<string, unknown>;
+    if (name === 'cq_validator') {
+      if (typeof parsed.count === 'number' && parsed.count > 0) {
+        return { ok: false, failures: [`cq_validator: ${parsed.count} finding(s)`] };
+      }
+      return { ok: true, failures: [] };
+    }
+    const passed = typeof parsed.ok === 'boolean' ? parsed.ok : parsed.conforms;
+    const status = typeof parsed.status === 'string' ? parsed.status : undefined;
+    const failed = passed === false
+      || (status !== undefined && status !== 'success' && status !== 'ok' && status !== 'disabled');
+    if (failed) {
+      const detail = parsed.summary ?? parsed.errors ?? parsed.violations
+        ?? parsed.findings ?? 'validation failed';
+      return { ok: false, failures: [`${name}: ${JSON.stringify(detail).slice(0, 300)}`] };
     }
     return { ok: true, failures: [] };
   } catch {
-    return { ok: false, failures: ['cq_validator: invalid JSON output'] };
+    return { ok: false, failures: [`${name}: invalid JSON output`] };
   }
 }
 
@@ -178,18 +227,10 @@ export function createScriptRevalidator(rootDir: string): Revalidator {
       : relativeToRoot(rootDir, path.join(rootDir, 'config', 'config.toml'));
 
     for (const requested of config.revalidation) {
-      const script = VALIDATOR_SCRIPTS[requested];
-      if (!script) {
+      const args = validatorCommand(requested, { wikiRel, configRel });
+      if (!args) {
         failures.push(`${requested}: unsupported validator`);
         continue;
-      }
-      const args = [path.join(rootDir, script)];
-      if (requested === 'okf_lint') args.push('--json', wikiRel);
-      if (requested === 'schema_lint' || requested === 'shacl') {
-        args.push('--strict', '--json', '--wiki-dir', wikiRel, '--config', configRel);
-      }
-      if (requested === 'cq_validator') {
-        args.push('--findings', '--wiki-dir', wikiRel, '--cq-file', path.join(wikiRel, 'competency_questions.md'));
       }
       const result = spawnSync(pythonCommand(), args, {
         cwd: rootDir,
@@ -216,12 +257,14 @@ export interface AutonomyEngineOptions {
   revalidate?: Revalidator;
   now?: () => Date;
   auditPath?: string;
+  findingsPath?: string;
 }
 
 export class AutonomyEngine {
   private readonly revalidate: Revalidator;
   private readonly now: () => Date;
   private readonly auditPath: string;
+  private readonly findingsPath: string;
 
   constructor(
     private readonly rootDir: string,
@@ -232,6 +275,7 @@ export class AutonomyEngine {
     this.revalidate = options.revalidate ?? createScriptRevalidator(rootDir);
     this.now = options.now ?? (() => new Date());
     this.auditPath = path.resolve(rootDir, options.auditPath ?? AUTONOMY_AUDIT_FILE);
+    this.findingsPath = path.resolve(rootDir, options.findingsPath ?? AUTONOMY_FINDINGS_FILE);
   }
 
   private async audit(entry: AutonomyAuditEntry): Promise<void> {
@@ -239,11 +283,39 @@ export class AutonomyEngine {
     await fs.appendFile(this.auditPath, `${JSON.stringify(entry)}\n`, 'utf-8');
   }
 
+  private async leaveFinding(
+    candidate: AutonomyCandidate,
+    changeset: Changeset,
+    phase: 'pre' | 'post',
+    failures: string[],
+  ): Promise<Finding> {
+    const digest = createHash('sha256')
+      .update([candidate.finding.findingId, changeset.id, phase, ...failures].join('\n'))
+      .digest('hex')
+      .slice(0, 12);
+    const finding: Finding = {
+      findingId: `inconsistency-autonomy-${digest}`,
+      kind: 'inconsistency',
+      confidence: 1,
+      evidence: [
+        `autonomy=${phase}-revalidation-failure`,
+        `changeset=${changeset.id}`,
+        ...failures.map((failure) => `failure=${failure}`),
+      ],
+      targetPath: candidate.finding.targetPath,
+      proposedAction: 'review-autonomy-revalidation-failure',
+    };
+    await fs.mkdir(path.dirname(this.findingsPath), { recursive: true });
+    await fs.appendFile(this.findingsPath, `${JSON.stringify(finding)}\n`, 'utf-8');
+    return finding;
+  }
+
   private result(
     outcome: AutonomyOutcome,
     reason: string,
     candidate: AutonomyCandidate,
     changeset?: Changeset,
+    finding?: Finding,
   ): AutonomyResult {
     const audit: AutonomyAuditEntry = {
       at: this.now().toISOString(),
@@ -258,7 +330,13 @@ export class AutonomyEngine {
       ...(changeset ? { changeSetId: changeset.id } : {}),
       reason,
     };
-    return { outcome, ...(changeset ? { changeset } : {}), reason, audit };
+    return {
+      outcome,
+      ...(changeset ? { changeset } : {}),
+      ...(finding ? { finding } : {}),
+      reason,
+      audit,
+    };
   }
 
   async process(candidate: AutonomyCandidate, projectRoot: string): Promise<AutonomyResult> {
@@ -282,7 +360,8 @@ export class AutonomyEngine {
     const pre = await this.revalidate(projectRoot, changeset);
     if (!pre.ok) {
       await this.store.reject(changeset.id, `rivalidazione fallita: ${pre.failures.join('; ')}`, AUTONOMY_ACTOR);
-      const result = this.result('rolled_back', pre.failures.join('; '), candidate, changeset);
+      const finding = await this.leaveFinding(candidate, changeset, 'pre', pre.failures);
+      const result = this.result('rolled_back', pre.failures.join('; '), candidate, changeset, finding);
       await this.audit(result.audit);
       return result;
     }
@@ -291,7 +370,8 @@ export class AutonomyEngine {
     const post = await this.revalidate(projectRoot, changeset);
     if (!post.ok) {
       await this.store.rollback(changeset.id, AUTONOMY_ACTOR);
-      const result = this.result('rolled_back', post.failures.join('; '), candidate, changeset);
+      const finding = await this.leaveFinding(candidate, changeset, 'post', post.failures);
+      const result = this.result('rolled_back', post.failures.join('; '), candidate, changeset, finding);
       await this.audit(result.audit);
       return result;
     }

@@ -224,6 +224,11 @@ export function createRbacMiddleware(config: RbacConfig) {
     context: CommandContext,
   ): ApiResult | undefined => {
     if (!config.enabled) return undefined;
+    // B7 — credential-free identity discovery is public, regardless of ACL.
+    if (command === 'auth.me'
+      && (payload as { authenticated?: boolean } | null)?.authenticated === false) {
+      return undefined;
+    }
     const decision = decideRbac(config, command, payload, context);
     context.rbac = decision;
     if (decision.allowed) return undefined;

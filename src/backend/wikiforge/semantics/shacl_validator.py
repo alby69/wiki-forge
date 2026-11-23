@@ -8,9 +8,14 @@ logical contradictions such as owl:disjointWith violations.
 
 from __future__ import annotations
 
+import argparse
+import json
+import sys
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from rdflib import Graph, URIRef, RDF, RDFS, OWL
+
+from .markdown_to_rdf import ZettelToRDFConverter
 
 try:
     import pyshacl
@@ -132,3 +137,46 @@ def check_owl_disjointness_violations(data_graph: Graph) -> List[Dict[str, str]]
                 })
 
     return violations
+
+
+def validate_wiki(wiki_dir: Path, shapes_path: Path) -> Dict[str, Any]:
+    shapes = Path(shapes_path)
+    if not shapes.exists():
+        return {
+            "conforms": False,
+            "error": f"SHACL shapes file not found: {shapes}",
+            "violations": [],
+        }
+    try:
+        converter = ZettelToRDFConverter()
+        notes = converter.parse_directory(Path(wiki_dir))
+        data_graph = Graph().parse(data=converter.convert_notes_to_turtle(notes), format="turtle")
+        result = validate_shacl(data_graph, shapes)
+    except Exception as exc:
+        return {
+            "conforms": False,
+            "error": str(exc),
+            "violations": [],
+        }
+    return {
+        "conforms": bool(result.get("conforms")),
+        "violations": result.get("violations", []),
+        "results_text": result.get("results_text", ""),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Validate a wiki's RDF projection against SHACL shapes")
+    parser.add_argument("--wiki-dir", default="wiki")
+    parser.add_argument(
+        "--shapes",
+        default="src/backend/wikiforge/config/shapes.ttl",
+    )
+    args = parser.parse_args()
+    result = validate_wiki(Path(args.wiki_dir), Path(args.shapes))
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    sys.exit(0 if result["conforms"] else 1)
+
+
+if __name__ == "__main__":
+    main()

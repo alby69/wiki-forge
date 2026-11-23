@@ -18,11 +18,14 @@ C2 — the vault -> Neo4j direction is real and idempotent:
   * a structured ``on_event`` callback emits ``graph.changed`` events while
     the legacy ``on_change_callback(type, path)`` keeps its exact signature;
   * C6 — origin/hash metadata and echo suppression: a note still matching the
-    ``wf.localHash`` written by the reconciler is never pushed back to Neo4j.
+    ``wf.localHash`` written by the reconciler is never pushed back to Neo4j;
+  * C8 — the hash/revision checkpoint is persisted under ``.wiki-forge``, so
+    a fresh sync invocation never re-emits an unchanged note.
 """
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import sys
@@ -80,6 +83,7 @@ StructuredEvent = dict[str, Any]
 # ``watcher`` and stays unchanged for legacy consumers.
 RECONCILER_ORIGINS = frozenset({"neo4j", "reconciler"})
 KNOWN_ORIGINS = frozenset({"browser", "watcher", "vault", "neo4j", "reconciler"})
+GRAPH_SYNC_STATE_DIR = ".wiki-forge/graph-sync-state"
 _FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 
 
@@ -146,6 +150,12 @@ def resolve_project_wiki(project_id: str | None, repo_root: Path | None = None) 
     return root / "wiki"
 
 
+def default_sync_state_path(watch_dir: Path) -> Path:
+    """C8 — per-wiki checkpoint next to the watched folder, outside the vault."""
+    watch = Path(watch_dir).resolve()
+    return watch.parent / GRAPH_SYNC_STATE_DIR / f"{watch.name}.json"
+
+
 class GraphSyncHandler(FileSystemEventHandler):
     """
     Event handler for incremental graph updates on markdown file events.
@@ -159,6 +169,7 @@ class GraphSyncHandler(FileSystemEventHandler):
         neo4j_client: Optional[Any] = None,
         on_event: Optional[Callable[[StructuredEvent], None]] = None,
         debounce_seconds: float = 0.05,
+        state_path: Path | str | None = None,
     ):
         super().__init__()
         self.watch_dir = Path(watch_dir)
@@ -173,9 +184,48 @@ class GraphSyncHandler(FileSystemEventHandler):
         self.rdf_converter = ZettelToRDFConverter()
         self.cypher_converter = ZettelToCypherConverter()
 
+        self.state_path = Path(state_path) if state_path else default_sync_state_path(self.watch_dir)
         self._hashes: dict[str, str] = {}
         self._revisions: dict[str, int] = {}
         self._last_seen: dict[tuple[str, str], float] = {}
+        self._load_state()
+
+    def _load_state(self) -> None:
+        """C8 — resume hashes/revisions from a previous invocation."""
+        try:
+            payload = json.loads(self.state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        hashes = payload.get("hashes", {})
+        revisions = payload.get("revisions", {})
+        if isinstance(hashes, dict):
+            self._hashes.update({
+                str(key): value for key, value in hashes.items()
+                if isinstance(value, str) and value
+            })
+        if isinstance(revisions, dict):
+            self._revisions.update({
+                str(key): value for key, value in revisions.items()
+                if isinstance(value, int) and not isinstance(value, bool) and value > 0
+            })
+
+    def _save_state(self) -> None:
+        """C8 — atomic checkpoint write; never touches markdown in the vault."""
+        if self.state_path is None:
+            return
+        payload = {"version": 1, "hashes": self._hashes, "revisions": self._revisions}
+        temporary = self.state_path.with_suffix(self.state_path.suffix + ".tmp")
+        try:
+            self.state_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )
+            temporary.replace(self.state_path)
+        except OSError as exc:
+            print(f"⚠️ Cannot persist graph sync checkpoint: {exc}")
 
     def _is_markdown(self, filepath: str) -> bool:
         return filepath.endswith(".md") and not Path(filepath).name.startswith(".")
@@ -257,6 +307,7 @@ class GraphSyncHandler(FileSystemEventHandler):
         echo = is_reconciler_echo(raw)
         if echo:
             self._hashes[note_id] = content_hash
+            self._save_state()
             return
         origin = note_origin(raw)
 
@@ -304,6 +355,7 @@ class GraphSyncHandler(FileSystemEventHandler):
             "path": self._relative_path(path),
         }
         self._execute_cypher([(statement, params)])
+        self._save_state()
         self._emit(action, path, note_id, revision, origin, body_hash, content_hash)
 
     def sync_note(self, path: Path | str, action: str = "SYNC") -> None:
@@ -321,6 +373,7 @@ class GraphSyncHandler(FileSystemEventHandler):
         self._hashes.pop(note_id, None)
         statement = "MATCH (n:PermanentNote {id: $id}) DETACH DELETE n"
         self._execute_cypher([(statement, {"id": note_id})])
+        self._save_state()
         self._emit(action, path, note_id, revision)
 
     def on_created(self, event: FileSystemEvent) -> None:
@@ -419,6 +472,7 @@ class LiveGraphWatcher:
         on_change_callback: Optional[Callable[[str, str], None]] = None,
         on_event: Optional[Callable[[StructuredEvent], None]] = None,
         debounce_seconds: float = 0.05,
+        state_path: Path | str | None = None,
     ):
         if Observer is None:  # C4 — dependency-free installs can still sync via API
             raise RuntimeError("watchdog is required for LiveGraphWatcher; install the 'watchdog' package")
@@ -434,6 +488,7 @@ class LiveGraphWatcher:
             on_change_callback=on_change_callback,
             on_event=on_event,
             debounce_seconds=debounce_seconds,
+            state_path=state_path,
         )
 
     def start(self, blocking: bool = False) -> None:

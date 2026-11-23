@@ -92,8 +92,8 @@ CONFIG_SCHEMA: dict[str, Any] = {
     "enterprise": {
         "enable_rbac": bool,
         "cloud_backup_webdav": str,
-        # B2/B6 — declarative catalogue. `enable_rbac=true` alone is inert;
-        # an IdP adapter is active only with a declared `auth.provider`.
+        # B2/B3/B6 — declarative catalogue enforced by the B3 bus gate when
+        # `enable_rbac=true`; an IdP adapter needs a declared `auth.provider`.
         "auth": {
             "issuer": str,
             "audience": str,
@@ -110,8 +110,8 @@ CONFIG_SCHEMA: dict[str, Any] = {
         "roles": {"*": (list, str)},
         "projectAcls": {"*": (list, str)},
     },
-    # C0 — declarative only. No runtime code opens a connection yet; the client
-    # and the sync services arrive in C1/C2 and must check `enabled` first.
+    # C0/C1-C6 — declarative gate: the C1 client and C2-C6 sync services open
+    # connections only after checking `enabled` and the password environment.
     "neo4j": {
         "enabled": bool,
         "uri": str,

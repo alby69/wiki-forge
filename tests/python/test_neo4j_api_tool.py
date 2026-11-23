@@ -220,17 +220,29 @@ def test_sync_is_idempotent_on_second_scan(monkeypatch: pytest.MonkeyPatch, tmp_
     monkeypatch.setattr(tool, "resolve_project_wiki", lambda _p: wiki)
     monkeypatch.setenv("WF_C4_TEST_PASSWORD", "secret")
 
-    first = run_cli(["sync", "--project", "demo"])
-    second = run_cli(["sync", "--project", "demo"])
+    count_runs = lambda: len([entry for entry in driver.calls if entry[0] == "run"])
 
+    first = run_cli(["sync", "--project", "demo"])
     assert first[1]["synced"] == 1
-    # Each tool invocation builds a fresh handler (and therefore fresh hashes).
-    assert second[1]["synced"] == 1
+    assert count_runs() == 1
+
+    second = run_cli(["sync", "--project", "demo"])
+    assert second[1]["synced"] == 0
+    assert count_runs() == 1
+
+    (wiki / "a.md").write_text("# Note A\n\nHuman edit", encoding="utf-8")
+    third = run_cli(["sync", "--project", "demo"])
+    assert third[1]["synced"] == 1
+    assert count_runs() == 2
 
     # Inside one handler the public wrapper stays idempotent: two calls for the
     # same unchanged note produce exactly one MERGE.
-    handler = graph_watcher.GraphSyncHandler(wiki, neo4j_client=client, debounce_seconds=0.0)
-    count_runs = lambda: len([entry for entry in driver.calls if entry[0] == "run"])
+    handler = graph_watcher.GraphSyncHandler(
+        wiki,
+        neo4j_client=client,
+        debounce_seconds=0.0,
+        state_path=tmp_path / "handler-state.json",
+    )
     before = count_runs()
     handler.sync_note(wiki / "a.md")
     after_first = count_runs()

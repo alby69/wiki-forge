@@ -2,9 +2,9 @@
  * B2 — declarative RBAC catalogue (inert).
  *
  * Reads the `[enterprise]` table of `config.toml` and normalises it into a
- * transport-neutral shape. Nothing here denies or allows an operation: the
- * permission gate arrives in B3 and the IdP in B6. Setting `enable_rbac=true`
- * on its own therefore cannot change any HTTP response.
+ * transport-neutral shape. Nothing in this loader denies or allows an
+ * operation: the B3 middleware enforces the catalogue when `enable_rbac=true`,
+ * while the B6 IdP remains opt-in through `auth.provider`.
  */
 
 import * as fs from 'node:fs/promises';

@@ -41,6 +41,29 @@ def test_collect_findings_is_deterministic_and_ignores_resolved_links(tmp_path: 
     assert all("source=wiki/source.md" in item.evidence for item in orphans)
 
 
+def test_three_orphans_are_repaired_idempotently(tmp_path: Path) -> None:
+    wiki = tmp_path / "wiki"
+    _write(
+        wiki / "source.md",
+        _source("[[Missing One]] [[deep/nested/target]] [[Third Page]]"),
+    )
+
+    before = collect_findings(wiki)
+    orphans = [item for item in before if item.kind == "orphan_node"]
+    assert [item.targetPath for item in orphans] == [
+        "wiki/deep-nested-target.md",
+        "wiki/missing-one.md",
+        "wiki/third-page.md",
+    ]
+
+    for orphan in orphans:
+        _write(wiki / Path(orphan.targetPath).name, _source("no links"))
+
+    after = collect_findings(wiki)
+    assert [item for item in after if item.kind == "orphan_node"] == []
+    assert collect_findings(wiki) == after
+
+
 def test_collect_findings_is_idempotent_after_stub_creation(tmp_path: Path) -> None:
     wiki = tmp_path / "wiki"
     _write(wiki / "source.md", _source("[[Missing Page]]"))

@@ -33,6 +33,13 @@ const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 20
 const jwk = { ...(publicKey.export({ format: 'jwk' }) as Record<string, unknown>), kid: 'ui-key' };
 
 const LEGACY_TOML = '[enterprise]\nenable_rbac = false\n';
+const RESTRICTED_RBAC_TOML = `
+[enterprise]
+enable_rbac = true
+[enterprise.projectAcls]
+default = []
+`;
+
 const IDP_TOML = `
 [enterprise]
 enable_rbac = true
@@ -164,6 +171,20 @@ describe('GET /api/auth/me (B7)', () => {
       assert.strictEqual(body.auth.idpConfigured, true);
       assert.strictEqual(body.auth.authenticated, false);
       assert.strictEqual(body.auth.strict, true);
+    } finally {
+      await h.close();
+    }
+  });
+
+  it('anonymous discovery stays public with a restrictive project ACL', async () => {
+    const h = await createHarness(RESTRICTED_RBAC_TOML);
+    try {
+      const res = await fetch(`${h.baseUrl}/api/auth/me`);
+      assert.strictEqual(res.status, 200);
+      const body = await res.json() as { success: boolean; auth: AuthIdentityDto };
+      assert.strictEqual(body.success, true);
+      assert.strictEqual(body.auth.authenticated, false);
+      assert.strictEqual(body.auth.rbacEnabled, true);
     } finally {
       await h.close();
     }

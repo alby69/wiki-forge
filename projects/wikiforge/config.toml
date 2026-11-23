@@ -98,13 +98,13 @@ mode = "off"
 scripts = [ "orphan_repair", "graph_analytics", "okf_lint" ]
 paths = [ "wiki" ]
 findingKinds = [ "orphan_node", "inconsistency" ]
-revalidation = [ "okf_lint", "schema_lint", "cq_validator" ]
+revalidation = [ "okf_lint", "shacl", "cq_validator" ]
 
 [enterprise]
 enable_rbac = false
 cloud_backup_webdav = ""
 
-# B2 — catalogo ruoli dichiarato ma NON applicato; vedere config/config.toml.
+# B2/B3/B6 — catalogo ruoli e ACL applicati dal gate B3; vedere config/config.toml.
 [enterprise.roles]
 Reader = [ "wiki.read", "export.read" ]
 Contributor = [ "note.write", "changeset.stage", "upload.write" ]

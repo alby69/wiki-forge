@@ -67,7 +67,7 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | B4 | ✅ | `auth/apiToken.ts` (confronto constant-time + estrazione header), `agentServer.ts` (auth prima del proxy graph, envelope 401 B0), `api/openapi.ts`, `docs/OPENAPI.md`, `tests/apiToken.test.ts` (9 test), `tests/authCharacterization.test.ts` (4 nuovi test) |
 | B5 | ✅ | `auth/actor.ts` + `scripts/actor_provenance.py` (grammatica condivisa), `agentServer.ts` (strict mode, binding verify/approval, flag F6-only, guard stable), `changesetStore.ts` (campi additivi), 4 moduli bus, script Python e registry rigenerato, `tests/provenance.test.ts` (10 test), `tests/python/test_provenance.py` (4 test) |
 | B6 | ✅ | `auth/idp.ts` (OIDC/JWKS, SAML, OAuth2 + claim mapping), `auth/principal.ts` (auth unica), `auth/rbacConfig.ts` + `config_schema.py` + 3 config, `apiToken.ts` (bearer dedicato), `rbacMiddleware.ts` (ruoli IdP senza inheritance), `agentServer.ts` (auth prima del proxy, Principal al bus), `tests/idp.test.ts` (10 test mock, zero rete) |
-| B7 | ✅ | `shared/api/types.ts` (`AuthIdentityDto`) + `contracts.ts` (`auth.me`, schema `AuthIdentity`), `endpoints.ts`, `agentServer.ts` (handler bus + route pubblica), `auth/rbacMiddleware.ts` (ruolo Reader), `frontend/api/client.ts` (`getBearerToken`), `frontend/core/auth.ts`, `frontend/store/appStore.ts` (slice `auth`), `frontend/core/apiBus.ts`, `storage/ApiStorage.ts`, `components/ui/Header.ts` (chip/gating), `components/review/ReviewStudio.ts` e `components/ke/KEWorkbenchModal.ts` (attore strict), `frontend/index.ts` (refresh), `tests/authUi.test.ts` (13 test), `tests/openapi.test.ts` (4 assert) |
+| B7 | ✅ | `shared/api/types.ts` (`AuthIdentityDto`) + `contracts.ts` (`auth.me`, schema `AuthIdentity`), `endpoints.ts`, `agentServer.ts` (handler bus + route pubblica), `auth/rbacMiddleware.ts` (ruolo Reader), `frontend/api/client.ts` (`getBearerToken`), `frontend/core/auth.ts`, `frontend/store/appStore.ts` (slice `auth`), `frontend/core/apiBus.ts`, `storage/ApiStorage.ts`, `components/ui/Header.ts` (chip/gating), `components/review/ReviewStudio.ts` e `components/ke/KEWorkbenchModal.ts` (attore strict), `frontend/index.ts` (refresh), `tests/authUi.test.ts` (11 test), `tests/openapi.test.ts` (4 assert) |
 | C0 | ✅ | `[neo4j]` in 3 config, `config_schema.py`, `requirements.txt`, `tests/python/test_config_schema.py` (6 nuovi test) |
 | C1 | ✅ | `src/backend/wikiforge/semantics/neo4j_client.py` (`Neo4jConfig.from_config`/`from_env`, `Neo4jClient.connect`/`verify_connectivity`/`session`/`close`, lazy import, DI), `graph_watcher.py` e `graph_rag_pipeline.py` (parametri opzionali additivi), `tests/python/test_neo4j_client.py` (9 test) |
 | C2 | ✅ | `watcher/graph_watcher.py` (MERGE parametrizzato, hash/revision, delete con slug annidato, `on_moved` + debounce, `on_event` strutturato, `--project`), `tests/python/test_graph_watcher_neo4j.py` (9 test) |
@@ -415,9 +415,15 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 
 **Risultato (2026-11-23).** Chiuso. `[autonomy]` è nella tabella viva e in 3 config;
 `AutonomyEngine` applica solo candidati `read-only`/`report` in `bounded`, con
-allowlist e doppia rivalidazione. Test tabellare 3 modi × 6 classi di sicurezza
-(le 5 canonicali più `unknown` fail-closed), rollback pre/post e audit JSONL
-verdi. `auto_apply` resta `false`; la modalità predefinita resta `off`.
+allowlist e doppia rivalidazione. La defaults è `okf_lint + shacl + cq_validator`
+e `shacl` invoca davvero `shacl_validator.py` (CLI con exit 0/1); un errore di
+rivalidazione pre/post fa rollback e lascia un finding strutturato in
+`.wiki-forge/autonomy-findings.jsonl`. `executeScheduledJob()` collega l'engine
+solo ai job riusciti, classifica `orphan_repair` come `read-only` e notifica gli
+errori come `job_output`. Verifica rafforzata: 22 test Node in
+`tests/autonomy.test.ts` (3 modi × 6 classi, allowlist script/path/finding-kind,
+rollback pre/post) + 1 test Python della CLI SHACL. `auto_apply` resta `false`;
+la modalità predefinita resta `off`.
 
 ### A5 — Auto-repair di orfani e incoerenze semantiche
 
@@ -438,7 +444,9 @@ deterministici, slugify dei link annidati (es. `deep/nested/target` →
 `deep-nested-target.md`) e finding `fix-okf-frontmatter` per incoerenze. Il ponte
 TS genera stub OKF senza timestamp, normalizza `type`/`status`, è idempotente e
 usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
-4 test Python + 2 test Node dedicati verdi.
+La fixture letterale con 3 orfani produce 3 riparazioni, il secondo giro 0
+finding e `okf_lint.py --json` resta `status: success`. Verifica rafforzata: 5
+test Python + 3 test Node dedicati verdi.
 
 ---
 
@@ -608,7 +616,7 @@ usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
 
 - **Obiettivo**: autenticazione enterprise reale dietro lo stesso flag.
 - **Modifiche**: provider pluggable: OIDC (discovery + JWKS + issuer/audience/
-  expiry), SAML 2.0 (metadata + ACS + validazione assertion), OAuth2
+  expiry), SAML 2.0 (metadata + verifier di assertion iniettato), OAuth2
   authorization-code per il browser; mapping claim → `Principal`/ruoli.
 - **Accettazione**: test con JWKS e IdP mockati; audience/expiry invalidi → 401
   con envelope attuale; i ruoli dei claim alimentano la matrice B3; nessuna
@@ -648,15 +656,17 @@ usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
 - **Risultato (2026-11-22)**: ✅ completato. Nuova route additiva
   `GET /api/auth/me` dichiarata in `contracts.ts` con DTO `AuthIdentityDto` e
   schema `AuthIdentity`: senza credenziali è pubblica e riporta
-  `authenticated=false`, con Bearer invalido restituisce l'envelope 401 esatto
-  di B0 prima di qualunque dispatch. Il client tipizzato separa
+   `authenticated=false`, con Bearer invalido restituisce l'envelope 401 esatto
+   di B0 prima di qualunque dispatch. Il middleware B3 lascia passare la
+   scoperta anonima anche con ACL restrittivi (test con `default = []`), senza
+   allargare gli altri comandi. Il client tipizzato separa
   `getBearerToken` (`Authorization: Bearer`, dallo slice additivo `auth`
   dell'app-store) dal legacy `getToken` (`X-WikiForge-Token`): senza token non
   viene inviato alcun header `Authorization`. Nessun `fetch(` nei componenti.
   Chip identità, form di sign-in e azioni gated per ruolo compaiono solo per
   identità IdP verificate; in legacy mode l'header resta byte-identico. In
   strict mode Review Studio e KE Workbench usano l'attore server-derived al
-  posto di `wiki-forge:reviewer` / `'utente workbench'`. 13 test in
+  posto di `wiki-forge:reviewer` / `'utente workbench'`. 11 test in
   `tests/authUi.test.ts` + 4 assert in `tests/openapi.test.ts`; suite Node
   429 test (428 pass + 1 skip pre-esistente), Python 87 pass. Grado B5 5,
   RBAC 5/5: pilastro completato.
@@ -749,9 +759,12 @@ usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
   "revision":…,"action":…}` senza toccare la firma legacy
   `on_change_callback(action, path)` che resta maiuscola. Senza driver il
   watcher rimane un no-op per Neo4j ma notifica comunque i callback; con un
-  client C1 il `connect()` è lazy e un client disabilitato resta innocuo. La CLI
-  accetta `--project <id>` e risolve `projects/<id>/wiki`; `LiveGraphWatcher`
-  inoltra i nuovi parametri in modo additivo. Verifica: 9 test in
+   client C1 il `connect()` è lazy e un client disabilitato resta innocuo. La CLI
+   accetta `--project <id>` e risolve `projects/<id>/wiki`; `LiveGraphWatcher`
+   inoltra i nuovi parametri in modo additivo. Il checkpoint hash/revisione è
+   persistito in `.wiki-forge/graph-sync-state/<wiki>.json`, fuori dal vault:
+   una nuova invocazione di `graph.sync.neo4j` non ri-emette note invariate e
+   riparte dal revision number corretto dopo una modifica umana. Verifica: 9 test in
   `tests/python/test_graph_watcher_neo4j.py` (replica invariata di
   `tests/test_graph_watcher.py:15-35`, un MERGE per nota, no-op su hash
   invariato, revision, delete annidato, move, callback strutturati, forwarding
@@ -829,9 +842,11 @@ usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
   errori di spawn, `graph_watcher.py` importa `watchdog` in modo lazy ed espone
   `sync_note()` senza cambiare la firma legacy. Ruoli RBAC espliciti: Reader per
   `graph.cypher`/`graph.status`, Contributor per `graph.sync.neo4j`. Il gate B4
-  protegge le nuove route con l'envelope 401 esatto; i tre proxy FastAPI
-  `/api/v1/graph/sync|validate|rag` restano byte-compatibili e raggiungibili con
-  token valido. OpenAPI passa a 93 endpoint / 88 comandi su bus (`GraphModule` 5).
+   protegge le nuove route con l'envelope 401 esatto; i tre proxy FastAPI
+   `/api/v1/graph/sync|validate|rag` restano byte-compatibili e raggiungibili con
+   token valido. Il contratto TS di `graph.reconcile` espone esplicitamente
+   `skippedEvents`, allineato al payload runtime. OpenAPI passa a 93 endpoint /
+   88 comandi su bus (`GraphModule` 5).
   Verifica: 5 test Node in `tests/graphRoutes.test.ts`, 11 test Python in
   `tests/python/test_neo4j_api_tool.py` con fake driver e zero rete, 446 test
   Node totali (445 pass + 1 skip pre-esistente), 139 test Python, test legacy
@@ -930,11 +945,12 @@ Contributor per la riconciliazione. 5 test Node nuovi
 **Risultato (2026-11-23).** Chiuso, con i vincoli di sic invariati. Documentazione
 allineata su `docs/GRAPH_RAG.md`, `docs/TECHNICAL_ARCHITECTURE.md`,
 `docs/OPENAPI.md` (95 endpoint / 90 comandi su bus), `docs/ROADMAP.md`, `ROADMAP.md`,
-piano vivo e proiezione wiki. Gate completo verde: 462 test Node (462 pass), 148
-test Python, 6 test legacy, typecheck, build, registry/docs sync, OKF lint e
-`git diff --check`. La deep-research ausiliaria ora accetta solo risposte LLM con
-le intestazioni canoniche e ricade al template deterministico, eliminando il
-flake pre-esistente; A4/A5 sono stati chiusi dopo il track C e `auto_apply=true` non è mai stato attivato.
+piano vivo e proiezione wiki. Dopo l'audit post-23/23 il gate completo resta
+verde: 488 test Node (488 pass), 154 test Python, 6 test legacy, typecheck,
+build, registry/docs sync, OKF lint e `git diff --check`. La deep-research
+ausiliaria ora accetta solo risposte LLM con le intestazioni canoniche e ricade
+al template deterministico, eliminando il flake pre-esistente; A4/A5 sono stati
+chiusi dopo il track C e `auto_apply=true` non è mai stato attivato.
 
 ---
 
@@ -981,13 +997,14 @@ chunk >500 kB. Nessuno skip nella suite Node del gate finale.
 | 2026-11-22 | B4 | B1 · RBAC complessivo | 2 · ~3.0 | 4.5 · ~3.0 | Confronto token constant-time e controllo prima del proxy graph: 401 B0 su graph senza/errato token, proxy raggiungibile con token valido, docs/OPTIONS pubblici, drift `WIKIFORGE_API_TOKEN` corretto; 13 nuovi test Node, B0/B3 invariati. |
 | 2026-11-22 | B5 | B4 · RBAC complessivo | 3 · ~3.0 | 4.5 · ~3.5 | Attore canonico condiviso TS/Python; strict mode vincola verify, F6 e changeset al Principal, flag `--allow-process-actor` F6-only, guard `stable-requires-human-actor`; legacy invariato. 10 test Node + 4 Python, suite 408 pass + 1 skip. |
 | 2026-11-22 | B6 | B1 / B2 · RBAC complessivo | 4.5 / 3.5 · ~3.5 | 5 / 5 · ~4.5 | Adapter OIDC/JWKS, SAML e OAuth2 dietro `enable_rbac` + `auth.provider`; bearer dedicato, 401 B0 invariato, ruoli claim nella matrice B3 senza inheritance ACL; 10 test mock zero-rete, suite 418 pass + 1 skip. |
-| 2026-11-22 | B7 | B5 · RBAC complessivo | 0 · ~4.5 | 5 · 5 | Identità UI via solo transport tipizzato: `GET /api/auth/me` additiva e pubblica in modalità anonima, bearer dedicato dall'app-store, chip/gating solo per IdP verificato, attore strict negli strumenti di review; 13 test UI/auth + 4 assert OpenAPI, suite 428 pass + 1 skip. Pilastro RBAC completo. |
+| 2026-11-22 | B7 | B5 · RBAC complessivo | 0 · ~4.5 | 5 · 5 | Identità UI via solo transport tipizzato: `GET /api/auth/me` additiva e pubblica in modalità anonima, bearer dedicato dall'app-store, chip/gating solo per IdP verificato, attore strict negli strumenti di review; 11 test UI/auth + 4 assert OpenAPI, suite 428 pass + 1 skip. Pilastro RBAC completo. |
 | 2026-11-22 | C5 | C3 / C5 · Neo4j complessivo | 2.5 / 0 · ~1.9 | 3 / 3 · ~2.5 | Reverse sync DB → vault come proposta: query read-only `wf:revision > checkpoint`, frontmatter OKF e conflitto su `wf:baseHash`; C2 aggiunge `wf:path`/`wf:baseHash`, CLI `reconcile` emette solo JSON e il ponte TS stagea con `process:neo4j-reconciler`, dedupe e checkpoint. Nessun file vault prima di `changesets.apply`, `confirm_destructive` come revisione obbligatoria; 5 test Node + 7 Python (451 Node: 450 pass + 1 skip, 146 Python), legacy invariati. |
 | 2026-11-23 | C6 | C2 / C5 / C6 · Neo4j complessivo | 3.5 / 3 / 0 · ~2.5 | 4.5 / 4.5 / 4.5 · ~3.7 | Metadata `wf:origin/baseHash/localHash/dbHash/revision` e hash del body; echo suppression nel watcher e nel reconciler, ledger `.wiki-forge/graph-reconciliation.json` con dedupe di eventi/revisioni, `graph.reconcile` stage-only e sempre scoped a `X-Project-Id`. 6 test Node + 2 Python nuovi, nessuna scrittura vault prima di `changesets.apply`, conflitti e human approval invariati. |
 | 2026-11-23 | C7 | C7 · Neo4j complessivo | 0 · ~3.7 | 5 · ~4.4 | `GraphEventHub` SSE con snapshot/keepalive e frame filtrati per progetto, route additiva `graph.events` e publish su sync/reconcile/apply; eventBus `graph:changed`, adapter puro e subscription frontend via `apiBus.stream()`, resubscribe al cambio progetto e zero `fetch` diretti. 5 test Node nuovi, ruoli Reader/Contributor e OpenAPI 95 endpoint / 90 comandi. |
 | 2026-11-23 | C8 | Neo4j complessivo | ~4.4 | ~5 | Documentazione e proiezione wiki allineate, affermazioni su Cypher live/RDF istantaneo corrette, gate completo verde (462 Node, 148 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint, `git diff --check`); deep-research reso deterministico nelle intestazioni richieste. A4/A5 ancora aperti a questo checkpoint. |
-| 2026-11-23 | A4 | A1 / A4 / L4 complessivo | 4 / 3 / ~3.6 | 4.5 / 4.5 / ~4.1 | `[autonomy]` in schema e 3 config, default `off`, mai `auto_apply=true`. `AutonomyEngine` con allowlist di script/percorsi/finding, classi `read-only`/`report` auto-applicate solo in `bounded`, rivalidazione pre/post apply, snapshot/rollback e audit JSONL `process:wiki-forge-autonomy`. 20 test Node: 3 modi × 6 classi di sicurezza, rollback pre e post, audit; nessun endpoint o job F6 cambiato. |
-| 2026-11-23 | A5 | A2 / A5 / L4 complessivo | 3.5 / 4.5 / ~4.1 | 5 / 5 / ~4.5 | Planner read-only `orphan_repair.py` con ID deterministici, link annidati via `slugify()` e finding di frontmatter; ponte TS con stub OKF privi di timestamp, normalizzazione `type`/`status`, staging idempotente e `requireOriginal` per conflitti a 0 scritture. 4 test Python + 2 test Node; gate finale 484 Node, 152 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint e `git diff --check` verdi. Piano completo 23/23. |
+| 2026-11-23 | A4 | A1 / A4 / L4 complessivo | 4 / 3 / ~3.6 | 4.5 / 4.5 / ~4.1 | `[autonomy]` in schema e 3 config, default `off`, mai `auto_apply=true`. `AutonomyEngine` con allowlist di script/percorsi/finding, classi `read-only`/`report` auto-applicate solo in `bounded`, rivalidazione pre/post apply, snapshot/rollback e audit JSONL `process:wiki-forge-autonomy`. 22 test Node: 3 modi × 6 classi di sicurezza, allowlist, rollback pre/post e audit, più 1 test Python della CLI SHACL; nessun endpoint o job F6 cambiato. |
+| 2026-11-23 | A5 | A2 / A5 / L4 complessivo | 3.5 / 4.5 / ~4.1 | 5 / 5 / ~4.5 | Planner read-only `orphan_repair.py` con ID deterministici, link annidati via `slugify()` e finding di frontmatter; ponte TS con stub OKF privi di timestamp, normalizzazione `type`/`status`, staging idempotente e `requireOriginal` per conflitti a 0 scritture. 5 test Python + 3 test Node; gate finale 488 Node, 154 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint e `git diff --check` verdi. Piano completo 23/23. |
+| 2026-11-23 | — | Audit post-23/23 · L4/RBAC/Neo4j | 23/23 | 23/23 | A4 usa la CLI SHACL reale, registra finding su fallimento di rivalidazione e collega l'engine ai job riusciti; A5 verifica 3 orfani/idempotenza e `okf_lint` verde; B7 mantiene `auth.me` anonimo pubblico anche con ACL restrittivi; C2 persiste il checkpoint sync tra invocazioni e C4 allinea `skippedEvents`. Commenti/contaggi docs corretti, `auto_apply=false` e 29 script invariati. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in

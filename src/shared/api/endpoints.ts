@@ -132,7 +132,10 @@ export type EndpointTypes = {
   'graph.events': { req: EmptyRequest; res: StreamResponse };
   'graph.reconcile': {
     req: ApiRequest<EmptyParams, EmptyQuery, { projectId?: string }>;
-    res: Ok<{ staged: number; skipped: Json[]; proposals: Json[]; conflicts: Json[] }>;
+    res: Ok<{
+      staged: number; skipped: Json[]; skippedEvents: Json[];
+      proposals: Json[]; conflicts: Json[];
+    }>;
   };
 
   // Catalogues
