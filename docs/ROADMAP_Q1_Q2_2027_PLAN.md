@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, track C completato (21/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅, C5 ✅, C6 ✅, C7 ✅, C8 ✅). A4 resta bloccato in attesa di conferma esplicita dell'utente; A5 dipende da A4.**
+> **Stato: studio completato, piano approvato e implementato (23/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, A4 ✅, A5 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅, C5 ✅, C6 ✅, C7 ✅, C8 ✅). `auto_apply` resta `false`; A4 usa solo la modalità `bounded` governata da allowlist e rivalidazione.**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -58,8 +58,8 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | A1 | ✅ | `src/backend/wikiforge/core/findings.py` (`Finding`, `make_finding`, `findings_envelope`, `print_findings`, schema `wikiforge.finding/v1`), adattatori in 4 script (`--findings`, lazy `load_findings_api()` in `okf_common.py`), docstring `--write` rimossa da `odp_suggester.py`, `tests/python/test_findings.py` (4 test) |
 | A2 | ✅ | `src/backend/server/scheduler/eventQueue.ts` (coda JSONL persistente), `eventTriggers.ts` (restore, dedupe e consumed su disk), `agentServer.ts` (wiring + emitter `note.modified`/`note.deleted`), `tests/eventTriggers.test.ts` (3 nuovi test), `tests/agentScheduleF5F6.test.ts` (2 nuovi test: restart e write-hook) |
 | A3 | ✅ | `src/backend/server/findingChangeset.ts` (ponte Finding → changeset + validazione envelope), `changesetStore.ts` (campi additivi `finding`/`requireOriginal`/`snapshotId`, hook snapshot, `rollback()`), `agentServer.ts` (snapshot hook nel factory), `frontend/core/types/review.ts` (tab `proposte`), `storage/ApiStorage.ts` (`listReviewProposals`), `components/review/ReviewStudio.ts` (tab Proposte via `apiBus`), `tests/findingChangeset.test.ts` (6 test), `tests/reviewProposals.test.ts` (1 test) |
-| A4 | ⬜ — **richiede approvazione utente** | — |
-| A5 | ⬜ | — |
+| A4 | ✅ | `server/autonomy.ts` (modalità `off`/`propose`/`bounded`, allowlist script/percorsi/finding, rivalidazione pre/post apply, rollback e audit `process:wiki-forge-autonomy`), `core/config_schema.py` + 3 config (`[autonomy]`), `tests/autonomy.test.ts` (20 test: 3 modi × 6 classi di sicurezza + rollback pre/post) |
+| A5 | ✅ | `semantics/orphan_repair.py` (planner read-only deterministico con `slugify()`, link annidati e frontmatter), `server/orphanRepair.ts` (ponte changeset con stub OKF, normalizzazione e conflitti), `tests/python/test_orphan_repair.py` (4 test), `tests/orphanRepair.test.ts` (2 test) |
 | B0 | ✅ | `tests/authCharacterization.test.ts` (8 test di baseline, nessun cambio funzionale) |
 | B1 | ✅ | `Principal` in `bus/messageBus.ts`, `auth/principal.ts`, `agentServer.ts`, `tests/principal.test.ts` (6 test) |
 | B2 | ✅ | `config_schema.py` (enterprise.auth/roles/projectAcls), 3 config, `auth/rbacConfig.ts`, `tests/rbacConfig.test.ts` (6 test), `test_config_schema.py` (4 nuovi) |
@@ -92,16 +92,16 @@ A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
-dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; dopo C5: C3 3, C5 3, Neo4j ~2.5; dopo C6: C2 4.5, C5 4.5, C6 4.5, Neo4j ~3.7; dopo C7: C7 5, Neo4j ~4.4; dopo C8: Neo4j ~5 (documentazione e collaudo allineati); gli altri valori coincidono ancora con “Oggi”).
+dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; dopo C5: C3 3, C5 3, Neo4j ~2.5; dopo C6: C2 4.5, C5 4.5, C6 4.5, Neo4j ~3.7; dopo C7: C7 5, Neo4j ~4.4; dopo C8: Neo4j ~5 (documentazione e collaudo allineati); dopo A4: A4 4.5, L4 ~4.1; dopo A5: A5 5, L4 ~4.5; gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
 | A1 | Scheduler, trigger e stato persistente (F0–F6, S0–S6) | 3 | 4 | 5 |
 | A2 | Rilevamento gap / entità orfane / incoerenze | 2 | 4 | 5 |
 | A3 | ODP proattivi e generazione note | 2.5 | 3.5 | 5 |
-| A4 | Validazione, auto-repair e rollback | 2 | 3 | 5 |
-| A5 | Guardrail, approvazione e audit | 4 | 4.5 | 5 |
-| — | **Complessivo L4** | **~2.5** | **~3.6** | **4.5–5** |
+| A4 | Validazione, auto-repair e rollback | 2 | 4.5 | 5 |
+| A5 | Guardrail, approvazione e audit | 4 | 5 | 5 |
+| — | **Complessivo L4** | **~2.5** | **~4.5** | **4.5–5** |
 | B1 | Autenticazione / identità del chiamante | 0.5 | 5 | 5 |
 | B2 | Ruoli e matrice permessi (Reader/Contributor/KE/Admin) | 0 | 5 | 5 |
 | B3 | Isolamento progetto/cartella e membership | 2.5 | 4 | 5 |
@@ -209,10 +209,10 @@ script con provenance reale (`promote_doc_answer.py`, `program_change_common.py`
 
 ---
 
-## 5. Decisioni proposte — da confermare prima di A4
+## 5. Decisioni approvate e attuate
 
-Queste decisioni **non sono ancora state approvate** e non vanno implementate
-senza un'esplicita conferma:
+Queste decisioni sono state confermate dall'utente e attuate in A4/A5, senza
+mai attivare `auto_apply=true` sui job F6:
 
 1. **Non attivare mai `auto_apply = true`** per i job esistenti. Al suo posto,
    introdurre una modalità separata `off | propose | bounded` con:
@@ -233,7 +233,7 @@ senza un'esplicita conferma:
 ## 6. Sequenza di esecuzione e dipendenze
 
 ```text
-A0 ─┐                                   ┌─ A4 (bounded; richiede conferma + A0 + B5 + C6)
+A0 ─┐                                   ┌─ A4 (bounded; conferma ricevuta + A0 + B5 + C6)
     ├─ A1 ─ A2 ─ A3 ────────────────────┤
 B0 ─ B1 ─ B2 ─ B3 ─ B4 ─ B5 ────────────┴─ A5
                         │
@@ -251,7 +251,7 @@ Ordine consigliato (ogni riga = un commit/push):
 4. **Autonomia advisory**: `A1`, `A2`, `A3`.
 5. **Neo4j reale**: `C1`, `C2`, `C3`, `C4`.
 6. **Bidirezionalità**: `C5`, `C6`.
-7. **Autonomia limitata**: `A4` (solo dopo conferma), `A5`.
+7. **Autonomia limitata**: `A4`, `A5` (conferma ricevuta, default `off`).
 8. **Enterprise e UI**: `B6`, `B7`, `C7`, `C8`.
 
 Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
@@ -413,6 +413,12 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
   rollback e di audit; `git diff --check`.
 - **Grado atteso**: A4 3 → 4.5, A1 4 → 4.5, complessivo L4 ~4.4.
 
+**Risultato (2026-11-23).** Chiuso. `[autonomy]` è nella tabella viva e in 3 config;
+`AutonomyEngine` applica solo candidati `read-only`/`report` in `bounded`, con
+allowlist e doppia rivalidazione. Test tabellare 3 modi × 6 classi di sicurezza
+(le 5 canonicali più `unknown` fail-closed), rollback pre/post e audit JSONL
+verdi. `auto_apply` resta `false`; la modalità predefinita resta `off`.
+
 ### A5 — Auto-repair di orfani e incoerenze semantiche
 
 - **Obiettivo**: risolvere entità orfane e incoerenze frontmatter entro
@@ -426,6 +432,13 @@ Dipendenze dure: `A4 ⟵ A0, A3, B5, C6`; `A5 ⟵ A4`; `C4 ⟵ B4`;
 - **Verifica**: `tests/python/test_orphan_repair.py` + test TS del ponte
   changeset; validazione completa.
 - **Grado atteso**: A2 3.5 → 5, A4 4.5 → 5, complessivo L4 4.5–5.
+
+**Risultato (2026-11-23).** Chiuso. Planner Python read-only con ID
+deterministici, slugify dei link annidati (es. `deep/nested/target` →
+`deep-nested-target.md`) e finding `fix-okf-frontmatter` per incoerenze. Il ponte
+TS genera stub OKF senza timestamp, normalizza `type`/`status`, è idempotente e
+usa `requireOriginal`: su conflitto lascia il changeset pending con 0 scritture.
+4 test Python + 2 test Node dedicati verdi.
 
 ---
 
@@ -921,7 +934,7 @@ piano vivo e proiezione wiki. Gate completo verde: 462 test Node (462 pass), 148
 test Python, 6 test legacy, typecheck, build, registry/docs sync, OKF lint e
 `git diff --check`. La deep-research ausiliaria ora accetta solo risposte LLM con
 le intestazioni canoniche e ricade al template deterministico, eliminando il
-flake pre-esistente; A4/A5 restano bloccati e `auto_apply=true` non viene attivato.
+flake pre-esistente; A4/A5 sono stati chiusi dopo il track C e `auto_apply=true` non è mai stato attivato.
 
 ---
 
@@ -972,7 +985,9 @@ chunk >500 kB. Nessuno skip nella suite Node del gate finale.
 | 2026-11-22 | C5 | C3 / C5 · Neo4j complessivo | 2.5 / 0 · ~1.9 | 3 / 3 · ~2.5 | Reverse sync DB → vault come proposta: query read-only `wf:revision > checkpoint`, frontmatter OKF e conflitto su `wf:baseHash`; C2 aggiunge `wf:path`/`wf:baseHash`, CLI `reconcile` emette solo JSON e il ponte TS stagea con `process:neo4j-reconciler`, dedupe e checkpoint. Nessun file vault prima di `changesets.apply`, `confirm_destructive` come revisione obbligatoria; 5 test Node + 7 Python (451 Node: 450 pass + 1 skip, 146 Python), legacy invariati. |
 | 2026-11-23 | C6 | C2 / C5 / C6 · Neo4j complessivo | 3.5 / 3 / 0 · ~2.5 | 4.5 / 4.5 / 4.5 · ~3.7 | Metadata `wf:origin/baseHash/localHash/dbHash/revision` e hash del body; echo suppression nel watcher e nel reconciler, ledger `.wiki-forge/graph-reconciliation.json` con dedupe di eventi/revisioni, `graph.reconcile` stage-only e sempre scoped a `X-Project-Id`. 6 test Node + 2 Python nuovi, nessuna scrittura vault prima di `changesets.apply`, conflitti e human approval invariati. |
 | 2026-11-23 | C7 | C7 · Neo4j complessivo | 0 · ~3.7 | 5 · ~4.4 | `GraphEventHub` SSE con snapshot/keepalive e frame filtrati per progetto, route additiva `graph.events` e publish su sync/reconcile/apply; eventBus `graph:changed`, adapter puro e subscription frontend via `apiBus.stream()`, resubscribe al cambio progetto e zero `fetch` diretti. 5 test Node nuovi, ruoli Reader/Contributor e OpenAPI 95 endpoint / 90 comandi. |
-| 2026-11-23 | C8 | Neo4j complessivo | ~4.4 | ~5 | Documentazione e proiezione wiki allineate, affermazioni su Cypher live/RDF istantaneo corrette, gate completo verde (462 Node, 148 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint, `git diff --check`); deep-research reso deterministico nelle intestazioni richieste. A4/A5 restano bloccati. |
+| 2026-11-23 | C8 | Neo4j complessivo | ~4.4 | ~5 | Documentazione e proiezione wiki allineate, affermazioni su Cypher live/RDF istantaneo corrette, gate completo verde (462 Node, 148 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint, `git diff --check`); deep-research reso deterministico nelle intestazioni richieste. A4/A5 ancora aperti a questo checkpoint. |
+| 2026-11-23 | A4 | A1 / A4 / L4 complessivo | 4 / 3 / ~3.6 | 4.5 / 4.5 / ~4.1 | `[autonomy]` in schema e 3 config, default `off`, mai `auto_apply=true`. `AutonomyEngine` con allowlist di script/percorsi/finding, classi `read-only`/`report` auto-applicate solo in `bounded`, rivalidazione pre/post apply, snapshot/rollback e audit JSONL `process:wiki-forge-autonomy`. 20 test Node: 3 modi × 6 classi di sicurezza, rollback pre e post, audit; nessun endpoint o job F6 cambiato. |
+| 2026-11-23 | A5 | A2 / A5 / L4 complessivo | 3.5 / 4.5 / ~4.1 | 5 / 5 / ~4.5 | Planner read-only `orphan_repair.py` con ID deterministici, link annidati via `slugify()` e finding di frontmatter; ponte TS con stub OKF privi di timestamp, normalizzazione `type`/`status`, staging idempotente e `requireOriginal` per conflitti a 0 scritture. 4 test Python + 2 test Node; gate finale 484 Node, 152 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint e `git diff --check` verdi. Piano completo 23/23. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
@@ -991,9 +1006,9 @@ sezione con la stessa disciplina del registro §11.
 - **Step chiusi: 21/23** — A0, A1, A2, A3, B0, B1, B2, B3, B4, B5, B6, B7,
   C0, C1, C2, C3, C4, C5, C6, C7, C8. Tabella viva in §2, gradi in §3,
   dettagli in §7–§9.
-- **Ultimo commit noto**: `8a00214 docs(roadmap): add end-of-session resume
-  checkpoint (18/23, next C6)`. Le modifiche C6–C8 di questa sessione sono
-  presenti nell'albero di lavoro e non sono ancora state committate.
+- **Ultimo commit del checkpoint**: `e324233 feat(graph): complete C6-C8
+  reconciliation and event sync`. Le modifiche C6–C8 sono state committate e
+  pushat su `origin/main`; il proseguimento A4/A5 è registrato in §13.
 - **Gradi correnti**: L4 ~3.6/5, RBAC 5/5 (pilastro completo), Neo4j ~5/5
   (track C completo).
 - **Sequenza eseguita in questa sessione**: C6 → C7 → C8, senza cambio di
@@ -1002,11 +1017,10 @@ sezione con la stessa disciplina del registro §11.
 
 ### 12.2 Prossimo step e dipendenze
 
-1. **A4 — Validazione, auto-repair e rollback** resta bloccato: la dipendenza
-   tecnica `A4 ⟵ C6` è ora soddisfatta, ma serve ancora conferma esplicita
-   dell'utente. La modalità `bounded` è solo una proposta (§5) e
-   `auto_apply=true` non va mai attivato.
-2. **A5 — Guardrail, approvazione e audit** resta bloccato da A4.
+1. A questo checkpoint A4 era ancora bloccato: la dipendenza tecnica
+   `A4 ⟵ C6` era soddisfatta, ma la conferma esplicita arrivata dopo ha
+   sbloccato l'implementazione registrata in §13.
+2. A5 dipendeva da A4 ed è stato chiuso subito dopo.
 3. Nessuno step del track C resta aperto; nuove modifiche vanno registrate nel
    registro §11 e nella proiezione wiki nello stesso commit.
 
@@ -1056,4 +1070,42 @@ Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM e chunk >500 kB.
   componenti non aprono `fetch`. `graph.reconcile` usa lo stesso progetto della
   richiesta anche se il body contiene un `projectId` diverso.
 - C8: 95 endpoint / 90 comandi su bus, `GraphModule` 7 comandi, wiki proiettata
-  da `docs/`; A4/A5 restano fuori dal track C e richiedono nuova conferma.
+  da `docs/`; A4/A5 sono fuori dal track C e sono stati chiusi in §13 dopo conferma.
+
+---
+
+## 13. Checkpoint finale — 2026-11-23 (piano completo)
+
+### 13.1 Posizione esatta
+
+- **Step chiusi: 23/23** — A0–A5, B0–B7, C0–C8. Tabella viva in §2, gradi in
+  §3, dettagli in §7–§9, registro in §11.
+- **Gradi correnti**: L4 ~4.5/5, RBAC 5/5, Neo4j ~5/5.
+- **Ultima chiusura**: A4 e A5, dopo la conferma esplicita dell'utente e con
+  `auto_apply` sempre `false`. Nessuna route, envelope o firma pubblica cambiata;
+  solo nuovi moduli interni, campi TOML additivi e test dedicati.
+
+### 13.2 Cosa resta invariato
+
+- `jobStore.ts` forza `auto_apply: false`; `blocked` e mutanti restano
+  disabilitati e passano dalla coda F6 con approvazione umana.
+- `off` è il default di `[autonomy]`; in assenza di configurazione il sistema
+  si astiene (fail-closed).
+- Endpoint, envelope `{ success, ... }`, metodi pubblici di `AgentServer`,
+  `ApiStorage` e moduli di dominio restano invariati.
+- UI senza `fetch` diretto: nessun nuovo transport frontend è stato necessario.
+
+### 13.3 Gate finale
+
+| Comando | Esito |
+| :--- | :--- |
+| `npm run typecheck` | OK |
+| `npm test` | 484 test Node: 484 pass, 0 fail, 0 skip |
+| `npm run build` | OK (warning non bloccanti: configLoader nativo, chunk >500 kB) |
+| `PYTHONPATH=.:scripts pytest tests/python/ -q` | 152 pass |
+| `pytest tests/test_graph_rag.py tests/test_graph_watcher.py -q` | 6 pass (legacy invariati) |
+| `gen_script_registry.py --check` | OK (29 script invariati) |
+| `check_docs_sync.py` · `docs_to_wiki.py --check` · `docs_wiki_drift.py --check` · `okf_lint.py wiki` | tutti OK |
+| `git diff --check` | OK |
+
+Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM e chunk >500 kB.

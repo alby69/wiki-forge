@@ -92,7 +92,7 @@
 | 82 | Automazione script — S4: UI di scheduling e gestione job | ✅ Done | Badge di sicurezza generato e pulsante **🕒 Schedula** nel Control Panel (ID automatico, argomenti del form, avvisi F6 via `apiBus`), badge "job script" e pulsante **🗑 Rimuovi** nella tab Agenti & Schedule solo per job script. Refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto e nessuna nuova route; test DOM/bus dedicati. |
 | 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
 | 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
-| 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done (track C) | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 21/23 step: L4 ~3.6/5 (A0–A3), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi), proiezione wiki e gate completo. A4/A5 restano bloccati: richiedono conferma esplicita e `auto_apply=true` resta vietato. |
+| 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 23/23 step: L4 ~4.5/5 (A0–A5), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi), proiezione wiki e gate completo. A4 introduce autonomia `bounded` con allowlist, doppia rivalidazione, rollback e audit `process:wiki-forge-autonomy`; A5 chiude l'auto-repair deterministico con conflitti a 0 scritture. `auto_apply=true` resta vietato. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -326,12 +326,12 @@ aggiornato.
   vault → Neo4j idempotente, query Cypher read-only, route dichiarative protette
   dal gate B4, reverse sync DB → vault come changeset, dedupe/echo suppression e
   propagazione SSE `graph:changed` al browser).
-  Il §12 del piano vivo è il checkpoint di ripresa tra sessioni
-  (21/23 step, gate verdi, track C completato, A4/A5 bloccati).
+  I §12–§13 del piano vivo sono i checkpoint di sessione
+  (23/23 step, gate verdi, track C e track A completati).
 - **Sicurezza prima dell'autonomia**: il gate `cq_gaps` di `health.py` è stato
   corretto in A0 (8 test dedicati), prima di qualunque claim L4; la modalità
-  `bounded` (A4) resta proposta e richiede approvazione esplicita, senza mai
-  attivare `auto_apply=true`.
+  `bounded` (A4) è governata da allowlist, doppia rivalidazione, rollback e
+  audit, senza mai attivare `auto_apply=true`.
 - **Contratti invariati**: nessun endpoint, envelope o metodo pubblico
   modificato; nuove route solo additive e generate da `contracts.ts`; nessun
   `fetch` diretto nell'UI.

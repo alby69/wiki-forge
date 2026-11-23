@@ -93,6 +93,13 @@ blocked = [ "the", "and", "of", "a", "to", "in", "on", "for", "is", "are" ]
 enabled = true
 fields = [ "version", "parent_commit", "generated" ]
 
+[autonomy]
+mode = "off"
+scripts = [ "orphan_repair", "graph_analytics", "okf_lint" ]
+paths = [ "wiki" ]
+findingKinds = [ "orphan_node", "inconsistency" ]
+revalidation = [ "okf_lint", "schema_lint", "cq_validator" ]
+
 [enterprise]
 enable_rbac = false
 cloud_backup_webdav = ""

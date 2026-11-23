@@ -82,6 +82,13 @@ CONFIG_SCHEMA: dict[str, Any] = {
     },
     "tags": {"allowed": (list, str), "blocked": (list, str)},
     "versioning": {"enabled": bool, "fields": (list, str)},
+    "autonomy": {
+        "mode": str,
+        "scripts": (list, str),
+        "paths": (list, str),
+        "findingKinds": (list, str),
+        "revalidation": (list, str),
+    },
     "enterprise": {
         "enable_rbac": bool,
         "cloud_backup_webdav": str,

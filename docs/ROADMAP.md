@@ -123,10 +123,13 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > `wf:origin/localHash/dbHash`, ledger di dedupe ed echo suppression e staging
 > sempre scoped a `X-Project-Id`; **C7** propaga `graph:changed` via SSE
 > `graph.events` consumata da `apiBus.stream()`, con frame filtrati per progetto;
-> **C8** allinea documentazione e gate. Track Neo4j ~5/5, 21/23 step chiusi.
-> A4 resta bloccato in attesa di conferma esplicita; A5 dipende da A4.
+> **C8** allinea documentazione e gate. **A4** introduce autonomia `bounded`
+> con allowlist, doppia rivalidazione, rollback e audit
+> `process:wiki-forge-autonomy` senza mai attivare `auto_apply`; **A5** chiude
+> l'auto-repair deterministico di orfani e frontmatter con conflitti a 0
+> scritture. Track Neo4j ~5/5, L4 ~4.5/5, **23/23 step chiusi**.
 >
-> **Stato piano**: il §12 di
-> [`ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md) contiene il
-> checkpoint finale del track C (step chiusi, gate, dipendenze e vincoli),
-> aggiornato insieme al registro §11.
+> **Stato piano**: i §12–§13 di
+> [`ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md) contengono il
+> checkpoint del track C e il checkpoint finale 23/23 (step chiusi, gate,
+> dipendenze e vincoli), aggiornati insieme al registro §11.
