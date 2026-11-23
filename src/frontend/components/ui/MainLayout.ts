@@ -45,7 +45,7 @@ export class MainLayout {
   public render(): void {
     this.container.innerHTML = `
       <div id="wiki-forge-app" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; background: transparent; font-family: var(--wf-font); overflow: hidden;">
-        <div id="header-root" style="position: relative; flex-shrink: 0;">
+        <div id="header-root" style="position: relative; z-index: 1300; flex-shrink: 0;">
           <div id="header-bar-root"></div>
         </div>
         <div style="flex: 1; display: flex; overflow: hidden; position: relative;">

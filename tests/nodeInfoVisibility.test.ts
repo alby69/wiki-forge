@@ -85,6 +85,7 @@ describe('Node Info panel visibility', () => {
     const dom = createDom();
     const layout = new MainLayout(dom.container);
 
+    assert.match(dom.html(), /id="header-root"[^>]*z-index:\s*1300/, 'header stacks above the main panes');
     assert.match(dom.html(), /id="context-root"[^>]*display: none/, 'context host is hidden in the initial markup');
     assert.match(dom.html(), /id="context-resizer"[^>]*display: none/, 'context resizer is hidden too');
 
