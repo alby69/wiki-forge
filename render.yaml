@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: wiki-forge
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    startCommand: bash bin/render-start.sh
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: "3001"
+      - key: VITE_API_BASE_URL
+        value: ""
+      - key: VITE_PROXY_TARGET
+        value: http://127.0.0.1:3001
+      - key: WIKIFORGE_USER_STORE_FILE
+        value: .wiki-forge/users.json
+      - key: WIKIFORGE_SESSION_TTL_MS
+        value: "28800000"
+      - key: WIKIFORGE_ADMIN_USERNAME
+        sync: false
+      - key: WIKIFORGE_ADMIN_PASSWORD
+        sync: false

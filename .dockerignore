@@ -11,3 +11,11 @@ __pycache__/
 output/
 raw/
 backup/
+node_modules/
+dist/
+.wiki-forge/
+.wikiforge/
+.env
+.env.*
+!/.env.example
+*.log
