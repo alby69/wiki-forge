@@ -16,17 +16,22 @@ C2 — the vault -> Neo4j direction is real and idempotent:
     the parser, so notes in subfolders resolve to the correct node id;
   * ``on_moved`` + a small debounce coalesce rename churn;
   * a structured ``on_event`` callback emits ``graph.changed`` events while
-    the legacy ``on_change_callback(type, path)`` keeps its exact signature.
+    the legacy ``on_change_callback(type, path)`` keeps its exact signature;
+  * C6 — origin/hash metadata and echo suppression: a note still matching the
+    ``wf.localHash`` written by the reconciler is never pushed back to Neo4j.
 """
 
 import argparse
 import hashlib
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
+
+import yaml
 
 # Ensure project root is in sys.path for direct script execution
 _file_path = Path(__file__).resolve()
@@ -70,6 +75,63 @@ from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
 from src.backend.wikiforge.semantics.markdown_to_cypher import ZettelToCypherConverter
 
 StructuredEvent = dict[str, Any]
+
+# C6 — origin-aware reconciliation. ``vault`` is the historical spelling of
+# ``watcher`` and stays unchanged for legacy consumers.
+RECONCILER_ORIGINS = frozenset({"neo4j", "reconciler"})
+KNOWN_ORIGINS = frozenset({"browser", "watcher", "vault", "neo4j", "reconciler"})
+_FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
+
+
+def _frontmatter(raw: str) -> dict[str, Any]:
+    match = _FRONTMATTER.match(raw)
+    if not match:
+        return {}
+    try:
+        parsed = yaml.safe_load(match.group(1)) or {}
+    except yaml.YAMLError:
+        return {}
+    return dict(parsed) if isinstance(parsed, dict) else {}
+
+
+def _body(raw: str) -> str:
+    match = _FRONTMATTER.match(raw)
+    return match.group(2) if match else raw
+
+
+def _body_hash(raw: str) -> str:
+    return hashlib.sha256(_body(raw).encode("utf-8")).hexdigest()
+
+
+def _wf_metadata(raw: str) -> dict[str, Any]:
+    wf = _frontmatter(raw).get("wf")
+    return dict(wf) if isinstance(wf, dict) else {}
+
+
+def note_origin(raw: str, *, echo: bool = False) -> str:
+    """C6 — resolve the origin written to Neo4j and carried by the event."""
+    declared = _wf_metadata(raw).get("origin")
+    if declared in RECONCILER_ORIGINS:
+        # A reconciled note that changed locally is a new human edit, not a DB echo.
+        return declared if echo else "browser"
+    return declared if declared in KNOWN_ORIGINS else "vault"
+
+
+def is_reconciler_echo(raw: str) -> bool:
+    """True when the note body is still exactly the bytes a revision wrote.
+
+    The reconciler puts ``wf.localHash`` (hash of the body) in the applied note.
+    As long as it matches, the watcher must not MERGE the note back into Neo4j:
+    that would bump ``wf:revision`` and create an endless DB → vault → DB loop.
+    """
+    wf = _wf_metadata(raw)
+    local_hash = wf.get("localHash")
+    return (
+        wf.get("origin") in RECONCILER_ORIGINS
+        and isinstance(local_hash, str)
+        and bool(local_hash)
+        and local_hash == _body_hash(raw)
+    )
 
 
 def resolve_project_wiki(project_id: str | None, repo_root: Path | None = None) -> Path:
@@ -148,14 +210,27 @@ class GraphSyncHandler(FileSystemEventHandler):
         self._last_seen[key] = now
         return previous is not None and (now - previous) < self.debounce_seconds
 
-    def _emit(self, action: str, path: Path, note_id: str, revision: int) -> None:
+    def _emit(
+        self,
+        action: str,
+        path: Path,
+        note_id: str,
+        revision: int,
+        origin: str = "vault",
+        local_hash: str = "",
+        db_hash: str = "",
+    ) -> None:
         payload: StructuredEvent = {
             "event": "graph.changed",
-            "origin": "vault",
+            "origin": origin,
             "path": self._relative_path(path),
             "id": note_id,
             "revision": revision,
             "action": action,
+            # C6 — stable dedupe key plus the hashes used for echo detection.
+            "eventId": f"{note_id}:{revision}:{origin}:{action}",
+            "localHash": local_hash,
+            "dbHash": db_hash,
         }
         if self.on_change_callback:
             # Legacy signature is deliberately untouched (uppercase action).
@@ -176,6 +251,15 @@ class GraphSyncHandler(FileSystemEventHandler):
         if self._hashes.get(note_id) == content_hash:
             return
 
+        # C6 — a DB revision written to the vault by the reconciler is already
+        # in the graph. Swallow the watchdog notification: no MERGE, no revision
+        # bump, no event. A later human edit changes the body hash and syncs.
+        echo = is_reconciler_echo(raw)
+        if echo:
+            self._hashes[note_id] = content_hash
+            return
+        origin = note_origin(raw)
+
         try:
             note_data = self.rdf_converter.parse_markdown_file(path, input_dir=self.watch_dir)
         except Exception as exc:
@@ -194,11 +278,13 @@ class GraphSyncHandler(FileSystemEventHandler):
         except OSError:
             modified = datetime.now(timezone.utc).isoformat()
 
+        body_hash = _body_hash(raw)
         statement = (
             "MERGE (n:PermanentNote {id: $id}) "
             "SET n.title = $title, n.content = $content, n.author = $author, "
             "n.`wf:source` = $source, n.`wf:origin` = $origin, "
             "n.`wf:contentHash` = $hash, n.`wf:baseHash` = $baseHash, "
+            "n.`wf:localHash` = $localHash, n.`wf:dbHash` = $dbHash, "
             "n.`wf:lastModified` = $lastModified, n.`wf:revision` = $revision, "
             "n.`wf:path` = $path"
         )
@@ -208,15 +294,17 @@ class GraphSyncHandler(FileSystemEventHandler):
             "content": note_data.get("body", raw),
             "author": note_data.get("author", "Anonymus"),
             "source": "wikiforge",
-            "origin": "vault",
+            "origin": origin,
             "hash": content_hash,
             "baseHash": base_hash,
+            "localHash": body_hash,
+            "dbHash": content_hash,
             "lastModified": modified,
             "revision": revision,
             "path": self._relative_path(path),
         }
         self._execute_cypher([(statement, params)])
-        self._emit(action, path, note_id, revision)
+        self._emit(action, path, note_id, revision, origin, body_hash, content_hash)
 
     def sync_note(self, path: Path | str, action: str = "SYNC") -> None:
         """C4 — public, idempotent single-note sync used by the API tool.

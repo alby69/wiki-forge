@@ -86,11 +86,12 @@ CDN. Existing endpoints and `AgentServer`'s public methods are unchanged. See
 
 ### 6.1 Backend MessageBus & Domain Modules (`src/backend/server/bus/`, `modules/`)
 `AgentServer.handleRequest()` matches the request against `ROUTES` and dispatches
-the resulting command to an in-process `MessageBus`. Fifteen modules own 82 of
-the 87 catalogue commands (catalogue, tools, reviews, ingestion, graph, projects,
+the resulting command to an in-process `MessageBus`. Fifteen modules own 89 of
+the 90 bus commands (catalogue, tools, reviews, ingestion, graph, projects,
 changesets, files, scheduler, execution, vault, review studio, research, study
-and chat); the remaining routes are the public docs endpoints and the three
-FastAPI graph proxies, which stay in the gateway before CORS/token validation.
+and chat); `auth.me` is registered in `AgentServer`. The remaining routes are
+the two public docs endpoints and the three FastAPI graph proxies, which stay
+in the gateway before CORS/token validation.
 Handlers return `json`, `binary` or `sse` results and never receive
 `http.IncomingMessage` or `ServerResponse`. The gateway is the only HTTP adapter,
 which keeps the facade and every existing endpoint intact while allowing the

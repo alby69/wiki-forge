@@ -79,6 +79,7 @@ import {
   type ProjectEntry,
 } from './projectService';
 import { ChangesetStore, type ChangesetStatus, type StageChangesetInput } from './changesetStore';
+import { GraphEventHub } from './graphEvents';
 import { handleDocsRequest } from './api/docsBrowser';
 import { json, readJsonBody, sendApiResult } from './api/http';
 import { createMessageBus, type MessageBus, type Principal } from './bus/messageBus';
@@ -772,6 +773,7 @@ export class AgentServer {
   private scheduleConfigErrors: string[] = [];
   private readonly scheduleClients = new Set<http.ServerResponse>();
   private scheduleHeartbeat?: NodeJS.Timeout;
+  private readonly graphEvents = new GraphEventHub();
   private readonly projects: ProjectService;
   private readonly rbacConfig: RbacConfig;
   private readonly strictProvenance: boolean;
@@ -842,8 +844,6 @@ export class AgentServer {
     };
     this.ingestion = createIngestionModule(pythonTool);
     this.ingestion.register(this.bus);
-    this.graph = createGraphModule(pythonTool);
-    this.graph.register(this.bus);
 
     const jsonRecord = (value: unknown): Record<string, unknown> => value as Record<string, unknown>;
     const services: DomainServices = {
@@ -938,7 +938,7 @@ export class AgentServer {
 
     const modules = [
       createProjectsModule(services),
-      createChangesetsModule(services),
+      createChangesetsModule(services, this.graphEvents),
       createFilesModule(services),
       createSchedulerModule(services),
       createExecutionModule(services),
@@ -949,6 +949,9 @@ export class AgentServer {
       createChatModule(services),
     ];
     for (const module of modules) module.register(this.bus);
+
+    this.graph = createGraphModule(pythonTool, this.graphEvents, services);
+    this.graph.register(this.bus);
   }
 
   /** Backend components communicate through this bus (additive public accessor). */
@@ -1401,6 +1404,7 @@ export class AgentServer {
     }
     for (const client of this.scheduleClients) client.end();
     this.scheduleClients.clear();
+    this.graphEvents.close();
     if (this.scheduler) {
       await this.scheduler.stop(options);
       this.scheduler = undefined;
@@ -4819,6 +4823,13 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
 - **Recommended Action**: Ingest additional primary sources into \`sources/\` and run \`/compile\`.
 `;
 
+    const requiredHeadings = [
+      '# Deep Research Report',
+      'Executive Summary',
+      'Thematic Deep-Dive',
+      'Source Attribution Matrix',
+      'Identified Knowledge Gaps',
+    ];
     let body = deterministicBody;
     let fallback = true;
     let error: string | undefined;
@@ -4831,17 +4842,14 @@ ${matrixRows || '| General Knowledge | `wiki/index.md` | `raw/` |'}
         userMessage: [
           `Domanda di ricerca: "${q || 'panoramica della knowledge base'}"`,
           'Scrivi un report di deep research in Markdown, in italiano, basandoti solo sulle note fornite.',
-          'Struttura richiesta:',
-          '1. # Deep Research Report: <domanda>',
-          '2. ## Executive Summary',
-          '3. ## Thematic Deep-Dive',
-          '4. ## Source Attribution Matrix (tabella: Claim | Wiki Source | Grounding)',
-          '5. ## Knowledge Gaps',
+          'Usa esattamente e letteralmente questi titoli in inglese, senza tradurli o modificarli:',
+          ...requiredHeadings,
+          'Il titolo Source Attribution Matrix deve essere seguito da una tabella Claim | Wiki Source | Grounding.',
           'Cita ogni affermazione con [[wikilink]] tratti esclusivamente dalle note fornite.',
         ].join('\n'),
         contextNotes: sources,
       });
-      if (markdown.trim()) {
+      if (markdown.trim() && requiredHeadings.every((heading) => markdown.includes(heading))) {
         body = markdown.trim();
         fallback = false;
       }

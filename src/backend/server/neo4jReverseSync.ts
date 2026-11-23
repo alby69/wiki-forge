@@ -26,7 +26,10 @@ export interface Neo4jProposal {
   origin: string;
   baseHash: string;
   contentHash: string;
+  /** C6 — aliases carried by the reconciler envelope; same value as contentHash. */
+  dbHash?: string;
   localHash?: string;
+  dbLocalHash?: string;
   content: string;
   requiresConfirmation?: boolean;
 }
@@ -130,7 +133,9 @@ export function parseReconcileResult(value: unknown): Neo4jReconcileResult {
       origin: typeof item.origin === 'string' ? item.origin : 'neo4j',
       baseHash: typeof item.baseHash === 'string' ? item.baseHash : '',
       contentHash: typeof item.contentHash === 'string' ? item.contentHash : '',
+      dbHash: typeof item.dbHash === 'string' ? item.dbHash : undefined,
       localHash: typeof item.localHash === 'string' ? item.localHash : undefined,
+      dbLocalHash: typeof item.dbLocalHash === 'string' ? item.dbLocalHash : undefined,
       content: typeof item.content === 'string' ? item.content : '',
       requiresConfirmation: item.requiresConfirmation === true,
     };

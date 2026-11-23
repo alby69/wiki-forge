@@ -4,6 +4,16 @@ import type { Language } from './i18n/strings';
 export interface AppEvents {
   'project:changed': { id: string; previousId?: string };
   'vault:changed': { projectId?: string };
+  /** C7 — a graph change observed by the server (DB sync, reconcile, apply). */
+  'graph:changed': {
+    origin: string;
+    projectId?: string;
+    id?: string;
+    path?: string;
+    revision?: number;
+    action?: string;
+    graph?: unknown;
+  };
   'note:selected': { id: string };
   'note:saved': { id: string };
   'language:changed': { language: Language };

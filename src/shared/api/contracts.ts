@@ -402,6 +402,30 @@ export const ROUTES = [
       }),
     },
   }),
+  defineRoute({
+    id: 'graph.events', method: 'GET', path: '/api/v1/graph/events', tags: ['Knowledge Graph'],
+    summary: 'Subscribe to graph change events (SSE)',
+    description: 'C7 — additive graph:changed frames; the UI updates through apiBus.stream().',
+    command: 'graph.events', stream: 'sse', projectScoped: true,
+    request: {}, response: { schema: sse('Initial snapshot frame, then GraphChanged frames and 15s keepalives') },
+  }),
+  defineRoute({
+    id: 'graph.reconcile', method: 'POST', path: '/api/v1/graph/reconcile', tags: ['Knowledge Graph'],
+    summary: 'Reconcile Neo4j revisions into reviewable changesets',
+    description: 'C6 — read-only DB query plus stage-only reconciliation; a human must still apply the changeset.',
+    command: 'graph.reconcile', projectScoped: true,
+    request: {
+      body: obj({
+        projectId: str('Accepted for compatibility; staging always uses X-Project-Id'),
+      }, [], 'Reconcile request'),
+    },
+    response: {
+      schema: ok({
+        staged: int(), skipped: arr(free()), skippedEvents: arr(free()),
+        proposals: arr(free()), conflicts: arr(free()),
+      }),
+    },
+  }),
 
   // ---------------------------------------------------------------------------
   // Catalogues: skills, help, scripts, use cases

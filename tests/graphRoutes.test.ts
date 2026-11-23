@@ -209,7 +209,11 @@ describe('C4 — declarative Neo4j graph routes', () => {
     assert.equal(OPERATION_ROLES['graph.cypher'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.status'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.sync.neo4j'], 'Contributor');
-    for (const command of ['graph.cypher', 'graph.status', 'graph.sync.neo4j']) {
+    assert.equal(OPERATION_ROLES['graph.events'], 'Reader');
+    assert.equal(OPERATION_ROLES['graph.reconcile'], 'Contributor');
+    for (const command of [
+      'graph.cypher', 'graph.status', 'graph.sync.neo4j', 'graph.events', 'graph.reconcile',
+    ]) {
       assert.ok(h.agentServer.getBus().has(command), `${command} is not registered`);
     }
   });

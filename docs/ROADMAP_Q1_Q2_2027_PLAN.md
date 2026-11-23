@@ -1,6 +1,6 @@
 # Piano Q1–Q2 2027 — L4 autonomo, RBAC multi-utente, Neo4j bidirezionale
 
-> **Stato: studio completato, piano approvato, implementazione avviata (18/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅, C5 ✅).**
+> **Stato: studio completato, piano approvato, track C completato (21/23 step: A0 ✅, A1 ✅, A2 ✅, A3 ✅, B0 ✅, B1 ✅, B2 ✅, B3 ✅, B4 ✅, B5 ✅, B6 ✅, B7 ✅, C0 ✅, C1 ✅, C2 ✅, C3 ✅, C4 ✅, C5 ✅, C6 ✅, C7 ✅, C8 ✅). A4 resta bloccato in attesa di conferma esplicita dell'utente; A5 dipende da A4.**
 > Questo è un **documento vivo**: a ogni step completato aggiornare la tabella
 > `§3 Grado di implementazione`, la tabella `§2 Avanzamento` e il `§11 Registro
 > aggiornamenti`, con lo stesso commit. Il grado indicato oggi è la **baseline
@@ -74,9 +74,9 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 | C3 | ✅ | `semantics/neo4j_query.py` (`Neo4jQueryService.execute_read`, whitelist, timeout/limit, binding, errori tipizzati), `graph_rag_pipeline.py` ($entities, modi mock/live espliciti, `error_type`, commenti fuorvianti rimossi), `docs/GRAPH_RAG.md`, `tests/python/test_graph_rag_live.py` (19 test) |
 | C4 | ✅ | `contracts.ts`/`endpoints.ts` (3 route additive e tipi), `modules/graphModule.ts` (3 handler bus), `modules/pythonTool.ts` (stdin opzionale), `semantics/neo4j_api_tool.py` (status/query/sync), `watcher/graph_watcher.py` (watchdog lazy + `sync_note()`), `auth/rbacMiddleware.ts` (ruoli), `docs/OPENAPI.md`, `tests/graphRoutes.test.ts` (5 test), `tests/python/test_neo4j_api_tool.py` (11 test) |
 | C5 | ✅ | `semantics/neo4j_reconciler.py` (query C3 read-only `wf:revision > checkpoint`, frontmatter OKF, conflitto `wf:baseHash`), `neo4j_api_tool.py` (`reconcile` con stdin JSON), `watcher/graph_watcher.py` (`wf:path` + `wf:baseHash`), `server/neo4jReverseSync.ts` (stage con `process:neo4j-reconciler`, dedupe e checkpoint), `tests/neo4jReverseSync.test.ts` (5 test), `tests/python/test_neo4j_reconciler.py` (7 test) |
-| C6 | ⬜ | — |
-| C7 | ⬜ | — |
-| C8 | ⬜ | — |
+| C6 | ✅ | `watcher/graph_watcher.py` (`wf:origin`/`localHash`/`dbHash`, echo suppression, eventId), `semantics/neo4j_reconciler.py` (`is_reconciler_echo`, metadata C6, query `wf:localHash`), `server/graphReconciliation.ts` (ledger `.wiki-forge/graph-reconciliation.json`, dedupe id, revisioni applicate), `server/modules/graphModule.ts` (`graph.reconcile` project-scoped), `tests/graphReconciliation.test.ts` (6 test), `tests/python/test_graph_watcher_neo4j.py` + `test_neo4j_reconciler.py` (2 nuovi test) |
+| C7 | ✅ | `server/graphEvents.ts` (hub SSE + keepalive, frame filtrati per progetto), `server/modules/graphModule.ts` (`graph.events`, publish su sync/reconcile), `server/modules/changesetsModule.ts` (publish su apply), `shared/api/contracts.ts`/`endpoints.ts` (2 route additive), `auth/rbacMiddleware.ts` (Reader/Contributor), `frontend/core/graphEvents.ts` (parser, adapter puro, subscription tipizzata), `frontend/core/events.ts` (`graph:changed`), `frontend/index.ts` (refresh grafo/vault e resubscribe al cambio progetto), `tests/graphEvents.test.ts` (5 test) |
+| C8 | ✅ | `docs/GRAPH_RAG.md`, `docs/TECHNICAL_ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/OPENAPI.md` (95 endpoint / 90 comandi), questa tabella, registro §11, checkpoint §12 e proiezione wiki `projects/wikiforge/wiki/processi/roadmap-q1-q2-2027-plan.md` aggiornati; gate completo verde |
 
 Legend: ⬜ Todo · 🔄 In corso · ✅ Implementato e verificato · ⛔ Bloccato
 
@@ -92,7 +92,7 @@ A5 4.5, L4 ~3.0; dopo A1: A2 3.5, A3 3, L4 ~3.2; dopo A2: A1 4, L4 ~3.4; dopo A3
 B3 4, RBAC ~3.0; dopo B4: B1 4.5 (RBAC invariato ~3.0); dopo B5: B4 4.5,
 RBAC ~3.5; dopo B6: B1 5, B2 5, RBAC ~4.5 (la UI identità B5 resta 0);
 dopo B7: B5 5, RBAC 5 (pilastro RBAC completo);
-dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; dopo C5: C3 3, C5 3, Neo4j ~2.5; gli altri valori coincidono ancora con “Oggi”).
+dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j ~1.2; dopo C3: C4 3, Neo4j ~1.6; dopo C4: C1 3.5, C4 4, Neo4j ~1.9; dopo C5: C3 3, C5 3, Neo4j ~2.5; dopo C6: C2 4.5, C5 4.5, C6 4.5, Neo4j ~3.7; dopo C7: C7 5, Neo4j ~4.4; dopo C8: Neo4j ~5 (documentazione e collaudo allineati); gli altri valori coincidono ancora con “Oggi”).
 
 | ID | Capacità | Oggi | Dopo step | Target Q2 |
 | :--- | :--- | :---: | :---: | :---: |
@@ -109,13 +109,13 @@ dopo C0: C1 1, Neo4j ~0.65; dopo C1: C1 2.5, Neo4j ~0.8; dopo C2: C2 3.5, Neo4j 
 | B5 | UI identità e sessione | 0 | 5 | 5 |
 | — | **Complessivo RBAC** | **~1** | **5** | **5** |
 | C1 | Driver e configurazione Neo4j | 0 | 3.5 | 5 |
-| C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 3.5 | 5 |
+| C2 | Watcher vault → Neo4j (graph_watcher.py) | 1 | 4.5 | 5 |
 | C3 | Export Cypher/RDF batch | 2.5 | 3 | 4 |
 | C4 | Interrogazione Cypher live | 0 | 4 | 5 |
-| C5 | Sync Neo4j → vault Markdown | 0 | 3 | 5 |
-| C6 | Riconciliazione e soppressione echo | 0 | 0 | 5 |
-| C7 | Propagazione real-time al browser | 0 | 0 | 5 |
-| — | **Complessivo Neo4j** | **~0.5** | **~2.5** | **5** |
+| C5 | Sync Neo4j → vault Markdown | 0 | 4.5 | 5 |
+| C6 | Riconciliazione e soppressione echo | 0 | 4.5 | 5 |
+| C7 | Propagazione real-time al browser | 0 | 5 | 5 |
+| — | **Complessivo Neo4j** | **~0.5** | **~5** | **5** |
 
 ---
 
@@ -224,8 +224,9 @@ senza un'esplicita conferma:
      rollback automatico se la rivalidazione fallisce, audit `process:<id>`.
 2. Il gate L4 (A0) deve rimanere **rosso** finché `cq_gaps > 0` o ci sono
    orfani irrisolti: nessun claim di autonomia su dati non veritieri.
-3. La riconciliazione Neo4j (C6) può auto-applicare **solo** modifiche non
-   conflittuali; i conflitti restano sempre in changeset.
+3. La riconciliazione Neo4j (C6) può **staged** (non applicare) solo modifiche
+   non conflittuali; i conflitti restano sempre in changeset e ogni apply
+   richiede approvazione umana.
 
 ---
 
@@ -858,14 +859,26 @@ invariati. Nessun endpoint, envelope o metodo pubblico esistente cambiato.
 - **Obiettivo**: convergenza senza loop infiniti.
 - **Modifiche**: metadata `wf:origin` (`browser|watcher|neo4j|reconciler`),
   `wf:baseHash`, `wf:localHash`, `wf:dbHash`, `wf:revision`; dedup id e
-  checkpoint store; auto-apply solo per modifiche non conflittuali, conflitti
-  in changeset.
+  checkpoint store; stage-only per modifiche non conflittuali, conflitti in
+  changeset e apply sempre umano.
 - **Accettazione**: test dei 4 scenari (vault→DB, DB→vault, entrambi→conflitto,
   evento ripetuto→nessun duplicato); secondo run idempotente; la scrittura
   DB→vault non torna indietro come nuovo evento vault.
 - **Verifica**: `tests/graphReconciliation.test.ts` + test checkpoint;
   validazione completa.
 - **Grado atteso**: C5 3 → 4.5, C6 0 → 4.5, C2 3.5 → 4.5.
+
+**Risultato (2026-11-23).** Chiuso. Ogni nota sincronizzata porta ora
+`wf:origin`, `wf:baseHash`, `wf:localHash` (SHA256 del solo body), `wf:dbHash` e
+`wf:revision`; il MERGE C2 non ripete scritture quando body ed echo sono
+invariati. Il reconciler salta le revisioni già originate da `neo4j`/`reconciler`
+e il ledger `.wiki-forge/graph-reconciliation.json` deduplica eventi e revisioni
+applicate. La riconciliazione resta **stage-only**: modifiche non conflittuali
+diventano changeset `process:neo4j-reconciler`, conflitti restano visibili e
+nessun file vault viene scritto prima di `changesets.apply`. 6 test Node e 2 test
+Python nuovi (`tests/graphReconciliation.test.ts` + test echo); il ledger non
+registra eventi in conflitto e `graph.reconcile` ignora un `projectId` nel body,
+usando sempre `X-Project-Id`. C2/C4 e i test legacy invariati.
 
 ### C7 — Propagazione real-time al browser
 
@@ -880,6 +893,16 @@ invariati. Nessun endpoint, envelope o metodo pubblico esistente cambiato.
 - **Verifica**: `tests/graphEvents.test.ts`, `tests/openapi.test.ts`.
 - **Grado atteso**: C7 0 → 5, complessivo Neo4j ~5.
 
+**Risultato (2026-11-23).** Chiuso. `GET /api/v1/graph/events` emette snapshot,
+frame `graph:changed` e keepalive 15 s tramite `GraphEventHub`; i frame sono
+filtrati per progetto e gli stream vengono chiusi a shutdown. `graph.sync.neo4j`,
+`graph.reconcile` e `changesets.apply` pubblicano aggiornamenti. L'adapter puro
+converte i `GraphData` del server e il composition root aggiorna il grafo e il
+vault tramite `apiBus.stream()`, con resubscribe al cambio progetto; nessun
+componente introduce `fetch` diretti. Ruoli B3: Reader per lo stream,
+Contributor per la riconciliazione. 5 test Node nuovi
+(`tests/graphEvents.test.ts`), OpenAPI e typecheck verdi.
+
 ### C8 — Documentazione e collaudo finale
 
 - **Obiettivo**: distinguere pubblicità reale, mock e modalità batch.
@@ -888,8 +911,17 @@ invariati. Nessun endpoint, envelope o metodo pubblico esistente cambiato.
   affermazioni oggi inesatte (“Cypher eseguito contro il database”,
   “sincronizzazione istantanea Neo4j/RDF”).
 - **Accettazione**: tutti i comandi del gate §1.1 verdi; tabella §3 e registro
-  §10 aggiornati; commit e push.
+  §11 aggiornati; proiezione wiki rigenerata.
 - **Grado atteso**: chiusura del piano.
+
+**Risultato (2026-11-23).** Chiuso, con i vincoli di sic invariati. Documentazione
+allineata su `docs/GRAPH_RAG.md`, `docs/TECHNICAL_ARCHITECTURE.md`,
+`docs/OPENAPI.md` (95 endpoint / 90 comandi su bus), `docs/ROADMAP.md`, `ROADMAP.md`,
+piano vivo e proiezione wiki. Gate completo verde: 462 test Node (462 pass), 148
+test Python, 6 test legacy, typecheck, build, registry/docs sync, OKF lint e
+`git diff --check`. La deep-research ausiliaria ora accetta solo risposte LLM con
+le intestazioni canoniche e ricade al template deterministico, eliminando il
+flake pre-esistente; A4/A5 restano bloccati e `auto_apply=true` non viene attivato.
 
 ---
 
@@ -911,7 +943,7 @@ git diff --check
 ```
 
 Warning pre-esistenti e non bloccanti: `configLoader: 'native'`/ESM di Vite e
-chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
+chunk >500 kB. Nessuno skip nella suite Node del gate finale.
 
 ---
 
@@ -938,6 +970,9 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 | 2026-11-22 | B6 | B1 / B2 · RBAC complessivo | 4.5 / 3.5 · ~3.5 | 5 / 5 · ~4.5 | Adapter OIDC/JWKS, SAML e OAuth2 dietro `enable_rbac` + `auth.provider`; bearer dedicato, 401 B0 invariato, ruoli claim nella matrice B3 senza inheritance ACL; 10 test mock zero-rete, suite 418 pass + 1 skip. |
 | 2026-11-22 | B7 | B5 · RBAC complessivo | 0 · ~4.5 | 5 · 5 | Identità UI via solo transport tipizzato: `GET /api/auth/me` additiva e pubblica in modalità anonima, bearer dedicato dall'app-store, chip/gating solo per IdP verificato, attore strict negli strumenti di review; 13 test UI/auth + 4 assert OpenAPI, suite 428 pass + 1 skip. Pilastro RBAC completo. |
 | 2026-11-22 | C5 | C3 / C5 · Neo4j complessivo | 2.5 / 0 · ~1.9 | 3 / 3 · ~2.5 | Reverse sync DB → vault come proposta: query read-only `wf:revision > checkpoint`, frontmatter OKF e conflitto su `wf:baseHash`; C2 aggiunge `wf:path`/`wf:baseHash`, CLI `reconcile` emette solo JSON e il ponte TS stagea con `process:neo4j-reconciler`, dedupe e checkpoint. Nessun file vault prima di `changesets.apply`, `confirm_destructive` come revisione obbligatoria; 5 test Node + 7 Python (451 Node: 450 pass + 1 skip, 146 Python), legacy invariati. |
+| 2026-11-23 | C6 | C2 / C5 / C6 · Neo4j complessivo | 3.5 / 3 / 0 · ~2.5 | 4.5 / 4.5 / 4.5 · ~3.7 | Metadata `wf:origin/baseHash/localHash/dbHash/revision` e hash del body; echo suppression nel watcher e nel reconciler, ledger `.wiki-forge/graph-reconciliation.json` con dedupe di eventi/revisioni, `graph.reconcile` stage-only e sempre scoped a `X-Project-Id`. 6 test Node + 2 Python nuovi, nessuna scrittura vault prima di `changesets.apply`, conflitti e human approval invariati. |
+| 2026-11-23 | C7 | C7 · Neo4j complessivo | 0 · ~3.7 | 5 · ~4.4 | `GraphEventHub` SSE con snapshot/keepalive e frame filtrati per progetto, route additiva `graph.events` e publish su sync/reconcile/apply; eventBus `graph:changed`, adapter puro e subscription frontend via `apiBus.stream()`, resubscribe al cambio progetto e zero `fetch` diretti. 5 test Node nuovi, ruoli Reader/Contributor e OpenAPI 95 endpoint / 90 comandi. |
+| 2026-11-23 | C8 | Neo4j complessivo | ~4.4 | ~5 | Documentazione e proiezione wiki allineate, affermazioni su Cypher live/RDF istantaneo corrette, gate completo verde (462 Node, 148 Python, 6 legacy, typecheck, build, registry/docs sync, OKF lint, `git diff --check`); deep-research reso deterministico nelle intestazioni richieste. A4/A5 restano bloccati. |
 
 > **Istruzione per il manutentore**: quando chiudi uno step, aggiungi qui una
 > riga con il grado nuovo, aggiorna la colonna “Dopo step” in §3 e lo stato in
@@ -946,56 +981,54 @@ chunk >500 kB. Skip pre-esistente: 1 test `opencode CLI not installed`.
 
 ---
 
-## 12. Checkpoint di ripresa — 2026-11-22 (fine sessione)
+## 12. Checkpoint di ripresa — 2026-11-23 (fine track C)
 
-Stato da cui riprendere eventualmente domani. Aggiornare questa sezione con la
-stessa disciplina del registro §11: è il punto di passaggio tra sessioni, non
-una dichiarazione di completezza del piano.
+Stato finale del track C e punto di passaggio per il track A. Aggiornare questa
+sezione con la stessa disciplina del registro §11.
 
 ### 12.1 Posizione esatta
 
-- **Step chiusi: 18/23** — A0, A1, A2, A3, B0, B1, B2, B3, B4, B5, B6, B7,
-  C0, C1, C2, C3, C4, C5. Tabella viva in §2, gradi in §3, dettagli in §7–§9.
-- **Ultimo commit**: `3fa6fb4 feat(neo4j): reconcile DB changes into reviewable
-  changesets (C5)`, pushato su `origin/main`; `HEAD == origin/main` e albero di
-  lavoro pulito al momento del checkpoint.
-- **Gradi correnti**: L4 ~3.6/5, RBAC 5/5 (pilastro completo), Neo4j ~2.5/5.
-- **Sequenza scelta dall'utente in questa sessione**: A2 → A3 → C1 → C2 → C3 →
-  C4 → C5, un commit/push per step. Non cambiare ordine senza nuova conferma.
+- **Step chiusi: 21/23** — A0, A1, A2, A3, B0, B1, B2, B3, B4, B5, B6, B7,
+  C0, C1, C2, C3, C4, C5, C6, C7, C8. Tabella viva in §2, gradi in §3,
+  dettagli in §7–§9.
+- **Ultimo commit noto**: `8a00214 docs(roadmap): add end-of-session resume
+  checkpoint (18/23, next C6)`. Le modifiche C6–C8 di questa sessione sono
+  presenti nell'albero di lavoro e non sono ancora state committate.
+- **Gradi correnti**: L4 ~3.6/5, RBAC 5/5 (pilastro completo), Neo4j ~5/5
+  (track C completo).
+- **Sequenza eseguita in questa sessione**: C6 → C7 → C8, senza cambio di
+  ordine. Nessun commit/push automatico: la chiusura richiede la revisione
+  finale del manutentore.
 
 ### 12.2 Prossimo step e dipendenze
 
-1. **C6 — Riconciliazione e soppressione echo** (prossimo, dipendenza `C6 ⟵ C5`
-   ora soddisfatta). Obiettivo: convergenza senza loop, metadata `wf:origin`
-   (`browser|watcher|neo4j|reconciler`), `wf:baseHash`, `wf:localHash`,
-   `wf:dbHash`, `wf:revision`, dedupe id e checkpoint store; auto-apply solo per
-   modifiche non conflittuali e conflitti in changeset. Accettazione e gate in
-   §9; verifica prevista `tests/graphReconciliation.test.ts` + test checkpoint.
-2. **C7** dopo C6 (SSE `graph:changed`, zero `fetch` diretti), poi **C8** collaudo
-   finale e documentazione.
-3. **A4** resta bloccato: serve `C6` **e** conferma esplicita dell'utente. La
-   modalità `bounded` è solo una proposta (§5), `auto_apply=true` non va mai
-   attivato. **A5** resta bloccato da A4.
+1. **A4 — Validazione, auto-repair e rollback** resta bloccato: la dipendenza
+   tecnica `A4 ⟵ C6` è ora soddisfatta, ma serve ancora conferma esplicita
+   dell'utente. La modalità `bounded` è solo una proposta (§5) e
+   `auto_apply=true` non va mai attivato.
+2. **A5 — Guardrail, approvazione e audit** resta bloccato da A4.
+3. Nessuno step del track C resta aperto; nuove modifiche vanno registrate nel
+   registro §11 e nella proiezione wiki nello stesso commit.
 
 ### 12.3 Gate verdi al checkpoint (ripetere prima di ogni commit)
 
 | Comando | Esito |
 | :--- | :--- |
 | `npm run typecheck` | OK |
-| `npm test` | 451 test: 450 pass + 1 skip pre-esistente (`opencode CLI not installed`) |
+| `npm test` | 462 test: 462 pass, 0 fail, 0 skip |
 | `npm run build` | OK (warning non bloccanti: configLoader nativo, chunk >500 kB) |
-| `pytest tests/python/ -q` | 146 pass |
+| `PYTHONPATH=.:scripts pytest tests/python/ -q` | 148 pass |
 | `pytest tests/test_graph_rag.py tests/test_graph_watcher.py -q` | 6 pass (legacy invariati) |
 | `python scripts/check_docs_sync.py` · `docs_to_wiki.py --check` · `docs_wiki_drift.py --check` · `okf_lint.py wiki` · `gen_script_registry.py --check` | tutti OK |
-| `git diff --check` | OK (solo warning LF→CRLF su Windows) |
+| `git diff --check` | OK |
 
-Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM, chunk >500 kB,
-conversione LF→CRLF di Git, 1 test Node skippato.
+Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM e chunk >500 kB.
 
 ### 12.4 Vincoli da non perdere riprendendo
 
 - Endpoint, envelope `{ success, ... }` e metodi pubblici esistenti invariati;
-  sole aggiunte già approvate: `GET /api/auth/me` (B7) e le route grafo C4.
+  sole aggiunte approvate: `GET /api/auth/me` (B7), le route grafo C4 e le route
+  additive C6/C7 (`graph.reconcile`, `graph.events`).
 - Nessun `fetch` diretto nell'UI; OpenAPI generata solo da `contracts.ts`.
 - F6 e human approval obbligatori, snapshot/guardrail sempre attivi; nessun
   `auto_apply=true`, anche dopo C6.
@@ -1015,5 +1048,12 @@ conversione LF→CRLF di Git, 1 test Node skippato.
   avanzato solo senza conflitti; `agent.confirm_destructive=true` resta
   revisione umana obbligatoria, non auto-apply. Nessuna scrittura vault prima
   di `changesets.apply`.
-- C6 deve riconciliare i metadata introdotti da C2/C5 evitando echo: una
-  revisione applicata dal reconciler non deve tornare come nuovo evento vault.
+- C6 riconcilia i metadata introdotti da C2/C5 evitando echo: una revisione
+  applicata dal reconciler non torna come nuovo evento vault. Il ledger è
+  `.wiki-forge/graph-reconciliation.json`; il checkpoint C5 resta separato.
+- C7 usa la sola SSE `graph.events` via `apiBus.stream()`; i frame sono
+  `snapshot`/`graph:changed`/keepalive 15 s, filtrati per `X-Project-Id`, e i
+  componenti non aprono `fetch`. `graph.reconcile` usa lo stesso progetto della
+  richiesta anche se il body contiene un `projectId` diverso.
+- C8: 95 endpoint / 90 comandi su bus, `GraphModule` 7 comandi, wiki proiettata
+  da `docs/`; A4/A5 restano fuori dal track C e richiedono nuova conferma.

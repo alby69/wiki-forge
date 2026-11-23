@@ -34,14 +34,17 @@ RETURN coalesce(n.id, '') AS id,
        coalesce(n.`wf:path`, '') AS path,
        coalesce(n.title, '') AS title,
        coalesce(n.content, '') AS content,
-       coalesce(n.`wf:contentHash`, '') AS contentHash,
-       coalesce(n.`wf:baseHash`, n.`wf:contentHash`, '') AS baseHash,
-       coalesce(n.`wf:origin`, '') AS origin,
-       n.`wf:revision` AS revision
+        coalesce(n.`wf:contentHash`, '') AS contentHash,
+        coalesce(n.`wf:baseHash`, n.`wf:contentHash`, '') AS baseHash,
+        coalesce(n.`wf:localHash`, '') AS localHash,
+        coalesce(n.`wf:origin`, '') AS origin,
+        n.`wf:revision` AS revision
+
 ORDER BY n.`wf:revision` ASC, n.id ASC"""
 
 _FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 _SLUG = re.compile(r"[^a-zA-Z0-9_-]+")
+RECONCILER_ORIGINS = frozenset({"neo4j", "reconciler"})
 
 
 def sha256_text(text: str) -> str:
@@ -58,6 +61,36 @@ def _as_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def body_hash(text: str) -> str:
+    """Hash the note body (frontmatter excluded): the C6 echo sentinel."""
+    match = _FRONTMATTER.match(text)
+    return sha256_text(match.group(2) if match else text)
+
+
+def is_reconciler_echo(row: Mapping[str, Any], local: Optional[str]) -> bool:
+    """True when the vault note still carries this exact applied DB revision."""
+    if not local:
+        return False
+    match = _FRONTMATTER.match(local)
+    if not match:
+        return False
+    try:
+        parsed = yaml.safe_load(match.group(1)) or {}
+    except yaml.YAMLError:
+        return False
+    wf = parsed.get("wf") if isinstance(parsed, dict) else None
+    if not isinstance(wf, dict) or wf.get("origin") not in RECONCILER_ORIGINS:
+        return False
+    sentinel = wf.get("localHash")
+    return (
+        isinstance(sentinel, str)
+        and bool(sentinel)
+        and sentinel == body_hash(local)
+        and _as_int(wf.get("revision")) == _as_int(row.get("revision"))
+        and _as_text(wf.get("dbHash")) == _as_text(row.get("contentHash"))
+    )
 
 
 def safe_relative_path(raw: Any, note_id: str) -> str:
@@ -106,12 +139,15 @@ def render_note(row: Mapping[str, Any]) -> str:
 
     wf = metadata.get("wf")
     wf = dict(wf) if isinstance(wf, dict) else {}
+    db_hash = _as_text(row.get("contentHash"))
     wf.update({
         "id": _as_text(row.get("id")),
-        "origin": "neo4j",
+        "origin": _as_text(row.get("origin")) if _as_text(row.get("origin")) in RECONCILER_ORIGINS else "neo4j",
         "revision": _as_int(row.get("revision")),
         "baseHash": _as_text(row.get("baseHash")),
-        "contentHash": _as_text(row.get("contentHash")),
+        "contentHash": db_hash,
+        "dbHash": db_hash,
+        "localHash": sha256_text(content),
     })
     metadata["wf"] = wf
 
@@ -181,6 +217,12 @@ def reconcile(
         base_hash = _as_text(row.get("baseHash"))
         db_hash = _as_text(row.get("contentHash"))
 
+        # C6 — a DB revision already applied to the vault must not bounce back
+        # as a new proposal (echo). The watchdog applies the same sentinel rule
+        # on the other direction; this is the second line of defence.
+        if is_reconciler_echo(row, local):
+            continue
+
         if local is not None and (not base_hash or local_hash != base_hash):
             conflicts.append({
                 "id": note_id,
@@ -207,7 +249,9 @@ def reconcile(
             "origin": _as_text(row.get("origin")) or "neo4j",
             "baseHash": base_hash,
             "contentHash": db_hash,
+            "dbHash": db_hash,
             "localHash": local_hash,
+            "dbLocalHash": _as_text(row.get("localHash")),
             "content": proposed,
             "requiresConfirmation": bool(confirm_destructive),
         })
@@ -228,7 +272,10 @@ __all__ = [
     "RECONCILE_QUERY",
     "RECONCILE_SCHEMA",
     "RECONCILER_ACTOR",
+    "RECONCILER_ORIGINS",
+    "body_hash",
     "finding_id",
+    "is_reconciler_echo",
     "reconcile",
     "render_note",
     "safe_relative_path",

@@ -39,6 +39,9 @@ Ogni voce di `ROUTES` dichiara una sola volta:
 - parametri path/query/header, schema JSON Schema della richiesta e della risposta;
 - flag `projectScoped`, `stream: 'sse' | 'binary'`, status di successo ed eventuale deprecazione.
 
+Le nuove route C6/C7 sono `POST /api/v1/graph/reconcile` (stage-only, human
+approval) e `GET /api/v1/graph/events` (SSE `graph:changed`).
+
 Da questo catalogo derivano: il routing, la validazione delle richieste (Fase 2),
 il client tipizzato del frontend e il bus UI (Fase 3) e la documentazione.
 Aggiungere un endpoint significa **modificare `contracts.ts`, il tipo in
@@ -51,7 +54,7 @@ rimasto senza tipi.
 
 ## 3. Cosa contiene la specifica
 
-- **93 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
+- **95 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
   Files, Catalogues, Knowledge Graph/Neo4j, Identity e Documentazione.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
@@ -117,7 +120,8 @@ AgentServer.handleRequest()
        ├─ ToolsModule        3    script registry, KE use cases
        ├─ ReviewModule       3    coda recensioni (.llm-wiki/reviews.json)
        ├─ IngestionModule    3    coda SQLite e conversione CoT
-       ├─ GraphModule        5    cluster, insight e Neo4j (query/sync/status)
+        ├─ GraphModule        7    cluster, insight, Neo4j (query/sync/status),
+        │                           reconcile stage-only e SSE graph.events
        ├─ ProjectsModule    12    CRUD progetti, config, import/export
        ├─ ChangesetsModule   5    stages plan → review → apply
        ├─ FilesModule        1    download binario con containment check
@@ -130,7 +134,7 @@ AgentServer.handleRequest()
        └─ ChatModule         1    chat JSON e SSE
 ```
 
-Degli **93 endpoint** del catalogo, **88 comandi** sono instradati sul bus.
+Degli **95 endpoint** del catalogo, **90 comandi** sono instradati sul bus.
 I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 `docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
 `graph.proxy` sono protetti dal gate B4 come ogni ingresso non pubblico e
@@ -150,6 +154,15 @@ preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
   `neo4j_api_tool.py` restituisce errori tipizzati e un `mode` esplicito
   `live`/`mock`; ruoli RBAC: Reader per query/status, Contributor per sync. Gli
   endpoint graph legacy restano invariati e protetti da B4.
+- **C6/C7 — riconciliazione ed eventi**: `POST /api/v1/graph/reconcile` esegue
+  la query DB → vault e **stagea** revisioni non conflittuali come changeset
+  (`process:neo4j-reconciler`), senza mai scrivere il vault; richiede il ruolo
+  Contributor. Il progetto di staging è sempre quello di `X-Project-Id`: un
+  `projectId` nel body è accettato solo per compatibilità. La risposta riporta
+  `staged`, `skipped` e `skippedEvents`. `GET /api/v1/graph/events` è una route
+  SSE additiva (Reader) che pubblica snapshot e frame `graph:changed` dal
+  GraphEventHub, filtrati per progetto; il frontend li consuma solo tramite
+  `apiBus.stream()`.
 
 - `MessageBus` (`src/backend/server/bus/messageBus.ts`) supporta handler multipli,
   middleware, eventi `command:handled`/`command:failed` e un `CommandContext`
@@ -177,7 +190,7 @@ preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (93 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (95 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -212,8 +225,8 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (93 id, assertion c
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 88 comandi |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (93 id), client generato, `apiBus`, facciate senza `fetch` diretto |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 90 comandi (89 + `auth.me`) |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (95 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

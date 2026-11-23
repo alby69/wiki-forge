@@ -18,6 +18,8 @@ from src.backend.wikiforge.semantics import neo4j_api_tool as api_tool
 from src.backend.wikiforge.semantics.neo4j_client import Neo4jClient, Neo4jConfig
 from src.backend.wikiforge.semantics.neo4j_reconciler import (
     RECONCILE_SCHEMA,
+    body_hash,
+    is_reconciler_echo,
     reconcile,
     sha256_text,
 )
@@ -128,6 +130,8 @@ def test_one_changed_node_becomes_one_proposal_with_correct_frontmatter(tmp_path
     assert meta["wf"]["id"] == "alpha"
     assert meta["wf"]["origin"] == "neo4j"
     assert meta["wf"]["revision"] == 7
+    assert meta["wf"]["origin"] == "neo4j"
+    assert meta["wf"]["dbHash"] == "db-hash"
     assert proposal["content"].endswith("# Alpha\n\nTesto DB.\n")
 
     # The Python side never touches the vault, even in live mode.
@@ -137,9 +141,49 @@ def test_one_changed_node_becomes_one_proposal_with_correct_frontmatter(tmp_path
     assert len(run) == 1
     assert run[0][2] == {"checkpoint": 4}
     assert "wf:revision" in run[0][1]
+    assert "wf:localHash" in run[0][1]
     assert "LIMIT" in run[0][1]
     assert "timeout" in run[0][3]
     assert ("session", "demo-db") in driver.calls
+
+
+def test_reconciled_note_is_not_proposed_again_as_an_echo(tmp_path: Path) -> None:
+    row = note_row(base_hash="base")
+    proposal = reconcile(
+        client=live_client(FakeDriver([row])),
+        project_id="demo",
+        checkpoint=4,
+        wiki_dir=tmp_path,
+    )["proposals"][0]
+    applied = proposal["content"]
+    path = write_note(tmp_path, applied)
+    meta = frontmatter(applied)
+    assert meta["wf"]["dbHash"] == "db-hash"
+    assert meta["wf"]["localHash"] == body_hash(applied)
+    assert is_reconciler_echo(row, applied) is True
+
+    second = reconcile(
+        client=live_client(FakeDriver([row])),
+        project_id="demo",
+        checkpoint=7,
+        wiki_dir=tmp_path,
+    )
+    assert second["proposals"] == []
+    assert second["conflicts"] == []
+    assert second["nextCheckpoint"] == 7
+    assert path.read_text(encoding="utf-8") == applied
+
+    edited = applied.replace("Testo DB.", "Modifica umana.")
+    path.write_text(edited, encoding="utf-8")
+    assert is_reconciler_echo(row, edited) is False
+    changed = reconcile(
+        client=live_client(FakeDriver([row])),
+        project_id="demo",
+        checkpoint=7,
+        wiki_dir=tmp_path,
+    )
+    assert len(changed["conflicts"]) == 1
+    assert "local_hash_mismatch" == changed["conflicts"][0]["reason"]
 
 
 def test_local_hash_mismatch_reports_conflict_and_no_proposal(tmp_path: Path) -> None:

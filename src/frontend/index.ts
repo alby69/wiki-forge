@@ -50,6 +50,8 @@ import { TemplateManagerModal } from '@frontend/components/templates/TemplateMan
 import { ProjectService } from '@frontend/services/projectService';
 import { bindActionHandler } from '@frontend/core/actions';
 import { eventBus } from '@frontend/core/events';
+import { apiBus } from '@frontend/core/apiBus';
+import { adaptServerGraphData, startGraphEventSubscription } from '@frontend/core/graphEvents';
 import { refreshIdentity } from '@frontend/core/auth';
 import { applyStoredLanguage, t } from '@frontend/core/i18n/strings';
 import { installShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
@@ -94,6 +96,7 @@ export class WikiForgeApp {
   private projectManager!: ProjectManagerModal;
   private newDocumentModal!: NewDocumentModal;
   private templateManager!: TemplateManagerModal;
+  private stopGraphEvents?: () => void;
 
   constructor(rootContainer: HTMLElement) {
     applyStoredLanguage();
@@ -107,12 +110,30 @@ export class WikiForgeApp {
     setShortcutContext(() => ({ noteId: this.selectedNote?.id }));
     installShortcuts();
     eventBus.on('vault:changed', () => void this.loadVault(true));
+    this.startGraphEvents();
     eventBus.on('project:changed', ({ id }) => {
       if (id !== this.storage.getActiveProjectId()) this.storage.setActiveProjectId(id);
+      this.startGraphEvents();
       void this.loadVault();
     });
+    window.addEventListener('beforeunload', () => this.stopGraphEvents?.());
     void this.loadVault();
     this.checkFirstLaunchOnboarding();
+  }
+
+  private startGraphEvents(): void {
+    this.stopGraphEvents?.();
+    this.stopGraphEvents = startGraphEventSubscription({
+      stream: (onEvent, signal) => apiBus.stream(
+        'graph.events', {}, onEvent, signal, this.storage.getActiveProjectId(),
+      ),
+      onGraphChanged: (payload) => {
+        const serverGraph = adaptServerGraphData(payload.graph);
+        if (serverGraph) this.graphViewer.updateData(serverGraph);
+        else this.refreshGraph();
+        void this.loadVault(true);
+      },
+    });
   }
 
   private checkFirstLaunchOnboarding(): void {

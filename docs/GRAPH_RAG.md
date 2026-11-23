@@ -10,7 +10,7 @@ This guide describes the **Enterprise Semantic Knowledge Graph & Stateful GraphR
 1. **W3C Semantic Web Graph (RDF/Turtle + RDF-star):** Formally validated using W3C SHACL shapes (`src/backend/wikiforge/config/shapes.ttl`) for interoperability, reasoning, RDF-star edge metadata (`<< s p o >>`), and data quality enforcement.
 2. **Labeled Property Graph (Neo4j Cypher):** Idempotent Cypher scripts (`CREATE CONSTRAINT`, `MERGE`) for fast graph traversal and pathfinding.
 3. **Multi-Layered View & Shortcut Engine:** SPARQL CONSTRUCT rules & Cypher queries to materialize simplified direct relations (`wf:directCoAuthor`, `wf:agent`, `wf:role`).
-4. **Incremental Event-Driven File Watcher:** Live filesystem watcher (`watchdog`) for instant synchronization of created, modified, or deleted notes into Neo4j/RDF graphs.
+4. **Incremental Event-Driven File Watcher:** Live filesystem watcher (`watchdog`) that synchronizes created, modified, or deleted notes into Neo4j with a small debounce. RDF/Turtle is produced by the batch converters, not by this watcher; C6 suppresses the echo of revisions previously written by the reconciler.
 5. **Hybrid GraphRAG Pipeline (LangGraph):** Agentic Retrieval-Augmented Generation featuring Vector Search + k-hop Ego-Graph Traversal, Text-to-Cypher translation, conditional self-correction error recovery, and grounded synthesis with PROV-O provenance citations.
 6. **FastAPI REST API & Unified CLI:** Programmatic REST endpoints (`/api/v1/graph/sync`, `/api/v1/graph/validate`, `/api/v1/graph/rag`) and CLI commands (`python3 -m src.backend.wikiforge.cli`).
 
@@ -36,6 +36,8 @@ src/backend/wikiforge/
     ├── shacl_validator.py       # SHACL & OWL Reasoning Engine
     ├── neo4j_client.py          # Injectable Neo4j connection (lazy driver import)
     ├── neo4j_query.py           # Validated read-only Cypher execution (C3)
+    ├── neo4j_reconciler.py      # DB → vault proposals, JSON only (C5/C6)
+    ├── neo4j_api_tool.py        # status/query/sync/reconcile CLI (C4/C5)
     └── graph_rag_pipeline.py    # Hybrid Stateful LangGraph GraphRAG Engine
 ```
 
@@ -109,6 +111,26 @@ The GraphRAG engine uses **LangGraph** to process user queries through a multi-s
 
 The k-hop triples and vector chunks returned by `hybrid_retrieval()` are static fixtures; they are clearly labelled as such and are not a live vector index or a live traversal.
 
+### Bidirectional sync and browser propagation (C5–C7)
+
+- **vault → DB (C2/C6):** one parametrized `MERGE` per note, with `wf:origin`
+  (`browser` for a human edit of a reconciled note, otherwise `vault`/`watcher`),
+  `wf:baseHash`, `wf:localHash` (body hash), `wf:dbHash`, `wf:revision` and
+  `wf:path`. Unchanged content and reconciler echoes are no-ops: no `MERGE`,
+  no revision bump, no event.
+- **DB → vault (C5/C6):** `neo4j_reconciler.reconcile()` reads only rows with
+  `wf:revision > checkpoint`, emits `wikiforge.neo4j-reconcile/v1` JSON and lets
+  the TypeScript bridge stage one changeset per finding with
+  `process:neo4j-reconciler` provenance. A local hash mismatch produces a
+  conflict and zero writes. Checkpoints advance only without conflicts;
+  `.wiki-forge/graph-reconciliation.json` adds stable event ids and per-note
+  applied revisions so a second run is idempotent. A human must still call
+  `changesets.apply`: there is no auto-apply.
+- **DB → browser (C7):** `GET /api/v1/graph/events` is an additive SSE route
+  (`graph.events`) consumed through `apiBus.stream()`; frames `graph:changed`
+  refresh the graph and the vault in the UI. No component issues a direct
+  `fetch`.
+
 ---
 
 ## 6. Competency Questions Test Runner & Live File Watcher
@@ -120,7 +142,7 @@ python3 src/backend/wikiforge/semantics/cq_runner.py --suite tests/competency_qu
 ```
 
 ### Live File Watcher
-Monitors `wiki/` directory changes in real time:
+Monitors `wiki/` directory changes with a short debounce (50 ms by default):
 ```bash
 python3 src/backend/wikiforge/watcher/graph_watcher.py wiki
 ```

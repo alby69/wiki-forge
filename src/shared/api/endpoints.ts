@@ -129,6 +129,11 @@ export type EndpointTypes = {
       mode: 'live' | 'mock'; database: string; projectId: string;
     }>;
   };
+  'graph.events': { req: EmptyRequest; res: StreamResponse };
+  'graph.reconcile': {
+    req: ApiRequest<EmptyParams, EmptyQuery, { projectId?: string }>;
+    res: Ok<{ staged: number; skipped: Json[]; proposals: Json[]; conflicts: Json[] }>;
+  };
 
   // Catalogues
   'skills.list': { req: EmptyRequest; res: Ok<{ skills: SkillDto[] }> };

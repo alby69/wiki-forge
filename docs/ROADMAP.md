@@ -93,9 +93,9 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 - Tracciamento della provenienza per le modifiche umane e sintetiche (`human:<id>` e `process:<id>`).
 
 ### 3. Integrazione Bidirezionale in Tempo Reale con Neo4j
-- Connessione diretta tramite driver Neo4j e sincronizzazione del grafo mediante il watcher `graph_watcher.py`.
-- Interrogazione live in Cypher con sincronizzazione bidirezionale tra il vault Markdown e le istanze Neo4j aziendali.
-- Riconciliazione automatica delle modifiche effettuate sia dal browser che dal database a grafi.
+- Connessione opzionale tramite driver Neo4j e sincronizzazione del grafo mediante il watcher `graph_watcher.py` (debounced, non istantanea).
+- Interrogazione live in Cypher con whitelist read-only e sincronizzazione bidirezionale tra il vault Markdown e le istanze Neo4j: DB → vault produce solo changeset revisionabili.
+- Riconciliazione delle modifiche da browser e database con metadata `wf:*`, dedupe, echo suppression e propagate SSE `graph:changed` al browser, filtrata per progetto; nessuna scrittura automatica nel vault.
 
 > **Piano operativo**: lo studio del codice, la scomposizione in 23 step (A0–A5,
 > B0–B7, C0–C8), le dipendenze, i criteri di accettazione, i test di verifica e
@@ -117,12 +117,16 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > eventi strutturati), **C3** (Cypher live read-only con whitelist e modi
 > mock/live espliciti) e **C4** (tre route Neo4j additive dichiarate in TS,
 > protette da B4 con ruoli RBAC espliciti e proxy FastAPI legacy invariato;
-> OpenAPI 93 endpoint/88 comandi). **C5** chiude la direzione DB → vault con
-> proposte staged via `process:neo4j-reconciler`, conflitti su `wf:baseHash` e
-> nessuna scrittura prima di `changesets.apply`; Neo4j ~2.5/5. A4/A5/C6/C7/C8
-> non sono ancora avviati.
+> OpenAPI 95 endpoint/90 comandi su bus). **C5** chiude la direzione DB → vault
+> con proposte staged via `process:neo4j-reconciler`, conflitti su `wf:baseHash`
+> e nessuna scrittura prima di `changesets.apply`. **C6** aggiunge metadata
+> `wf:origin/localHash/dbHash`, ledger di dedupe ed echo suppression e staging
+> sempre scoped a `X-Project-Id`; **C7** propaga `graph:changed` via SSE
+> `graph.events` consumata da `apiBus.stream()`, con frame filtrati per progetto;
+> **C8** allinea documentazione e gate. Track Neo4j ~5/5, 21/23 step chiusi.
+> A4 resta bloccato in attesa di conferma esplicita; A5 dipende da A4.
 >
-> **Ripresa sessione**: il §12 di
+> **Stato piano**: il §12 di
 > [`ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md) contiene il
-> checkpoint di fine sessione (commit `3fa6fb4`, gate verdi, prossimo step C6,
-> dipendenze e vincoli). Aggiornarlo insieme al registro §11 a ogni step.
+> checkpoint finale del track C (step chiusi, gate, dipendenze e vincoli),
+> aggiornato insieme al registro §11.

@@ -6,6 +6,7 @@ module without adding a runtime dependency or touching a socket.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import sys
 import tempfile
@@ -57,6 +58,8 @@ from src.backend.wikiforge.semantics.neo4j_client import Neo4jClient, Neo4jConfi
 from src.backend.wikiforge.watcher.graph_watcher import (  # noqa: E402
     GraphSyncHandler,
     LiveGraphWatcher,
+    is_reconciler_echo,
+    note_origin,
     resolve_project_wiki,
 )
 
@@ -186,6 +189,45 @@ def test_unchanged_hash_never_writes_twice(tmp_path: Path) -> None:
     assert len(driver.calls) == 1
     assert [event["action"] for event in events] == ["CREATED"]
     assert driver.calls[0][1]["revision"] == 1
+
+
+def test_reconciled_note_is_not_pushed_back_to_neo4j(tmp_path: Path) -> None:
+    driver = RecordingDriver()
+    events: list = []
+    handler = GraphSyncHandler(
+        watch_dir=tmp_path,
+        neo4j_client=enabled_client(driver),
+        on_event=events.append,
+        debounce_seconds=0,
+    )
+    echo_body = "# Echo\n\nTesto DB.\n"
+    body_sha = hashlib.sha256(echo_body.encode("utf-8")).hexdigest()
+    echo_note = (
+        "---\ntitle: Echo\nwf:\n  origin: neo4j\n  revision: 7\n"
+        f"  dbHash: db-hash\n  localHash: {body_sha}\n---\n{echo_body}"
+    )
+    note = write_note(tmp_path, "echo.md", echo_note)
+
+    assert is_reconciler_echo(note.read_text(encoding="utf-8")) is True
+    assert note_origin(note.read_text(encoding="utf-8"), echo=True) == "neo4j"
+    assert note_origin(note.read_text(encoding="utf-8")) == "browser"
+    handler.on_created(MockEvent(note))
+    handler.on_modified(MockEvent(note))
+
+    assert driver.calls == []
+    assert events == []
+
+    edited = note.read_text(encoding="utf-8").replace("Testo DB.", "Modifica umana.")
+    note.write_text(edited, encoding="utf-8")
+    handler.on_modified(MockEvent(note))
+
+    assert len(driver.calls) == 1
+    assert driver.calls[0][1]["origin"] == "browser"
+    assert len(events) == 1
+    assert events[0]["origin"] == "browser"
+    assert events[0]["eventId"] == "echo:1:browser:MODIFIED"
+    assert events[0]["localHash"] == driver.calls[0][1]["localHash"]
+    assert events[0]["dbHash"] == driver.calls[0][1]["dbHash"]
 
 
 def test_changed_content_bumps_revision(tmp_path: Path) -> None:

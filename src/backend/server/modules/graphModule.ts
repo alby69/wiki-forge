@@ -1,7 +1,11 @@
 /** Graph commands backed by `scripts/graph_analytics.py` and the C4 Neo4j tool. */
 
-import { error, json, type ApiResult } from '../api/http';
+import { error, json, sse, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
+import type { ChangesetStore } from '../changesetStore';
+import { GraphEventHub, graphChangedFrame } from '../graphEvents';
+import { eventsFromProposals, reconcileGraphChanges } from '../graphReconciliation';
+import { parseReconcileResult, readCheckpoint } from '../neo4jReverseSync';
 import { runPythonJson, runPythonText, type PythonTool } from './pythonTool';
 
 /** Additive C4 routes: state/query/sync through one injectable Python adapter. */
@@ -25,17 +29,36 @@ interface ToolReply {
   [key: string]: unknown;
 }
 
+interface GraphServices {
+  changesets?: (projectId: string) => ChangesetStore | Promise<ChangesetStore>;
+  resolveRoot?: (projectId: string) => Promise<string>;
+}
+
 export class GraphModule implements DomainModule {
   readonly name = 'graph-analytics';
 
-  constructor(private readonly tool: PythonTool) {}
+  constructor(
+    private readonly tool: PythonTool,
+    private readonly events?: GraphEventHub,
+    private readonly services?: GraphServices,
+  ) {}
 
   register(bus: MessageBus): void {
     bus.register('graph.clusters', (_payload, context) => this.clusters(context.projectId));
     bus.register('graph.insights', (_payload, context) => this.insights(context.projectId));
     bus.register('graph.status', (_payload, context) => this.status(context.projectId));
+    bus.register('graph.events', (_payload, context) => this.eventStream(context));
     bus.register<Neo4jPayload>('graph.cypher', (payload, context) => this.cypher(payload, context.projectId));
     bus.register<Neo4jPayload>('graph.sync.neo4j', (payload, context) => this.syncNeo4j(payload, context.projectId));
+    bus.register<Neo4jPayload>('graph.reconcile', (payload, context) => this.reconcile(payload, context.projectId));
+  }
+
+  private eventStream(context: { projectId: string; onClose?: (handler: () => void) => void }): ApiResult {
+    return sse((res) => {
+      const remove = this.events?.addClient(res, context.projectId);
+      if (remove) context.onClose?.(remove);
+      res.write(`data: ${JSON.stringify({ type: 'snapshot', at: new Date().toISOString() })}\n\n`);
+    });
   }
 
   clusters(projectId: string): Promise<ApiResult> {
@@ -85,10 +108,62 @@ export class GraphModule implements DomainModule {
     return this.invoke(['query', '--project', project], projectId, stdin);
   }
 
-  syncNeo4j(payload: Neo4jPayload, projectId: string): Promise<ApiResult> {
+  async syncNeo4j(payload: Neo4jPayload, projectId: string): Promise<ApiResult> {
     const body = payload.body ?? payload;
     const project = body.projectId || projectId;
-    return this.invoke(['sync', '--project', project], projectId);
+    const result = await this.invoke(['sync', '--project', project], projectId);
+    if (result.kind === 'json' && result.status === 200) {
+      this.events?.publish(graphChangedFrame('neo4j', { projectId: project, action: 'SYNC' }));
+    }
+    return result;
+  }
+
+  async reconcile(_payload: Neo4jPayload, projectId: string): Promise<ApiResult> {
+    const root = this.services?.resolveRoot
+      ? await this.services.resolveRoot(projectId)
+      : process.cwd();
+    const checkpoint = await readCheckpoint(root);
+    const stdin = JSON.stringify({ checkpoint, projectId });
+    const result = await this.invoke(['reconcile', '--project', projectId], projectId, stdin);
+    if (result.kind !== 'json' || result.status !== 200) return result;
+
+    const body = result.body as Record<string, unknown>;
+    let envelope;
+    try {
+      envelope = parseReconcileResult(result.body);
+    } catch (err) {
+      return error(String(err), 500, { errorType: 'invalid_reconcile_envelope' });
+    }
+    if (!envelope.success) {
+      return json({ ...body, staged: 0, skipped: [], skippedEvents: [] });
+    }
+
+    const store = this.services?.changesets
+      ? await this.services.changesets(projectId)
+      : undefined;
+    if (!store) {
+      return json({ ...body, staged: 0, skipped: [], skippedEvents: [] });
+    }
+
+    const reconciliation = await reconcileGraphChanges({
+      store,
+      projectRoot: root,
+      envelope,
+      events: eventsFromProposals(envelope),
+    });
+    if (reconciliation.created.length > 0) {
+      this.events?.publish(graphChangedFrame('reconciler', {
+        projectId,
+        action: 'RECONCILE',
+        revision: envelope.nextCheckpoint,
+      }));
+    }
+    return json({
+      ...body,
+      staged: reconciliation.created.length,
+      skipped: reconciliation.skipped,
+      skippedEvents: reconciliation.skippedEvents,
+    });
   }
 
   private async invoke(args: string[], projectId: string, stdin?: string): Promise<ApiResult> {
@@ -107,6 +182,10 @@ export class GraphModule implements DomainModule {
   }
 }
 
-export function createGraphModule(tool: PythonTool): GraphModule {
-  return new GraphModule(tool);
+export function createGraphModule(
+  tool: PythonTool,
+  events?: GraphEventHub,
+  services?: GraphServices,
+): GraphModule {
+  return new GraphModule(tool, events, services);
 }

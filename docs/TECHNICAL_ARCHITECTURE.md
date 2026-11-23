@@ -106,7 +106,8 @@ Implemented in `scripts/export_semantic.py` and `scripts/ontology_rules.py`:
 Implemented in `src/backend/wikiforge/config/shapes.ttl`, `src/backend/wikiforge/semantics/markdown_to_rdf.py`, `markdown_to_cypher.py`, `graph_rag_pipeline.py`, and `.github/workflows/shacl_validation.yml`:
 - **W3C SHACL Validation Schema (`shapes.ttl`)**: Formally validates extracted RDF graphs against SHACL shape constraints enforcing unique slug IDs, ISO creation dates, non-empty markdown bodies, author agent IRIs, and typed relation targets (`wf:supports`, `wf:contradicts`, `wf:refersTo`).
 - **Dual-Graph Conversion**: Converts Zettelkasten Markdown notes into W3C Turtle RDF graphs and Neo4j Cypher property graph scripts.
-- **Stateful GraphRAG Pipeline (`WikiForgeGraphRAG`)**: Agentic workflow built with LangGraph implementing Entity Extraction, Text-to-Cypher translation, Neo4j/Mock execution, automated self-correction error recovery, and grounded synthesis with PROV-O provenance citations.
+- **Stateful GraphRAG Pipeline (`WikiForgeGraphRAG`)**: Agentic workflow built with LangGraph implementing Entity Extraction, Text-to-Cypher translation, Cypher execution through the C3 read-only service (`mode="live"` only with a configured driver, otherwise explicit `mode="mock"`), automated self-correction error recovery, and grounded synthesis with PROV-O provenance citations. Vector chunks and k-hop triples from `hybrid_retrieval()` are labelled fixtures, not a live index.
+- **Neo4j sync (C0–C7)**: the driver is optional (C0/C1); the vault → DB watcher writes parametrized `MERGE` statements with `wf:*` metadata (C2), Cypher queries are whitelisted and bound (C3), three additive TS routes expose status/query/sync (C4), the reverse direction stages reviewable changesets without writing notes directly (C5/C6), and `graph.events` (SSE) propagates `graph:changed` frames to the UI through the typed apiBus (C7). RDF/Turtle remains a batch export; sync is debounced, not literally instantaneous.
 - **CI/CD Automation**: GitHub Actions workflow automatically verifies SHACL shape conformance and builds graph artifacts on push/PR.
 
 ### 2.9 Multi-Project Workspace Management
@@ -157,12 +158,12 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   correlation id. `AgentServer.getBus()` exposes the instance without changing
   the existing HTTP facade. `CommandContext.onClose()` lets SSE handlers remove
   scheduler/chat clients when the connection closes.
-- Fifteen modules are wired in the constructor and own 82 of the 87 commands:
+- Fifteen modules are wired in the constructor and own 89 of the 90 bus commands:
   catalogue, tools, review queue, ingestion, graph, projects, changesets,
   files, scheduler, execution, vault, review studio, research, study and chat.
-  `docs.openapi`, `docs.swagger` and the three `graph.proxy` operations remain
-  in the gateway: the docs are public and the FastAPI proxies run before
-  CORS/token validation.
+  `auth.me` is registered in `AgentServer`; `docs.openapi`, `docs.swagger` and
+  the three `graph.proxy` operations remain in the gateway: the docs are public
+  and the FastAPI proxies run before CORS/token validation.
 - Handlers return transport-neutral results: `json`, `binary` (verbatim bytes)
   or `sse`. `sendApiResult()` is the single place that writes `ServerResponse`,
   including the SSE headers and the `[DONE]` terminator. Streamed ingestion,
@@ -177,7 +178,7 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
 
 #### 2.10.3 Typed client and frontend bus (Fase 3)
 
-- `src/shared/api/endpoints.ts` maps all 87 `EndpointId`s to request/response
+- `src/shared/api/endpoints.ts` maps all 95 `EndpointId`s to request/response
   types. An `IsExact<keyof EndpointTypes, EndpointId>` assertion makes a missing
   endpoint a compile-time error; stream/binary/document routes resolve to the
   raw fetch `Response`.

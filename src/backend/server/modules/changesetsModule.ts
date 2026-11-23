@@ -9,6 +9,7 @@
 import { error, json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { ChangesetStatus, ChangesetStore, StageChangesetInput } from '../changesetStore';
+import { GraphEventHub, graphChangedFrame } from '../graphEvents';
 import type { DomainServices, ProjectId } from './services';
 
 type Payload = Record<string, unknown>;
@@ -33,7 +34,10 @@ function pathId(payload: Payload): string {
 export class ChangesetsModule implements DomainModule {
   readonly name = 'changesets';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(
+    private readonly services: DomainServices,
+    private readonly graphEvents?: GraphEventHub,
+  ) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('changesets.list', (payload, context) => this.list(payload, context.projectId));
@@ -91,6 +95,13 @@ export class ChangesetsModule implements DomainModule {
         ? this.services.provenanceActor(context.principal)
         : undefined;
       const result = await (await this.store(context.projectId)).apply(pathId(payload), actor);
+      for (const file of result.appliedFiles) {
+        this.graphEvents?.publish(graphChangedFrame('browser', {
+          projectId: context.projectId,
+          path: file,
+          action: 'APPLIED',
+        }));
+      }
       return json({ success: true, ...result });
     } catch (err) {
       return error(String(err), 400);
@@ -111,6 +122,9 @@ export class ChangesetsModule implements DomainModule {
   }
 }
 
-export function createChangesetsModule(services: DomainServices): ChangesetsModule {
-  return new ChangesetsModule(services);
+export function createChangesetsModule(
+  services: DomainServices,
+  graphEvents?: GraphEventHub,
+): ChangesetsModule {
+  return new ChangesetsModule(services, graphEvents);
 }
