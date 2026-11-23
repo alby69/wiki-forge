@@ -92,6 +92,8 @@ import { actorKind, canonicalActor, PROCESS_FALLBACK_ACTOR } from './auth/actor'
 import { createIdpAdapter, defaultIdpDependencies, type IdpAdapter, type IdpDependencies } from './auth/idp';
 import { loadRbacConfigSync, type RbacConfig } from './auth/rbacConfig';
 import { createRbacMiddleware } from './auth/rbacMiddleware';
+import { buildAuthIdentity } from './auth/identity';
+import { UserStore } from './auth/userStore';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from './modules/toolsModule';
 import { createReviewModule, type ReviewModule } from './modules/reviewModule';
@@ -107,6 +109,7 @@ import { createReviewStudioModule } from './modules/reviewStudioModule';
 import { createResearchModule } from './modules/researchModule';
 import { createStudyModule } from './modules/studyModule';
 import { createChatModule } from './modules/chatModule';
+import { UserModule } from './modules/userModule';
 import type { DomainServices } from './modules/services';
 import type { PythonTool } from './modules/pythonTool';
 import { matchRoute } from '../../shared/api/router';
@@ -782,6 +785,7 @@ export class AgentServer {
   private readonly strictProvenance: boolean;
   /** B6 — absent unless `[enterprise.auth].provider` is configured. */
   private readonly idp?: IdpAdapter;
+  private readonly userStore: UserStore;
   private readonly bus: MessageBus;
   private readonly catalogue: CatalogueModule;
   private readonly tools: ToolsModule;
@@ -811,6 +815,7 @@ export class AgentServer {
           idpDependencies ?? defaultIdpDependencies(),
         )
       : undefined;
+    this.userStore = new UserStore({ rootDir });
     this.bus = createMessageBus();
     // B3 — opt-in gate. With `enable_rbac=false` this middleware returns
     // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
@@ -822,17 +827,21 @@ export class AgentServer {
       const principal = context.principal ?? legacyPrincipal();
       return json({
         success: true,
-        auth: {
-          actor: principal.actor,
-          roles: [...principal.roles],
-          source: principal.source,
-          authenticated: payload.authenticated === true,
+        auth: buildAuthIdentity(principal, payload.authenticated === true, {
           rbacEnabled: this.rbacConfig.enabled,
           strict: this.strictProvenance,
           idpConfigured: Boolean(this.idp),
-        },
+          userStoreConfigured: this.userStore.isEnabledSync(),
+        }),
       });
     });
+    const userModule = new UserModule({
+      store: this.userStore,
+      rbac: this.rbacConfig,
+      idpConfigured: Boolean(this.idp),
+      strict: this.strictProvenance,
+    });
+    userModule.register(this.bus);
     this.catalogue = createCatalogueModule(rootDir);
     this.catalogue.register(this.bus);
     this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);
@@ -1668,7 +1677,7 @@ export class AgentServer {
    * made unless an IdP is explicitly configured.
    */
   private authenticate(req: http.IncomingMessage) {
-    return authenticateRequest(req, this.idp);
+    return authenticateRequest(req, this.idp, process.env, this.userStore);
   }
 
   private getProjectIdFromRequest(req: http.IncomingMessage, url: URL): string {
@@ -1813,6 +1822,18 @@ export class AgentServer {
       return this.dispatchApiCommand(
         'auth.me', { authenticated: true }, projectId, req, res, viewed.principal,
       );
+    }
+
+    if (req.method === 'POST' && pathname === '/api/auth/login') {
+      let body: Record<string, unknown>;
+      try {
+        body = await readJsonBody<Record<string, unknown>>(req);
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: String(err) }));
+        return true;
+      }
+      return this.dispatchApiCommand('auth.login', { ...body, body }, projectId, req, res);
     }
 
     // B4/B6 — authenticate BEFORE any other ingress, the FastAPI graph proxy

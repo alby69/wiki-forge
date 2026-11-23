@@ -47,6 +47,7 @@ import { CommandPalette } from '@frontend/components/ui/CommandPalette';
 import { ProjectManagerModal } from '@frontend/components/projects/ProjectManagerModal';
 import { NewDocumentModal } from '@frontend/components/templates/NewDocumentModal';
 import { TemplateManagerModal } from '@frontend/components/templates/TemplateManagerModal';
+import { UserManagerModal } from '@frontend/components/users/UserManagerModal';
 import { ProjectService } from '@frontend/services/projectService';
 import { bindActionHandler } from '@frontend/core/actions';
 import { eventBus } from '@frontend/core/events';
@@ -96,6 +97,7 @@ export class WikiForgeApp {
   private projectManager!: ProjectManagerModal;
   private newDocumentModal!: NewDocumentModal;
   private templateManager!: TemplateManagerModal;
+  private userManager!: UserManagerModal;
   private stopGraphEvents?: () => void;
 
   constructor(rootContainer: HTMLElement) {
@@ -503,6 +505,7 @@ Backlink to [[01-index]].
       onOpenChat: () => this.chatDrawer.open(),
       onVaultUpdated: () => void this.loadVault(),
     });
+    this.userManager = new UserManagerModal();
     appStore.subscribe(state => {
       this.layout.setViewMode(state.viewMode);
     });
@@ -525,7 +528,11 @@ Backlink to [[01-index]].
     bindActionHandler('global:template', () => this.templateManager.open());
     bindActionHandler('global:help', () => void this.helpPanel.open());
     bindActionHandler('global:chat', () => this.chatDrawer.toggle());
+    bindActionHandler('global:users', () => void this.userManager.open());
     bindActionHandler('global:toggleMode', () => appStore.toggleAdvancedMode());
+    bindActionHandler('focus:upload', () => this.simpleDashboard.openUploadModal());
+    bindActionHandler('focus:compile', () => void this.simpleDashboard.executeCompilePipeline());
+    bindActionHandler('focus:ask', () => this.simpleDashboard.openAsk());
 
     bindActionHandler('note:info', () => this.toggleContext());
     bindActionHandler('note:review', context => this.openReviewStudio(context.noteId));

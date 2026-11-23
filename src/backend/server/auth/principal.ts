@@ -12,6 +12,7 @@
 import type http from 'node:http';
 import { apiTokenFromRequest, bearerTokenFromRequest, verifyApiToken } from './apiToken';
 import type { IdpAdapter } from './idp';
+import type { UserStore } from './userStore';
 import type { Principal } from '../bus/messageBus';
 
 /** Canonical actor used until a real identity provider is configured. */
@@ -53,10 +54,15 @@ export async function authenticateRequest(
   req: Pick<http.IncomingMessage, 'headers'>,
   idp?: IdpAdapter,
   env: NodeJS.ProcessEnv = process.env,
+  userStore?: UserStore,
 ): Promise<RequestAuthentication> {
   const legacy = legacyPrincipal();
+  const bearer = bearerTokenFromRequest(req);
+  if (bearer) {
+    const localPrincipal = userStore?.principalForToken(bearer);
+    if (localPrincipal) return { ok: true, principal: localPrincipal };
+  }
   if (idp) {
-    const bearer = bearerTokenFromRequest(req);
     if (bearer) {
       const verified = await idp.verify(bearer);
       return verified.ok && verified.principal

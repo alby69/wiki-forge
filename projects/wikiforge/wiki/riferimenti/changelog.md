@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Utenti server-side e UI Focus/Developer
+
+- **Backend**: nuovo `UserStore` con account persistenti in `.wiki-forge/users.json`, password hashata con `scrypt`, sessioni opache con TTL, bootstrap Admin via `WIKIFORGE_ADMIN_USERNAME`/`WIKIFORGE_ADMIN_PASSWORD` e guardia sull'ultimo Admin attivo. I ruoli canonici restano `Reader`, `Contributor`, `KnowledgeEngineer`, `Admin`.
+- **API**: nuove route tipizzate `POST /api/auth/login`, `GET /api/users`, `POST /api/users`, `PATCH /api/users/:id` e `DELETE /api/users/:id` nel catalogo dichiarativo; `auth.me` espone `source: local` e `userStoreConfigured` in modo additivo. Nessun envelope o metodo pubblico esistente è stato rotto.
+- **Autorizzazione**: `auth.login` resta pubblico e fuori dal gate RBAC; `users.*` richiede Admin. I principal locali sono applicati anche con `enable_rbac=false`, quindi la gestione utenti non dipende dal solo token condiviso. Il Bearer locale passa dalla verifica HTTP al contesto del bus senza fidarsi di campi del body.
+- **UI**: Focus Mode mostra solo brand, modalità, progetto, lingua, Wiki-Forge Docs, viste File/Editor/Note/Grafo/Divisione, Progetti/Ricerca/Studio/Chat e le azioni `Carica`, `Compila`, `Chiedi`; il menu `⋯` e gli strumenti sviluppatore sono nascosti. Developer Mode riabilita tutto e offre la modale **Gestione utenti** (CRUD con ruoli e stato attivo) plus sign-in locale/IdP, con accesso via `apiBus` e zero `fetch(` nei componenti.
+- **Verifica**: 495 test Node (495 pass), 154 test Python, 6 test legacy, typecheck, build, registry/docs sync, OKF lint e `git diff --check` verdi. `auto_apply=false`, nessun contract break e registry SSOT a 29 script invariati.
+
 ### Audit post-23/23 — indurimento A4/A5, B7, C2/C4
 
 - **A4**: la rivalidazione usa davvero `okf_lint + shacl + cq_validator`; nuovo CLI `shacl_validator.py` con exit 0/1, finding strutturato su fallimento pre/post in `.wiki-forge/autonomy-findings.jsonl`, allowlist estesa a script/percorsi/finding-kind e wiring dell'engine solo dopo job riusciti. `auto_apply=false` e default `off` invariati.

@@ -25,17 +25,21 @@ const HEADER_ACTION_ROLES: Record<string, string> = {
   'global:config': 'Admin',
   'global:wizard': 'Admin',
   'global:keWorkbench': 'KnowledgeEngineer',
+  'global:users': 'Admin',
 };
 
-/** True when the store holds a verified IdP identity (strict mode UI only). */
 export function hasIdpIdentity(): boolean {
   return appStore.getState().auth.identity?.source === 'idp';
 }
 
-/** Role-gated rendering; legacy mode always returns true (no visual change). */
+export function hasManagedIdentity(): boolean {
+  const identity = appStore.getState().auth.identity;
+  return identity?.authenticated === true && (identity.source === 'idp' || identity.source === 'local');
+}
+
 export function canRenderAction(actionId: string): boolean {
   const identity = appStore.getState().auth.identity;
-  if (!identity || identity.source !== 'idp') return true;
+  if (!hasManagedIdentity() || !identity) return true;
   const required = HEADER_ACTION_ROLES[actionId];
   if (!required) return true;
   return identity.roles.some((role) => (RBAC_RANK[role] ?? -1) >= RBAC_RANK[required]);
@@ -76,7 +80,18 @@ export async function signIn(token: string): Promise<AuthIdentityDto> {
   return identity;
 }
 
-/** Clear both token and identity; the legacy UI is restored immediately. */
+export async function signInWithCredentials(username: string, password: string): Promise<AuthIdentityDto> {
+  const clean = username.trim();
+  if (!clean || !password) throw new Error('Username e password richiesti');
+  const data = await apiBus.dispatch('auth.login', { body: { username: clean, password } });
+  if (data.success === false) {
+    throw new Error((data as { error?: string }).error ?? 'HTTP 200');
+  }
+  if (!data.token || !data.auth?.authenticated) throw new Error('Identità utente non verificata');
+  appStore.setAuth(data.token, data.auth);
+  return data.auth;
+}
+
 export function signOut(): void {
   appStore.signOut();
 }

@@ -15,6 +15,7 @@ import type {
   ChangesetDto,
   DeepResearchDto,
   HelpTopicDto,
+  ManagedUserDto,
   PolicyDecisionDto,
   ProjectBundleDto,
   ProjectEntryDto,
@@ -151,12 +152,17 @@ export const SCHEMAS: Record<string, JsonSchema> = {
   AuthIdentity: obj({
     actor: str('Canonical server-derived actor, e.g. human:<id> or process:api-token'),
     roles: arr(str('Canonical RBAC role')),
-    source: str('legacy-token | idp | process', ['legacy-token', 'idp', 'process']),
+    source: str('legacy-token | idp | local | process', ['legacy-token', 'idp', 'local', 'process']),
     authenticated: bool('True when a verified credential was supplied'),
     rbacEnabled: bool('enterprise.enable_rbac'),
     strict: bool('Strict provenance mode'),
     idpConfigured: bool('An IdP adapter is active'),
+    userStoreConfigured: bool('The server-side user store has accounts or a bootstrap admin'),
   }, ['actor', 'roles', 'source', 'authenticated', 'rbacEnabled', 'strict', 'idpConfigured']),
+  ManagedUser: obj({
+    id: str(), username: str(), roles: arr(str('Canonical RBAC role')),
+    active: bool(), createdAt: str(), updatedAt: str(),
+  }, ['id', 'username', 'roles', 'active', 'createdAt', 'updatedAt']),
   WikiNote: obj({
     id: str('Stable note id or wiki-relative path'),
     title: str(),
@@ -304,6 +310,52 @@ export const ROUTES = [
     description: 'Public identity introspection: without credentials it reports authenticated=false. An invalid credential still returns the standard 401 envelope.',
     command: 'auth.me',
     request: {}, response: { schema: ok({ auth: ref('AuthIdentity') }) },
+  }),
+  defineRoute({
+    id: 'auth.login', method: 'POST', path: '/api/auth/login', tags: ['Identity'],
+    summary: 'Sign in with a server-side user account',
+    description: 'Public credential exchange. Returns an opaque bearer token whose identity is resolved by the server on every later request.',
+    command: 'auth.login',
+    request: {
+      body: obj({ username: str(), password: str() }, ['username', 'password'], 'User credentials'),
+    },
+    response: { schema: ok({ token: str(), user: ref('ManagedUser'), auth: ref('AuthIdentity') }) },
+  }),
+  defineRoute({
+    id: 'users.list', method: 'GET', path: '/api/users', tags: ['Identity'],
+    summary: 'List server-side user accounts',
+    command: 'users.list',
+    request: {}, response: { schema: ok({ users: arr(ref('ManagedUser')) }) },
+  }),
+  defineRoute({
+    id: 'users.create', method: 'POST', path: '/api/users', tags: ['Identity'],
+    summary: 'Create a server-side user account',
+    command: 'users.create',
+    request: {
+      body: obj({
+        username: str(), password: str(), roles: arr(str('Canonical RBAC role')), active: bool(),
+      }, ['username', 'password', 'roles'], 'New user'),
+    },
+    response: { schema: ok({ user: ref('ManagedUser') }) },
+  }),
+  defineRoute({
+    id: 'users.update', method: 'PATCH', path: '/api/users/:id', tags: ['Identity'],
+    summary: 'Update roles, status or password of a server-side user',
+    command: 'users.update',
+    request: {
+      params: [pathParam('id', 'Stable user id')],
+      body: obj({
+        roles: arr(str('Canonical RBAC role')), active: bool(), password: str(),
+      }, [], 'User changes'),
+    },
+    response: { schema: ok({ user: ref('ManagedUser') }) },
+  }),
+  defineRoute({
+    id: 'users.delete', method: 'DELETE', path: '/api/users/:id', tags: ['Identity'],
+    summary: 'Delete a server-side user account',
+    command: 'users.delete',
+    request: { params: [pathParam('id', 'Stable user id')] },
+    response: { schema: ok() },
   }),
 
   // ---------------------------------------------------------------------------
@@ -1161,7 +1213,7 @@ export const PROJECT_SCOPED_ROUTE_COUNT: number = ROUTES.filter((route) => route
 
 /** Kinds of import above are kept as a type-only reference for documentation generation. */
 export type ContractDtos =
-  | ApiErrorBody | ApprovalRequestDto | AuthIdentityDto | ChangesetDto | HelpTopicDto | PolicyDecisionDto
+  | ApiErrorBody | ApprovalRequestDto | AuthIdentityDto | ChangesetDto | HelpTopicDto | ManagedUserDto | PolicyDecisionDto
   | ProjectBundleDto | ProjectEntryDto | ProjectStatsDto | ReviewMetaDto | ReviewDigestDto
   | ReviewDiffDto | ReviewSnapshotDto | SchedulerEventDto | SchedulerStatusDto | SkillDto
   | SseEventDto | SuccessDto | TrashEntryDto | WikiNoteDto | SearchResultDto | TraceResultDto

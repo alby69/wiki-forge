@@ -3,7 +3,9 @@ import { appStore, type AppState, type ViewMode } from '@frontend/store/appStore
 import { getAction, getActions, runAction, actionLabel, actionTitle, type ActionDefinition } from '@frontend/core/actions';
 import { getLanguage, setLanguage, subscribeLanguage, t } from '@frontend/core/i18n/strings';
 import { escapeHtml } from '@frontend/core/utils/html';
-import { canRenderAction, signIn, signOut } from '@frontend/core/auth';
+import { canRenderAction, signIn, signInWithCredentials, signOut } from '@frontend/core/auth';
+
+const FOCUS_ACTION_IDS = ['global:projects', 'global:research', 'global:study', 'global:docsWiki', 'global:chat'];
 
 const VIEW_MODES: Array<{ id: ViewMode; labelKey: 'viewEditor' | 'viewScratchpad' | 'viewGraph' | 'viewSplit'; icon: string }> = [
   { id: 'editor', labelKey: 'viewEditor', icon: '📝' },
@@ -27,6 +29,7 @@ const HEADER_BUTTON_IDS: Record<string, string> = {
   'global:template': 'header-template-btn',
   'global:chat': 'chat-toggle-header-btn',
   'global:help': 'header-help-btn',
+  'global:users': 'header-users-btn',
 };
 
 const ACTION_ID_BY_BUTTON_ID: Record<string, string> = Object.fromEntries(
@@ -113,6 +116,7 @@ export class Header {
       state.auth.identity?.roles.join(',') ?? '',
       state.auth.identity?.authenticated === true,
       state.auth.identity?.idpConfigured === true,
+      state.auth.identity?.userStoreConfigured === true,
     ].join('|');
   }
 
@@ -125,12 +129,13 @@ export class Header {
 
   /** Actions that can be toggled from the ⋯ menu and shown as header buttons. */
   private pinnableActions(state: AppState): ActionDefinition[] {
-    return getActions({ group: 'global', menu: true })
-      // The docs wiki is a Developer Mode feature: don't offer a flag that
-      // would have no visible effect in Focus Mode.
-      .filter(action => action.id !== 'global:docsWiki' || state.isAdvancedMode)
-      // B7 — role-gated rendering applies only to verified IdP identities.
-      .filter(action => canRenderAction(action.id));
+    const catalogue = getActions({ group: 'global', menu: true });
+    if (!state.isAdvancedMode) {
+      return catalogue
+        .filter(action => FOCUS_ACTION_IDS.includes(action.id))
+        .filter(action => canRenderAction(action.id));
+    }
+    return catalogue.filter(action => canRenderAction(action.id));
   }
 
   /** The only list in the ⋯ menu: tick the flag to pin, click the row to run. */
@@ -155,6 +160,7 @@ export class Header {
   }
 
   private renderMenu(state: AppState): string {
+    if (!state.isAdvancedMode) return '';
     return `
       <div class="wf-header__menu">
         <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}"><span class="wf-menu__dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
@@ -181,12 +187,14 @@ export class Header {
 
     const pinnedIds = new Set(state.pinnedActionIds);
     const pinned = this.pinnableActions(state)
-      .filter(action => !SPECIAL_HEADER_ACTIONS.has(action.id) && pinnedIds.has(action.id))
+      .filter(action => !SPECIAL_HEADER_ACTIONS.has(action.id)
+        && (state.isAdvancedMode ? pinnedIds.has(action.id) : FOCUS_ACTION_IDS.includes(action.id)))
       .map(action => this.renderActionButton(action, headerButtonId(action.id)))
       .join('');
 
     const docsAction = getAction('global:docsWiki');
-    const docsButton = state.isAdvancedMode && pinnedIds.has('global:docsWiki') && docsAction
+    const docsVisible = state.isAdvancedMode ? pinnedIds.has('global:docsWiki') : FOCUS_ACTION_IDS.includes('global:docsWiki');
+    const docsButton = docsVisible && docsAction
       ? `<button id="${headerButtonId('global:docsWiki')}" class="wf-btn wf-btn--sm wf-btn--success" data-action-id="${headerButtonId('global:docsWiki')}" data-action-key="global:docsWiki" title="${escapeHtml(t('docsWiki'))}" aria-label="${escapeHtml(t('docsWiki'))}">${docsAction.icon} ${escapeHtml(actionLabel(docsAction))}</button>`
       : '';
     if (docsButton) {
@@ -194,31 +202,55 @@ export class Header {
       this.headerActionButtonIds.push(headerButtonId('global:docsWiki'));
     }
 
-    const chatButton = pinnedIds.has('global:chat')
+    const chatVisible = state.isAdvancedMode ? pinnedIds.has('global:chat') : FOCUS_ACTION_IDS.includes('global:chat');
+    const chatButton = chatVisible
       ? `<button id="${headerButtonId('global:chat')}" class="wf-btn wf-btn--primary" title="${escapeHtml(t('chat'))}" aria-label="${escapeHtml(t('chat'))}"><span aria-hidden="true">💬</span> ${escapeHtml(t('chat'))}</button>`
       : '';
     if (chatButton) this.headerActionButtonIds.push(headerButtonId('global:chat'));
 
-    const helpButton = pinnedIds.has('global:help')
+    const helpButton = state.isAdvancedMode && pinnedIds.has('global:help')
       ? `<button id="${headerButtonId('global:help')}" class="wf-icon-btn" title="${escapeHtml(t('help'))} (F1)" aria-label="${escapeHtml(t('help'))}">?</button>`
       : '';
     if (helpButton) this.headerActionButtonIds.push(headerButtonId('global:help'));
 
-    // B7 — the identity chip/sign-in form appears only when the server reports
-    // an IdP session or an available IdP. Legacy mode renders no extra markup.
+    const focusQuickActions = state.isAdvancedMode ? '' : [
+      { id: 'focus-upload-btn', action: 'focus:upload' },
+      { id: 'focus-compile-btn', action: 'focus:compile' },
+      { id: 'focus-ask-btn', action: 'focus:ask' },
+    ].map(({ id, action }) => {
+      const def = getAction(action);
+      if (!def) return '';
+      return `<button id="${id}" class="wf-btn wf-btn--sm wf-focus-btn" title="${escapeHtml(actionLabel(def))}" aria-label="${escapeHtml(actionLabel(def))}"><span aria-hidden="true">${def.icon}</span> ${escapeHtml(actionLabel(def))}</button>`;
+    }).join('');
+
     const identity = state.auth.identity;
-    const identityArea = identity?.source === 'idp'
-      ? `<div class="wf-header__identity" id="wf-identity">
-           <span id="wf-identity-actor" title="Utente autenticato">👤 ${escapeHtml(identity.actor)}</span>
+    const authenticated = identity?.authenticated === true
+      && (identity.source === 'idp' || identity.source === 'local');
+    let identityArea = '';
+    if (state.isAdvancedMode && authenticated && identity) {
+      identityArea = `<div class="wf-header__identity" id="wf-identity">
+           <span id="wf-identity-actor" title="${escapeHtml(t('userManager'))}">👤 ${escapeHtml(identity.actor)}</span>
            <span id="wf-identity-roles">${identity.roles.map((role) => escapeHtml(role)).join(' · ')}</span>
-           <button id="wf-signout-btn" class="wf-icon-btn" title="Esci" aria-label="Esci">⇥</button>
-         </div>`
-      : identity?.idpConfigured && !identity.authenticated
-        ? `<div class="wf-header__identity" id="wf-identity-signin">
-             <input id="wf-token-input" class="wf-field" type="password" placeholder="Token IdP" aria-label="Token IdP" />
-             <button id="wf-signin-btn" class="wf-btn wf-btn--sm wf-btn--primary" aria-label="Accedi">Accedi</button>
-           </div>`
-        : '';
+           <button id="wf-signout-btn" class="wf-icon-btn" title="${escapeHtml(t('signOut'))}" aria-label="${escapeHtml(t('signOut'))}">⇥</button>
+         </div>`;
+    } else if (state.isAdvancedMode && identity && !identity.authenticated) {
+      const forms: string[] = [];
+      if (identity.idpConfigured) {
+        forms.push(`<input id="wf-token-input" class="wf-field" type="password" placeholder="Token IdP" aria-label="Token IdP" />
+          <button id="wf-signin-btn" class="wf-btn wf-btn--sm wf-btn--primary" aria-label="${escapeHtml(t('signIn'))}">${escapeHtml(t('signIn'))}</button>`);
+      }
+      if (identity.userStoreConfigured) {
+        forms.push(`<input id="wf-username-input" class="wf-field" placeholder="${escapeHtml(t('username'))}" aria-label="${escapeHtml(t('username'))}" />
+          <input id="wf-password-input" class="wf-field" type="password" placeholder="${escapeHtml(t('password'))}" aria-label="${escapeHtml(t('password'))}" />
+          <button id="wf-user-signin-btn" class="wf-btn wf-btn--sm wf-btn--primary" aria-label="${escapeHtml(t('signIn'))}">${escapeHtml(t('signIn'))}</button>`);
+      }
+      if (forms.length > 0) {
+        identityArea = `<div class="wf-header__identity" id="wf-identity-signin">
+            ${forms.join('')}
+            <span id="wf-login-error" class="wf-login-error" role="status"></span>
+          </div>`;
+      }
+    }
 
     this.container.innerHTML = `
       <header class="wf-header">
@@ -249,6 +281,7 @@ export class Header {
           </div>
 
           <div class="wf-header__group wf-header__group--actions">
+            ${focusQuickActions}
             <div class="wf-header__actions">
               ${pinned}
               ${docsButton}
@@ -351,6 +384,20 @@ export class Header {
       const token = input?.value?.trim() ?? '';
       if (token) void signIn(token);
     });
+    this.container.querySelector('#wf-user-signin-btn')?.addEventListener('click', () => {
+      const username = (this.container.querySelector('#wf-username-input') as HTMLInputElement | null)?.value ?? '';
+      const password = (this.container.querySelector('#wf-password-input') as HTMLInputElement | null)?.value ?? '';
+      const errorEl = this.container.querySelector('#wf-login-error') as HTMLElement | null;
+      if (errorEl) errorEl.textContent = '';
+      void signInWithCredentials(username, password).catch(() => {
+        if (errorEl) errorEl.textContent = t('invalidCredentials');
+      });
+    });
+
+    for (const id of ['focus-upload-btn', 'focus-compile-btn', 'focus-ask-btn']) {
+      const action = id === 'focus-upload-btn' ? 'focus:upload' : id === 'focus-compile-btn' ? 'focus:compile' : 'focus:ask';
+      this.container.querySelector(`#${id}`)?.addEventListener('click', () => runAction(action));
+    }
 
     const projectSelect = this.container.querySelector('#header-project-select') as HTMLSelectElement | null;
     projectSelect?.addEventListener('change', () => {

@@ -40,6 +40,7 @@ export const ROLE_RANK: Record<RbacRole, number> = {
 export const OPERATION_ROLES: Record<string, RbacRole> = {
   // Reader — reads and export
   'auth.me': 'Reader',
+  'auth.login': 'Reader',
   'files.download': 'Reader',
   'graph.clusters': 'Reader',
   'graph.cypher': 'Reader',
@@ -135,6 +136,10 @@ export const OPERATION_ROLES: Record<string, RbacRole> = {
   'projects.rename': 'Admin',
   'projects.restore': 'Admin',
   'schedule.approvalDecision': 'Admin',
+  'users.list': 'Admin',
+  'users.create': 'Admin',
+  'users.update': 'Admin',
+  'users.delete': 'Admin',
 };
 
 /** Unknown commands require Admin: a new endpoint is never public by default. */
@@ -169,8 +174,7 @@ export function effectiveRoles(
   scopePath?: string,
 ): string[] {
   const acl = rolesForScope(config, projectId, scopePath);
-  if (principal?.source === 'idp') {
-    // B6: trusted claims are authoritative; empty roles must not inherit ACL.
+  if (principal?.source === 'idp' || principal?.source === 'local') {
     return principal.roles.filter((role) => acl.includes(role));
   }
   if (principal?.roles.length) {
@@ -223,8 +227,9 @@ export function createRbacMiddleware(config: RbacConfig) {
     payload: unknown,
     context: CommandContext,
   ): ApiResult | undefined => {
-    if (!config.enabled) return undefined;
-    // B7 — credential-free identity discovery is public, regardless of ACL.
+    const isLocal = context.principal?.source === 'local';
+    if (!config.enabled && !isLocal) return undefined;
+    if (command === 'auth.login') return undefined;
     if (command === 'auth.me'
       && (payload as { authenticated?: boolean } | null)?.authenticated === false) {
       return undefined;

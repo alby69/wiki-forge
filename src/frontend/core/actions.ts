@@ -39,7 +39,11 @@ const BUILT_IN_ACTIONS: ActionDefinition[] = [
   { id: 'global:template', labelKey: 'template', icon: '📐', titleKey: 'templateManager', group: 'global', menu: true },
   { id: 'global:help', labelKey: 'help', icon: '❓', group: 'global', menu: true, shortcut: 'F1' },
   { id: 'global:chat', labelKey: 'chat', icon: '💬', group: 'global', menu: true },
+  { id: 'global:users', labelKey: 'users', icon: '👥', titleKey: 'userManager', group: 'global', menu: true },
   { id: 'global:toggleMode', labelKey: 'actions', icon: '🔄', group: 'global', menu: false, shortcut: 'Ctrl+Shift+D' },
+  { id: 'focus:upload', labelKey: 'upload', icon: '📥', group: 'global', menu: false },
+  { id: 'focus:compile', labelKey: 'compile', icon: '⚡', group: 'global', menu: false },
+  { id: 'focus:ask', labelKey: 'ask', icon: '💬', group: 'global', menu: false },
 
   { id: 'note:info', labelKey: 'nodeInfo', icon: '📊', group: 'note' },
   { id: 'note:review', labelKey: 'review', icon: '🧐', group: 'note' },

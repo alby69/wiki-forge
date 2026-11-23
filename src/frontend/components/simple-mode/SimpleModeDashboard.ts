@@ -137,6 +137,10 @@ export class SimpleModeDashboard {
     });
   }
 
+  public openAsk(): void {
+    this.onOpenChat();
+  }
+
   private openMarkdownImport(): void {
     if (!this.markdownImport) {
       this.markdownImport = new MarkdownImportModal({
@@ -147,7 +151,7 @@ export class SimpleModeDashboard {
     void this.markdownImport.open();
   }
 
-  private openUploadModal(): void {
+  public openUploadModal(): void {
     setHelpContext('upload');
     if (this.dropZoneModal) {
       this.dropZoneModal.style.display = 'flex';
@@ -197,7 +201,7 @@ export class SimpleModeDashboard {
     }
   }
 
-  private async executeCompilePipeline(): Promise<void> {
+  public async executeCompilePipeline(): Promise<void> {
     if (this.isCompiling) return;
 
     this.isCompiling = true;

@@ -168,14 +168,14 @@ describe('Header toolbar customizer', () => {
     header.destroy();
   });
 
-  it('hides the Docs Wiki flag and button in Focus Mode', () => {
+  it('keeps Docs Wiki visible and hides its customizer flag in Focus Mode', () => {
     const dom = createDom();
     const header = new Header({ container: dom.container });
     appStore.setAdvancedMode(false);
 
     const markup = dom.html();
     assert.ok(!markup.includes('data-pin-action="global:docsWiki"'));
-    assert.ok(!markup.includes('header-docs-wiki-btn'));
+    assert.ok(markup.includes('header-docs-wiki-btn'));
 
     header.destroy();
   });

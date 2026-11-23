@@ -121,7 +121,7 @@ test('Header renders the Docs Wiki button in Developer Mode and fires the callba
   });
 
   assert.ok(html.includes('header-docs-wiki-btn'), 'Docs Wiki button is rendered in Dev Mode');
-  assert.ok(html.includes('📚 Wiki Docs'));
+  assert.ok(html.includes('📚 Wiki-Forge Docs'));
   for (const cb of listeners.get('#header-docs-wiki-btn:click') ?? []) cb();
   assert.equal(opened, 1);
 

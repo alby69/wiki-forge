@@ -430,12 +430,24 @@ export interface SuccessDto {
  * exposed. In legacy mode the actor is `process:api-token` and the UI renders
  * exactly as before.
  */
+export type ManagedUserRole = 'Reader' | 'Contributor' | 'KnowledgeEngineer' | 'Admin';
+
+export interface ManagedUserDto {
+  id: string;
+  username: string;
+  roles: ManagedUserRole[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthIdentityDto {
   actor: string;
   roles: string[];
-  source: 'legacy-token' | 'idp' | 'process';
+  source: 'legacy-token' | 'idp' | 'local' | 'process';
   authenticated: boolean;
   rbacEnabled: boolean;
   strict: boolean;
   idpConfigured: boolean;
+  userStoreConfigured?: boolean;
 }

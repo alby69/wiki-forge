@@ -13,6 +13,8 @@ import type {
   ChangesetDto,
   ChangesetEditDto,
   HelpTopicDto,
+  ManagedUserDto,
+  ManagedUserRole,
   PolicyDecisionDto,
   ProjectBundleDto,
   ProjectEntryDto,
@@ -106,6 +108,20 @@ export type EndpointTypes = {
 
   // Identity (B7)
   'auth.me': { req: EmptyRequest; res: Ok<{ auth: AuthIdentityDto }> };
+  'auth.login': {
+    req: WithBody<{ username: string; password: string }>;
+    res: Ok<{ token: string; user: ManagedUserDto; auth: AuthIdentityDto }>;
+  };
+  'users.list': { req: EmptyRequest; res: Ok<{ users: ManagedUserDto[] }> };
+  'users.create': {
+    req: WithBody<{ username: string; password: string; roles: ManagedUserRole[]; active?: boolean }>;
+    res: Ok<{ user: ManagedUserDto }>;
+  };
+  'users.update': {
+    req: WithParamsBody<{ id: string }, { roles?: ManagedUserRole[]; active?: boolean; password?: string }>;
+    res: Ok<{ user: ManagedUserDto }>;
+  };
+  'users.delete': { req: WithParams<{ id: string }>; res: Ok<Record<string, never>> };
 
   // Knowledge graph (proxied to FastAPI)
   'graph.sync': { req: WithBody<{ wiki_dir?: string; output_ttl?: string }>; res: Json };

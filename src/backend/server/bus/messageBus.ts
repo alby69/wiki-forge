@@ -21,7 +21,7 @@ import type { RbacDecision } from '../auth/rbacConfig';
 export interface Principal {
   actor: string;
   roles: string[];
-  source: 'legacy-token' | 'idp' | 'process';
+  source: 'legacy-token' | 'idp' | 'local' | 'process';
 }
 
 export interface CommandContext {

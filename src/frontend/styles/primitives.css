@@ -138,6 +138,9 @@
 }
 .wf-header__actions > .wf-btn,
 .wf-header__actions > .wf-icon-btn { flex: 0 0 auto; white-space: nowrap; }
+.wf-header__focus-actions { display: flex; align-items: center; gap: var(--wf-space-2); flex: 0 0 auto; }
+.wf-focus-btn { background: var(--wf-accent-soft); border-color: var(--wf-accent); }
+.wf-login-error { color: var(--wf-danger); font-size: 11px; max-width: 180px; }
 /* Whatever no longer fits in the first row lands here, centred on the window. */
 .wf-header__overflow {
   display: flex;
