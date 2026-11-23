@@ -11,6 +11,7 @@ import { CodeMirrorAdapter } from './CodeMirrorAdapter';
 import type { ApiStorage } from '@frontend/storage/ApiStorage';
 import { actionLabel, actionTitle, getAction, runAction, type ActionDefinition } from '@frontend/core/actions';
 import { t } from '@frontend/core/i18n/strings';
+import { canUseOperation } from '@frontend/core/auth';
 
 export {
   applyAlignment,
@@ -155,7 +156,7 @@ export class MarkdownEditor {
   }
 
   private saveCurrentContent(): void {
-    if (!this.currentNote || !this.onSaveCb) return;
+    if (!this.currentNote || !this.onSaveCb || !canUseOperation('wiki.note.save')) return;
     const content = this.adapter ? this.adapter.getMarkdown() : this.currentNote.content;
     const fullContent = `${this.currentNote.frontmatterRaw ?? ''}${content}`;
     this.onSaveCb(this.currentNote.id, content, fullContent);
@@ -221,7 +222,8 @@ export class MarkdownEditor {
     }
 
     const note = this.currentNote;
-    const isPreview = this.mode === 'preview';
+    const canEdit = canUseOperation('wiki.note.save');
+    const isPreview = !canEdit || this.mode === 'preview';
 
     this.container.innerHTML = `
       <div class="editor-panel-wrapper" style="height: 100%; display: flex; flex-direction: column; background: #18191c; color: #e2e8f0; border-right: 1px solid #2d3748;">
@@ -234,11 +236,13 @@ export class MarkdownEditor {
               this.renderNoteAction(item.id, item.elementId, item.id === 'note:info' && this.contextVisible ? `${item.variant} wf-btn--active` : item.variant)
             ).join('')}
             ${
-              isPreview
-                ? `<button id="editor-save-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('save'))}</button>
-                   <button id="editor-toggle-btn" class="wf-btn">✏️ ${escapeHtml(t('edit'))}</button>`
-                : `<button id="editor-save-close-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('saveAndClose'))}</button>
-                   <button id="editor-cancel-btn" class="wf-btn">✖ ${escapeHtml(t('cancel'))}</button>`
+              !canEdit
+                ? ''
+                : isPreview
+                  ? `<button id="editor-save-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('save'))}</button>
+                     <button id="editor-toggle-btn" class="wf-btn">✏️ ${escapeHtml(t('edit'))}</button>`
+                  : `<button id="editor-save-close-btn" class="wf-btn wf-btn--primary">💾 ${escapeHtml(t('saveAndClose'))}</button>
+                     <button id="editor-cancel-btn" class="wf-btn">✖ ${escapeHtml(t('cancel'))}</button>`
             }
           </div>
         </div>

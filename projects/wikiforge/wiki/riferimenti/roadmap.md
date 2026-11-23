@@ -90,7 +90,20 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Generatore deterministico `scripts/docs_to_wiki.py` (`--check`, `--json`, `--dry-run`) con provenienza e tag; progetto dedicato `wikiforge` registrato in `config/projects.json`; verifica drift in `scripts/check_docs_sync.py` e validazione `okf_lint.py`.
   - UX: bottone **📚 Wiki Docs** e `Ctrl+Alt+D` aprono il Research Studio con `projectId=wikiforge` (query + header) senza cambiare vault attivo, con badge di ambito e topic guida `wiki-di-wiki-forge`.
   - Accumulazione curata: `scripts/promote_doc_answer.py` (solo umano, `verified: human:<id>`, script mutante bloccato dal Policy Agent) e job `weekly-docs-wiki-drift` che rigenera la proiezione OKF da `docs/` (note curate preservate), con rationale e fonti; i percorsi relativi sono risolti dalla radice del repo e i run schedulati richiedono approvazione F6.
-  - Fase 76: ponte wiki → modifiche al programma con Use Case 8 `ke_wiki_program_change`; `wiki_program_change_propose.py` (sola lettura) accoda la proposta, `wiki_program_change_apply.py` (mutante, F6-only) la applica con snapshot e audit solo dopo approvazione umana. Nessuna mutazione automatica.
+   - Fase 76: ponte wiki → modifiche al programma con Use Case 8 `ke_wiki_program_change`; `wiki_program_change_propose.py` (sola lettura) accoda la proposta, `wiki_program_change_apply.py` (mutante, F6-only) la applica con snapshot e audit solo dopo approvazione umana. Nessuna mutazione automatica.
+
+- [x] **Task 10: Accesso obbligatorio, bootstrap Admin ed esportazione Wiki ZIP**
+  - Gateway di login all'avvio: `refreshIdentity()` viene risolto prima di graph events, vault e onboarding; sessioni anonime o scadute mostrano una modale bloccante e il sign-out riapre il gate.
+  - Bootstrap predefinito `admin`/`admin` in `UserStore` quando le variabili `WIKIFORGE_ADMIN_USERNAME` / `WIKIFORGE_ADMIN_PASSWORD` non sono impostate; credenziali configurate mantengono la precedenza. La modale **👥 Utenti** resta in Modalità Sviluppo per creare utenti e assegnare ruoli.
+  - Nuova route additiva `GET /api/projects/:id/export/markdown.zip` (`projects.exportMarkdownZip`, `application/zip`, auth locale obbligatoria).
+  - Writer ZIP store-only in `src/backend/server/zipFile.ts` (CRC32, nomi UTF-8, timestamp DOS, validazione path, nessuna dipendenza runtime) e raccolta deterministica di tutti i `.md` sotto `[paths].wiki` in `ProjectService`.
+  - Azione **📦 Esporta Wiki ZIP** pinata in Modalità Sviluppo e nascosta in Modalità Focus; download tramite `apiBus` con nome `<project>-wiki.zip`.
+
+- [x] **Task 11: Matrice capabilities RBAC progressiva**
+  - Source of truth condivisa in `src/shared/auth/capabilities.ts`: `OPERATION_MIN_ROLE` e `ACTION_MIN_ROLE` alimentano `OPERATION_ROLES` del backend e `canRenderAction()` / `canUseOperation()` del frontend.
+  - Ruoli progressivi Reader → Contributor → KnowledgeEngineer → Admin: scritture note, upload e changeset staging a Contributor; verifica, deep research, script/scheduler e apply/reject changeset a KnowledgeEngineer; utenti, progetti, config write e approvazioni F6 ad Admin.
+  - UI filtrata per identità managed: header, command palette, scorciatoie, editor, sidebar, tab degli studio, modali progetti/config/tools/changeset/KE, comandi chat e onboarding. Le sessioni legacy/anonymous mantengono la superficie storica.
+  - Copertura test in `tests/capabilityMatrix.test.ts`, `tests/authUi.test.ts`, `tests/userUi.test.ts`, `tests/rbacMiddleware.test.ts` e `tests/graphRoutes.test.ts`.
 
 ---
 

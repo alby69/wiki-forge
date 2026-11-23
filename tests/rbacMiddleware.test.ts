@@ -312,7 +312,7 @@ wikiforge = ["Reader"]
       assert.strictEqual(denied.status, 403);
       assert.deepStrictEqual(denied.body, {
         success: false,
-        error: "Forbidden: 'schedule.trigger' requires the Contributor role in project 'wikiforge'",
+        error: "Forbidden: 'schedule.trigger' requires the KnowledgeEngineer role in project 'wikiforge'",
       });
 
       const allowed = await json(`${h.baseUrl}/api/ke/schedule/trigger?projectId=default`, {
@@ -327,7 +327,7 @@ wikiforge = ["Reader"]
       // allowed one is captured here.
       const seen = capture.filter((entry) => entry.command === 'schedule.trigger');
       assert.strictEqual(seen.length, 1);
-      assert.strictEqual(seen[0].context.rbac?.requiredRole, 'Contributor');
+      assert.strictEqual(seen[0].context.rbac?.requiredRole, 'KnowledgeEngineer');
       assert.strictEqual(seen[0].context.rbac?.allowed, true);
 
       // The denied decision itself is verifiable with the pure function.

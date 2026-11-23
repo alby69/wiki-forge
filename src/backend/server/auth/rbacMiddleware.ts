@@ -16,135 +16,25 @@
 import { error, type ApiResult } from '../api/http';
 import type { CommandContext } from '../bus/messageBus';
 import {
+  OPERATION_MIN_ROLE,
+  ROLE_RANK,
+  minimumRoleForOperation,
+  type CapabilityRole,
+} from '@shared/auth/capabilities';
+import {
   rolesForProject,
   rolesForScope,
   type RbacConfig,
   type RbacDecision,
 } from './rbacConfig';
 
-export type RbacRole = 'Reader' | 'Contributor' | 'KnowledgeEngineer' | 'Admin';
+export type RbacRole = CapabilityRole;
 
-/** Role precedence: a higher role may do everything a lower one may do. */
-export const ROLE_RANK: Record<RbacRole, number> = {
-  Reader: 0,
-  Contributor: 1,
-  KnowledgeEngineer: 2,
-  Admin: 3,
-};
+export const OPERATION_ROLES: Record<string, RbacRole> = OPERATION_MIN_ROLE;
+export { ROLE_RANK };
 
-/**
- * Minimum role for every registered operation. Commands are mapped explicitly
- * so that adding one requires a deliberate decision; anything unmapped fails
- * closed with `Admin` via `requiredRoleFor()`.
- */
-export const OPERATION_ROLES: Record<string, RbacRole> = {
-  // Reader — reads and export
-  'auth.me': 'Reader',
-  'auth.login': 'Reader',
-  'files.download': 'Reader',
-  'graph.clusters': 'Reader',
-  'graph.cypher': 'Reader',
-  'graph.events': 'Reader',
-  'graph.insights': 'Reader',
-  'graph.status': 'Reader',
-  'help.get': 'Reader',
-  'help.list': 'Reader',
-  'ingest.queue.list': 'Reader',
-  'ke.useCases.list': 'Reader',
-  'projects.config.get': 'Reader',
-  'projects.export': 'Reader',
-  'projects.list': 'Reader',
-  'projects.stats': 'Reader',
-  'research.backlinks': 'Reader',
-  'research.related': 'Reader',
-  'research.search': 'Reader',
-  'review.diff': 'Reader',
-  'review.digest': 'Reader',
-  'review.meta': 'Reader',
-  'review.snapshots': 'Reader',
-  'reviews.list': 'Reader',
-  'schedule.approvals': 'Reader',
-  'schedule.decisions': 'Reader',
-  'schedule.events': 'Reader',
-  'schedule.runs': 'Reader',
-  'schedule.status': 'Reader',
-  'scripts.list': 'Reader',
-  'scripts.registry': 'Reader',
-  'skills.list': 'Reader',
-  'wiki.folders.list': 'Reader',
-  'wiki.notes.list': 'Reader',
-  'wiki.scratchpad.list': 'Reader',
-  'wiki.trash.list': 'Reader',
-
-  // Contributor — notes, changeset staging, uploads, generated study material
-  'changesets.get': 'Contributor',
-  'changesets.list': 'Contributor',
-  'changesets.stage': 'Contributor',
-  'chat.send': 'Contributor',
-  'ingest.queue.add': 'Contributor',
-  'graph.sync.neo4j': 'Contributor',
-  'graph.reconcile': 'Contributor',
-  'ingest.queue.process': 'Contributor',
-  'reviews.action': 'Contributor',
-  'reviews.add': 'Contributor',
-  'schedule.trigger': 'Contributor',
-  'study.audioOverview': 'Contributor',
-  'study.guide': 'Contributor',
-  'study.mindmap': 'Contributor',
-  'study.note': 'Contributor',
-  'study.promoteNote': 'Contributor',
-  'study.quiz': 'Contributor',
-  'study.thesisChapter': 'Contributor',
-  'wiki.delete': 'Contributor',
-  'wiki.file.create': 'Contributor',
-  'wiki.folder.create': 'Contributor',
-  'wiki.ingest': 'Contributor',
-  'wiki.move': 'Contributor',
-  'wiki.note.applyEdit': 'Contributor',
-  'wiki.note.attach': 'Contributor',
-  'wiki.note.save': 'Contributor',
-  'wiki.rename': 'Contributor',
-  'wiki.scratchpad.delete': 'Contributor',
-  'wiki.trash.restore': 'Contributor',
-  'wiki.upload': 'Contributor',
-
-  // Knowledge Engineer — verification, use cases, scripts and scheduler
-  'ke.useCases.execute': 'KnowledgeEngineer',
-  'research.consult': 'KnowledgeEngineer',
-  'research.deepResearch': 'KnowledgeEngineer',
-  'research.promoteAnswer': 'KnowledgeEngineer',
-  'research.trace': 'KnowledgeEngineer',
-  'review.critique': 'KnowledgeEngineer',
-  'review.restore': 'KnowledgeEngineer',
-  'review.verify': 'KnowledgeEngineer',
-  'schedule.cancel': 'KnowledgeEngineer',
-  'schedule.patch': 'KnowledgeEngineer',
-  'schedule.run': 'KnowledgeEngineer',
-  'scripts.execute': 'KnowledgeEngineer',
-  'scripts.schedule': 'KnowledgeEngineer',
-  'scripts.unschedule': 'KnowledgeEngineer',
-
-  // Admin — projects, approval decisions, changeset apply/reject and config
-  'changesets.apply': 'Admin',
-  'changesets.reject': 'Admin',
-  'projects.archive': 'Admin',
-  'projects.clone': 'Admin',
-  'projects.config.put': 'Admin',
-  'projects.create': 'Admin',
-  'projects.delete': 'Admin',
-  'projects.import': 'Admin',
-  'projects.rename': 'Admin',
-  'projects.restore': 'Admin',
-  'schedule.approvalDecision': 'Admin',
-  'users.list': 'Admin',
-  'users.create': 'Admin',
-  'users.update': 'Admin',
-  'users.delete': 'Admin',
-};
-
-/** Unknown commands require Admin: a new endpoint is never public by default. */
 export function requiredRoleFor(command: string): RbacRole {
-  return OPERATION_ROLES[command] ?? 'Admin';
+  return minimumRoleForOperation(command);
 }
 
 const PATH_FIELDS = ['path', 'note', 'noteRef', 'file', 'filePath', 'target', 'folder'];

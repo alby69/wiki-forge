@@ -15,6 +15,7 @@ import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
 import { appStore } from '@frontend/store/appStore';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface ReviewStudioCallbacks {
   /** Called after the note was rewritten by a verify or restore action. */
@@ -97,10 +98,22 @@ export class ReviewStudio {
     if (this.isOpen()) this.renderShell();
   }
 
+  private visibleTabs(): Array<{ id: ReviewTab; label: string; icon: string; hint: string }> {
+    const commandFor: Record<ReviewTab, string> = {
+      verify: 'review.verify',
+      critique: 'review.critique',
+      digest: 'review.digest',
+      diff: 'review.diff',
+      proposte: 'reviews.list',
+    };
+    return TABS.filter(candidate => canUseOperation(commandFor[candidate.id]));
+  }
+
   public open(noteId: string, tab: ReviewTab = 'verify'): void {
     const changedNote = this.noteId !== noteId;
+    const visible = this.visibleTabs();
     this.noteId = noteId;
-    this.tab = tab;
+    this.tab = visible.some(candidate => candidate.id === tab) ? tab : visible[0]?.id ?? 'digest';
     if (changedNote) {
       this.meta = null;
       this.snapshots = [];
@@ -121,7 +134,7 @@ export class ReviewStudio {
   }
 
   public setTab(tab: ReviewTab): void {
-    if (this.tab === tab) return;
+    if (this.tab === tab || !this.visibleTabs().some(candidate => candidate.id === tab)) return;
     this.tab = tab;
     this.renderShell();
     void this.loadTab();
@@ -348,7 +361,7 @@ export class ReviewStudio {
           <button class="wf-rs-close" id="wf-rs-close" title="Chiudi (Esc)">✕</button>
         </div>
         <div class="wf-rs-tabs" role="tablist">
-          ${TABS.map(tab => `
+          ${this.visibleTabs().map(tab => `
             <button class="wf-rs-tab${this.tab === tab.id ? ' active' : ''}"
                     role="tab"
                     aria-selected="${this.tab === tab.id}"

@@ -187,6 +187,7 @@ describe('Header toolbar customizer', () => {
       '#header-research-btn': 80,
       '#header-study-btn': 70,
       '#header-docs-wiki-btn': 90,
+      '#header-export-wiki-zip-btn': 70,
       '#chat-toggle-header-btn': 70,
       '#header-help-btn': 30,
     };
@@ -238,6 +239,7 @@ describe('Header toolbar customizer', () => {
     assert.deepEqual(selectors(actions.children), ['#header-projects-btn', '#header-research-btn']);
     assert.deepEqual(selectors(overflow.children), [
       '#header-study-btn',
+      '#header-export-wiki-zip-btn',
       '#header-docs-wiki-btn',
       '#chat-toggle-header-btn',
       '#header-help-btn',
@@ -248,7 +250,7 @@ describe('Header toolbar customizer', () => {
     // Widening the window puts every action back in the first row.
     actions.clientWidth = 600;
     for (const cb of windowListeners.get('resize') ?? []) cb();
-    assert.equal(selectors(actions.children).length, 6);
+    assert.equal(selectors(actions.children).length, 7);
     assert.equal(overflow.hidden, true, 'empty second row is hidden');
 
     header.destroy();

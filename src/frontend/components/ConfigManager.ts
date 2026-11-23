@@ -1,5 +1,6 @@
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
+import { canUseOperation } from '@frontend/core/auth';
 
 /**
  * ConfigManager
@@ -119,7 +120,7 @@ export class ConfigManager {
           <span id="config-status-msg" style="font-size: 12px; color: #48bb78;"></span>
           <div style="display: flex; gap: 8px;">
             <button id="config-cancel-btn" style="background: #2d3748; color: #e2e8f0; border: none; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer;">Cancel</button>
-            <button id="config-save-btn" style="background: #3182ce; color: #ffffff; border: none; padding: 6px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">Save Configuration</button>
+            ${canUseOperation('projects.config.put') ? `<button id="config-save-btn" style="background: #3182ce; color: #ffffff; border: none; padding: 6px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">Save Configuration</button>` : ''}
           </div>
         </div>
 

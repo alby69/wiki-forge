@@ -175,11 +175,11 @@ export class UserStore {
   }
 
   private bootstrapUsername(): string {
-    return (this.env.WIKIFORGE_ADMIN_USERNAME ?? '').trim();
+    return (this.env.WIKIFORGE_ADMIN_USERNAME ?? 'admin').trim() || 'admin';
   }
 
   private bootstrapPassword(): string {
-    return this.env.WIKIFORGE_ADMIN_PASSWORD ?? '';
+    return this.env.WIKIFORGE_ADMIN_PASSWORD || 'admin';
   }
 
   private sessionTtlMs(): number {

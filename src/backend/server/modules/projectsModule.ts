@@ -6,7 +6,7 @@
  * payloads to results and never sees an HTTP request or response.
  */
 
-import { error, json, type ApiResult } from '../api/http';
+import { binary, error, json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { CloneInclude, ProjectBundle, ProjectDeleteMode } from '../projectService';
 import type { DomainServices } from './services';
@@ -34,6 +34,11 @@ function pathId(payload: Payload): string {
     ?? '';
 }
 
+function zipFileName(id: string): string {
+  const clean = id.replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'project';
+  return `${clean}-wiki.zip`;
+}
+
 function failure(err: unknown): ApiResult {
   const status = (err as { status?: number } | null | undefined)?.status;
   return error(String(err), status || 500);
@@ -59,6 +64,7 @@ export class ProjectsModule implements DomainModule {
     bus.register<Payload>('projects.archive', (payload) => this.archive(payload));
     bus.register<Payload>('projects.restore', (payload) => this.restore(payload));
     bus.register<Payload>('projects.export', (payload) => this.exportBundle(payload));
+    bus.register<Payload>('projects.exportMarkdownZip', (payload, context) => this.exportWikiMarkdownZip(payload, context));
     bus.register<Payload>('projects.stats', (payload) => this.stats(payload));
     bus.register<Payload>('projects.config.get', (payload) => this.configGet(payload));
     bus.register<Payload>('projects.config.put', (payload) => this.configPut(payload));
@@ -140,6 +146,20 @@ export class ProjectsModule implements DomainModule {
     try {
       const bundle = JSON.parse(await this.services.projects.export(pathId(payload))) as ProjectBundle;
       return json({ success: true, bundle });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async exportWikiMarkdownZip(payload: Payload, context: CommandContext): Promise<ApiResult> {
+    const source = (context.principal as { source?: string } | undefined)?.source;
+    if (source !== 'local' && source !== 'idp') return error('Authentication required', 401);
+    try {
+      const projectId = pathId(payload);
+      const archive = await this.services.projects.exportWikiMarkdownZip(projectId);
+      return binary(archive, 'application/zip', {
+        'Content-Disposition': `attachment; filename="${zipFileName(projectId)}"`,
+      });
     } catch (err) {
       return failure(err);
     }

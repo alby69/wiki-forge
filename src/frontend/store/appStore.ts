@@ -46,6 +46,7 @@ export const DEFAULT_PINNED_ACTION_IDS: string[] = [
   'global:research',
   'global:study',
   'global:docsWiki',
+  'global:exportWikiZip',
   'global:chat',
   'global:help',
 ];

@@ -3,6 +3,7 @@ import { actionLabel, getActions, runAction, type ActionContext } from '@fronten
 import { t } from '@frontend/core/i18n/strings';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { registerShortcut, unregisterShortcut } from '@frontend/core/shortcuts';
+import { canRenderAction } from '@frontend/core/auth';
 
 export interface CommandItem {
   id: string;
@@ -101,17 +102,17 @@ export class CommandPalette {
   }
 
   private buildItems(): void {
-    const items: CommandItem[] = [
-      {
-        id: 'act-cockpit',
-        type: 'action',
-        title: t('keWorkbench'),
-        subtitle: t('actions'),
-        icon: '🚀',
-        action: () => this.onOpenCockpitCb(),
-      },
-    ];
-    for (const action of getActions({ menu: true })) {
+    const items: CommandItem[] = canRenderAction('global:keWorkbench')
+      ? [{
+          id: 'act-cockpit',
+          type: 'action',
+          title: t('keWorkbench'),
+          subtitle: t('actions'),
+          icon: '🚀',
+          action: () => this.onOpenCockpitCb(),
+        }]
+      : [];
+    for (const action of getActions({ menu: true }).filter(candidate => canRenderAction(candidate.id))) {
       items.push({
         id: `act-${action.id}`,
         type: 'action',

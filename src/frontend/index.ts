@@ -48,14 +48,15 @@ import { ProjectManagerModal } from '@frontend/components/projects/ProjectManage
 import { NewDocumentModal } from '@frontend/components/templates/NewDocumentModal';
 import { TemplateManagerModal } from '@frontend/components/templates/TemplateManagerModal';
 import { UserManagerModal } from '@frontend/components/users/UserManagerModal';
+import { LoginModal } from '@frontend/components/auth/LoginModal';
 import { ProjectService } from '@frontend/services/projectService';
 import { bindActionHandler } from '@frontend/core/actions';
 import { eventBus } from '@frontend/core/events';
 import { apiBus } from '@frontend/core/apiBus';
 import { adaptServerGraphData, startGraphEventSubscription } from '@frontend/core/graphEvents';
-import { refreshIdentity } from '@frontend/core/auth';
+import { canRenderAction, hasManagedIdentity, refreshIdentity } from '@frontend/core/auth';
 import { applyStoredLanguage, t } from '@frontend/core/i18n/strings';
-import { installShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
+import { installShortcuts, refreshActionShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
 import { notifications } from '@frontend/services/notificationService';
 
 export class WikiForgeApp {
@@ -98,6 +99,9 @@ export class WikiForgeApp {
   private newDocumentModal!: NewDocumentModal;
   private templateManager!: TemplateManagerModal;
   private userManager!: UserManagerModal;
+  private loginModal!: LoginModal;
+  private workspaceStarted = false;
+  private lastIdentityKey = '';
   private stopGraphEvents?: () => void;
 
   constructor(rootContainer: HTMLElement) {
@@ -105,22 +109,68 @@ export class WikiForgeApp {
     this.layout = new MainLayout(rootContainer);
     this.initUI();
     this.bindGlobalActions();
-    // B7 — resolve the server-trusted identity once at startup. No credential
-    // means a normal anonymous result; a stale bearer is cleared by the controller.
-    void refreshIdentity();
     registerActionShortcuts();
     setShortcutContext(() => ({ noteId: this.selectedNote?.id }));
     installShortcuts();
-    eventBus.on('vault:changed', () => void this.loadVault(true));
-    this.startGraphEvents();
+    eventBus.on('vault:changed', () => {
+      if (this.workspaceStarted) void this.loadVault(true);
+    });
     eventBus.on('project:changed', ({ id }) => {
       if (id !== this.storage.getActiveProjectId()) this.storage.setActiveProjectId(id);
+      if (!this.workspaceStarted) return;
       this.startGraphEvents();
       void this.loadVault();
     });
     window.addEventListener('beforeunload', () => this.stopGraphEvents?.());
+    void this.startStartupAuth();
+  }
+
+  private async startStartupAuth(): Promise<void> {
+    await refreshIdentity();
+    if (hasManagedIdentity()) {
+      this.startWorkspace();
+      return;
+    }
+    this.showLogin();
+  }
+
+  private startWorkspace(): void {
+    if (this.workspaceStarted) return;
+    this.workspaceStarted = true;
+    this.loginModal.close();
+    this.startGraphEvents();
     void this.loadVault();
     this.checkFirstLaunchOnboarding();
+  }
+
+  private showLogin(): void {
+    if (this.loginModal.isOpen) return;
+    this.loginModal.open();
+  }
+
+  private async exportWikiZip(): Promise<void> {
+    const projectId = this.storage.getActiveProjectId();
+    try {
+      const response = await apiBus.dispatch('projects.exportMarkdownZip', { params: { id: projectId } });
+      if (!(response instanceof Response)) throw new Error('Risposta ZIP non valida');
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '');
+        throw new Error(detail || `HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${projectId.replace(/[^a-zA-Z0-9_-]+/g, '_') || 'project'}-wiki.zip`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      notifications.translated('wikiZipExported', 'success');
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      notifications.show(`${t('wikiZipFailed')} ${detail}`.trim(), 'error');
+    }
   }
 
   private startGraphEvents(): void {
@@ -506,8 +556,25 @@ Backlink to [[01-index]].
       onVaultUpdated: () => void this.loadVault(),
     });
     this.userManager = new UserManagerModal();
+    this.loginModal = new LoginModal({
+      onAuthenticated: () => this.startWorkspace(),
+    });
     appStore.subscribe(state => {
       this.layout.setViewMode(state.viewMode);
+      const identityKey = [
+        state.auth.token,
+        state.auth.identity?.actor ?? '',
+        state.auth.identity?.roles.join(',') ?? '',
+        state.auth.identity?.authenticated === true,
+      ].join('|');
+      if (identityKey !== this.lastIdentityKey) {
+        this.lastIdentityKey = identityKey;
+        refreshActionShortcuts();
+        if (hasManagedIdentity() && !canRenderAction('global:toggleMode')) {
+          appStore.setAdvancedMode(false);
+        }
+      }
+      if (this.workspaceStarted && !hasManagedIdentity()) this.showLogin();
     });
 
     this.layout.setViewMode(appStore.getState().viewMode);
@@ -529,6 +596,7 @@ Backlink to [[01-index]].
     bindActionHandler('global:help', () => void this.helpPanel.open());
     bindActionHandler('global:chat', () => this.chatDrawer.toggle());
     bindActionHandler('global:users', () => void this.userManager.open());
+    bindActionHandler('global:exportWikiZip', () => void this.exportWikiZip());
     bindActionHandler('global:toggleMode', () => appStore.toggleAdvancedMode());
     bindActionHandler('focus:upload', () => this.simpleDashboard.openUploadModal());
     bindActionHandler('focus:compile', () => void this.simpleDashboard.executeCompilePipeline());

@@ -2,6 +2,7 @@ import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { appStore } from '@frontend/store/appStore';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { DropZoneIngest } from './DropZoneIngest';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface OnboardingWizardOptions {
   storage: ApiStorage;
@@ -231,29 +232,29 @@ export class OnboardingWizard {
 
   private async finishOnboarding(): Promise<void> {
     try {
-      const rawConfig = (await this.storage.getProjectConfig()) || {};
-      const config = (rawConfig as Record<string, any>) || {};
-      if (!config.project) config.project = {};
-      if (!config.agent) config.agent = {};
-      if (!config.agent.llm) config.agent.llm = {};
+      if (canUseOperation('projects.config.put')) {
+        const rawConfig = (await this.storage.getProjectConfig()) || {};
+        const config = (rawConfig as Record<string, any>) || {};
+        if (!config.project) config.project = {};
+        if (!config.agent) config.agent = {};
+        if (!config.agent.llm) config.agent.llm = {};
 
-      // Never clobber an existing project context: the wizard may run again
-      // from the header, and a hand-written description must survive.
-      if (!config.project.context) {
-        config.project.context = `Scenario preset: ${this.selectedScenario}`;
-      }
-      if (this.selectedModel === 'opencode' || this.selectedModel === 'ollama') {
-        config.agent.llm.provider = this.selectedModel;
-      } else {
-        config.agent.llm.model = this.selectedModel;
-      }
+        // Never clobber an existing project context: the wizard may run again
+        // from the header, and a hand-written description must survive.
+        if (!config.project.context) {
+          config.project.context = `Scenario preset: ${this.selectedScenario}`;
+        }
+        if (this.selectedModel === 'opencode' || this.selectedModel === 'ollama') {
+          config.agent.llm.provider = this.selectedModel;
+        } else {
+          config.agent.llm.model = this.selectedModel;
+        }
 
-      const saved = await this.storage.updateProjectConfig(config);
-
-      if (!saved) {
-        throw new Error('Unable to save project configuration');
+        const saved = await this.storage.updateProjectConfig(config);
+        if (!saved) {
+          throw new Error('Unable to save project configuration');
+        }
       }
-      
     } catch (_e) {
       // Fallback
     }

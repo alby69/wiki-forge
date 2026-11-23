@@ -10,23 +10,14 @@
 import { apiBus } from './apiBus';
 import { appStore } from '../store/appStore';
 import type { AuthIdentityDto } from '@shared/api/types';
+import {
+  ROLE_ORDER,
+  ROLE_RANK,
+  canUseAction as sharedCanUseAction,
+  canUseOperation as sharedCanUseOperation,
+} from '@shared/auth/capabilities';
 
-/** Local mirror of the server role rank (frontend must not import backend code). */
-export const RBAC_RANK: Record<string, number> = {
-  Reader: 0,
-  Contributor: 1,
-  KnowledgeEngineer: 2,
-  Admin: 3,
-};
-
-/** Header actions hidden from IdP users below the required role. */
-const HEADER_ACTION_ROLES: Record<string, string> = {
-  'global:changesets': 'Admin',
-  'global:config': 'Admin',
-  'global:wizard': 'Admin',
-  'global:keWorkbench': 'KnowledgeEngineer',
-  'global:users': 'Admin',
-};
+export const RBAC_RANK: Record<string, number> = ROLE_RANK;
 
 export function hasIdpIdentity(): boolean {
   return appStore.getState().auth.identity?.source === 'idp';
@@ -37,12 +28,18 @@ export function hasManagedIdentity(): boolean {
   return identity?.authenticated === true && (identity.source === 'idp' || identity.source === 'local');
 }
 
-export function canRenderAction(actionId: string): boolean {
+function currentRoles(): string[] | undefined {
   const identity = appStore.getState().auth.identity;
-  if (!hasManagedIdentity() || !identity) return true;
-  const required = HEADER_ACTION_ROLES[actionId];
-  if (!required) return true;
-  return identity.roles.some((role) => (RBAC_RANK[role] ?? -1) >= RBAC_RANK[required]);
+  if (!hasManagedIdentity() || !identity) return [...ROLE_ORDER];
+  return identity.roles;
+}
+
+export function canRenderAction(actionId: string): boolean {
+  return sharedCanUseAction(currentRoles(), actionId);
+}
+
+export function canUseOperation(command: string): boolean {
+  return sharedCanUseOperation(currentRoles(), command);
 }
 
 /**

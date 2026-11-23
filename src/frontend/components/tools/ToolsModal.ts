@@ -6,6 +6,7 @@ import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { eventBus } from '@frontend/core/events';
 import { scriptSafetyBadge } from '@frontend/core/utils/schedulePanel';
 import { LogConsole } from './LogConsole';
+import { canUseOperation } from '@frontend/core/auth';
 
 export class ToolsModal {
   private overlay: HTMLElement;
@@ -195,6 +196,8 @@ export class ToolsModal {
     if (!container) return;
 
     const paramFields = script.parameters.map(p => this.renderParamInput(p)).join('');
+    const canExecute = canUseOperation('scripts.execute');
+    const canSchedule = canUseOperation('scripts.schedule');
     const safety = scriptSafetyBadge(script.automation);
     const scheduleTitle = safety.schedulable
       ? `Crea un job ${safety.defaultSchedule ? `con orario ${safety.defaultSchedule}` : 'con l\'orario predefinito'}; i job mutanti restano disabilitati fino a F6.`
@@ -218,13 +221,13 @@ export class ToolsModal {
           ${paramFields || '<div style="font-size: 12px; color: #718096; font-style: italic;">This tool requires no input arguments.</div>'}
 
           <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
-            <button id="run-tool-btn" type="submit" style="background: #3182ce; color: #ffffff; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            ${canExecute ? `<button id="run-tool-btn" type="submit" style="background: #3182ce; color: #ffffff; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
               ▶ Run Tool
-            </button>
-            <button id="schedule-tool-btn" type="button" title="${scheduleTitle.replace(/"/g, '&quot;')}" style="background: #4c51bf; color: #ffffff; border: 1px solid #5a67d8; padding: 8px 16px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;" ${safety.schedulable ? '' : 'disabled'}>
+            </button>` : ''}
+            ${canSchedule ? `<button id="schedule-tool-btn" type="button" title="${scheduleTitle.replace(/"/g, '&quot;')}" style="background: #4c51bf; color: #ffffff; border: 1px solid #5a67d8; padding: 8px 16px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;" ${safety.schedulable ? '' : 'disabled'}>
               🕒 Schedula
-            </button>
-            <span id="exec-status-indicator" style="font-size: 12px; color: #a0aec0;">Ready</span>
+            </button>` : ''}
+            <span id="exec-status-indicator" style="font-size: 12px; color: #a0aec0;">${canExecute || canSchedule ? 'Ready' : 'Sola lettura'}</span>
           </div>
         </form>
       </div>

@@ -24,6 +24,7 @@ import {
   ScheduleSnapshotView,
 } from '@frontend/core/utils/schedulePanel';
 import { LogConsole } from '../tools/LogConsole';
+import { canUseOperation } from '@frontend/core/auth';
 
 export class KEWorkbenchModal {
   private overlay: HTMLElement;
@@ -706,6 +707,7 @@ export class KEWorkbenchModal {
   private renderPolicySection(): string {
     const pending = this.scheduleApprovals.filter(item => item.status === 'pending');
     const decisions = this.scheduleDecisions.slice(0, 3);
+    const canDecide = canUseOperation('schedule.approvalDecision');
 
     const approvalsHtml = pending.length === 0
       ? '<div style="font-size:11px; color:#64748b;">Nessuna approvazione in attesa.</div>'
@@ -721,10 +723,10 @@ export class KEWorkbenchModal {
              return `<div class="ke-approval-card" data-approval-id="${escapeHtml(item.id)}" style="background:#1e1b4b; border:1px solid #4338ca; border-radius:6px; padding:10px 12px;">
                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
                  <div style="font-size:12px; font-weight:700; color:#e0e7ff;">⏸ ${escapeHtml(item.jobId)} · ${isScriptJob ? 'job script' : 'use case'} · ${escapeHtml(step)}</div>
-                 <div style="display:flex; gap:6px;">
-                   <button id="ke-approve-${this.cssId(item.id)}" type="button" title="Esegui lo step mutante" style="background:#14532d; color:#bbf7d0; border:1px solid #166534; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">✅ Approva</button>
-                   <button id="ke-reject-${this.cssId(item.id)}" type="button" title="Rifiuta lo step mutante" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">❌ Rifiuta</button>
-                 </div>
+                  <div style="display:flex; gap:6px;">
+                    ${canDecide ? `<button id="ke-approve-${this.cssId(item.id)}" type="button" title="Esegui lo step mutante" style="background:#14532d; color:#bbf7d0; border:1px solid #166534; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">✅ Approva</button>` : ''}
+                    ${canDecide ? `<button id="ke-reject-${this.cssId(item.id)}" type="button" title="Rifiuta lo step mutante" style="background:#7f1d1d; color:#fecaca; border:1px solid #991b1b; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">❌ Rifiuta</button>` : ''}
+                  </div>
                </div>
                ${isScriptJob ? `<div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Args risolti:</strong> <code style="color:#a5b4fc;">${escapeHtml(args || '—')}</code></div>` : ''}
                 <div style="font-size:11px; color:#c7d2fe; margin-top:6px;"><strong>Motivazione:</strong> ${escapeHtml(item.rationale || '—')}</div>

@@ -12,6 +12,7 @@ import {
   ResearchTraceResponse,
 } from '@frontend/core/types/research';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface ResearchStudioCallbacks {
   /** Opens a result note in the editor and closes the modal. */
@@ -113,6 +114,18 @@ export class ResearchStudio {
     if (this.isOpen()) this.renderShell();
   }
 
+  private visibleTabs(): typeof TABS {
+    const commandFor: Record<ResearchTab, string> = {
+      consult: 'research.consult',
+      search: 'research.search',
+      backlinks: 'research.backlinks',
+      related: 'research.related',
+      trace: 'research.trace',
+      deep: 'research.deepResearch',
+    };
+    return TABS.filter(candidate => canUseOperation(commandFor[candidate.id]));
+  }
+
   public open(options: ResearchOpenOptions = {}): void {
     this.scopeProjectId = options.projectId;
     this.scopeLabel = options.scopeLabel || '';
@@ -142,7 +155,8 @@ export class ResearchStudio {
       this.related = null;
     }
 
-    if (options.tab) this.tab = options.tab;
+    if (options.tab && this.visibleTabs().some(candidate => candidate.id === options.tab)) this.tab = options.tab;
+    else if (!this.visibleTabs().some(candidate => candidate.id === this.tab)) this.tab = this.visibleTabs()[0]?.id ?? 'search';
     if (options.query) this.setQuery(this.tab, options.query);
 
     this.feedback = '';
@@ -158,7 +172,7 @@ export class ResearchStudio {
   }
 
   public setTab(tab: ResearchTab): void {
-    if (this.tab === tab) return;
+    if (this.tab === tab || !this.visibleTabs().some(candidate => candidate.id === tab)) return;
     this.tab = tab;
     this.feedback = '';
     this.renderShell();
@@ -304,7 +318,7 @@ export class ResearchStudio {
           <button class="wf-rs-close" id="wf-rq-close" title="Chiudi (Esc)">✕</button>
         </div>
         <div class="wf-rs-tabs" role="tablist">
-          ${TABS.map(tab => `
+          ${this.visibleTabs().map(tab => `
             <button class="wf-rs-tab wf-rq-tab${this.tab === tab.id ? ' active' : ''}"
                     role="tab"
                     aria-selected="${this.tab === tab.id}"

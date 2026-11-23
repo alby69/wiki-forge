@@ -50,6 +50,11 @@
   --wf-radius-lg: 8px;
   --wf-radius-pill: 9999px;
 
+  /* Ambient glass surfaces over the wiki background */
+  --wf-glass: rgba(15, 23, 42, 0.82);
+  --wf-glass-deep: rgba(2, 6, 23, 0.88);
+  --wf-glass-blur: blur(18px) saturate(1.1);
+
   /* Motion & shadows */
   --wf-transition: 0.15s ease;
   --wf-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7);

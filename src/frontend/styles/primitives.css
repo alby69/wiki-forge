@@ -101,7 +101,8 @@
   min-height: 52px;
   height: auto;
   box-sizing: border-box;
-  background: var(--wf-bg);
+  background: var(--wf-glass);
+  backdrop-filter: var(--wf-glass-blur);
   border-bottom: 1px solid var(--wf-border);
   display: flex;
   flex-direction: column;
@@ -212,6 +213,11 @@
   justify-content: center;
   z-index: 2000;
   font-family: var(--wf-font);
+}
+
+.wf-modal-overlay[data-role='login-overlay'] {
+  background: linear-gradient(135deg, rgba(2, 6, 23, 0.88), rgba(15, 23, 42, 0.64));
+  backdrop-filter: blur(10px) saturate(1.2);
 }
 
 .wf-modal {

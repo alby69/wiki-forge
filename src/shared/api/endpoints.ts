@@ -217,6 +217,7 @@ export type EndpointTypes = {
   };
   'projects.restore': { req: WithParams<{ id: string | number }>; res: Ok<{ project: ProjectEntryDto }> };
   'projects.export': { req: WithParams<{ id: string | number }>; res: Ok<{ bundle: ProjectBundleDto }> };
+  'projects.exportMarkdownZip': { req: WithParams<{ id: string | number }>; res: StreamResponse };
   'projects.stats': { req: WithParams<{ id: string | number }>; res: Ok<{ stats: ProjectStatsDto }> };
   'projects.config.get': { req: WithParams<{ id: string | number }>; res: Ok<{ config: Json }> };
   'projects.config.put': { req: WithParamsBody<{ id: string | number }, Json>; res: Ok<{ config: Json }> };

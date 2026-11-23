@@ -208,9 +208,9 @@ describe('C4 — declarative Neo4j graph routes', () => {
   it('maps the new commands to explicit RBAC roles and registers them on the bus', () => {
     assert.equal(OPERATION_ROLES['graph.cypher'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.status'], 'Reader');
-    assert.equal(OPERATION_ROLES['graph.sync.neo4j'], 'Contributor');
+    assert.equal(OPERATION_ROLES['graph.sync.neo4j'], 'KnowledgeEngineer');
     assert.equal(OPERATION_ROLES['graph.events'], 'Reader');
-    assert.equal(OPERATION_ROLES['graph.reconcile'], 'Contributor');
+    assert.equal(OPERATION_ROLES['graph.reconcile'], 'KnowledgeEngineer');
     for (const command of [
       'graph.cypher', 'graph.status', 'graph.sync.neo4j', 'graph.events', 'graph.reconcile',
     ]) {

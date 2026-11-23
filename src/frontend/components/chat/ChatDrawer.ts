@@ -7,6 +7,12 @@ import { AttachModal } from './AttachModal';
 import { COMMAND_CATALOG } from './commandCatalog';
 import type { ResearchTab } from '@frontend/core/types/research';
 import { bindResizer } from '@frontend/core/ui/resizer';
+import { canRenderAction, canUseOperation } from '@frontend/core/auth';
+
+const KE_CHAT_COMMANDS = new Set([
+  'adversarial-review', 'verify', 'human-review', 'consult', 'trace', 'deep-research',
+  'schema-lint', 'schema-infer', 'validate-cq', 'suggest-odp', 'neuro-check', 'ke-maturity',
+]);
 
 const RESEARCH_COMMANDS: Record<string, ResearchTab> = {
   '/consult': 'consult',
@@ -311,8 +317,17 @@ export class ChatDrawer {
     const escape = (s: string): string =>
       s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+    const canKnowledgeEngineer = canUseOperation('scripts.execute');
+    const canAdmin = canRenderAction('global:wizard');
+    const isAllowed = (cmd: string): boolean => {
+      if (cmd === 'wizard') return canAdmin;
+      if (KE_CHAT_COMMANDS.has(cmd)) return canKnowledgeEngineer;
+      return true;
+    };
+
     return COMMAND_CATALOG.map(category => {
       const items = category.commands
+        .filter(cmd => isAllowed(cmd.cmd))
         .map(cmd => {
           const tooltip = cmd.description ? `${cmd.label} — ${cmd.description}` : cmd.label;
           const usage = cmd.usage ? ` <span style="opacity: 0.5;">${escape(cmd.usage)}</span>` : '';
@@ -323,14 +338,15 @@ export class ChatDrawer {
         })
         .join('');
 
-      return `
-        <div style="margin-bottom: 10px;">
+      return items
+        ? `<div style="margin-bottom: 10px;">
           <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; font-weight: 700; margin: 2px 2px 6px;">
             ${category.icon} ${escape(category.label)}
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 4px;">${items}</div>
-        </div>`;
-    }).join('');
+        </div>`
+        : '';
+    }).filter(section => section.length > 0).join('');
   }
 
   private setCommandsOpen(open: boolean): void {
@@ -351,8 +367,8 @@ export class ChatDrawer {
         const align = isUser ? 'flex-end' : 'flex-start';
         const pendingEdits = isUser ? [] : parseWikiEdits(msg.text);
         const applyBtnHtml = pendingEdits.length > 0
-          ? `<button class="apply-edit-btn" data-msg-id="${msg.id}" title="Applica la modifica proposta al file (find/replace deterministico)" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">✅ Applica modifica${pendingEdits.length > 1 ? ` (${pendingEdits.length})` : ''}</button>
-             <button class="propose-changeset-btn" data-msg-id="${msg.id}" title="Accoda la modifica LLM in un changeset da revisionare prima dell'applicazione" style="background: #4338ca; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">📋 Proponi changeset</button>`
+          ? `${canUseOperation('wiki.note.applyEdit') ? `<button class="apply-edit-btn" data-msg-id="${msg.id}" title="Applica la modifica proposta al file (find/replace deterministico)" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">✅ Applica modifica${pendingEdits.length > 1 ? ` (${pendingEdits.length})` : ''}</button>` : ''}
+             ${canUseOperation('changesets.stage') ? `<button class="propose-changeset-btn" data-msg-id="${msg.id}" title="Accoda la modifica LLM in un changeset da revisionare prima dell'applicazione" style="background: #4338ca; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">📋 Proponi changeset</button>` : ''}`
           : '';
 
         const actionChipsHtml = !isUser
@@ -365,7 +381,7 @@ export class ChatDrawer {
                 isAdvancedMode
                   ? `
                   <button class="action-chip" data-chip-cmd="/audio-overview">🎙️ Audio Script</button>
-                  <button class="action-chip" data-chip-cmd="/deep-research">🔬 Deep Research</button>
+                  ${canUseOperation('research.deepResearch') ? `<button class="action-chip" data-chip-cmd="/deep-research">🔬 Deep Research</button>` : ''}
                 `
                   : ''
               }

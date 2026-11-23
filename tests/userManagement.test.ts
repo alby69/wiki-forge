@@ -108,6 +108,28 @@ async function call(
 }
 
 describe('Server-side user store', () => {
+  it('bootstraps admin/admin when no bootstrap credentials are configured', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-user-store-default-'));
+    try {
+      const store = new UserStore({ rootDir: tmpDir, env: {}, now: () => 1_800_000_000 });
+      assert.equal(store.isEnabledSync(), true);
+
+      await store.initialize();
+      const users = await store.list();
+      assert.equal(users.length, 1);
+      assert.equal(users[0].username, 'admin');
+      assert.deepStrictEqual(users[0].roles, ['Admin']);
+
+      const session = await store.authenticate({ username: 'admin', password: 'admin' });
+      assert.ok(session, 'default credentials authenticate');
+      assert.ok(session.token);
+      assert.equal(session.user.username, 'admin');
+      assert.deepStrictEqual(session.user.roles, ['Admin']);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('bootstraps an Admin, persists hashed users and guards the last Admin', async () => {
     const tmpDir = await fs.mkdtemp(path.join(process.cwd(), 'tmp-user-store-'));
     const env: NodeJS.ProcessEnv = {

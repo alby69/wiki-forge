@@ -131,12 +131,32 @@ describe('Focus and Developer header', () => {
     assert.ok(!markup.includes('wf-identity'), 'identity tools hidden in Focus');
     assert.ok(!markup.includes('header-config-btn'), 'developer tools hidden in Focus');
     assert.ok(!markup.includes('header-users-btn'), 'user manager hidden in Focus');
+    assert.ok(!markup.includes('header-export-wiki-zip-btn'), 'ZIP export hidden in Focus');
     assert.ok(!markup.includes('focus-upload-btn" class="wf-btn wf-btn--sm"'), 'focus actions use their own style');
 
     fire(dom.elements.get('#focus-upload-btn'), 'click');
     fire(dom.elements.get('#focus-compile-btn'), 'click');
     fire(dom.elements.get('#focus-ask-btn'), 'click');
     assert.deepEqual(fired, ['upload', 'compile', 'ask']);
+
+    header.destroy();
+  });
+
+  it('hides Focus write actions from a Reader', () => {
+    appStore.setAuth('local-token', identity({
+      actor: 'human:reader', roles: ['Reader'], source: 'local', authenticated: true,
+    }));
+
+    const dom = createDom();
+    const header = new Header({ container: dom.container });
+    const markup = dom.html();
+    assert.ok(markup.includes('header-projects-btn'), 'projects stay visible');
+    assert.ok(markup.includes('header-docs-wiki-btn'), 'docs stay visible');
+    assert.ok(!markup.includes('focus-upload-btn'), 'upload requires Contributor');
+    assert.ok(!markup.includes('focus-compile-btn'), 'compile requires Contributor');
+    assert.ok(!markup.includes('focus-ask-btn'), 'chat requires Contributor');
+    assert.ok(!markup.includes('chat-toggle-header-btn'), 'chat button requires Contributor');
+    assert.ok(!markup.includes('header-study-btn'), 'study requires Contributor');
 
     header.destroy();
   });
@@ -150,6 +170,8 @@ describe('Focus and Developer header', () => {
     const anonymous = dom.html();
     assert.ok(anonymous.includes('header-more-btn'), 'Developer Mode has the three-dot menu');
     assert.ok(anonymous.includes('menu-item-global-users'), 'user management is in the menu');
+    assert.ok(anonymous.includes('header-export-wiki-zip-btn'), 'ZIP export is pinned in Developer Mode');
+    assert.ok(anonymous.includes('menu-item-global-exportWikiZip'), 'ZIP export is in the Developer Mode menu');
     assert.ok(anonymous.includes('wf-user-signin-btn'), 'local sign-in is offered');
     assert.ok(anonymous.includes('id="wf-username-input"'));
     assert.ok(anonymous.includes('id="wf-password-input"'));
@@ -167,6 +189,7 @@ describe('Focus and Developer header', () => {
     }));
     const admin = dom.html();
     assert.ok(admin.includes('menu-item-global-users'), 'Admin can see user management');
+    assert.ok(admin.includes('header-export-wiki-zip-btn'), 'ZIP export stays available to local Admin');
     assert.ok(admin.includes('human:admin'), 'local actor is visible');
     assert.ok(admin.includes('id="wf-signout-btn"'), 'local session can be closed');
 

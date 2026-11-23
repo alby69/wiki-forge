@@ -12,6 +12,7 @@ import {
   type ProjectStats,
 } from '@frontend/services/projectService';
 import { appStore } from '@frontend/store/appStore';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface ProjectManagerOptions {
   service: ProjectService;
@@ -115,12 +116,13 @@ export class ProjectManagerModal {
     const rows = this.projects.length
       ? this.projects.map(project => this.renderRow(project, activeId)).join('')
       : `<tr><td colspan="6">${escapeHtml(t('noProjects'))}</td></tr>`;
+    const admin = canUseOperation('projects.create');
     const body = `
       <p class="wf-modal__hint">${escapeHtml(t('projectManagerHint'))}</p>
       <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
-        <button type="button" class="wf-btn wf-btn--primary" data-action="new">${escapeHtml(t('newProject'))}</button>
-        <button type="button" class="wf-btn" data-action="clone">${escapeHtml(t('cloneProject'))}</button>
-        <button type="button" class="wf-btn" data-action="import">${escapeHtml(t('importProject'))}</button>
+        ${admin ? `<button type="button" class="wf-btn wf-btn--primary" data-action="new">${escapeHtml(t('newProject'))}</button>` : ''}
+        ${admin ? `<button type="button" class="wf-btn" data-action="clone">${escapeHtml(t('cloneProject'))}</button>` : ''}
+        ${admin ? `<button type="button" class="wf-btn" data-action="import">${escapeHtml(t('importProject'))}</button>` : ''}
       </div>
       <div style="overflow-x:auto;">
         <table class="wf-table">
@@ -142,14 +144,17 @@ export class ProjectManagerModal {
       project.archived ? `<span class="wf-badge">${escapeHtml(t('archived'))}</span>` : '',
       project.id === activeId ? `<span class="wf-badge wf-badge--success">${escapeHtml(t('active'))}</span>` : '',
     ].filter(Boolean).join(' ') || '—';
+    const admin = canUseOperation('projects.create');
     const buttons: Array<[string, string, string]> = [
       ['open', t('open'), 'wf-btn--info'],
-      ['rename', t('rename'), ''],
-      ['clone', t('clone'), ''],
       ['export', t('export'), ''],
-      [project.archived ? 'restore' : 'archive', project.archived ? t('restore') : t('archive'), 'wf-btn--warning'],
-      ['delete', t('delete'), 'wf-btn--warning'],
-      ['permanent', t('permanentDelete'), 'wf-btn--danger'],
+      ...(admin ? [
+        ['rename', t('rename'), ''],
+        ['clone', t('clone'), ''],
+        [project.archived ? 'restore' : 'archive', project.archived ? t('restore') : t('archive'), 'wf-btn--warning'],
+        ['delete', t('delete'), 'wf-btn--warning'],
+        ['permanent', t('permanentDelete'), 'wf-btn--danger'],
+      ] as Array<[string, string, string]> : []),
     ];
     const actions = buttons
       .map(([action, label, variant]) => `

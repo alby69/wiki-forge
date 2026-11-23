@@ -10,6 +10,7 @@ import {
   type SoftDeleteOptions,
   type TrashEntry,
 } from './safeFs';
+import { createZip, type ZipEntry } from './zipFile';
 
 /** F5 — single source of truth for project lifecycle operations. */
 
@@ -669,6 +670,49 @@ export class ProjectService {
       },
       files,
     };
+  }
+
+  private async wikiRelativePath(root: string): Promise<string> {
+    const config = await this.readConfigObject(this.getConfigPath(root));
+    const paths = isPlainObject(config.paths) ? config.paths : {};
+    const configured = typeof paths.wiki === 'string' ? paths.wiki.trim() : '';
+    const candidate = (configured || 'wiki').replace(/\\/g, '/').replace(/^\.\/+/, '').replace(/\/+$/, '');
+    if (!candidate || candidate.split('/').includes('..') || path.isAbsolute(candidate)) return 'wiki';
+    return candidate;
+  }
+
+  private async collectWikiMarkdown(dir: string, base: string, entries: ZipEntry[]): Promise<void> {
+    let children: import('node:fs').Dirent[];
+    try {
+      children = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const child of children) {
+      const absolute = path.join(dir, child.name);
+      if (child.isDirectory()) {
+        await this.collectWikiMarkdown(absolute, base, entries);
+        continue;
+      }
+      if (!child.isFile() || !child.name.toLowerCase().endsWith('.md')) continue;
+      const relative = path.relative(base, absolute).split(path.sep).join('/');
+      if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) continue;
+      entries.push({ name: relative, data: await fs.readFile(absolute) });
+    }
+  }
+
+  public async exportWikiMarkdownZip(id: string): Promise<Buffer> {
+    const project = await this.getRequired(id);
+    const root = await this.dataRootFor(project);
+    const wikiRelative = await this.wikiRelativePath(root);
+    const wikiDir = this.assertInsideRoot(path.resolve(root, wikiRelative));
+    const entries: ZipEntry[] = [];
+    await this.collectWikiMarkdown(wikiDir, wikiDir, entries);
+    if (entries.length === 0) {
+      throw statusError(`No Markdown files found in wiki for project '${project.id}'`, 404);
+    }
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    return createZip(entries);
   }
 
   /** JSON-encoded bundle: no ZIP dependency required. */

@@ -4,6 +4,7 @@ import { computeNoteTrustTier, isNoteStale, renderTrustTierDot } from './TrustBa
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
 import { bindResizer } from '@frontend/core/ui/resizer';
+import { canUseOperation } from '@frontend/core/auth';
 
 interface TreeNode {
   name: string;
@@ -359,16 +360,19 @@ export class Sidebar {
       this.selectedTags.size > 0
         ? `<span class="tag-clear" style="color: #fc8181; font-size: 11px; cursor: pointer; margin-left: 4px; text-transform: none;">clear</span>`
         : '';
+    const writeToolbar = canUseOperation('wiki.note.save')
+      ? `<button id="btn-new-folder" title="New Folder" aria-label="New Folder">📁+</button>
+         <button id="btn-new-file" title="New File" aria-label="New File">📄+</button>
+         <button id="btn-upload-file" title="Upload File" aria-label="Upload File">📤</button>
+         <button id="btn-rename-item" title="Rename Selected" aria-label="Rename Selected">✏️</button>
+         <button id="btn-delete-item" title="Delete Selected" aria-label="Delete Selected">🗑️</button>`
+      : '';
 
 this.container.innerHTML = `
-      <div style="width: 100%; background: #121316; height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
+      <div style="width: 100%; background: var(--wf-glass-deep); backdrop-filter: var(--wf-glass-blur); height: 100%; border-right: 1px solid #2d3748; display: flex; flex-direction: column; color: #e2e8f0;">
         <!-- File Operations Toolbar -->
         <div class="sidebar-toolbar" id="sidebar-toolbar">
-          <button id="btn-new-folder" title="New Folder" aria-label="New Folder">📁+</button>
-          <button id="btn-new-file" title="New File" aria-label="New File">📄+</button>
-          <button id="btn-upload-file" title="Upload File" aria-label="Upload File">📤</button>
-          <button id="btn-rename-item" title="Rename Selected" aria-label="Rename Selected">✏️</button>
-          <button id="btn-delete-item" title="Delete Selected" aria-label="Delete Selected">🗑️</button>
+          ${writeToolbar}
           <input type="file" id="sidebar-file-input" multiple style="display: none;" />
         </div>
 

@@ -678,6 +678,13 @@ export const ROUTES = [
     response: { schema: ok({ bundle: ref('ProjectBundle') }) },
   }),
   defineRoute({
+    id: 'projects.exportMarkdownZip', method: 'GET', path: '/api/projects/:id/export/markdown.zip', tags: ['Projects'],
+    summary: 'Export the project wiki as a ZIP of Markdown files',
+    command: 'projects.exportMarkdownZip', projectScoped: true, stream: 'binary',
+    request: { params: [pathParam('id')] },
+    response: { schema: str('application/zip'), description: 'ZIP archive with Content-Disposition: attachment' },
+  }),
+  defineRoute({
     id: 'projects.stats', method: 'GET', path: '/api/projects/:id/stats', tags: ['Projects'],
     summary: 'Get note, source and asset counts for a project',
     command: 'projects.stats',

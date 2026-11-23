@@ -30,6 +30,7 @@ const HEADER_BUTTON_IDS: Record<string, string> = {
   'global:chat': 'chat-toggle-header-btn',
   'global:help': 'header-help-btn',
   'global:users': 'header-users-btn',
+  'global:exportWikiZip': 'header-export-wiki-zip-btn',
 };
 
 const ACTION_ID_BY_BUTTON_ID: Record<string, string> = Object.fromEntries(
@@ -181,9 +182,10 @@ export class Header {
       : `<option value="default" selected>Default Wiki</option>`;
 
     const modeTitle = state.isAdvancedMode ? t('focusMode') : t('developerMode');
+    const modeTag = canRenderAction('global:toggleMode') ? 'button' : 'span';
     const modeBadge = state.isAdvancedMode
-      ? `<button id="mode-toggle-btn" class="mode-badge-advanced mode-badge-btn" title="${escapeHtml(modeTitle)}">👑 ${escapeHtml(t('developerMode'))}</button>`
-      : `<button id="mode-toggle-btn" class="mode-badge-simple mode-badge-btn" title="${escapeHtml(modeTitle)}">🌱 ${escapeHtml(t('focusMode'))}</button>`;
+      ? `<${modeTag} id="mode-toggle-btn" class="mode-badge-advanced mode-badge-btn" title="${escapeHtml(modeTitle)}">👑 ${escapeHtml(t('developerMode'))}</${modeTag}>`
+      : `<${modeTag} id="mode-toggle-btn" class="mode-badge-simple mode-badge-btn" title="${escapeHtml(modeTitle)}">🌱 ${escapeHtml(t('focusMode'))}</${modeTag}>`;
 
     const pinnedIds = new Set(state.pinnedActionIds);
     const pinned = this.pinnableActions(state)
@@ -193,7 +195,8 @@ export class Header {
       .join('');
 
     const docsAction = getAction('global:docsWiki');
-    const docsVisible = state.isAdvancedMode ? pinnedIds.has('global:docsWiki') : FOCUS_ACTION_IDS.includes('global:docsWiki');
+    const docsVisible = canRenderAction('global:docsWiki')
+      && (state.isAdvancedMode ? pinnedIds.has('global:docsWiki') : FOCUS_ACTION_IDS.includes('global:docsWiki'));
     const docsButton = docsVisible && docsAction
       ? `<button id="${headerButtonId('global:docsWiki')}" class="wf-btn wf-btn--sm wf-btn--success" data-action-id="${headerButtonId('global:docsWiki')}" data-action-key="global:docsWiki" title="${escapeHtml(t('docsWiki'))}" aria-label="${escapeHtml(t('docsWiki'))}">${docsAction.icon} ${escapeHtml(actionLabel(docsAction))}</button>`
       : '';
@@ -202,13 +205,14 @@ export class Header {
       this.headerActionButtonIds.push(headerButtonId('global:docsWiki'));
     }
 
-    const chatVisible = state.isAdvancedMode ? pinnedIds.has('global:chat') : FOCUS_ACTION_IDS.includes('global:chat');
+    const chatVisible = canRenderAction('global:chat')
+      && (state.isAdvancedMode ? pinnedIds.has('global:chat') : FOCUS_ACTION_IDS.includes('global:chat'));
     const chatButton = chatVisible
       ? `<button id="${headerButtonId('global:chat')}" class="wf-btn wf-btn--primary" title="${escapeHtml(t('chat'))}" aria-label="${escapeHtml(t('chat'))}"><span aria-hidden="true">💬</span> ${escapeHtml(t('chat'))}</button>`
       : '';
     if (chatButton) this.headerActionButtonIds.push(headerButtonId('global:chat'));
 
-    const helpButton = state.isAdvancedMode && pinnedIds.has('global:help')
+    const helpButton = canRenderAction('global:help') && state.isAdvancedMode && pinnedIds.has('global:help')
       ? `<button id="${headerButtonId('global:help')}" class="wf-icon-btn" title="${escapeHtml(t('help'))} (F1)" aria-label="${escapeHtml(t('help'))}">?</button>`
       : '';
     if (helpButton) this.headerActionButtonIds.push(headerButtonId('global:help'));
@@ -219,7 +223,7 @@ export class Header {
       { id: 'focus-ask-btn', action: 'focus:ask' },
     ].map(({ id, action }) => {
       const def = getAction(action);
-      if (!def) return '';
+      if (!def || !canRenderAction(action)) return '';
       return `<button id="${id}" class="wf-btn wf-btn--sm wf-focus-btn" title="${escapeHtml(actionLabel(def))}" aria-label="${escapeHtml(actionLabel(def))}"><span aria-hidden="true">${def.icon}</span> ${escapeHtml(actionLabel(def))}</button>`;
     }).join('');
 

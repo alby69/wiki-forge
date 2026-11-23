@@ -3,6 +3,7 @@ import { apiBus } from '@frontend/core/apiBus';
 import { ApiClientError } from '@frontend/api/client';
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface ChangesetData {
   id: string;
@@ -172,12 +173,12 @@ export class ChangesetReviewModal {
           <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">ID: ${cs.id} • Proposed by ${cs.author} at ${cs.timestamp}</div>
         </div>
         <div style="display: flex; gap: 10px;">
-          <button id="cs-approve-btn" style="background: #059669; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
+          ${canUseOperation('changesets.apply') ? `<button id="cs-approve-btn" style="background: #059669; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
             ✓ Accept & Apply
-          </button>
-          <button id="cs-reject-btn" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
+          </button>` : ''}
+          ${canUseOperation('changesets.reject') ? `<button id="cs-reject-btn" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
             ✕ Reject
-          </button>
+          </button>` : ''}
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { getActions, runAction, type ActionContext } from './actions';
+import { canRenderAction } from './auth';
 
 export interface ShortcutDefinition {
   id: string;
@@ -63,7 +64,7 @@ export function setShortcutContext(provider: () => ActionContext): void {
 
 /** Register every action that declares a keyboard shortcut. */
 export function registerActionShortcuts(): void {
-  for (const action of getActions({ withShortcut: true })) {
+  for (const action of getActions({ withShortcut: true }).filter(candidate => canRenderAction(candidate.id))) {
     registerShortcut(`action:${action.id}`, action.shortcut!, () => runAction(action.id, contextProvider()));
   }
 }
@@ -86,6 +87,13 @@ export function installShortcuts(): () => void {
     document.removeEventListener('keydown', onKeyDown);
     installed = false;
   };
+}
+
+export function refreshActionShortcuts(): void {
+  for (const definition of listShortcuts()) {
+    if (definition.id.startsWith('action:')) unregisterShortcut(definition.id);
+  }
+  registerActionShortcuts();
 }
 
 export function listShortcuts(): ShortcutDefinition[] {

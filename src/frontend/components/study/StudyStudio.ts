@@ -13,6 +13,7 @@ import {
   StudyThesisResponse,
 } from '@frontend/core/types/study';
 import { ApiStorage } from '@frontend/storage/ApiStorage';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface StudyStudioCallbacks {
   /** Opens a note in the editor and closes the modal. */
@@ -118,8 +119,14 @@ export class StudyStudio {
     if (this.isOpen()) this.renderShell();
   }
 
+  private visibleTabs(): typeof TABS {
+    return TABS.filter(candidate => canUseOperation(candidate.command));
+  }
+
   public open(options: StudyOpenOptions = {}): void {
-    if (options.tab) this.tab = options.tab;
+    const visible = this.visibleTabs();
+    if (options.tab && visible.some(candidate => candidate.id === options.tab)) this.tab = options.tab;
+    else if (!visible.some(candidate => candidate.id === this.tab)) this.tab = visible[0]?.id ?? 'guide';
 
     if (options.noteId) {
       const note = this.notes.find(item => item.id === options.noteId);
@@ -146,7 +153,7 @@ export class StudyStudio {
   }
 
   public setTab(tab: StudyTab): void {
-    if (this.tab === tab) return;
+    if (this.tab === tab || !this.visibleTabs().some(candidate => candidate.id === tab)) return;
     this.tab = tab;
     this.feedback = '';
     this.renderShell();
@@ -273,7 +280,7 @@ export class StudyStudio {
           <button class="wf-rs-close" id="wf-st-close" title="Chiudi (Esc)">✕</button>
         </div>
         <div class="wf-rs-tabs" role="tablist">
-          ${TABS.map(tab => `
+          ${this.visibleTabs().map(tab => `
             <button class="wf-rs-tab wf-st-tab${this.tab === tab.id ? ' active' : ''}"
                     role="tab"
                     aria-selected="${this.tab === tab.id}"

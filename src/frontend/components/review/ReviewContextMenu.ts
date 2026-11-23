@@ -5,6 +5,7 @@ import { StudyTab } from '@frontend/core/types/study';
 import { getActions, actionLabel } from '@frontend/core/actions';
 import { t } from '@frontend/core/i18n/strings';
 import { registerShortcut, unregisterShortcut } from '@frontend/core/shortcuts';
+import { canRenderAction } from '@frontend/core/auth';
 
 export interface ReviewContextMenuCallbacks {
   onOpenReview: (noteId: string, tab: ReviewTab) => void;
@@ -36,7 +37,8 @@ export class ReviewContextMenu {
   }
 
   private section(prefix: string, heading: string): string {
-    const items = getActions({ group: 'studio' }).filter(action => action.id.startsWith(`${prefix}:`));
+    const items = getActions({ group: 'studio' })
+      .filter(action => action.id.startsWith(`${prefix}:`) && canRenderAction(action.id));
     if (items.length === 0) return '';
     return `
       <div class="wf-context-menu__head">${escapeHtml(heading)}</div>

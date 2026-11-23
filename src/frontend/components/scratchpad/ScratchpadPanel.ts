@@ -2,6 +2,7 @@ import { ScratchpadEntry } from '@frontend/storage/ApiStorage';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { notifications } from '@frontend/services/notificationService';
 import { t } from '@frontend/core/i18n/strings';
+import { canUseOperation } from '@frontend/core/auth';
 
 export interface ScratchpadCallbacks {
   getScratchpad?: () => Promise<ScratchpadEntry[]>;
@@ -32,6 +33,7 @@ export class ScratchpadPanel {
   }
 
   private render(): void {
+    const canWrite = canUseOperation('wiki.scratchpad.delete');
     const items =
       this.entries.length > 0
         ? this.entries
@@ -50,10 +52,10 @@ export class ScratchpadPanel {
           ${
             open
               ? `<div style="padding: 8px 6px 6px 20px; font-size: 13px; color: #e2e8f0; white-space: pre-wrap; word-break: break-word; max-height: 60%; overflow-y: auto;">${escapeHtml(entry.text)}</div>
-                <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;">
+                ${canWrite ? `<div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;">
                   <button class="scratch-delete" data-scratch-id="${escapeHtml(entry.id)}" title="Delete this note" style="background: #742a2a; color: #fff; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;">🗑️ Cancella</button>
                   <button class="scratch-promote" data-scratch-id="${escapeHtml(entry.id)}" title="Promote to wiki article (via /promote-note)" style="background: #2b6cb0; color: #fff; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-weight: 600;">🚀 Promuovi</button>
-                </div>`
+                </div>` : ''}`
               : ''
           }
         </div>`;

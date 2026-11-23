@@ -93,6 +93,9 @@
 | 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
 | 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
 | 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 23/23 step: L4 ~4.5/5 (A0–A5), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi), proiezione wiki e gate completo. A4 introduce autonomia `bounded` con allowlist, doppia rivalidazione, rollback e audit `process:wiki-forge-autonomy`; A5 chiude l'auto-repair deterministico con conflitti a 0 scritture. `auto_apply=true` resta vietato. |
+| 86 | Accesso obbligatorio e bootstrap Admin | ✅ Done | Gateway di login bloccante all'avvio, credenziali predefinite `admin`/`admin` quando non configurate, sessioni locali bearer, gesture **👥 Utenti** in Modalità Sviluppo per creare utenti e assegnare ruoli Reader/Contributor/KnowledgeEngineer/Admin. |
+| 87 | Esportazione Wiki ZIP per progetto | ✅ Done | Azione **📦 Esporta Wiki ZIP** solo in Modalità Sviluppo; route additiva `GET /api/projects/:id/export/markdown.zip` con auth locale; ZIP `stored` generato senza dipendenze da tutti i `.md` della wiki path configurata, con nomi UTF-8 e path relativi. |
+| 88 | Matrice capabilities RBAC progressiva | ✅ Done | Source of truth condivisa in `src/shared/auth/capabilities.ts` per comandi e azioni; ruoli progressivi Reader → Contributor → KnowledgeEngineer → Admin applicati a backend e UI; operazioni KE (changeset apply/reject, sync/reconcile grafo, trigger scheduler) e approvazioni F6/admin separate; UI filtra header, command palette, scorciatoie, editor, studio, modali e chat. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -308,6 +311,35 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Human-only apply (`scripts/wiki_program_change_apply.py`)**: refuses to run without `--reviewer human:<id>` and `--confirm`, snapshots every target file before an exact find/replace and appends a JSONL audit entry. Hard-blocked from automatic execution via `MUTATING_SCRIPT_IDS`.
 - **Use Case 8 / F6 (`ke_wiki_program_change`)**: the F5 Policy Agent withholds the mutating apply step into the approval queue; only `POST /api/ke/schedule/approvals/:id/approve` injects the human reviewer and confirmation and executes the step with an `actor: human` audit trail. The `wiki-program-change` job has `auto_apply = false` and is disabled by default.
 - **Tests**: `tests/python/test_program_change.py` (7) and `tests/programChangeBridge.test.ts` (3).
+
+## Phase 86 — Accesso obbligatorio e bootstrap Admin ✅ Done
+
+**Goal:** make authentication the entry point of the UI and guarantee an Admin owner for a fresh workspace, while keeping user/role management in Developer Mode.
+
+**Deliverables:**
+- **Startup gate (`src/frontend/components/auth/LoginModal.ts`)**: `refreshIdentity()` runs before any vault work; anonymous or stale sessions show a blocking dialog, and a successful local login starts graph events, vault loading and first-launch onboarding.
+- **Default owner (`src/backend/server/auth/userStore.ts`)**: `admin`/`admin` is bootstrapped when `WIKIFORGE_ADMIN_USERNAME` / `WIKIFORGE_ADMIN_PASSWORD` are absent; explicitly configured credentials keep precedence. Render blueprint uses the documented defaults.
+- **Role management**: existing **👥 Utenti** action and Admin-only API remain available in Developer Mode; sign-out re-opens the login gate.
+
+## Phase 87 — Esportazione Wiki ZIP per progetto ✅ Done
+
+**Goal:** let a developer download the whole project wiki as a portable set of Markdown files in one archive.
+
+**Deliverables:**
+- **Binary contract (additive)**: `projects.exportMarkdownZip` maps `GET /api/projects/:id/export/markdown.zip` to a `application/zip` stream with `Content-Disposition: attachment`.
+- **Store-only writer (`src/backend/server/zipFile.ts`)**: deterministic stored ZIP with CRC32, UTF-8 names, DOS timestamps and path validation; no new runtime dependency.
+- **Project service (`src/backend/server/projectService.ts`)**: collects every `.md` under the configured `[paths].wiki` directory (including nested folders), skips other files and returns a sorted archive; empty wikis return 404.
+- **Developer UX**: `global:exportWikiZip` is pinned in Developer Mode and absent from Focus Mode; the handler uses the typed API bus and saves `<project>-wiki.zip`. The route rejects unauthenticated callers.
+
+## Phase 88 — Matrice capabilities RBAC progressiva ✅ Done
+
+**Goal:** make Reader, Contributor, KnowledgeEngineer and Admin behave consistently across bus authorization and UI visibility, with capabilities inherited from the lower roles.
+
+**Deliverables:**
+- **Shared SSOT (`src/shared/auth/capabilities.ts`)**: `OPERATION_MIN_ROLE` and `ACTION_MIN_ROLE` drive both backend `OPERATION_ROLES` and frontend `canRenderAction()` / `canUseOperation()`. Unknown operations fail closed as Admin; unknown actions remain renderable.
+- **Backend boundaries**: notes, upload, scratchpad and changeset staging are Contributor; verify/critique/restore, deep research, script execution/scheduling, scheduler control and changeset apply/reject are KnowledgeEngineer; users, projects, configuration writes and F6 approvals are Admin.
+- **Progressive UI**: filtered header and command palette, action shortcuts, read-only editor and sidebar, Review/Research/Study tabs, project/config/tools/changeset/KE modals, chat commands and onboarding writes. Managed identities only see their allowed capabilities; legacy/anonymous sessions keep the historical full surface.
+- **Tests**: `tests/capabilityMatrix.test.ts`, `tests/authUi.test.ts`, `tests/userUi.test.ts`, `tests/rbacMiddleware.test.ts` and `tests/graphRoutes.test.ts` cover the role ladder and the new KE boundaries.
 
 ## Q1–Q2 2027 — Piano incrementale 🔄 Ongoing
 

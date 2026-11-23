@@ -44,7 +44,7 @@ export class MainLayout {
 
   public render(): void {
     this.container.innerHTML = `
-      <div id="wiki-forge-app" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; background: var(--wf-bg-deep); font-family: var(--wf-font); overflow: hidden;">
+      <div id="wiki-forge-app" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; background: transparent; font-family: var(--wf-font); overflow: hidden;">
         <div id="header-root" style="position: relative; flex-shrink: 0;">
           <div id="header-bar-root"></div>
         </div>
@@ -52,21 +52,21 @@ export class MainLayout {
           <div id="sidebar-root" style="width: ${this.sidebarWidth}px; min-width: 200px; max-width: 500px; flex-shrink: 0;"></div>
           <div id="sidebar-resizer" data-resizer="sidebar"></div>
           <button id="sidebar-toggle-btn" title="Nascondi barra laterale (file manager e tag cloud)" style="position: absolute; top: 14px; left: ${this.sidebarCollapsed ? 0 : this.sidebarWidth - 10}px; width: 20px; height: 28px; z-index: 20; border-radius: 0 6px 6px 0; background: #1e293b; border: 1px solid #334155; border-left: none; color: #94a3b8; cursor: pointer; font-size: 11px; line-height: 1; padding: 0; transition: color 0.15s, background 0.15s;">${this.sidebarCollapsed ? '▶' : '◀'}</button>
-          <div id="main-content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #18191c; min-width: 0;">
+          <div id="main-content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
             <div id="graph-controls-root"></div>
             <div style="flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0;">
               <div id="scratch-root" style="display: none; flex: 1; height: 100%; position: relative; min-width: 0;"></div>
               <div id="editor-root" style="flex: ${this.editorFlex}; height: 100%; display: flex; flex-direction: column; min-width: 0;"></div>
               <div id="graph-resizer" data-resizer="graph"></div>
               <div id="graph-root" style="flex: ${this.graphFlex}; height: 100%; position: relative; min-width: 0;"></div>
-              <div id="view-empty" style="display: none; flex: 1; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: #18191c; color: #718096;"></div>
+              <div id="view-empty" style="display: none; flex: 1; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: var(--wf-glass-deep); color: #718096;"></div>
             </div>
             <div id="context-resizer" data-resizer="context" style="display: none;"></div>
             <div id="context-root" style="display: none; height: ${this.contextHeight}px; min-height: 0; flex-shrink: 0; border-top: 1px solid #2d3748; background: #121316;"></div>
           </div>
           <div id="chat-root" style="display: none; height: 100%; z-index: 100;"></div>
         </div>
-        <footer style="height: 24px; background: var(--wf-bg-deep); border-top: 1px solid var(--wf-border); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--wf-space-4); font-size: 11px; color: var(--wf-text-subtle);">
+        <footer style="height: 24px; background: var(--wf-glass-deep); backdrop-filter: var(--wf-glass-blur); border-top: 1px solid var(--wf-border); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--wf-space-4); font-size: 11px; color: var(--wf-text-subtle);">
           <div>Wiki-Forge</div>
           <div>Ctrl+K · F1</div>
         </footer>

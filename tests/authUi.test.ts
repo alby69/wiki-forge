@@ -7,7 +7,7 @@ import { generateKeyPairSync, sign } from 'node:crypto';
 import { AgentServer } from '@backend/server/agentServer';
 import { createApiClient } from '@frontend/api/client';
 import { Header } from '@frontend/components/ui/Header';
-import { signOut } from '@frontend/core/auth';
+import { canRenderAction, canUseOperation, signOut } from '@frontend/core/auth';
 import { appStore, DEFAULT_PINNED_ACTION_IDS } from '@frontend/store/appStore';
 import type { AuthIdentityDto } from '@shared/api/types';
 
@@ -156,6 +156,7 @@ describe('GET /api/auth/me (B7)', () => {
       assert.deepStrictEqual(body.auth, {
         actor: 'process:api-token', roles: [], source: 'legacy-token',
         authenticated: false, rbacEnabled: false, strict: false, idpConfigured: false,
+        userStoreConfigured: true,
       });
     } finally {
       await h.close();
@@ -214,6 +215,7 @@ describe('GET /api/auth/me (B7)', () => {
       assert.deepStrictEqual(body.auth, {
         actor: 'human:alice', roles: ['Admin'], source: 'idp',
         authenticated: true, rbacEnabled: true, strict: true, idpConfigured: true,
+        userStoreConfigured: true,
       });
     } finally {
       await h.close();
@@ -276,6 +278,11 @@ describe('Identity UI (B7)', () => {
     assert.doesNotMatch(dom.html(), /wf-identity|wf-signin-btn|wf-signout-btn/);
   });
 
+  it('legacy mode keeps the historical full action surface', () => {
+    assert.equal(canRenderAction('global:users'), true);
+    assert.equal(canUseOperation('scripts.schedule'), true);
+  });
+
   it('a verified IdP identity shows the actor, roles and sign-out', () => {
     const dom = createDom();
     appStore.setAuth('idp-token', identity());
@@ -299,14 +306,41 @@ describe('Identity UI (B7)', () => {
     assert.match(dom.html(), /id="wf-signin-btn"/);
   });
 
-  it('roles gate admin actions only for IdP identities', () => {
+  it('roles gate managed identities progressively', () => {
     const dom = createDom();
-    appStore.setAuth('idp-token', identity({ roles: ['Reader'] }));
+    appStore.setAuth('local-token', identity({
+      actor: 'human:reader', roles: ['Reader'], source: 'local', authenticated: true,
+    }));
     new Header({ container: dom.container });
-    assert.doesNotMatch(dom.html(), /id="header-changesets-btn"/);
+    const reader = dom.html();
+    assert.match(reader, /id="header-projects-btn"/);
+    assert.match(reader, /id="header-docs-wiki-btn"/);
+    assert.doesNotMatch(reader, /id="header-study-btn"/);
+    assert.doesNotMatch(reader, /id="header-changesets-btn"/);
+    assert.doesNotMatch(reader, /data-pin-action="global:keWorkbench"/);
+    assert.doesNotMatch(reader, /data-pin-action="global:users"/);
+    assert.match(reader, /<span id="mode-toggle-btn"/);
 
-    appStore.setAuth('idp-token', identity({ roles: ['Admin'] }));
-    assert.match(dom.html(), /id="header-changesets-btn"/);
+    appStore.setAuth('local-token', identity({
+      actor: 'human:author', roles: ['Contributor'], source: 'local', authenticated: true,
+    }));
+    const contributor = dom.html();
+    assert.match(contributor, /id="header-study-btn"/);
+    assert.match(contributor, /id="header-changesets-btn"/);
+    assert.doesNotMatch(contributor, /data-pin-action="global:keWorkbench"/);
+    assert.match(contributor, /<button id="mode-toggle-btn"/);
+
+    appStore.setAuth('local-token', identity({
+      actor: 'human:ke', roles: ['KnowledgeEngineer'], source: 'local', authenticated: true,
+    }));
+    const engineer = dom.html();
+    assert.match(engineer, /data-pin-action="global:keWorkbench"/);
+    assert.doesNotMatch(engineer, /data-pin-action="global:users"/);
+
+    appStore.setAuth('local-token', identity({
+      actor: 'human:admin', roles: ['Admin'], source: 'local', authenticated: true,
+    }));
+    assert.match(dom.html(), /data-pin-action="global:users"/);
   });
 
   it('sign-out clears the token and restores the legacy header', () => {

@@ -21,6 +21,6 @@ services:
       - key: WIKIFORGE_SESSION_TTL_MS
         value: "28800000"
       - key: WIKIFORGE_ADMIN_USERNAME
-        sync: false
+        value: admin
       - key: WIKIFORGE_ADMIN_PASSWORD
-        sync: false
+        value: admin
