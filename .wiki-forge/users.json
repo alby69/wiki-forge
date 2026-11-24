@@ -1,0 +1,13 @@
+[
+  {
+    "id": "eadfbd3f-f553-497e-b275-8346708662b4",
+    "username": "admin",
+    "passwordHash": "0de831488fbce4f133c93aa0f6f53516:2b5700b5acf0c2f02d9861f38c17dd14b4b74e5c117ae2792e816cbc6eb3ada50d63306a4f005e0abf653b86257182f7c0178ae1107675a6e6bbe13bcbe33506",
+    "roles": [
+      "Admin"
+    ],
+    "active": true,
+    "createdAt": "2026-11-24T08:14:32.795Z",
+    "updatedAt": "2026-11-24T08:14:32.795Z"
+  }
+]
