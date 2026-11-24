@@ -254,6 +254,9 @@
 .wf-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--wf-space-3); }
 .wf-form-grid > .wf-form-field--full { grid-column: 1 / -1; }
 .wf-form-field { display: flex; flex-direction: column; gap: var(--wf-space-1); }
+.wf-shortcut-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--wf-space-2); font-size: 12px; }
+.wf-shortcut-list li { display: flex; align-items: center; gap: var(--wf-space-2); color: var(--wf-text-muted); }
+.wf-shortcut-list kbd { background: var(--wf-surface-sunken); border: 1px solid var(--wf-border); border-radius: 4px; padding: 2px 6px; font-family: var(--wf-font-mono); color: var(--wf-text-link); }
 .wf-form-field textarea { min-height: 160px; font-family: var(--wf-font-mono); resize: vertical; }
 
 .wf-table { width: 100%; border-collapse: collapse; font-size: 12px; }

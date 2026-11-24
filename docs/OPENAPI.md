@@ -54,9 +54,10 @@ rimasto senza tipi.
 
 ## 3. Cosa contiene la specifica
 
-- **95 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
+- **104 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
-  Files, Catalogues, Knowledge Graph/Neo4j, Identity e Documentazione.
+  Files, Catalogues, Knowledge Graph/Neo4j, Identity, UI access/preferences e
+  Documentazione.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
   `SchedulerStatus`, `ResearchAnswer`).
 - `securitySchemes.WikiForgeToken`: header `X-WikiForge-Token`, richiesto solo
@@ -131,10 +132,11 @@ AgentServer.handleRequest()
        ├─ ReviewStudioModule 7    meta/verify/digest/critica/snapshot
        ├─ ResearchModule     7    search/backlinks/related/trace/consult
        ├─ StudyModule        7    guide/quiz/mindmap/audio/note/thesis
-       └─ ChatModule         1    chat JSON e SSE
+       ├─ ChatModule         1    chat JSON e SSE
+        └─ UiModule           3    ui.access, ui.preferences.get/put
 ```
 
-Degli **95 endpoint** del catalogo, **90 comandi** sono instradati sul bus.
+Degli **104 endpoint** del catalogo, **99 comandi** sono instradati sul bus. Il piano F0–F6 prevedeva 98 endpoint sulla baseline documentale storica di 95; il catalogo reale era già a 101 prima delle tre route `ui.*`, quindi il conteggio è stato riallineato al codice.
 I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
 `docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
 `graph.proxy` sono protetti dal gate B4 come ogni ingresso non pubblico e
@@ -146,6 +148,8 @@ preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
   `authenticated=false`; con Bearer invalido restituisce l'envelope 401 di B0.
   Il client invia il Bearer IdP tramite `Authorization` solo quando presente,
   lasciando invariato l'header legacy `X-WikiForge-Token`.
+
+- **F1/F2 — UI access e preferenze**: `GET /api/ui/access` restituisce ruoli, azioni, operazioni e pannelli consentiti per l'identità corrente; `GET /api/ui/preferences` e `PUT /api/ui/preferences` gestiscono le preferenze dell'utente. Tutte richiedono il ruolo minimo Reader e passano da `UiModule`. La chiave dello store è derivata da `source:actor` (SHA-256); il body non può impostare `actor`, `roles` o la chiave utente. Il frontend carica tutto via `apiBus` e applica il filtro RBAC dopo il merge delle preferenze.
 
 - **C4 — Neo4j dichiarativo**: `POST /api/v1/graph/cypher` (query read-only C3),
   `POST /api/v1/graph/sync/neo4j` (scan idempotente del vault) e
@@ -190,7 +194,7 @@ preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (95 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (104 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -225,8 +229,8 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (95 id, assertion c
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 15 moduli / 90 comandi (89 + `auth.me`) |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (95 id), client generato, `apiBus`, facciate senza `fetch` diretto |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 16 moduli più `auth.me`, 99 comandi su bus (3 di `UiModule`) |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (104 id), client generato, `apiBus`, facciate senza `fetch` diretto |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

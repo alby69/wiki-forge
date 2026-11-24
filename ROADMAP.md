@@ -96,6 +96,7 @@
 | 86 | Accesso obbligatorio e bootstrap Admin | ✅ Done | Gateway di login bloccante all'avvio, credenziali predefinite `admin`/`admin` quando non configurate, sessioni locali bearer, gesture **👥 Utenti** in Modalità Sviluppo per creare utenti e assegnare ruoli Reader/Contributor/KnowledgeEngineer/Admin. |
 | 87 | Esportazione Wiki ZIP per progetto | ✅ Done | Azione **📦 Esporta Wiki ZIP** solo in Modalità Sviluppo; route additiva `GET /api/projects/:id/export/markdown.zip` con auth locale; ZIP `stored` generato senza dipendenze da tutti i `.md` della wiki path configurata, con nomi UTF-8 e path relativi. |
 | 88 | Matrice capabilities RBAC progressiva | ✅ Done | Source of truth condivisa in `src/shared/auth/capabilities.ts` per comandi e azioni; ruoli progressivi Reader → Contributor → KnowledgeEngineer → Admin applicati a backend e UI; operazioni KE (changeset apply/reject, sync/reconcile grafo, trigger scheduler) e approvazioni F6/admin separate; UI filtra header, command palette, scorciatoie, editor, studio, modali e chat. |
+| 89 | Accesso UI per utente e personalizzazione RBAC-aware | ✅ Done | Route additive `ui.access`, `ui.preferences.get`/`put` e azione `global:customize`; preferenze per utente sul server con fallback locale e filtro RBAC dopo il merge. Modale **Personalizza UI** per pannelli, pin, densità e scorciatoie effettive; **Gestione utenti** con descrizione ruoli, anteprima capacità e blocco del proprio account. Piano F0–F6 in `docs/USER_PERMISSIONS_UIUX_PLAN.md`; zero `fetch` diretti e envelope invariati. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
@@ -340,6 +341,17 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Backend boundaries**: notes, upload, scratchpad and changeset staging are Contributor; verify/critique/restore, deep research, script execution/scheduling, scheduler control and changeset apply/reject are KnowledgeEngineer; users, projects, configuration writes and F6 approvals are Admin.
 - **Progressive UI**: filtered header and command palette, action shortcuts, read-only editor and sidebar, Review/Research/Study tabs, project/config/tools/changeset/KE modals, chat commands and onboarding writes. Managed identities only see their allowed capabilities; legacy/anonymous sessions keep the historical full surface.
 - **Tests**: `tests/capabilityMatrix.test.ts`, `tests/authUi.test.ts`, `tests/userUi.test.ts`, `tests/rbacMiddleware.test.ts` and `tests/graphRoutes.test.ts` cover the role ladder and the new KE boundaries.
+
+## Phase 89 — Accesso UI per utente e personalizzazione RBAC-aware ✅ Done
+
+**Goal:** make the frontend surface user-specific without turning UI preferences into a permission bypass, and make role management understandable and safe.
+
+**Deliverables:**
+- **Additive API**: `GET /api/ui/access`, `GET /api/ui/preferences` and `PUT /api/ui/preferences` are declared in the TS catalogue and served by `UiModule` with Reader as the minimum role. The preferences store uses a SHA-256 key derived from `source:actor`, atomic writes, defensive normalisation and local fallback.
+- **Single UI state**: the managed-identity startup loads access and preferences through `apiBus`; a 403 falls back to the roles already present in `auth.me`. Legacy mode keeps the historical surface and never calls the new routes. RBAC filtering always runs after preferences are merged.
+- **Customize UI modal**: the only panel catalogue (`UI_PANELS`) drives visibility, pinnable actions, density and the shortcuts that are actually registered. The `editor` panel is essential; `chat` requires `chat.send`.
+- **User management UX**: the modal explains all four roles and previews capabilities from `ACTION_MIN_ROLE`; local accounts matching `human:<username>` cannot edit, deactivate or delete themselves. Italian and English messages stay aligned and no native dialog was added.
+- **Docs and gates**: `docs/USER_PERMISSIONS_UIUX_PLAN.md`, `docs/USER_GUIDE.md`, `docs/help/ui-personalizzazione.md`, `docs/CHANGELOG.md`, `docs/OPENAPI.md`, `docs/TECHNICAL_ARCHITECTURE.md` and the regenerated docs wiki projection.
 
 ## Q1–Q2 2027 — Piano incrementale 🔄 Ongoing
 

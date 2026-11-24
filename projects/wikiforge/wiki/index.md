@@ -7,10 +7,10 @@ okf_version: "0.2"
 ## Topics
 
 * [Guida operativa](guida/index.md) (6 note) — guida operativa di wiki-forge.
-* [Architettura](architettura/index.md) (6 note) — architettura di wiki-forge.
+* [Architettura](architettura/index.md) (7 note) — architettura di wiki-forge.
 * [Processi e agenti](processi/index.md) (7 note) — processi e agenti di wiki-forge.
 * [Standard e specifiche](standard/index.md) (4 note) — standard e specifiche di wiki-forge.
-* [Riferimenti](riferimenti/index.md) (26 note) — riferimenti di wiki-forge.
+* [Riferimenti](riferimenti/index.md) (27 note) — riferimenti di wiki-forge.
 
 ## Sintesi curata
 

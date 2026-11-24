@@ -25,6 +25,8 @@ import type {
   ScriptDefDto,
   SkillDto,
   TrashEntryDto,
+  UiAccessDto,
+  UiPreferencesDto,
   UseCaseDefDto,
 } from './types';
 import type {
@@ -122,6 +124,14 @@ export type EndpointTypes = {
     res: Ok<{ user: ManagedUserDto }>;
   };
   'users.delete': { req: WithParams<{ id: string }>; res: Ok<Record<string, never>> };
+
+  // UI shell — additive, permission-aware layout and per-user preferences
+  'ui.access': { req: EmptyRequest; res: Ok<{ access: UiAccessDto }> };
+  'ui.preferences.get': { req: EmptyRequest; res: Ok<{ preferences: UiPreferencesDto }> };
+  'ui.preferences.put': {
+    req: WithBody<UiPreferencesDto>;
+    res: Ok<{ preferences: UiPreferencesDto }>;
+  };
 
   // Knowledge graph (proxied to FastAPI)
   'graph.sync': { req: WithBody<{ wiki_dir?: string; output_ttl?: string }>; res: Json };

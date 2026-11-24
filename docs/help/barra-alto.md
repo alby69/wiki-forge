@@ -24,7 +24,7 @@ Da **sinistra a destra** trovi:
 6. **Contesto della modalità**:
    - In **Focus Mode**: i 4 pulsanti **Carica · Importa · Compila · Chiedi**.
    - In **Developer Mode**: **Onboarding Wizard · KE Workbench · 🔎 Research · 📚 Studio · Tools · Config**.
-7. **`⋯` (Altre azioni)** — menu con l'elenco **Personalizza barra**: clicca una riga per eseguire l'azione, spunta la casella per aggiungerla come pulsante. Include **📐 Template**, che apre la gestione grafica dei template (crea/modifica, predefinito e **Nuovo documento**).
+7. **`⋯` (Altre azioni)** — menu con l'elenco **Personalizza barra**: clicca una riga per eseguire l'azione, spunta la casella per aggiungerla come pulsante. Include **📐 Template**, che apre la gestione grafica dei template (crea/modifica, predefinito e **Nuovo documento**), e **⚙️ Personalizza UI**, che apre pannelli, pin, densità e scorciatoie in base ai permessi (vedi *Personalizza UI, ruoli e permessi*).
 8. **`?`** — apre questa **guida in-app** (anche col tasto **F1**, ovunque).
 9. **💬 Agent Chat** — apre/chiude la finestra di chat con l'agente.
 

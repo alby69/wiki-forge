@@ -41,6 +41,8 @@ import type {
   StudyQuizDto,
   StudyThesisDto,
   SuccessDto,
+  UiAccessDto,
+  UiPreferencesDto,
   TraceResultDto,
   TrashEntryDto,
   UseCaseDefDto,
@@ -163,6 +165,26 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     id: str(), username: str(), roles: arr(str('Canonical RBAC role')),
     active: bool(), createdAt: str(), updatedAt: str(),
   }, ['id', 'username', 'roles', 'active', 'createdAt', 'updatedAt']),
+  UiAccess: obj({
+    actor: str('Server-derived canonical actor'),
+    source: str('legacy-token | idp | local | process', ['legacy-token', 'idp', 'local', 'process']),
+    authenticated: bool(),
+    roles: arr(str('Global role')),
+    visibleProjects: arr(str('Project id allowed by the ACL')),
+    projectRoles: free('Project id → effective roles after ACL intersection'),
+    actions: arr(str('Renderable action id')),
+    operations: arr(str('Dispatchable operation id')),
+  }, ['actor', 'source', 'authenticated', 'roles', 'visibleProjects', 'projectRoles', 'actions', 'operations']),
+  UiPreferences: obj({
+    version: int('Preferences schema version'),
+    pinnedActionIds: arr(str('Global action id pinned in the header')),
+    filesVisible: bool(),
+    viewMode: str('editor | graph | split | scratchpad | closed', ['editor', 'graph', 'split', 'scratchpad', 'closed']),
+    theme: str('dark | light', ['dark', 'light']),
+    density: str('comfortable | compact', ['comfortable', 'compact']),
+    language: str('it | en', ['it', 'en']),
+    hiddenPanels: arr(str('Panel id hidden from the shell')),
+  }, ['version', 'pinnedActionIds', 'filesVisible', 'viewMode', 'theme', 'density', 'language', 'hiddenPanels']),
   WikiNote: obj({
     id: str('Stable note id or wiki-relative path'),
     title: str(),
@@ -356,6 +378,31 @@ export const ROUTES = [
     command: 'users.delete',
     request: { params: [pathParam('id', 'Stable user id')] },
     response: { schema: ok() },
+  }),
+
+  // ---------------------------------------------------------------------------
+  // UI shell — additive view model and per-user presentation preferences
+  // ---------------------------------------------------------------------------
+  defineRoute({
+    id: 'ui.access', method: 'GET', path: '/api/ui/access', tags: ['Identity'],
+    summary: 'Resolve the permission-aware UI view model for the current caller',
+    description: 'Server-derived roles, projects, actions and operations. The UI must apply it after merging user preferences.',
+    command: 'ui.access',
+    request: {}, response: { schema: ok({ access: ref('UiAccess') }) },
+  }),
+  defineRoute({
+    id: 'ui.preferences.get', method: 'GET', path: '/api/ui/preferences', tags: ['Identity'],
+    summary: 'Read the presentation preferences of the current caller',
+    command: 'ui.preferences.get',
+    request: {}, response: { schema: ok({ preferences: ref('UiPreferences') }) },
+  }),
+  defineRoute({
+    id: 'ui.preferences.put', method: 'PUT', path: '/api/ui/preferences', tags: ['Identity'],
+    summary: 'Save the presentation preferences of the current caller',
+    description: 'Only presentation data is accepted: permissions are always recomputed server-side from the trusted Principal.',
+    command: 'ui.preferences.put',
+    request: { body: ref('UiPreferences') },
+    response: { schema: ok({ preferences: ref('UiPreferences') }) },
   }),
 
   // ---------------------------------------------------------------------------
@@ -1227,7 +1274,7 @@ export type ContractDtos =
   | ScratchpadEntryDto | ScriptDefDto | UseCaseDefDto | UseCaseEventDto | RelatedNoteDto
   | BacklinkResultDto | DeepResearchDto | ResearchAnswerDto | ResearchPromoteDto
   | StudyOutputDto | StudyQuizDto | StudyMindmapDto | StudyQuickNoteDto | StudyPromoteDto
-  | StudyThesisDto;
+  | StudyThesisDto | UiAccessDto | UiPreferencesDto;
 
 // Re-export aliases used by the generated client and by the backend bus.
 export type {

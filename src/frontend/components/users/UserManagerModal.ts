@@ -1,10 +1,30 @@
 import { escapeHtml } from '@frontend/core/utils/html';
-import { t } from '@frontend/core/i18n/strings';
+import { t, type TranslationKey } from '@frontend/core/i18n/strings';
 import { apiBus } from '@frontend/core/apiBus';
 import { notifications } from '@frontend/services/notificationService';
+import { appStore } from '@frontend/store/appStore';
+import { ACTION_MIN_ROLE, ROLE_ORDER, canUseAction } from '@shared/auth/capabilities';
 import type { ManagedUserDto, ManagedUserRole } from '@shared/api/types';
 
-const ROLES: ManagedUserRole[] = ['Reader', 'Contributor', 'KnowledgeEngineer', 'Admin'];
+const ROLES: readonly ManagedUserRole[] = ROLE_ORDER;
+
+const ROLE_DESCRIPTIONS: Record<ManagedUserRole, TranslationKey> = {
+  Reader: 'roleReaderDescription',
+  Contributor: 'roleContributorDescription',
+  KnowledgeEngineer: 'roleKnowledgeEngineerDescription',
+  Admin: 'roleAdminDescription',
+};
+
+/** Capability preview derived from the shared action/role matrix. */
+const CAPABILITY_PREVIEW: ReadonlyArray<{ labelKey: TranslationKey; actionId: string }> = [
+  { labelKey: 'capabilityBrowse', actionId: 'global:projects' },
+  { labelKey: 'capabilityEdit', actionId: 'global:template' },
+  { labelKey: 'capabilityChat', actionId: 'global:chat' },
+  { labelKey: 'capabilityReview', actionId: 'review:verify' },
+  { labelKey: 'capabilityKeWorkbench', actionId: 'global:keWorkbench' },
+  { labelKey: 'capabilityUsers', actionId: 'global:users' },
+  { labelKey: 'capabilityCustomize', actionId: 'global:customize' },
+];
 
 export interface UserManagerOptions {
   container?: HTMLElement;
@@ -67,26 +87,82 @@ export class UserManagerModal {
     }
   }
 
+  /** Local accounts carry the managed username as `human:<username>`. */
+  private selfUsername(): string | undefined {
+    const identity = appStore.getState().auth.identity;
+    if (!identity || identity.source !== 'local' || !identity.authenticated) return undefined;
+    const match = /^human:(.+)$/.exec(identity.actor);
+    return match?.[1] || undefined;
+  }
+
+  private isSelf(user: ManagedUserDto, username = this.selfUsername()): boolean {
+    return !!username && user.username === username;
+  }
+
+  private renderRoleGuide(): string {
+    const cards = ROLES.map(role => {
+      const capabilities = CAPABILITY_PREVIEW.map(item => ({
+        label: t(item.labelKey),
+        allowed: canUseAction([role], item.actionId),
+      }));
+      const count = Object.keys(ACTION_MIN_ROLE).filter(id => canUseAction([role], id)).length;
+      return `
+        <article class="wf-role-card">
+          <header class="wf-role-card__header">
+            <strong>${escapeHtml(role)}</strong>
+            <span class="wf-template-badge">${escapeHtml(t('capabilityCount', { count }))}</span>
+          </header>
+          <p class="wf-role-card__desc">${escapeHtml(t(ROLE_DESCRIPTIONS[role]))}</p>
+          <ul class="wf-role-card__caps">
+            ${capabilities.map(cap => `
+              <li class="${cap.allowed ? 'is-allowed' : ''}" title="${escapeHtml(cap.allowed ? t('capabilityAllowed') : t('capabilityDenied'))}">
+                <span aria-hidden="true">${cap.allowed ? '✓' : '✕'}</span> ${escapeHtml(cap.label)}
+              </li>`).join('')}
+          </ul>
+        </article>`;
+    }).join('');
+    return `
+      <section class="wf-role-guide" aria-label="${escapeHtml(t('roleGuideTitle'))}">
+        <h4 class="wf-template-form-title">${escapeHtml(t('roleGuideTitle'))}</h4>
+        <p class="wf-template-hint">${escapeHtml(t('roleGuideHint'))}</p>
+        <div class="wf-role-guide__grid">${cards}</div>
+      </section>`;
+  }
+
   private render(): void {
+    const username = this.selfUsername();
+    if (this.editingId) {
+      const target = this.users.find(user => user.id === this.editingId);
+      if (target && this.isSelf(target, username)) this.editingId = undefined;
+    }
     const editing = this.users.find(user => user.id === this.editingId);
-    const rows = this.users.map(user => `
-      <li class="wf-template-row" data-user-id="${escapeHtml(user.id)}">
-        <div class="wf-template-row__main">
-          <span class="wf-template-row__name">${escapeHtml(user.username)}</span>
-          <span class="wf-template-badge">${user.roles.map(role => escapeHtml(role)).join(' · ')}</span>
-          ${user.active ? '' : `<span class="wf-template-badge">${escapeHtml(t('active'))}: ✕</span>`}
-        </div>
-        <div class="wf-template-row__actions">
-          <button class="wf-btn wf-btn--sm" data-user-edit="${escapeHtml(user.id)}">${escapeHtml(t('edit'))}</button>
-          <button class="wf-btn wf-btn--sm wf-btn--danger" data-user-delete="${escapeHtml(user.id)}">${escapeHtml(t('deleteUser'))}</button>
-        </div>
-      </li>`).join('');
+    const rows = this.users.map(user => {
+      const self = this.isSelf(user, username);
+      const blockedAttrs = self
+        ? ` disabled aria-disabled="true" title="${escapeHtml(t('selfAccountNotice'))}"`
+        : '';
+      return `
+        <li class="wf-template-row" data-user-id="${escapeHtml(user.id)}"${self ? ' data-self="true"' : ''}>
+          <div class="wf-template-row__main">
+            <span class="wf-template-row__name">${escapeHtml(user.username)}</span>
+            ${self ? `<span class="wf-template-badge wf-template-badge--self">${escapeHtml(t('selfAccountBadge'))}</span>` : ''}
+            <span class="wf-template-badge">${user.roles.map(role => escapeHtml(role)).join(' · ')}</span>
+            ${user.active ? '' : `<span class="wf-template-badge">${escapeHtml(t('active'))}: ✕</span>`}
+          </div>
+          <div class="wf-template-row__actions">
+            <button class="wf-btn wf-btn--sm" data-user-edit="${escapeHtml(user.id)}"${blockedAttrs}>${escapeHtml(t('edit'))}</button>
+            <button class="wf-btn wf-btn--sm wf-btn--danger" data-user-delete="${escapeHtml(user.id)}"${blockedAttrs}>${escapeHtml(t('deleteUser'))}</button>
+          </div>
+        </li>`;
+    }).join('');
     this.host.innerHTML = `
       <div class="wf-modal-overlay" data-role="user-manager-overlay">
         <div class="wf-modal" role="dialog" aria-modal="true" aria-labelledby="user-manager-title">
           <div class="wf-modal__header"><h3 class="wf-modal__title" id="user-manager-title">${escapeHtml(t('userManager'))}</h3></div>
           <div class="wf-modal__body">
+            ${username ? `<p class="wf-role-guide__notice" role="note">${escapeHtml(t('selfAccountNotice'))}</p>` : ''}
             <ul class="wf-template-list">${rows}</ul>
+            ${this.renderRoleGuide()}
             <hr class="wf-template-separator" />
             <h4 class="wf-template-form-title">${escapeHtml(editing ? t('edit') : t('createUser'))}</h4>
             <div class="wf-form-grid">
@@ -122,6 +198,12 @@ export class UserManagerModal {
     this.host.querySelector('#user-save')?.addEventListener('click', () => void this.save());
     this.host.querySelectorAll<HTMLElement>('[data-user-edit]').forEach(button => {
       button.addEventListener('click', () => {
+        const user = this.users.find(item => item.id === button.dataset.userEdit);
+        if (user && this.isSelf(user)) {
+          this.status = t('selfEditBlocked');
+          this.render();
+          return;
+        }
         this.editingId = button.dataset.userEdit;
         this.status = '';
         this.render();
@@ -140,6 +222,12 @@ export class UserManagerModal {
   }
 
   private async save(): Promise<void> {
+    const editingUser = this.editingId ? this.users.find(user => user.id === this.editingId) : undefined;
+    if (editingUser && this.isSelf(editingUser)) {
+      this.status = t('selfEditBlocked');
+      this.render();
+      return;
+    }
     const username = this.host.querySelector<HTMLInputElement>('#user-username')?.value ?? '';
     const password = this.host.querySelector<HTMLInputElement>('#user-password')?.value ?? '';
     const active = this.host.querySelector<HTMLInputElement>('#user-active')?.checked ?? true;
@@ -169,6 +257,11 @@ export class UserManagerModal {
   private async remove(id?: string): Promise<void> {
     if (!id) return;
     const user = this.users.find(item => item.id === id);
+    if (user && this.isSelf(user)) {
+      this.status = t('selfDeleteBlocked');
+      this.render();
+      return;
+    }
     const confirmed = await notifications.confirm({
       title: t('deleteUser'),
       message: t('confirmDeleteItem', { name: user?.username ?? id }),

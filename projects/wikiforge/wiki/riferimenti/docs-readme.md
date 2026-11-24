@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: "Wiki-Forge Documentation Index"
-description: "Indice completo dei documenti in docs/ (29 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/."
+description: "Indice completo dei documenti in docs/ (32 file), dei contenuti della guida in-app (docs/help/, 19 argomenti) e dei mockup in docs/mockups/."
 resource: docs/README.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/en]
 status: stable
@@ -16,7 +16,7 @@ sources:
 ---
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (29 file), dei contenuti della guida in-app (`docs/help/`, 18 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (32 file), dei contenuti della guida in-app (`docs/help/`, 19 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -52,6 +52,7 @@ Indice completo dei documenti in `docs/` (29 file), dei contenuti della guida in
 | [`ROADMAP_Q1_Q2_2027_PLAN.md`](../processi/roadmap-q1-q2-2027-plan.md) | Piano A0–A5/B0–B7/C0–C8 per L4 autonomo, RBAC e Neo4j bidirezionale: baseline, dipendenze, criteri di accettazione, test e grado di implementazione aggiornato a ogni step. |
 | [`EDITOR_MIGRATION.md`](../architettura/editor-migration.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
 | [`FRONTEND_UIUX_PLAN.md`](../architettura/frontend-uiux-plan.md) | Studio UI/UX del frontend e piano KISS/DRY: azioni uniche, design system, disaccoppiamento e ciclo di vita progetti. |
+| [`USER_PERMISSIONS_UIUX_PLAN.md`](../architettura/user-permissions-uiux-plan.md) | Piano F0–F6 per permessi utente e UI modulare: audit, route `ui.*`, preferenze per utente, pannelli RBAC-aware e UX gestione utenti. |
 | [`KE_PLAYBOOK.md`](../processi/ke-playbook.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
 | [`PROCEDURES.md`](../standard/procedures.md) | Specifica del Procedure Engine: schema TOML, DAG, criteri di uscita. |
 | [`SCHEMA.md`](../standard/schema.md) | Guida allo schema tipizzato (`[schema]`), validazione e inferenza (`/schema-lint`, `/schema-infer`). |
@@ -73,7 +74,7 @@ Indice completo dei documenti in `docs/` (29 file), dei contenuti della guida in
 | Documento | Contenuto |
 |---|---|
 | [`AGENT.md`](../processi/agent-manual.md) (radice) | Operating manual v3.0 per agenti LLM: ruolo, OKF checklist, skill router (10 skill), macro-command. |
-| [`help/*.md`](help/) (18 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
+| [`help/*.md`](help/) (19 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
 
 ## 🗺️ Mappa: argomenti guida in-app ↔ documenti
 
@@ -97,6 +98,7 @@ Indice completo dei documenti in `docs/` (29 file), dei contenuti della guida in
 | `modalita-dev` | `SCRIPT_AUTOMATION_REFERENCE.md`, `KE_AGENT_SCHEDULER_PLAN.md`, `TUTORIAL.md` §3 (KE Workbench), `KE_PLAYBOOK.md` |
 | `maturita-metriche` | `TUTORIAL.md` FASE 4, `METRICS.md`, `KE_PLAYBOOK.md` |
 | `wiki-di-wiki-forge` | `SELF_WIKI_PLAN.md` (fasi 70-76), `docs_to_wiki.py`, `KNOWLEDGE_ENGINEERING.md` (UC8), `TUTORIAL.md` §5 |
+| `ui-personalizzazione` | `USER_GUIDE.md` (Personalizzazione UI, ruoli e permessi), `USER_PERMISSIONS_UIUX_PLAN.md` (F0–F6), `OPENAPI.md` (route `ui.*`) |
 
 ## Verifica di coerenza
 

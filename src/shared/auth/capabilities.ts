@@ -14,6 +14,9 @@ export const ROLE_RANK: Record<CapabilityRole, number> = {
 export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'auth.me': 'Reader',
   'auth.login': 'Reader',
+  'ui.access': 'Reader',
+  'ui.preferences.get': 'Reader',
+  'ui.preferences.put': 'Reader',
   'files.download': 'Reader',
   'graph.clusters': 'Reader',
   'graph.cypher': 'Reader',
@@ -125,6 +128,7 @@ export const ACTION_MIN_ROLE: Record<string, CapabilityRole> = {
   'global:help': 'Reader',
   'global:chat': 'Contributor',
   'global:users': 'Admin',
+  'global:customize': 'Reader',
   'global:exportWikiZip': 'Reader',
   'global:toggleMode': 'Contributor',
   'focus:upload': 'Contributor',
@@ -165,4 +169,47 @@ export function canUseOperation(roles: readonly string[] | undefined, command: s
 export function canUseAction(roles: readonly string[] | undefined, actionId: string): boolean {
   const required = minimumRoleForAction(actionId);
   return required === undefined || roleHasCapability(roles, required);
+}
+
+/** View modes that can be selected by presentation preferences. */
+export const UI_VIEW_MODES = ['editor', 'graph', 'split', 'scratchpad', 'closed'] as const;
+
+/**
+ * Single catalogue of presentational panels. `requiredOperation` is checked
+ * with the same matrix as bus commands; `essential` panels cannot be hidden.
+ */
+export interface UiPanelDefinition {
+  id: 'files' | 'editor' | 'graph' | 'context' | 'chat' | 'scratchpad';
+  labelKey: string;
+  icon: string;
+  requiredOperation: string;
+  essential?: boolean;
+}
+
+export const UI_PANELS: readonly UiPanelDefinition[] = [
+  { id: 'files', labelKey: 'panelFiles', icon: '📁', requiredOperation: 'wiki.folders.list' },
+  { id: 'editor', labelKey: 'panelEditor', icon: '📝', requiredOperation: 'wiki.notes.list', essential: true },
+  { id: 'graph', labelKey: 'panelGraph', icon: '🕸️', requiredOperation: 'graph.status' },
+  { id: 'context', labelKey: 'panelContext', icon: '📊', requiredOperation: 'wiki.notes.list' },
+  { id: 'chat', labelKey: 'panelChat', icon: '💬', requiredOperation: 'chat.send' },
+  { id: 'scratchpad', labelKey: 'panelScratchpad', icon: '📒', requiredOperation: 'wiki.scratchpad.list' },
+];
+
+export type UiPanelId = (typeof UI_PANELS)[number]['id'];
+export const UI_PANEL_IDS: readonly UiPanelId[] = UI_PANELS.map(panel => panel.id);
+
+/** Only global action ids from the shared matrix may be pinned in the header. */
+export const PINNABLE_ACTION_IDS: readonly string[] = Object.keys(ACTION_MIN_ROLE)
+  .filter((id) => id.startsWith('global:'));
+
+export function isPinnableActionId(value: unknown): value is string {
+  return typeof value === 'string' && PINNABLE_ACTION_IDS.includes(value);
+}
+
+export function isUiPanelId(value: unknown): value is UiPanelId {
+  return typeof value === 'string' && (UI_PANEL_IDS as readonly string[]).includes(value);
+}
+
+export function isUiViewMode(value: unknown): boolean {
+  return typeof value === 'string' && (UI_VIEW_MODES as readonly string[]).includes(value);
 }

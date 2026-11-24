@@ -44,6 +44,7 @@ import { StudyStudio } from '@frontend/components/study/StudyStudio';
 import { ReviewContextMenu } from '@frontend/components/review/ReviewContextMenu';
 import { HelpPanel } from '@frontend/components/ui/HelpPanel';
 import { CommandPalette } from '@frontend/components/ui/CommandPalette';
+import { CustomizeUiModal } from '@frontend/components/ui/CustomizeUiModal';
 import { ProjectManagerModal } from '@frontend/components/projects/ProjectManagerModal';
 import { NewDocumentModal } from '@frontend/components/templates/NewDocumentModal';
 import { TemplateManagerModal } from '@frontend/components/templates/TemplateManagerModal';
@@ -55,6 +56,7 @@ import { eventBus } from '@frontend/core/events';
 import { apiBus } from '@frontend/core/apiBus';
 import { adaptServerGraphData, startGraphEventSubscription } from '@frontend/core/graphEvents';
 import { canRenderAction, hasManagedIdentity, refreshIdentity } from '@frontend/core/auth';
+import { hasUiAccess, isPanelVisible, loadUiAccess } from '@frontend/core/uiAccess';
 import { applyStoredLanguage, t } from '@frontend/core/i18n/strings';
 import { installShortcuts, refreshActionShortcuts, registerActionShortcuts, setShortcutContext } from '@frontend/core/shortcuts';
 import { notifications } from '@frontend/services/notificationService';
@@ -94,6 +96,7 @@ export class WikiForgeApp {
   private reviewContextMenu!: ReviewContextMenu;
   private helpPanel!: HelpPanel;
   private commandPalette!: CommandPalette;
+  private customizeUiModal!: CustomizeUiModal;
   private projectService = new ProjectService();
   private projectManager!: ProjectManagerModal;
   private newDocumentModal!: NewDocumentModal;
@@ -127,6 +130,10 @@ export class WikiForgeApp {
 
   private async startStartupAuth(): Promise<void> {
     await refreshIdentity();
+    // refreshIdentity already hydrates the access view; this is a no-op when
+    // the same identity is still active, and a safety net after a token change.
+    await loadUiAccess();
+    refreshActionShortcuts();
     if (hasManagedIdentity()) {
       this.startWorkspace();
       return;
@@ -137,6 +144,7 @@ export class WikiForgeApp {
   private startWorkspace(): void {
     if (this.workspaceStarted) return;
     this.workspaceStarted = true;
+    if (!hasUiAccess()) void loadUiAccess().then(() => refreshActionShortcuts());
     this.loginModal.close();
     this.startGraphEvents();
     void this.loadVault();
@@ -348,14 +356,17 @@ Backlink to [[01-index]].
       onOpenStudy: (noteId, tab) => this.openStudyStudio({ noteId, tab }),
     });
 
+    this.customizeUiModal = new CustomizeUiModal();
+
     // Keyboard shortcuts are registered once in core/shortcuts.ts; see
     // bindGlobalActions() below for the action handlers they dispatch to.
     this.header = new Header({
       container: this.layout.headerContainer,
       onViewModeChange: mode => this.handleViewModeToggle(mode),
       onToggleFiles: () => appStore.toggleFilesVisible(),
-      onToggleChat: () => this.chatDrawer.toggle(),
+      onToggleChat: () => { if (isPanelVisible('chat')) this.chatDrawer.toggle(); },
       onProjectSelect: projectId => this.storage.setActiveProjectId(projectId),
+      onOpenCustomize: () => this.customizeUiModal.open(),
     });
 
     this.sidebar = new Sidebar(
@@ -594,7 +605,8 @@ Backlink to [[01-index]].
     bindActionHandler('global:changesets', () => void this.changesetReviewModal.open());
     bindActionHandler('global:template', () => this.templateManager.open());
     bindActionHandler('global:help', () => void this.helpPanel.open());
-    bindActionHandler('global:chat', () => this.chatDrawer.toggle());
+    bindActionHandler('global:customize', () => this.customizeUiModal.open());
+    bindActionHandler('global:chat', () => { if (isPanelVisible('chat')) this.chatDrawer.toggle(); });
     bindActionHandler('global:users', () => void this.userManager.open());
     bindActionHandler('global:exportWikiZip', () => void this.exportWikiZip());
     bindActionHandler('global:toggleMode', () => appStore.toggleAdvancedMode());

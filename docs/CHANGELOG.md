@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Permessi utente e UI modulare/personalizzabile (F0–F6)
+
+- **Piano**: nuovo `docs/USER_PERMISSIONS_UIUX_PLAN.md` con audit F0, route F1/F2, pipeline frontend F3, catalogo pannelli F4, UX utenti F5 e gate F6; registro di avanzamento compilato a ogni step.
+- **API additive**: `GET /api/ui/access`, `GET /api/ui/preferences`, `PUT /api/ui/preferences` dichiarate in `contracts.ts`/`endpoints.ts` e servite da `UiModule` con ruolo minimo Reader; nuova azione `global:customize`. Nessun envelope, metodo pubblico o contratto esistente è stato rotto.
+- **Preferenze per utente**: `UiPreferencesStore` scrive in `.wiki-forge/ui-preferences.json` con chiave SHA-256 derivata da `source:actor`, scrittura atomica, normalizzazione difensiva e file corrotto gestito. Il server ignora `actor`/`roles` inviati dal client; le preferenze non ampliano mai i permessi.
+- **Frontend**: `ui.access` e preferenze caricate all'avvio per le identità managed tramite `apiBus`; 403 → fallback dai ruoli di `auth.me`, legacy mode invariato. `appStore` è l'unico stato UI; il filtro RBAC è applicato dopo il merge. Nessun `fetch` diretto aggiunto.
+- **Personalizza UI**: modale con pannelli da `UI_PANELS` (editor essenziale), pin della barra, densità e scorciatoie effettive; il pulsante è dentro `renderMenu()` per preservare la toolbar storica. Selettore lingua che aggiorna anche la preferenza `language`.
+- **Gestione utenti**: descrizioni dei quattro ruoli e anteprima capacità derivata da `ACTION_MIN_ROLE`; l'account corrente (`source: local`, `human:<username>`) non può essere modificato, disattivato o eliminato, anche dopo un cambio identità. Messaggi IT/EN allineati e nessun dialogo nativo nuovo.
+- **Documentazione/gate**: `ROADMAP.md`, `USER_GUIDE.md`, help `ui-personalizzazione.md`, `OPENAPI.md`, `TECHNICAL_ARCHITECTURE.md`, `README.md` e proiezione wiki aggiornati; conteggio OpenAPI riallineato al catalogo reale (104 endpoint / 99 comandi su bus; il piano prevedeva 98 sulla baseline documentale storica di 95).
+- **Pulizia workspace**: rimosse le cartelle `tmp-*/` residue di debug e di run interrotti dei test graph/C4 (`tmp-c4-debug2-*`, `tmp-c4-debug3-*`, `tmp-graph-routes-*`). Erano ignorate da Git e vuote tranne la sottocartella `wiki`; la suite `graphRoutes` già ripulisca i propri temporary directory al termine.
+
 ### Utenti server-side e UI Focus/Developer
 
 - **Backend**: nuovo `UserStore` con account persistenti in `.wiki-forge/users.json`, password hashata con `scrypt`, sessioni opache con TTL, bootstrap Admin via `WIKIFORGE_ADMIN_USERNAME`/`WIKIFORGE_ADMIN_PASSWORD` e guardia sull'ultimo Admin attivo. I ruoli canonici restano `Reader`, `Contributor`, `KnowledgeEngineer`, `Admin`.

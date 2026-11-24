@@ -8,14 +8,10 @@
  */
 
 import { apiBus } from './apiBus';
+import { canAction, canOperation, resetUiAccess } from './uiAccess';
 import { appStore } from '../store/appStore';
 import type { AuthIdentityDto } from '@shared/api/types';
-import {
-  ROLE_ORDER,
-  ROLE_RANK,
-  canUseAction as sharedCanUseAction,
-  canUseOperation as sharedCanUseOperation,
-} from '@shared/auth/capabilities';
+import { ROLE_RANK } from '@shared/auth/capabilities';
 
 export const RBAC_RANK: Record<string, number> = ROLE_RANK;
 
@@ -28,18 +24,13 @@ export function hasManagedIdentity(): boolean {
   return identity?.authenticated === true && (identity.source === 'idp' || identity.source === 'local');
 }
 
-function currentRoles(): string[] | undefined {
-  const identity = appStore.getState().auth.identity;
-  if (!hasManagedIdentity() || !identity) return [...ROLE_ORDER];
-  return identity.roles;
-}
-
+/** Compatibility wrappers: all consumers now share the F3 permission selectors. */
 export function canRenderAction(actionId: string): boolean {
-  return sharedCanUseAction(currentRoles(), actionId);
+  return canAction(actionId);
 }
 
 export function canUseOperation(command: string): boolean {
-  return sharedCanUseOperation(currentRoles(), command);
+  return canOperation(command);
 }
 
 /**
@@ -90,5 +81,6 @@ export async function signInWithCredentials(username: string, password: string):
 }
 
 export function signOut(): void {
+  resetUiAccess();
   appStore.signOut();
 }

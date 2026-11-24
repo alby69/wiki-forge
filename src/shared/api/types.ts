@@ -451,3 +451,35 @@ export interface AuthIdentityDto {
   idpConfigured: boolean;
   userStoreConfigured?: boolean;
 }
+
+/**
+ * UI access view model. Every field is computed by the server from the trusted
+ * Principal and the declarative RBAC catalogue: the browser never supplies it.
+ */
+export interface UiAccessDto {
+  actor: string;
+  source: AuthIdentityDto['source'];
+  authenticated: boolean;
+  /** Global roles of the verified caller. */
+  roles: string[];
+  /** Projects whose ACL grants at least one effective role to the caller. */
+  visibleProjects: string[];
+  /** Effective roles (caller roles ∩ project/folder ACL) per visible project. */
+  projectRoles: Record<string, string[]>;
+  /** Action ids from ACTION_MIN_ROLE that the caller may render. */
+  actions: string[];
+  /** Operation ids from OPERATION_MIN_ROLE that the caller may dispatch. */
+  operations: string[];
+}
+
+/** Presentation-only preferences. They can never widen RBAC permissions. */
+export interface UiPreferencesDto {
+  version: 1;
+  pinnedActionIds: string[];
+  filesVisible: boolean;
+  viewMode: 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed';
+  theme: 'dark' | 'light';
+  density: 'comfortable' | 'compact';
+  language: 'it' | 'en';
+  hiddenPanels: string[];
+}

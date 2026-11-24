@@ -94,6 +94,8 @@ import { loadRbacConfigSync, type RbacConfig } from './auth/rbacConfig';
 import { createRbacMiddleware } from './auth/rbacMiddleware';
 import { buildAuthIdentity } from './auth/identity';
 import { UserStore } from './auth/userStore';
+import { UiModule } from './auth/uiModule';
+import { UiPreferencesStore } from './auth/uiPreferencesStore';
 import { createCatalogueModule, type CatalogueModule, type HelpTopicMeta } from './modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from './modules/toolsModule';
 import { createReviewModule, type ReviewModule } from './modules/reviewModule';
@@ -786,6 +788,7 @@ export class AgentServer {
   /** B6 — absent unless `[enterprise.auth].provider` is configured. */
   private readonly idp?: IdpAdapter;
   private readonly userStore: UserStore;
+  private readonly uiStore: UiPreferencesStore;
   private readonly bus: MessageBus;
   private readonly catalogue: CatalogueModule;
   private readonly tools: ToolsModule;
@@ -842,6 +845,8 @@ export class AgentServer {
       strict: this.strictProvenance,
     });
     userModule.register(this.bus);
+    this.uiStore = new UiPreferencesStore({ rootDir });
+    new UiModule({ rbac: this.rbacConfig, store: this.uiStore }).register(this.bus);
     this.catalogue = createCatalogueModule(rootDir);
     this.catalogue.register(this.bus);
     this.tools = createToolsModule(SCRIPT_REGISTRY, KE_USE_CASES);

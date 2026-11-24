@@ -1,5 +1,6 @@
 import { paneFlexes } from '@frontend/core/utils/viewMode';
 import { bindResizer } from '@frontend/core/ui/resizer';
+import { isPanelVisible } from '@frontend/core/uiAccess';
 import { appStore } from '@frontend/store/appStore';
 
 export class MainLayout {
@@ -19,6 +20,7 @@ export class MainLayout {
   private editorFlex = 1;
   private graphFlex = 1;
   private sidebarCollapsed = false;
+  private contextVisible = false;
   private sidebarToggleBtn!: HTMLElement;
   private unsubscribeStore?: () => void;
 
@@ -27,7 +29,11 @@ export class MainLayout {
     // The header "File" button and this pane share one store flag. The legacy
     // localStorage key is migrated by appStore, so no duplicate state here.
     this.sidebarCollapsed = !appStore.getState().filesVisible;
-    this.unsubscribeStore = appStore.subscribe(state => this.setFilesVisible(state.filesVisible));
+    this.unsubscribeStore = appStore.subscribe(state => {
+      this.setFilesVisible(state.filesVisible);
+      this.setViewMode(state.viewMode);
+      this.setContextVisible(this.contextVisible);
+    });
     try {
       this.sidebarWidth = Number(localStorage.getItem('wiki-forge:sidebar-width')) || this.sidebarWidth;
       this.contextHeight = Number(localStorage.getItem('wiki-forge:context-height')) || this.contextHeight;
@@ -160,7 +166,7 @@ export class MainLayout {
 
   /** Apply the shared visibility flag to the file pane. */
   public setFilesVisible(visible: boolean): void {
-    this.sidebarCollapsed = !visible;
+    this.sidebarCollapsed = !visible || !isPanelVisible('files');
     this.applySidebarState();
   }
 
@@ -191,9 +197,9 @@ export class MainLayout {
   }
 
   public setViewMode(mode: 'editor' | 'graph' | 'split' | 'scratchpad' | 'closed'): void {
-    const showEditor = mode === 'editor' || mode === 'split';
-    const showGraph = mode === 'graph' || mode === 'split';
-    const showScratch = mode === 'scratchpad';
+    const showEditor = (mode === 'editor' || mode === 'split') && isPanelVisible('editor');
+    const showGraph = (mode === 'graph' || mode === 'split') && isPanelVisible('graph');
+    const showScratch = mode === 'scratchpad' && isPanelVisible('scratchpad');
     const showEmpty = mode === 'closed';
 
     this.editorContainer.style.display = showEditor ? 'flex' : 'none';
@@ -213,9 +219,11 @@ export class MainLayout {
   }
 
   public setContextVisible(visible: boolean): void {
+    this.contextVisible = visible;
+    const allowed = visible && isPanelVisible('context');
     const context = this.container.querySelector('#context-root') as HTMLElement;
     const resizer = this.container.querySelector('#context-resizer') as HTMLElement;
-    if (context) context.style.display = visible ? 'block' : 'none';
-    if (resizer) resizer.style.display = visible ? 'block' : 'none';
+    if (context) context.style.display = allowed ? 'block' : 'none';
+    if (resizer) resizer.style.display = allowed ? 'block' : 'none';
   }
 }

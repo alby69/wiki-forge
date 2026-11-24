@@ -38,6 +38,7 @@ const BUILT_IN_ACTIONS: ActionDefinition[] = [
   { id: 'global:changesets', labelKey: 'changesets', icon: '📋', group: 'global', menu: true },
   { id: 'global:template', labelKey: 'template', icon: '📐', titleKey: 'templateManager', group: 'global', menu: true },
   { id: 'global:help', labelKey: 'help', icon: '❓', group: 'global', menu: true, shortcut: 'F1' },
+  { id: 'global:customize', labelKey: 'customizeUi', icon: '🎛️', group: 'global', menu: true },
   { id: 'global:chat', labelKey: 'chat', icon: '💬', group: 'global', menu: true },
   { id: 'global:users', labelKey: 'users', icon: '👥', titleKey: 'userManager', group: 'global', menu: true },
   { id: 'global:exportWikiZip', labelKey: 'exportWikiZip', icon: '📦', group: 'global', menu: true },

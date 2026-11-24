@@ -117,6 +117,25 @@ See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHI
 - Confirmation and input dialogs are styled and keyboard accessible; no native
   browser dialogs are used.
 
+## Personalizzazione UI, ruoli e permessi
+
+The `⋯` menu also contains **⚙️ Personalizza UI / Customize UI** (global action `global:customize`, available to every signed-in role). It opens a modal with four sections:
+
+| Section | What it controls |
+|---|---|
+| **Layout / Pannelli visibili** | Show or hide File, Graph, Info nodo, Chat and Note rapide. The Editor is essential and cannot be hidden. |
+| **Barra / Mostra nella barra** | Pin allowed global actions next to the view control. A permission change removes a pin automatically; it never grants the action. |
+| **Aspetto / Densità** | Choose Ampia/Compatta (Comfortable/Compact). |
+| **Scorciatoie** | Review the shortcuts that are actually registered and allowed for the current roles. |
+
+Preferences follow **your user**, not the browser: for managed local sessions they are stored on the server in `.wiki-forge/ui-preferences.json` under a key derived from `source:actor`. Anonymous/legacy sessions keep the previous local behaviour. The server never accepts an identity or role override in the preferences payload, and the RBAC filter is applied after preferences are merged. If the backend is unreachable, the last local copy is used until the next successful save.
+
+The language selector (🇮🇹 IT / 🇬🇧 EN) in the top bar changes both the interface language and the `language` preference; on the next sign-in the server value is restored. All confirmation and input dialogs are in-app and keyboard accessible — no native `alert`, `confirm` or `prompt` is used.
+
+In **Developer Mode**, the **👥 Utenti / User management** modal now includes a **Ruoli e permessi / Roles and permissions** guide. Each of the four roles shows a short description and a capability preview derived from the shared action/role matrix, together with the number of available actions. Project-level ACLs can still further restrict what a role can do.
+
+Safety rule: the account matching the current local identity (`human:<username>`) is marked **Tu / You**. Its **Modifica / Edit** and **Elimina / Delete** buttons are disabled, the form never opens for it, and a save or delete attempted after an identity switch is refused. You therefore cannot remove your own Admin role, deactivate yourself or delete yourself from the UI.
+
 ## Templates and creating documents
 
 The repository ships note templates in `templates/`: `article.md` (standard wiki

@@ -49,6 +49,7 @@ DOC_MAP: dict[str, str] = {
     "docs/OPENAPI.md": "architettura/openapi",
     "docs/EDITOR_MIGRATION.md": "architettura/editor-migration",
     "docs/FRONTEND_UIUX_PLAN.md": "architettura/frontend-uiux-plan",
+    "docs/USER_PERMISSIONS_UIUX_PLAN.md": "architettura/user-permissions-uiux-plan",
     "docs/GRAPH_RAG.md": "architettura/graph-rag",
     # processi
     "docs/AGENT.md": "processi/agent-manual",
@@ -89,6 +90,7 @@ HELP_IDS = [
     "viste-grafo", "modifica-note", "review-studio", "research-studio",
     "study-studio", "stati-okf", "studio-sintesi", "esportare", "problematic",
     "progetti-config", "modalita-dev", "maturita-metriche", "wiki-di-wiki-forge",
+    "ui-personalizzazione",
 ]
 for _help_id in HELP_IDS:
     DOC_MAP[f"docs/help/{_help_id}.md"] = f"riferimenti/help-{_help_id}"

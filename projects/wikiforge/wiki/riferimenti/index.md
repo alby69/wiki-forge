@@ -16,6 +16,7 @@
 * [Metriche e maturità](help-maturita-metriche.md) — Argomenti: metriche, metrics, maturità, maturity, stats, statistiche, audit, punteggio, score, ke-maturity, indicatore
 * [Mockup — Review Studio](mockups.md) — Prototipo statico e interattivo della console di revisione descritta nella proposta.
 * [Modificare le note](help-modifica-note.md) — Argomenti: modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot…
+* [Personalizza UI, ruoli e permessi](help-ui-personalizzazione.md) — Argomenti: personalizza, preferenze, UI, ruoli, permessi, RBAC, utenti, admin, reader, contributor, knowledge engineer, lingua, densità, pannelli, pin…
 * [Problemi frequenti](help-problematic.md) — Argomenti: problema, errore, error, non funziona, aiuto, bug, offline, lento, crash, debug, log
 * [Progetti e configurazione](help-progetti-config.md) — Argomenti: progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle, clone, archivia, cestino, esporta, importa
 * [Research Studio](help-research-studio.md) — Argomenti: research, ricerca, consult, search, backlink, backlinks, related, correlate, trace, traccia, deep research, deep-research, fonti, citazioni…
@@ -26,6 +27,6 @@
 * [Study Studio](help-study-studio.md) — Argomenti: study, studio, studio-studio, guida di studio, study-guide, quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast, note…
 * [Viste: File, Editor, Scratchpad, Graph, Split](help-viste-grafo.md) — Argomenti: viste, vista, file, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio
 * [Wiki di wiki-forge](help-wiki-di-wiki-forge.md) — Argomenti: wiki, docs, documentazione, architettura, consult, projectid, self-documentation, sintesi
-* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (29 file), dei contenuti della guida in-app (docs/help/, 18 argomenti) e dei mockup in docs/mockups/.
+* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (32 file), dei contenuti della guida in-app (docs/help/, 19 argomenti) e dei mockup in docs/mockups/.
 * [🚀 Wiki-Forge: Roadmap di Sviluppo](roadmap.md) — I comandi implementati sono nel SLASHCOMMANDSREFERENCE.md; questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
 

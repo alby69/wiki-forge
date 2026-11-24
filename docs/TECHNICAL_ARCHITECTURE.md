@@ -158,12 +158,11 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   correlation id. `AgentServer.getBus()` exposes the instance without changing
   the existing HTTP facade. `CommandContext.onClose()` lets SSE handlers remove
   scheduler/chat clients when the connection closes.
-- Fifteen modules are wired in the constructor and own 89 of the 90 bus commands:
-  catalogue, tools, review queue, ingestion, graph, projects, changesets,
-  files, scheduler, execution, vault, review studio, research, study and chat.
-  `auth.me` is registered in `AgentServer`; `docs.openapi`, `docs.swagger` and
-  the three `graph.proxy` operations remain in the gateway: the docs are public
-  and the FastAPI proxies run before CORS/token validation.
+- Sixteen modules are wired in the constructor (`UiModule` included) and serve
+  98 of the 99 bus commands; `auth.me` is registered directly in `AgentServer`.
+  `docs.openapi`, `docs.swagger` and the three `graph.proxy` operations remain
+  in the gateway: the docs are public and the FastAPI proxies run before
+  CORS/token validation.
 - Handlers return transport-neutral results: `json`, `binary` (verbatim bytes)
   or `sse`. `sendApiResult()` is the single place that writes `ServerResponse`,
   including the SSE headers and the `[DONE]` terminator. Streamed ingestion,
@@ -178,7 +177,7 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
 
 #### 2.10.3 Typed client and frontend bus (Fase 3)
 
-- `src/shared/api/endpoints.ts` maps all 95 `EndpointId`s to request/response
+- `src/shared/api/endpoints.ts` maps all 104 `EndpointId`s to request/response
   types. An `IsExact<keyof EndpointTypes, EndpointId>` assertion makes a missing
   endpoint a compile-time error; stream/binary/document routes resolve to the
   raw fetch `Response`.
@@ -196,6 +195,35 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   Changeset Review and KE Workbench modals no longer contain direct `fetch`
   calls. Legacy body field names are still accepted by the backend, while the
   facade sends the contract shapes.
+
+#### 2.10.4 Per-user UI access and preferences (Fase 89)
+
+- `src/shared/auth/capabilities.ts` remains the single source of truth for role
+  ranking, `ACTION_MIN_ROLE` / `OPERATION_MIN_ROLE`, the `UI_PANELS` catalogue
+  and the pinnable global actions. `global:customize` is a Reader action.
+- `src/backend/server/auth/uiModule.ts` serves the three additive `ui.*`
+  commands. `buildUiAccess()` intersects global roles with project/folder ACLs
+  and returns the allowed actions, operations, panels and view modes. A 403 on
+  `ui.access` is expected for very restrictive ACLs even when `auth.me` is
+  public; no existing endpoint changes its envelope.
+- `src/backend/server/auth/uiPreferencesStore.ts` persists normalised
+  `UiPreferencesDto` values per `source:actor` in `.wiki-forge/ui-preferences.json`.
+  The key is a SHA-256 digest, writes are atomic, corrupt JSON falls back to
+  defaults and the request body cannot set `actor`, `roles` or the storage key.
+- `src/frontend/core/uiAccess.ts` plus the `access`/`preferences` slices of
+  `appStore` hydrate managed identities at startup and save only real changes
+  through `ui.preferences.put`. A baseline is recorded after hydration to avoid
+  write-back; logout restores local defaults. Legacy sessions stay on the
+  historical surface and never call the new routes.
+- RBAC filtering is applied **after** preferences are merged: hidden panels,
+  pins and shortcuts can only remove surface, never grant an operation.
+  `CustomizeUiModal` is the only panel editor; the Editor panel is essential and
+  the Chat panel requires `chat.send`. The header trigger lives inside
+  `renderMenu()` so the legacy toolbar test contract is unchanged.
+- `UserManagerModal` renders role descriptions and a capability preview from
+  `ACTION_MIN_ROLE`. Local accounts whose actor is `human:<username>` matching
+  the signed-in user are marked as self: edit/delete are disabled, the form is
+  not opened and a staged update is refused if the identity changes before save.
 
 ### 2.11 Review Studio API & Local Snapshot Store
 Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextMenu.ts`, `src/frontend/core/types/review.ts`, `src/frontend/storage/ApiStorage.ts`, `src/frontend/styles/review-studio.css`, and `src/backend/server/agentServer.ts`.

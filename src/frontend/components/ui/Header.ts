@@ -1,9 +1,10 @@
 import { ProjectInfo } from '@frontend/storage/ApiStorage';
 import { appStore, type AppState, type ViewMode } from '@frontend/store/appStore';
 import { getAction, getActions, runAction, actionLabel, actionTitle, type ActionDefinition } from '@frontend/core/actions';
-import { getLanguage, setLanguage, subscribeLanguage, t } from '@frontend/core/i18n/strings';
+import { getLanguage, subscribeLanguage, t } from '@frontend/core/i18n/strings';
 import { escapeHtml } from '@frontend/core/utils/html';
 import { canRenderAction, signIn, signInWithCredentials, signOut } from '@frontend/core/auth';
+import { isPanelVisible } from '@frontend/core/uiAccess';
 
 const FOCUS_ACTION_IDS = ['global:projects', 'global:research', 'global:study', 'global:docsWiki', 'global:chat'];
 
@@ -29,6 +30,7 @@ const HEADER_BUTTON_IDS: Record<string, string> = {
   'global:template': 'header-template-btn',
   'global:chat': 'chat-toggle-header-btn',
   'global:help': 'header-help-btn',
+  'global:customize': 'header-customize-ui-btn',
   'global:users': 'header-users-btn',
   'global:exportWikiZip': 'header-export-wiki-zip-btn',
 };
@@ -53,6 +55,8 @@ export interface HeaderOptions {
   onProjectSelect?: (projectId: string) => void;
   /** Kept for compatibility with existing launchers; falls back to the action registry. */
   onOpenDocsWiki?: () => void;
+  /** Opens the declarative UI customizer (F4). */
+  onOpenCustomize?: () => void;
 }
 
 /** Global header. Every shared action comes from the single action registry. */
@@ -63,6 +67,7 @@ export class Header {
   private onToggleChatCb?: () => void;
   private onProjectSelectCb?: (projectId: string) => void;
   private onOpenDocsWikiCb?: () => void;
+  private onOpenCustomizeCb?: () => void;
   private projects: ProjectInfo[] = [];
   private activeProjectId: string = 'default';
   private unsubscribeStore?: () => void;
@@ -83,6 +88,7 @@ export class Header {
     this.onToggleChatCb = options.onToggleChat;
     this.onProjectSelectCb = options.onProjectSelect;
     this.onOpenDocsWikiCb = options.onOpenDocsWiki;
+    this.onOpenCustomizeCb = options.onOpenCustomize;
 
     this.unsubscribeStore = appStore.subscribe(state => {
       const key = this.renderKey(state);
@@ -118,6 +124,11 @@ export class Header {
       state.auth.identity?.authenticated === true,
       state.auth.identity?.idpConfigured === true,
       state.auth.identity?.userStoreConfigured === true,
+      // F4 — access hydration must re-render the gated toolbar immediately.
+      state.accessSource,
+      state.access?.actions.join(',') ?? '',
+      state.hiddenPanels.join(','),
+      state.density,
     ].join('|');
   }
 
@@ -162,8 +173,12 @@ export class Header {
 
   private renderMenu(state: AppState): string {
     if (!state.isAdvancedMode) return '';
+    const customizeButton = canRenderAction('global:customize')
+      ? `<button id="${headerButtonId('global:customize')}" class="wf-icon-btn" title="${escapeHtml(t('customizeUi'))}" aria-label="${escapeHtml(t('customizeUi'))}">🎛️</button>`
+      : '';
     return `
       <div class="wf-header__menu">
+        ${customizeButton}
         <button id="header-more-btn" class="wf-icon-btn" aria-haspopup="menu" aria-expanded="false" title="${escapeHtml(t('moreActions'))}" aria-label="${escapeHtml(t('moreActions'))}"><span class="wf-menu__dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
         <div id="header-more-menu" class="wf-menu" role="menu" hidden>
           ${this.renderBarCustomizer(state)}
@@ -275,11 +290,13 @@ export class Header {
 
           <div class="wf-header__view-group">
             <div class="seg-control" role="tablist" aria-label="${escapeHtml(t('view'))}">
-              <button id="header-files-btn" class="seg-btn ${state.filesVisible ? 'active' : ''}" role="tab" aria-selected="${state.filesVisible}" title="${escapeHtml(t('viewFiles'))}" aria-label="${escapeHtml(t('viewFiles'))}"><span aria-hidden="true">🗂️</span> ${escapeHtml(t('viewFiles'))}</button>
-              ${VIEW_MODES.map(m => {
-                const active = m.id === state.viewMode;
-                return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
-              }).join('')}
+              ${isPanelVisible('files') ? `<button id="header-files-btn" class="seg-btn ${state.filesVisible ? 'active' : ''}" role="tab" aria-selected="${state.filesVisible}" title="${escapeHtml(t('viewFiles'))}" aria-label="${escapeHtml(t('viewFiles'))}"><span aria-hidden="true">🗂️</span> ${escapeHtml(t('viewFiles'))}</button>` : ''}
+              ${VIEW_MODES.filter(m => m.id !== 'graph' || isPanelVisible('graph'))
+                .filter(m => m.id !== 'scratchpad' || isPanelVisible('scratchpad'))
+                .map(m => {
+                  const active = m.id === state.viewMode;
+                  return `<button id="view-mode-${m.id}" class="seg-btn ${active ? 'active' : ''}" role="tab" aria-selected="${active}" title="${escapeHtml(t(m.labelKey))}"><span aria-hidden="true">${m.icon}</span> ${escapeHtml(t(m.labelKey))}</button>`;
+                }).join('')}
             </div>
             <div class="wf-divider" id="header-actions-divider"></div>
           </div>
@@ -380,6 +397,7 @@ export class Header {
       else runAction('global:chat');
     });
     this.container.querySelector(`#${headerButtonId('global:help')}`)?.addEventListener('click', () => runAction('global:help'));
+    this.container.querySelector(`#${headerButtonId('global:customize')}`)?.addEventListener('click', () => this.onOpenCustomizeCb?.());
 
     // B7 — sign-in/out use the auth controller, never a direct fetch.
     this.container.querySelector('#wf-signout-btn')?.addEventListener('click', () => signOut());
@@ -414,7 +432,7 @@ export class Header {
     const languageSelect = this.container.querySelector('#header-language-select') as HTMLSelectElement | null;
     languageSelect?.addEventListener('change', () => {
       const value = languageSelect.value;
-      if (value === 'it' || value === 'en') setLanguage(value);
+      if (value === 'it' || value === 'en') appStore.setUiLanguage(value);
     });
 
     // The ⋯ menu flags persist the toolbar layout in appStore.

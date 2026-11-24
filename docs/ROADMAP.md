@@ -89,6 +89,14 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - UI filtrata per identità managed: header, command palette, scorciatoie, editor, sidebar, tab degli studio, modali progetti/config/tools/changeset/KE, comandi chat e onboarding. Le sessioni legacy/anonymous mantengono la superficie storica.
   - Copertura test in `tests/capabilityMatrix.test.ts`, `tests/authUi.test.ts`, `tests/userUi.test.ts`, `tests/rbacMiddleware.test.ts` e `tests/graphRoutes.test.ts`.
 
+- [x] **Task 12: Accesso UI per utente e personalizzazione RBAC-aware**
+   - Piano vivo `docs/USER_PERMISSIONS_UIUX_PLAN.md` (F0–F6) con audit, dipendenze, criteri di accettazione e registro avanzamento.
+   - Nuove route additive `GET /api/ui/access`, `GET /api/ui/preferences` e `PUT /api/ui/preferences` (`UiModule`, ruolo minimo Reader) e nuova azione `global:customize`. Le preferenze sono salvate per utente sul server in `.wiki-forge/ui-preferences.json` con chiave derivata da `source:actor` (hash SHA-256), fallback locale e file corrotto gestito.
+   - Pipeline frontend: `ui.access` + preferenze caricate all'avvio nelle identità managed, 403 → fallback dai ruoli dell'identità, legacy mode invariato. Il filtro RBAC è applicato **dopo** il merge delle preferenze, che non possono ampliare i permessi.
+   - **Personalizza UI**: pannelli (editor essenziale), pin della barra, densità e scorciatoie effettive; il pulsante resta dentro `renderMenu()` per non alterare la toolbar storica.
+   - **Gestione utenti**: la modale mostra le descrizioni dei quattro ruoli e un'anteprima delle capacità derivata da `ACTION_MIN_ROLE`; l'account corrente (`source: local`, actor `human:<username>`) non può essere modificato, disattivato o eliminato. Messaggi IT/EN coerenti, nessun dialogo nativo nuovo.
+   - Documentazione e gate: `USER_GUIDE.md`, help `ui-personalizzazione.md`, `CHANGELOG.md`, `OPENAPI.md`, `TECHNICAL_ARCHITECTURE.md`, proiezione wiki rigenerata.
+
 ---
 
 ## 🔮 Medio / Lungo Termine (Q1-Q2 2027)
