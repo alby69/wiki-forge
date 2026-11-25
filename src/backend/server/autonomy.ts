@@ -4,6 +4,7 @@ import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import * as toml from 'smol-toml';
+import { buildAllowedEnv } from './process/scriptRunner';
 import type { Changeset, ChangesetStore, StageChangesetInput } from './changesetStore';
 import type { Finding } from './findingChangeset';
 
@@ -236,6 +237,7 @@ export function createScriptRevalidator(rootDir: string): Revalidator {
         cwd: rootDir,
         encoding: 'utf-8',
         maxBuffer: 8 * 1024 * 1024,
+        env: buildAllowedEnv(),
       });
       if (result.error) {
         failures.push(`${requested}: ${result.error.message}`);

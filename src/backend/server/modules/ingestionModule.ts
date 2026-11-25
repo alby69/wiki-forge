@@ -9,6 +9,7 @@
 import { spawn } from 'node:child_process';
 import { error, sse, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
+import { buildAllowedEnv } from '../process/scriptRunner';
 import { runPythonJson, type PythonTool } from './pythonTool';
 
 export interface EnqueuePayload {
@@ -46,7 +47,10 @@ export class IngestionModule implements DomainModule {
       const script = this.tool.pathFor('scripts/conv2md.py');
       return sse((res) => {
         res.write(`data: ${JSON.stringify({ type: 'start', message: 'Starting two-step CoT queue processing...' })}\n\n`);
-        const child = spawn(this.tool.pythonCmd, [script, '--cot', '--json'], { cwd });
+        const child = spawn(this.tool.pythonCmd, [script, '--cot', '--json'], {
+          cwd,
+          env: buildAllowedEnv(),
+        });
         child.stdout.on('data', (chunk) => {
           res.write(`data: ${JSON.stringify({ type: 'stdout', text: chunk.toString('utf-8') })}\n\n`);
         });

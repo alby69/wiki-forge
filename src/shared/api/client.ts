@@ -112,7 +112,7 @@ async function readApiError(response: Response): Promise<ApiClientError> {
 }
 
 export function createApiClient(options: ApiClientOptions = {}): TypedApiClient {
-  const baseUrl = (options.baseUrl ?? defaultBaseUrl()).replace(/\/+$/, '');
+  const baseUrl = options.baseUrl ?? defaultBaseUrl();
   const getProjectId = options.getProjectId ?? defaultProjectId;
   const getToken = options.getToken ?? (() => undefined);
   const getBearerToken = options.getBearerToken ?? (() => undefined);
@@ -141,7 +141,7 @@ export function createApiClient(options: ApiClientOptions = {}): TypedApiClient 
     if (route.request.body && req.body !== undefined) init.body = JSON.stringify(req.body);
 
     return {
-      url: buildUrl(baseUrl, route, params, req.query as Record<string, unknown> | undefined),
+      url: buildUrl((req.baseUrl ?? baseUrl).replace(/\/+$/, ''), route, params, req.query as Record<string, unknown> | undefined),
       init,
     };
   };

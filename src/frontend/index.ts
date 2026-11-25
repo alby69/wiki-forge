@@ -492,7 +492,7 @@ Backlink to [[01-index]].
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
       onFilterChange: options => {
         this.excludedFolders = options.excludedFolders ?? [];
-        const fullData = this.graphService.generateGraphData(this.notes, this.storage.getWikiGraph());
+        const fullData = this.graphService.generateGraphData(this.storage.getWikiGraph());
         const filtered = this.graphService.filterGraphData(fullData, {
           ...options,
           selectedTags: this.filterTags,
@@ -646,7 +646,7 @@ Backlink to [[01-index]].
 
   private refreshGraph(): void {
     this.graphControls.setAvailableFolders(this.collectFolders(), this.excludedFolders);
-    const full = this.graphService.generateGraphData(this.notes, this.storage.getWikiGraph());
+    const full = this.graphService.generateGraphData(this.storage.getWikiGraph());
     const filtered = this.graphService.filterGraphData(full, {
       selectedTags: this.filterTags,
       excludedFolders: this.excludedFolders,

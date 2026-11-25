@@ -603,7 +603,11 @@ allineano la documentazione e certificano il collaudo finale.
 - `docs/OPENAPI.md` allinea i conteggi al catalogo reale: 89 endpoint, 84 comandi
   su 15 moduli (`SchedulerModule` passa da 10 a 12 con `scripts.schedule` e
   `scripts.unschedule`); i 5 endpoint rimasti nel gateway sono `docs.openapi`,
-  `docs.swagger` e i tre `graph.proxy`.
+  `docs.swagger` e i tre `graph.proxy`. **Nota stato finale (2026-11-25):** i
+  conteggi S5 sono storici; oggi il manifest registra 105 route HTTP, 158 handler
+  bus e 14 moduli di dominio in `src/backend/app/createKernel.ts` (20 complessivi
+  con quelli registrati da `AgentServer`), con zero route senza bus e
+  `manifest:check` fail-closed.
 - La proiezione wiki è rigenerata da `python scripts/docs_to_wiki.py`; gli indici
   `projects/wikiforge/wiki/riferimenti/index.md` e `architettura/openapi.md`
   seguono automaticamente le fonti.
@@ -618,3 +622,28 @@ allineano la documentazione e certificano il collaudo finale.
   il TOML `config/script_schedules.toml` resta la fonte di verità dei job e la
   classificazione di sicurezza resta solo in `SCRIPT_SCHEMAS` Python → registry TS →
   documentazione generata.
+
+---
+
+## 14. Stato finale — esercizio (2026-11-25)
+
+Il piano F0–F6/S0–S6 resta completato; il lock PID e la coda di approvazione
+descritti sopra sono la baseline storica. Nello stato finale:
+
+- Stato e sessioni sono persistiti in `StateStore`; lo scheduler usa un lock a
+  lease (`src/backend/server/state/lock.ts`) per il coordinamento tra worker e può
+  girare come processo separato con `WIKIFORGE_EMBED_SCHEDULER=false`.
+- Le approvazioni passano da un outbox con relay dedicato
+  (`src/backend/server/state/outboxRelay.ts`): gli eventi letti dall'outbox sono
+  inoltrati al flusso F6 con cursor persistito, senza perdere decisioni tra
+  riavvii.
+- Ogni comando è coperto dall'audit centralizzato e il `Principal` è sempre
+  presente nel dispatch del bus; i subprocess usano un allowlist di variabili
+  d'ambiente e i container non girano come root.
+- Contratto unico: 105 route HTTP, 158 handler bus, 51 comandi slash (20 con caso
+  dedicato), 113 tool MCP, 32 gap noti, zero route senza bus; `manifest:check`
+  fallisce se compare un gap `route-without-bus`. CLI, MCP e UI consumano lo
+  stesso manifest generato, con entrypoint MCP `bin/mcp.ts` avviato da `wf mcp`.
+- Verifica: `npm test` 593/593 con venv Python da `requirements.txt`,
+  `pytest tests/python/test_semantic_engine.py -q` 6/6, typecheck,
+  `manifest:check`, build, compose e `git diff --check` verdi.

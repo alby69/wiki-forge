@@ -211,3 +211,23 @@ può partire dopo F3; F6 chiude tutto.
 | F4 | ✅ | `npm run typecheck` verde; 3/3 test mirati (`customizeUiModal`), header/toolbar B7-green |
 | F5 | ✅ | `npm run typecheck` verde; 15/15 test mirati (`userManagerRoles`, `userUi`, `customizeUiModal`, `uiAccessFrontend`); `lang="it"` già presente in `index.html` |
 | F6 | ✅ | `npm run typecheck`/`npm run build` verdi; `npm test` 521 pass + 1 skip + 1 fallimento baseline (`userManagement`, permesso file Windows); pytest 153 pass + 1 fallimento baseline (`pyshacl` mancante); registry, docs/wiki sync, `okf_lint` (con UTF-8) e `git diff --check` verdi |
+
+---
+
+## 8. Stato finale — verifica (2026-11-25)
+
+Le righe F0–F6 e la baseline qui sopra restano la storia dello step. La verifica
+corrente, dopo il completamento del piano di disaccoppiamento, è:
+
+- `npm test` **593/593** con l'ambiente Python virtuale ricostruito da
+  `requirements.txt`: i due fallimenti ambientali registrati nella baseline non
+  sono più presenti. `pytest tests/python/test_semantic_engine.py -q` **6/6**.
+- `npm run typecheck`, `npm run manifest:check`, `npm run build`,
+  `docker compose config --quiet` e `git diff --check`: tutti verdi.
+- La UI usa la sola facciata tipizzata `apiBus`; CLI, MCP e UI consumano lo
+  stesso manifest generato (105 route HTTP, 158 handler bus, 32 gap noti, zero
+  route senza bus). Nessun fallback `FileStorage` in `ApiStorage`, grafo solo da
+  `WikiGraphDto` del backend, fallback template esplicito via `api:error`.
+- Sessioni e preferenze restano lato server: sessioni in `StateStore` e dati
+  sotto `.wiki-forge/` (radice attiva); `.wikiforge/` è solo storico. Non esiste
+  più il bootstrap predefinito `admin/admin`.

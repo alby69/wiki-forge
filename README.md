@@ -33,17 +33,19 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## ✨ System Architecture & Key Enhancements (v4.1)
 
-- **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl`.
-- **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wikiforge/state/<run_id>.json`.
-- **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wikiforge/trash/`, and staged Changeset JSON proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
+- **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wiki-forge/STATUS.md` and tracks metrics history in `.wiki-forge/metrics/history.jsonl`.
+- **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wiki-forge/state/<run_id>.json`.
+- **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wiki-forge/trash/`, and staged Changeset JSON proposals (`.wiki-forge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
 - **🧐 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🧐 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
 - **🔎 Research Studio**: One modal with six horizontal tabs — **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research** — matching the six query commands `/consult`, `/search`, `/backlinks`, `/related`, `/trace`, `/deep-research`. Open it from the **🔎 Research** header button, the **🔎 Ricerca** editor button, the note context menu, `Ctrl+Alt+Q/S/B/L/T/H`, or by typing the command in chat. Search, backlinks, related and trace are deterministic (`/api/notes/research/*`); consult and deep research use the configured LLM and fall back to a deterministic response, with deep-research reports stored in `output/` and `wiki/synthesis/`.
 - **📚 Study Studio**: One modal with seven horizontal tabs — **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi** — matching `/study-guide`, `/quiz`, `/mindmap`, `/audio-overview`, `/note`, `/promote-note`, `/thesis-chapter`. Open it from the **📚 Studio** header/editor buttons, the note context menu, or `Ctrl+Alt+G/K/M/A`. All tabs share deterministic builders (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`); artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and thesis runs also refresh `output/thesis_compiled.md` for the PDF export.
-- **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wikiforge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
+- **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wiki-forge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
-- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for 70+ endpoints; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/OPENAPI.md`](docs/OPENAPI.md).
-- **🚌 Bus backend e API tipizzate**: il gateway instrada 82 comandi del catalogo a 15 moduli di dominio tramite `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il frontend usa un client generato da `ROUTES` e un bus UI: nessun componente chiama `fetch` o un altro componente per raggiungere le API. Vedi [`docs/OPENAPI.md`](docs/OPENAPI.md).
+- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for **105 HTTP routes**; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/OPENAPI.md`](docs/OPENAPI.md).
+- **🚌 Bus backend e API tipizzate**: il backend segue kernel/modules/ports: 20 moduli di dominio instradano **158 handler** su `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, [`docs/COMMAND_MANIFEST.md`](docs/COMMAND_MANIFEST.md)) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **51 comandi slash catalogati / 20 con case dedicato**, **113 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, verificati da `npm run manifest:check`. Il frontend usa la sola facciata `apiBus` e un client tipizzato generato da `ROUTES`; `ApiStorage` non ha più fallback a `FileStorage`, il grafo è mappato solo dal `WikiGraphDto` del backend e il fallback dei template canonici passa esplicitamente da `api:error`. Nessun componente chiama `fetch` o un altro componente per raggiungere le API, e nessun adapter importa un altro adapter. Vedi [`docs/OPENAPI.md`](docs/OPENAPI.md).
+- **🔐 Produzione**: RBAC e auth sempre forzati, token richiesto salvo IdP o user store configurati, CORS allowlist, body limit, correlation id ed endpoint `/api/healthz`, `/api/readyz`, `/api/metrics`. Le sessioni sono persistite via `StateStore`, lo scheduler usa un lock a lease sullo stato (non più un lock PID), il relay dell'outbox delle approvazioni è attivo, il subscriber di audit registra `command:handled`/`command:failed`, `CommandContext.principal` è sempre impostato dal dispatch del bus, i subprocess usano un allowlist di variabili d'ambiente e `@opentelemetry/api` è dichiarato con fallback locale.
+- **🚢 Deployment**: Render usa `Dockerfile.render` + `bin/render-start.sh`: un solo processo Node serve la SPA buildata e le API su `$PORT`, con health su `/api/healthz`, nessuna variabile `VITE_*` a runtime, nessun default `admin/admin`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state` e utente non-root. Docker Compose mantiene il servizio Vite `ui` solo per lo sviluppo, insieme ad API e worker (`WIKIFORGE_EMBED_SCHEDULER=false`).
 
 ---
 
@@ -64,7 +66,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
 - **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Analisi tecnica approfondita**: moduli, versioning, API della Review Studio e snapshot store, MCP, export RDF.
-- **[`docs/OPENAPI.md`](docs/OPENAPI.md)** — **Contratto API e browser Swagger**: specifica generata da TypeScript, `/api/docs` self-hosted, security e piano del refactoring a bus.
+- **[`docs/OPENAPI.md`](docs/OPENAPI.md)** — **Contratto API e browser Swagger**: specifica generata da TypeScript, `/api/docs` self-hosted, security, bus e manifest dei comandi.
 - **[`docs/EDITOR_MIGRATION.md`](docs/EDITOR_MIGRATION.md)** — **Editor note**: architettura ad adapter (CodeMirror/Milkdown-Crepe), conservazione frontmatter OKF e wikilink.
 - **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
 - **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.
@@ -135,25 +137,30 @@ A single study console for the knowledge base, built from seven horizontal tabs:
 │   ├── projects.json         # Registro dei progetti
 │   ├── scenarios.toml        # Preset di scenario
 │   └── procedures/           # Procedure TOML guidate (ke.*.toml e user.*.toml)
-├── .wikiforge/               # Stato persistente del sistema
+├── .wiki-forge/              # Root dello stato attivo del sistema
 │   ├── STATUS.md             # Summary di salute generato automaticamente
-│   ├── state/                # Stato di esecuzione delle procedure (.json)
+│   ├── state/                # Stato procedure, sessioni, lock e cursori outbox
 │   ├── changesets/           # Proposte di modifica staged da revisionare
 │   ├── snapshots/            # Storico pre-scrittura delle note (Review Studio)
 │   ├── trash/                # Cestino soft-delete con timestamp
 │   └── metrics/              # Storico metriche di salute (history.jsonl)
+├── bin/
+│   ├── wf.ts                 # CLI HTTP-only (`npm run wf`); `wf mcp` avvia l'adapter
+│   ├── mcp.ts                # Adapter MCP Node (`npm run mcp`)
+│   ├── worker.ts             # Worker scheduler con lock a lease
+│   └── render-start.sh       # Avvio produzione su $PORT
 ├── src/
-│   ├── frontend/             # Web UI Client (TypeScript, Vite, CodeMirror 6)
-│   └── backend/              # Python Domain & Server Engine
+│   ├── frontend/             # Web UI Client (TypeScript, Vite)
+│   ├── shared/api/generated/
+│   │   └── commandManifest.generated.ts # Manifest generato (CLI/MCP/OpenAPI)
+│   └── backend/
+│       ├── app/              # Kernel, moduli di dominio e porte
 │       ├── server/
-│       │   ├── agentServer.ts # REST & SSE API Gateway
-│       │   └── mcp_server.py  # Model Context Protocol (MCP) Server
-│       └── wikiforge/
-│           ├── api/
-│           │   ├── api_server.py # FastAPI REST Server
-│           │   └── health.py     # Unified Health & Metrics Engine
-│           ├── vault.py          # Safe Vault & Changeset Manager
-│           └── procedures.py     # Procedure Engine Core
+│       │   ├── httpServer.ts # Gateway HTTP/SSE e SPA in produzione
+│       │   ├── mcp_server.py # Solo shim di compatibilità (adapter reale: Node)
+│       │   ├── bus/, modules/, state/, observability/
+│       │   └── generated/    # Registry script generato
+│       └── wikiforge/        # Core Python, API FastAPI e semantica
 └── wiki/                     # Knowledge Base viva ed interconnessa
 ```
 

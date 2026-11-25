@@ -3,13 +3,15 @@
  *
  * Assets come from `swagger-ui-dist` (npm), not from a CDN, so the browser
  * works offline and inside Docker. No route handler outside this module knows
- * about Swagger UI; the gateway only delegates two paths here.
+ * about Swagger UI; the gateway delegates only static assets here, while the
+ * JSON and HTML documents are exposed as bus commands.
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { createRequire } from 'node:module';
 import type * as http from 'node:http';
+import { binary, type ApiResult } from './http';
 import { fastApiBaseUrl, loadOpenApiDocument } from './openapi';
 
 const require = createRequire(import.meta.url);
@@ -77,6 +79,24 @@ function html(): string {
 </html>`;
 }
 
+export async function openApiResult(): Promise<ApiResult> {
+  const headers = { 'Cache-Control': 'no-store' };
+  try {
+    const body = JSON.stringify(await loadOpenApiDocument(), null, 2);
+    return binary(body, 'application/json; charset=utf-8', headers);
+  } catch (err) {
+    const body = JSON.stringify({ success: false, error: `OpenAPI generation failed: ${String(err)}` }, null, 2);
+    return binary(body, 'application/json; charset=utf-8', headers, 500);
+  }
+}
+
+export function swaggerHtmlResult(): ApiResult {
+  return binary(html(), 'text/html; charset=utf-8', {
+    'Cache-Control': 'no-cache',
+    'Content-Security-Policy': `default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ${fastApiBaseUrl()}`,
+  });
+}
+
 /**
  * Handle documentation routes. Returns false when the request belongs to
  * another component, so the gateway can keep its existing dispatch order.
@@ -87,25 +107,6 @@ export async function handleDocsRequest(
   pathname: string,
 ): Promise<boolean> {
   if (req.method !== 'GET') return false;
-
-  if (pathname === '/api/openapi.json') {
-    try {
-      sendJson(res, 200, await loadOpenApiDocument());
-    } catch (err) {
-      sendJson(res, 500, { success: false, error: `OpenAPI generation failed: ${String(err)}` });
-    }
-    return true;
-  }
-
-  if (pathname === '/api/docs' || pathname === '/api/docs/') {
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      'Content-Security-Policy': `default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ${fastApiBaseUrl()}`,
-    });
-    res.end(html());
-    return true;
-  }
 
   if (pathname.startsWith('/api/docs/assets/')) {
     const name = pathname.slice('/api/docs/assets/'.length);

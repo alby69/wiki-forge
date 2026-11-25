@@ -15,12 +15,10 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirement
 COPY . .
 
 ENV NODE_ENV=production \
-    API_PORT=3001 \
-    VITE_API_BASE_URL= \
-    VITE_PROXY_TARGET=http://127.0.0.1:3001
+    PORT=10000
 
 RUN npm run build \
-    && mkdir -p /app/output/scheduler /app/.wiki-forge/state \
+    && mkdir -p /app/output /app/output/scheduler /app/.wiki-forge /app/.wiki-forge/state \
     && chown -R node:node /app
 
 USER node

@@ -2,13 +2,13 @@
 
 ## Overview & Unified System Diagram
 
-Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only), a standalone Node.js API gateway, a standalone Python FastAPI service, the stateful Procedure Engine, a live Plan/Review/Apply changeset store, and W3C SHACL/RDF semantics.
+Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only in development), a standalone Node.js API gateway backed by a kernel/modules/ports architecture, a standalone Python FastAPI service, the stateful Procedure Engine, a live Plan/Review/Apply changeset store, and W3C SHACL/RDF semantics. In production the API process serves the built SPA from `dist/` on `$PORT`; no `VITE_*` runtime variables are used.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Web UI (TypeScript / Vite)                      │
 │  [Focus Mode: Guided Pills] [KE Workbench & Chat] [Review Studio]       │
-│  Vite = static server + one shared /api proxy (no AgentServer in-process)│
+│  Dev: Vite = static server + one shared /api proxy (no AgentServer in-process)│
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ HTTP / SSE (Server-Sent Events)
 ┌───────────────────────────────▼─────────────────────────────────────────┐
@@ -41,16 +41,22 @@ Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy 
 └────────────────────────────────────┘   └────────────────────────────────┘
 ```
 
+The diagram shows the development Compose topology (`ui`, `api`, `kg-api`,
+`worker`, MCP). Production uses `Dockerfile.render` + `bin/render-start.sh`:
+one Node process serves the built SPA and the API on `$PORT`, with health at
+`/api/healthz`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state`, a non-root user
+and no `admin`/`admin` default credentials.
+
 ## Key Backend Components
 
 ### 1. Unified Health Engine (`src/backend/wikiforge/api/health.py`)
-Aggregates health indicators (SHACL violations, CQ gaps, orphan ratio, broken links, raw pending sources) into a single 0-100 score and L1-L4 maturity level. Automatically generates `.wikiforge/STATUS.md` and appends historical data to `.wikiforge/metrics/history.jsonl`.
+Aggregates health indicators (SHACL violations, CQ gaps, orphan ratio, broken links, raw pending sources) into a single 0-100 score and L1-L4 maturity level. Automatically generates `.wiki-forge/STATUS.md` and appends historical data to `.wiki-forge/metrics/history.jsonl`.
 
 ### 2. Procedure Engine (`src/backend/wikiforge/procedures.py`)
-Executes declarative TOML workflows (`config/procedures/*.toml`). Features DAG prerequisite checking, automatic script invocation, human review pauses, exit criteria validation, and persistent state in `.wikiforge/state/`.
+Executes declarative TOML workflows (`config/procedures/*.toml`). Features DAG prerequisite checking, automatic script invocation, human review pauses, exit criteria validation, and persistent state in `.wiki-forge/state/` with a lease lock (the old PID lock is historical).
 
 ### 3. Safe Filesystem & Changeset Store (`src/backend/server/safeFs.ts`, `src/backend/server/changesetStore.ts`)
-Enforces atomic writes via a temp file + rename, soft-deletes files to `<project>/.wiki-forge/trash/` with a JSONL manifest and restore endpoint, and stages AI-proposed edits into `<project>/.wiki-forge/changesets/` for human review before applying. This is the live implementation that replaces the old, never-wired `wikiforge/vault.py` (removed). Note the active state root is `.wiki-forge/`; the older `.wikiforge/` paths in sections 1–2 are historical documentation from v4.1.0.
+Enforces atomic writes via a temp file + rename, soft-deletes files to `<project>/.wiki-forge/trash/` with a JSONL manifest and restore endpoint, and stages AI-proposed edits into `<project>/.wiki-forge/changesets/` for human review before applying. This is the live implementation that replaces the old, never-wired `wikiforge/vault.py` (removed). The active state root is `.wiki-forge/` throughout.
 
 ### 4. Review Studio API & Snapshot Store (`src/backend/server/agentServer.ts`)
 Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critique|snapshots|diff|restore`). The quality gate, digest, diff and human verification are deterministic; the critique tab uses the configured LLM with a deterministic fallback. Before every save, verification or restore the previous note content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a JSON sidecar (reason and timestamp); the latest 25 snapshots per note are retained. The folder is gitignored and independent of the git-based `VersionTimeline` history.
@@ -65,17 +71,20 @@ as OpenAPI 3.1, merges the FastAPI graph service (live spec or checked-in
 snapshot) and adds MCP tool metadata. `docsBrowser.ts` serves
 `GET /api/openapi.json` and `GET /api/docs` with Swagger UI assets from the
 `swagger-ui-dist` npm package: the browser works offline and in Docker, with no
-CDN. Existing endpoints and `AgentServer`'s public methods are unchanged. See
-`docs/OPENAPI.md`.
+CDN. The published manifest is generated from `ROUTES` plus the shared MCP
+definitions, is checked by `npm run manifest:check`, and is consumed by the CLI,
+MCP descriptors and OpenAPI. Existing endpoints and `AgentServer`'s public
+methods are unchanged. See `docs/OPENAPI.md`.
 
 ### 6.1 Backend MessageBus & Domain Modules (`src/backend/server/bus/`, `modules/`)
 `AgentServer.handleRequest()` matches the request against `ROUTES` and dispatches
-the resulting command to an in-process `MessageBus`. Fifteen modules own 89 of
-the 90 bus commands (catalogue, tools, reviews, ingestion, graph, projects,
-changesets, files, scheduler, execution, vault, review studio, research, study
-and chat); `auth.me` is registered in `AgentServer`. The remaining routes are
-the two public docs endpoints and the three FastAPI graph proxies, which stay
-in the gateway before CORS/token validation.
+the resulting command to an in-process `MessageBus`. Twenty domain modules own
+the 158 bus commands; `createKernel()` wires projects, template, changesets,
+files, scheduler, execution, vault, review studio, research, study, chat, slash,
+graph and graph proxy, while `AgentServer` registers user, UI, catalogue, tools,
+reviews and ingestion directly plus `auth.me`. All 105 routes are bus-dispatched,
+including the two public docs endpoints (with middleware skipped) and the three
+FastAPI graph proxies (after the B4 auth gate).
 Handlers return `json`, `binary` or `sse` results and never receive
 `http.IncomingMessage` or `ServerResponse`. The gateway is the only HTTP adapter,
 which keeps the facade and every existing endpoint intact while allowing the
@@ -88,8 +97,30 @@ one method per endpoint from `ROUTES`, handles path interpolation, query
 serialization, project/token headers, `ApiClientError` and incremental SSE
 parsing. `apiBus.dispatch()/stream()` adds typed UI events so features react to
 API results without calling each other; `ApiStorage` keeps its 51 public methods
-as a compatibility facade and no UI component builds an API URL or calls
-`fetch` directly. See `docs/OPENAPI.md`.
+as a compatibility facade over the single `apiBus` transport — there is no
+`FileStorage` fallback —, the graph service maps only the backend `WikiGraphDto`
+and canonical template fallback is explicit via `api:error`. No UI component
+builds an API URL or calls `fetch` directly. See `docs/OPENAPI.md`.
+
+### 6.3 Kernel, Modules, Ports and Persistence
+`createKernel()` wires domain modules through ports; adapters (HTTP, CLI, MCP,
+worker) never import one another. `StateStore` persists sessions, procedure
+state, scheduler cursor/lease and the approval outbox under `.wiki-forge/state/`;
+the outbox relay forwards decisions back into the bus. The scheduler uses a
+state lease lock rather than the old PID lock, and command handlers emit
+`command:handled`/`command:failed` audit events. `CommandContext.principal` is
+always set by bus dispatch, subprocesses receive an explicit environment
+allowlist and `@opentelemetry/api` has a local fallback.
+
+### 6.4 Production Hardening
+The production gateway forces RBAC and authentication (token required unless an
+IdP or user store is configured), applies a CORS allowlist and body limit,
+propagates correlation ids and exposes `/api/healthz`, `/api/readyz` and
+`/api/metrics`. `Dockerfile.render` + `bin/render-start.sh` run a single
+non-root Node process serving the built SPA and API on `$PORT`, with no default
+`admin/admin` credentials and no `VITE_*` runtime variables. Development Compose
+keeps the Vite `ui` service alongside API and worker
+(`WIKIFORGE_EMBED_SCHEDULER=false`).
 
 ## Key Frontend Components
 

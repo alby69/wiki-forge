@@ -171,3 +171,14 @@ make convert
 | `recompile <file>` | riprocessa un file già `_COMPILED` |
 | `reindex` | rigenera gli indici |
 | `audit` | verifica salute della wiki (link rotti, orfani) |
+
+---
+
+## Nota operativa (ambiente attuale)
+
+In sviluppo i comandi chat passano dal gateway Node (`npm run api`, con
+`npm run dev:all` per avviare insieme la UI Vite) e dal client tipizzato
+unico `apiBus`. In produzione `Dockerfile.render` + `bin/render-start.sh`
+avviano un solo processo Node che serve la SPA buildata e le API sulla
+porta `$PORT`: accesso obbligatorio senza credenziali `admin`/`admin` di
+default, stato attivo in `.wiki-forge/`, health su `/api/healthz`.

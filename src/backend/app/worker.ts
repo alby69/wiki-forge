@@ -17,7 +17,6 @@ import {
 } from '../server/scheduler/scheduler';
 import { runUseCase } from '../server/useCaseRunner';
 import { createStateStoreFromEnv } from '../server/state';
-import { createPidLock, isPidAlive } from '../server/scheduler/lock';
 import {
   acquireWithRetry,
   createStateLock,
@@ -25,6 +24,7 @@ import {
   type StateLock,
 } from '../server/state/lock';
 import { ApprovalOutbox } from '../server/state/outbox';
+import { createApprovalOutboxRelay } from '../server/state/outboxRelay';
 import { createStateRuntimeStore } from '../server/state/runtimeAdapter';
 import type { StateStore } from '../server/state/types';
 
@@ -69,13 +69,6 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerHandle> {
     ? Math.max(1_000, options.leaseMs as number)
     : DEFAULT_LEASE_MS;
   const rootDir = options.rootDir;
-  const legacyLock = createPidLock(path.join(rootDir, '.wiki-forge', 'scheduler.lock'));
-  const legacyHolder = await legacyLock.read();
-  if (legacyHolder && isPidAlive(legacyHolder.pid)) {
-    throw new Error(
-      `API scheduler PID lock is held by PID ${legacyHolder.pid}; disable it before starting the worker`,
-    );
-  }
   const store = options.store ?? createStateStoreFromEnv(process.env, rootDir);
   const lock = createStateLock(store, {
     key: 'leader/scheduler',
@@ -85,11 +78,30 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerHandle> {
   });
   const pool = new WorkerPool(concurrency);
   const outbox = options.outbox ?? new ApprovalOutbox(store);
-
+  const relay = createApprovalOutboxRelay(outbox, (event) => {
+    if (event.type !== 'approval.required') return;
+    options.onEvent?.({
+      type: 'approval_required',
+      jobId: event.jobId,
+      approvalIds: event.approvalIds,
+      steps: event.steps ?? [],
+      ...(event.jobKind ? { jobKind: event.jobKind } : {}),
+      ...(event.scriptIds ? { scriptIds: event.scriptIds } : {}),
+      rationale: event.rationale,
+      sources: event.sources,
+      at: event.at,
+    });
+  }, {
+    store,
+    filter: { type: 'approval.required' },
+    onError: options.onOutboxError,
+  });
   await acquireWithRetry(lock, { timeoutMs: leaseMs * 2, retryMs: 100 });
+  relay.start();
 
   const heartbeat = setInterval(() => {
-    void lock.renew().catch((err) => options.onHeartbeatError?.(err));
+    const lost = (): void => { void stop().catch((err) => options.onHeartbeatError?.(err)); };
+    void lock.renew().then((renewed) => { if (!renewed) lost(); }, lost);
   }, Math.max(250, Math.floor(leaseMs / 3)));
   heartbeat.unref?.();
 
@@ -99,10 +111,20 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerHandle> {
         type: 'approval.required',
         jobId: event.jobId,
         approvalIds: event.approvalIds,
+        steps: event.steps,
+        jobKind: event.jobKind,
+        scriptIds: event.scriptIds,
         rationale: event.rationale,
         sources: event.sources,
         at: event.at,
-      }).catch((err) => options.onOutboxError?.(err));
+      }).then(
+        () => relay.poll().catch((err) => options.onOutboxError?.(err)),
+        (err) => {
+          options.onOutboxError?.(err);
+          options.onEvent?.(event);
+        },
+      );
+      return;
     }
     options.onEvent?.(event);
   };
@@ -159,6 +181,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerHandle> {
     await scheduler.start();
   } catch (err) {
     clearInterval(heartbeat);
+    relay.stop();
     await lock.release();
     throw err;
   }
@@ -168,6 +191,7 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerHandle> {
     if (!stopping) {
       stopping = (async () => {
         clearInterval(heartbeat);
+        relay.stop();
         await scheduler.stop({ cancelActive: stopOptions.cancelActive ?? true });
         await lock.release();
       })();

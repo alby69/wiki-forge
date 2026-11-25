@@ -2,8 +2,6 @@
   "version": 1,
   "note": "Gap accettati dopo la Fase 2 del piano di disaccoppiamento. Aggiungere un nuovo comando senza handler o senza case dedicato richiede l'aggiornamento esplicito di questo file.",
   "gaps": [
-    "route-without-bus:docs.openapi",
-    "route-without-bus:docs.swagger",
     "slash-without-implementation:adversarial-review",
     "slash-without-implementation:backlinks",
     "slash-without-implementation:convert-only",

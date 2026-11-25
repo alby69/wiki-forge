@@ -153,14 +153,14 @@ describe('Server-side user store', () => {
       assert.equal(await store.authenticate({ username: 'reader', password: 'wrong' }), undefined);
       const session = await store.authenticate({ username: 'reader', password: 'reader-password' });
       assert.ok(session);
-      assert.deepStrictEqual(store.principalForToken(session!.token), {
+      assert.deepStrictEqual(await store.principalForToken(session!.token), {
         actor: 'human:reader', roles: ['Reader', 'Contributor'], source: 'local',
       });
 
       await store.update(session!.user.id, { roles: ['Reader'] });
-      assert.deepStrictEqual(store.principalForToken(session!.token)?.roles, ['Reader']);
+      assert.deepStrictEqual((await store.principalForToken(session!.token))?.roles, ['Reader']);
       await store.update(session!.user.id, { active: false });
-      assert.equal(store.principalForToken(session!.token), undefined);
+      assert.equal(await store.principalForToken(session!.token), undefined);
 
       await assert.rejects(
         store.update(initial[0].id, { roles: ['Reader'] }),
@@ -192,9 +192,9 @@ describe('Server-side user store', () => {
       });
       const session = await store.authenticate({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD });
       assert.ok(session);
-      assert.ok(store.principalForToken(session!.token));
+      assert.ok(await store.principalForToken(session!.token));
       now += 1001;
-      assert.equal(store.principalForToken(session!.token), undefined);
+      assert.equal(await store.principalForToken(session!.token), undefined);
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }

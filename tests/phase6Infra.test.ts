@@ -250,13 +250,14 @@ describe('subprocess runner', () => {
   it('applies the environment allowlist', () => {
     const env = buildAllowedEnv(
       [...DEFAULT_ENV_ALLOWLIST],
-      { INJECTED: 'yes' },
+      { WIKIFORGE_INJECTED: 'yes', AWS_SECRET_ACCESS_KEY: 'extra-leak' },
       { PATH: '/bin', WIKIFORGE_X: '1', AWS_SECRET_ACCESS_KEY: 'leak', HOME: '/home/test' },
     );
     assert.equal(env.PATH, '/bin');
     assert.equal(env.WIKIFORGE_X, '1');
     assert.equal(env.HOME, '/home/test');
-    assert.equal(env.INJECTED, 'yes');
+    assert.equal(env.WIKIFORGE_INJECTED, 'yes');
+    assert.equal(env.INJECTED, undefined);
     assert.equal(env.AWS_SECRET_ACCESS_KEY, undefined);
   });
 

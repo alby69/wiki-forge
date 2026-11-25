@@ -5,12 +5,12 @@
 #   make wizard           Run scenario-driven wizard script (local Python)
 #   make build            Build the Docker image
 #   make shell            Open a shell inside the Docker environment
-#   make audit            Reminder for agent audit command
-#   make stats            Generate wiki stats report
-#   make reindex          Reminder for agent reindex command
+#   make audit            Run wiki audit through the CLI
+#   make stats            Generate wiki stats report through the CLI
+#   make reindex          Run reindex through the CLI
 #   make clean-output     Remove output/ directory contents
-#   make export-json      Reminder for agent export command
-#   make lint             Reminder for agent lint command
+#   make export-json      Export projects through the CLI
+#   make lint             Run wiki lint through the CLI
 #   make help             Display available target commands
 
 convert:
@@ -32,7 +32,7 @@ audit:
 	@npm run wf -- --yes cmd audit
 
 stats:
-	@python3 scripts/wiki_stats.py
+	@npm run wf -- ke run wiki_stats
 
 reindex:
 	@npm run wf -- --yes cmd reindex
@@ -47,10 +47,10 @@ lint:
 	@npm run wf -- --yes cmd audit
 
 schema-lint:
-	@python3 scripts/schema_lint.py
+	@npm run wf -- ke run schema_lint
 
 schema-infer:
-	@python3 scripts/schema_infer.py
+	@npm run wf -- ke run schema_infer
 
 study-guide:
 	@npm run wf -- study guide "$(or $(TOPIC),wiki-forge)"
@@ -139,8 +139,8 @@ thesis-pdf:
 mcp-serve:
 	npm run mcp -- --http --port 8080
 
-# A2/A3 — explicit runtime boundary. The Node API and the Python KG API are
-# separate processes; Vite only proxies to the Node API.
+# A2/A3 — runtime boundary: the Node API serves the built SPA and proxies
+# /api/v1/graph/* to the standalone Python KG API; Vite is dev-only.
 api:
 	npm run api
 

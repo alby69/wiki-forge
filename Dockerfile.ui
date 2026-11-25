@@ -29,7 +29,10 @@ RUN apt-get update \
 COPY requirements.txt ./
 # --break-system-packages: Debian Bookworm python is "externally managed" (PEP 668);
 # this image is a purpose-built dev container, so we install into the system env.
-RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt \
+    && chown -R node:node /app
+
+USER node
 
 EXPOSE 5173
 

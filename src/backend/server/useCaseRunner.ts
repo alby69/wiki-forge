@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { KEUseCaseDef, ScriptDef } from '@shared/domain/scripts';
+import { buildAllowedEnv } from './process/scriptRunner';
 import { resolveToolScript } from './toolPaths';
 
 /**
@@ -169,7 +170,11 @@ export async function runUseCase(
         cwd: projectRoot,
         // Force UTF-8 so script output containing emoji/accents never hits a
         // Windows `charmap` UnicodeEncodeError and fails an otherwise valid step.
-        env: { ...process.env, ...projectEnv, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
+        env: buildAllowedEnv(undefined, {
+          ...projectEnv,
+          PYTHONUNBUFFERED: '1',
+          PYTHONIOENCODING: 'utf-8',
+        }),
         stdio: 'pipe',
       });
 

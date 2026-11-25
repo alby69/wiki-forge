@@ -24,6 +24,12 @@ export interface Principal {
   source: 'legacy-token' | 'idp' | 'local' | 'process';
 }
 
+export const PROCESS_PRINCIPAL: Principal = {
+  actor: 'process:kernel',
+  roles: [],
+  source: 'process',
+};
+
 export interface CommandContext {
   /** Absolute repository/workspace root. */
   rootDir: string;
@@ -31,7 +37,7 @@ export interface CommandContext {
   projectId: string;
   /** Stable operation id of the originating HTTP route, when applicable. */
   operationId?: string;
-  /** Server-trusted principal. Optional because non-HTTP callers have none. */
+  /** Server-trusted principal; the bus supplies a process principal when absent. */
   principal?: Principal;
   /** B3 permission decision, set by the opt-in RBAC middleware only. */
   rbac?: RbacDecision;
@@ -47,6 +53,10 @@ export type CommandHandler<Payload = unknown, Result = unknown> = (
 ) => Promise<ApiResult<Result>> | ApiResult<Result>;
 
 export type EventHandler<Payload = unknown> = (payload: Payload, context: Partial<CommandContext>) => void | Promise<void>;
+
+export interface DispatchOptions {
+  readonly skipMiddleware?: boolean;
+}
 
 export interface DomainModule {
   readonly name: string;
@@ -112,17 +122,21 @@ export class MessageBus {
     command: string,
     payload: unknown = {},
     overrides: Partial<CommandContext> = {},
+    options: DispatchOptions = {},
   ): Promise<ApiResult<Result>> {
     const context: CommandContext = {
       rootDir: process.cwd(),
       projectId: 'default',
       correlationId: nextCorrelationId(),
       ...overrides,
+      principal: overrides.principal ?? PROCESS_PRINCIPAL,
     };
 
-    for (const middleware of this.middlewares) {
-      const result = await middleware(command, payload, context);
-      if (result) return result as ApiResult<Result>;
+    if (!options.skipMiddleware) {
+      for (const middleware of this.middlewares) {
+        const result = await middleware(command, payload, context);
+        if (result) return result as ApiResult<Result>;
+      }
     }
 
     for (const handler of [...(this.handlers.get(command) ?? [])]) {

@@ -31,6 +31,11 @@ async function main() {
   ];
 
   if (CHECK) {
+    const busGaps = manifest.gaps.filter((gap) => gap.kind === 'route-without-bus');
+    if (busGaps.length > 0) {
+      console.error(`Command manifest has route-without-bus gaps: ${busGaps.map((gap) => gap.id).join(', ')}`);
+      process.exitCode = 1;
+    }
     const stale = [];
     for (const output of outputs) {
       let current = null;

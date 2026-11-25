@@ -4,14 +4,20 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { atomicWriteFile } from '../safeFs';
 import { DEFAULT_ROLES } from '../auth/rbacConfig';
+import { createStateStoreFromEnv } from '../state';
+import { StateConflictError, type StateStore } from '../state/types';
 import type { Principal } from '../bus/messageBus';
 import type { ManagedUserDto, ManagedUserRole } from '@shared/api/types';
+
+export const DEFAULT_SESSION_KEY = 'auth/sessions';
 
 export interface UserStoreOptions {
   rootDir?: string;
   env?: NodeJS.ProcessEnv;
   filePath?: string;
   now?: () => number;
+  store?: StateStore;
+  sessionKey?: string;
 }
 
 interface StoredUser {
@@ -27,6 +33,18 @@ interface StoredUser {
 interface Session {
   userId: string;
   expiresAt: number;
+}
+
+type SessionMap = Record<string, Session>;
+
+function parseSession(value: unknown): Session | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (
+    typeof record.userId !== 'string' || !record.userId
+    || typeof record.expiresAt !== 'number' || !Number.isFinite(record.expiresAt)
+  ) return null;
+  return { userId: record.userId, expiresAt: record.expiresAt };
 }
 
 export interface UserCredentials {
@@ -64,8 +82,11 @@ export class UserStore {
   private readonly env: NodeJS.ProcessEnv;
   private readonly filePath: string;
   private readonly now: () => number;
+  private readonly stateStore: StateStore;
+  private readonly sessionKey: string;
   private readonly users = new Map<string, StoredUser>();
   private readonly sessions = new Map<string, Session>();
+  private sessionVersion: number | undefined;
   private loaded = false;
 
   constructor(options: UserStoreOptions = {}) {
@@ -76,6 +97,8 @@ export class UserStore {
     this.filePath = configured
       ? path.resolve(this.rootDir, configured)
       : path.resolve(this.rootDir, '.wiki-forge', 'users.json');
+    this.stateStore = options.store ?? createStateStoreFromEnv(this.env, this.rootDir);
+    this.sessionKey = options.sessionKey ?? DEFAULT_SESSION_KEY;
   }
 
   public isEnabledSync(): boolean {
@@ -86,6 +109,7 @@ export class UserStore {
     if (this.loaded) return;
     this.loaded = true;
     await this.readUsers();
+    await this.readSessions();
     const username = this.bootstrapUsername();
     const password = this.bootstrapPassword();
     if (username && password && !this.findByUsername(username)) {
@@ -145,6 +169,7 @@ export class UserStore {
       if (session.userId === id) this.sessions.delete(digest);
     }
     await this.persist();
+    await this.persistSessions();
   }
 
   public async authenticate(input: UserCredentials): Promise<{ token: string; user: ManagedUserDto } | undefined> {
@@ -157,16 +182,19 @@ export class UserStore {
       userId: user.id,
       expiresAt: this.now() + this.sessionTtlMs(),
     });
+    await this.persistSessions();
     return { token, user: this.toDto(user) };
   }
 
-  public principalForToken(token: string | undefined): Principal | undefined {
+  public async principalForToken(token: string | undefined): Promise<Principal | undefined> {
     if (!token) return undefined;
+    await this.initialize();
     const digest = tokenDigest(token);
     const session = this.sessions.get(digest);
     if (!session) return undefined;
     if (session.expiresAt <= this.now()) {
       this.sessions.delete(digest);
+      await this.persistSessions();
       return undefined;
     }
     const user = this.users.get(session.userId);
@@ -262,6 +290,41 @@ export class UserStore {
     for (const entry of parsed) {
       const user = this.parseStoredUser(entry);
       if (user) this.users.set(user.id, user);
+    }
+  }
+
+  private async readSessions(): Promise<void> {
+    const entry = await this.stateStore.get<SessionMap>(this.sessionKey);
+    this.sessionVersion = entry?.version;
+    const value = entry?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    for (const [digest, raw] of Object.entries(value)) {
+      const session = parseSession(raw);
+      if (session) this.sessions.set(digest, session);
+    }
+  }
+
+  private async persistSessions(): Promise<void> {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const value: SessionMap = Object.fromEntries(
+        [...this.sessions].map(([digest, session]) => [digest, { ...session }]),
+      );
+      try {
+        const entry = await this.stateStore.put(this.sessionKey, value, this.sessionVersion);
+        this.sessionVersion = entry.version;
+        return;
+      } catch (err) {
+        if (!(err instanceof StateConflictError) || attempt === 2) throw err;
+        const current = await this.stateStore.get<SessionMap>(this.sessionKey);
+        this.sessionVersion = current?.version ?? 0;
+        if (current?.value && typeof current.value === 'object' && !Array.isArray(current.value)) {
+          for (const [digest, raw] of Object.entries(current.value)) {
+            if (this.sessions.has(digest)) continue;
+            const session = parseSession(raw);
+            if (session) this.sessions.set(digest, session);
+          }
+        }
+      }
     }
   }
 

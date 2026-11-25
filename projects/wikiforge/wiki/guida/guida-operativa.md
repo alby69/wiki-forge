@@ -29,6 +29,12 @@ Tu porti il materiale (PDF, documenti, pagine web, appunti), l'agente lo trasfor
 
 Niente va in cloud: la tua conoscenza resta in una cartella locale (*vault*).
 
+Quando usi l'installazione pubblica (non quella locale), devi prima accedere:
+l'accesso e i permessi sono sempre attivi e non esistono credenziali predefinite
+`admin`/`admin`; servono un account configurato, un IdP oppure uno user store.
+La sessione resta salvata sul server, quindi non devi rifare il login a ogni
+ricarica.
+
 ### Le parole da conoscere
 
 | Parola | In pratica |

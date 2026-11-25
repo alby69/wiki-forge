@@ -14,7 +14,7 @@
     "manifest": "node --import tsx scripts/gen_command_manifest.mjs",
     "manifest:check": "node --import tsx scripts/gen_command_manifest.mjs --check",
     "wf": "node --import tsx bin/wf.ts",
-    "mcp": "node --import tsx bin/wf.ts mcp",
+    "mcp": "node --import tsx bin/mcp.ts",
     "worker": "node --import tsx bin/worker.ts"
   },
   "dependencies": {
@@ -27,6 +27,7 @@
     "@milkdown/crepe": "^7.23.0",
     "@milkdown/kit": "^7.23.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@opentelemetry/api": "^1.10.0",
     "ajv": "^8.20.0",
     "commander": "^15.1.0",
     "cron-parser": "^5.10.6",

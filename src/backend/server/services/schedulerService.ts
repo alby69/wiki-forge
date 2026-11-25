@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import * as http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
@@ -98,6 +99,10 @@ import { buildAuthIdentity } from '../auth/identity';
 import { UserStore } from '../auth/userStore';
 import { UiModule } from '../auth/uiModule';
 import { UiPreferencesStore } from '../auth/uiPreferencesStore';
+import { createStateStoreFromEnv } from '../state';
+import { createStateLock, DEFAULT_LEASE_MS } from '../state/lock';
+import { ApprovalOutbox } from '../state/outbox';
+import { createApprovalOutboxRelay } from '../state/outboxRelay';
 import { createCatalogueModule, type CatalogueModule } from '../modules/catalogueModule';
 import { createToolsModule, type ToolsModule } from '../modules/toolsModule';
 import { createReviewModule, type ReviewModule } from '../modules/reviewModule';
@@ -183,6 +188,57 @@ export const schedulerMethods = {
       });
     }
 
+    const env = process.env;
+    const configuredLease = Number(env.WIKIFORGE_WORKER_LEASE_MS ?? '');
+    const leaseMs = Number.isFinite(configuredLease) && configuredLease > 0
+      ? Math.max(1_000, configuredLease)
+      : DEFAULT_LEASE_MS;
+    const stateStore = createStateStoreFromEnv(env, this.rootDir);
+    const lock = createStateLock(stateStore, {
+      key: 'leader/scheduler',
+      owner: env.WIKIFORGE_WORKER_ID || `api:${process.pid}@${os.hostname()}`,
+      leaseMs,
+    });
+    const outbox = new ApprovalOutbox(stateStore);
+    const relay = createApprovalOutboxRelay(outbox, (event) => {
+      if (event.type !== 'approval.required') return;
+      this.broadcastScheduleEvent({
+        type: 'approval_required',
+        jobId: event.jobId,
+        approvalIds: event.approvalIds,
+        steps: event.steps ?? [],
+        ...(event.jobKind ? { jobKind: event.jobKind } : {}),
+        ...(event.scriptIds ? { scriptIds: event.scriptIds } : {}),
+        rationale: event.rationale,
+        sources: event.sources,
+        at: event.at,
+      });
+    }, { store: stateStore, filter: { type: 'approval.required' } });
+    this.approvalOutbox = outbox;
+    this.approvalOutboxRelay = relay;
+    const forwardScheduleEvent = (event: SchedulerEvent): void => {
+      if (event.type !== 'approval_required') {
+        this.broadcastScheduleEvent(event);
+        return;
+      }
+      void outbox.append({
+        type: 'approval.required',
+        jobId: event.jobId,
+        approvalIds: event.approvalIds,
+        steps: event.steps,
+        jobKind: event.jobKind,
+        scriptIds: event.scriptIds,
+        rationale: event.rationale,
+        sources: event.sources,
+        at: event.at,
+      }).then(
+        () => relay.poll().catch((err: unknown) => console.error('[Wiki-Forge API] Approval outbox relay error:', err)),
+        (err: unknown) => {
+          this.broadcastScheduleEvent(event);
+          console.error('[Wiki-Forge API] Failed to stage approval event:', err);
+        },
+      );
+    };
     const scheduler = new Scheduler({
       config: loaded.config,
       jobs: loaded.jobs,
@@ -190,7 +246,8 @@ export const schedulerMethods = {
       rootDir: this.rootDir,
       executeJob: (ctx) => this.executeScheduledJob(ctx),
       preflight: this.policyAgent ? (ctx) => this.runPolicy(ctx) : undefined,
-      onEvent: (event) => this.broadcastScheduleEvent(event),
+      onEvent: forwardScheduleEvent,
+      lock,
     });
     this.scheduler = scheduler;
     this.eventBus = new EventTriggerBus({
@@ -203,9 +260,26 @@ export const schedulerMethods = {
         await scheduler.runJobNow(jobId, 'event', event);
         this.broadcastScheduleEvent({ type: 'event_triggered', jobId, event, at: new Date().toISOString() });
       },
-      onEvent: (event) => this.broadcastScheduleEvent(event),
+      onEvent: forwardScheduleEvent,
     });
-    await scheduler.start();
+    try {
+      await scheduler.start();
+      relay.start();
+    } catch (err) {
+      relay.stop();
+      this.eventBus.stop();
+      this.eventBus = undefined;
+      this.scheduler = undefined;
+      this.approvalOutbox = undefined;
+      this.approvalOutboxRelay = undefined;
+      throw err;
+    }
+    const heartbeat = setInterval(() => {
+      const lost = (): void => { void this.stopScheduler().catch(() => undefined); };
+      void lock.renew().then((renewed) => { if (!renewed) lost(); }, lost);
+    }, Math.max(250, Math.floor(leaseMs / 3)));
+    heartbeat.unref?.();
+    this.schedulerLeaseHeartbeat = heartbeat;
     return { added, removed };
   },
 
@@ -533,11 +607,18 @@ export const schedulerMethods = {
     }
   },
 
-  /** Stop the tick loop, close SSE clients and release the PID lock. */
+  /** Stop the tick loop, close SSE clients and release the state lease. */
 
   async stopScheduler(this: Host, options: { cancelActive?: boolean } = {}): Promise<void> {
+    if (this.schedulerLeaseHeartbeat) {
+      clearInterval(this.schedulerLeaseHeartbeat);
+      this.schedulerLeaseHeartbeat = undefined;
+    }
     this.eventBus?.stop();
     this.eventBus = undefined;
+    this.approvalOutboxRelay?.stop();
+    this.approvalOutboxRelay = undefined;
+    this.approvalOutbox = undefined;
     if (this.scheduleHeartbeat) {
       clearInterval(this.scheduleHeartbeat);
       this.scheduleHeartbeat = undefined;

@@ -98,6 +98,7 @@ import {
 import { corsHeadersFor, corsPolicyFromEnv } from './security/cors';
 import { runWithRequestContext } from './observability/context';
 import { httpLogger } from './observability/logger';
+import { installCommandAudit } from './observability/commandAudit';
 import { recordHttpRequest, renderPrometheus } from './observability/metrics';
 import { getTelemetry } from './observability/telemetry';
 import { createValidationMiddleware } from './api/validation';
@@ -310,6 +311,7 @@ export class AgentServer {
       : undefined;
     this.userStore = new UserStore({ rootDir });
     this.bus = createMessageBus();
+    installCommandAudit(this.bus);
     // B3 — opt-in gate. With `enable_rbac=false` this middleware returns
     // `undefined` on every dispatch, so the legacy behaviour is byte-identical.
     // The catalogue is read once at construction; no connection is opened.
@@ -494,6 +496,7 @@ export class AgentServer {
     req: http.IncomingMessage,
     res: http.ServerResponse,
     principal?: Principal,
+    skipMiddleware = false,
   ): Promise<boolean> {
     if (!this.bus.has(command)) return false;
     // B1: a body field named `principal` must never reach handlers as if it
@@ -509,7 +512,7 @@ export class AgentServer {
       correlationId: correlationIdFor(res),
       principal: principal ?? deriveRequestPrincipal(req),
       onClose: (handler) => { req.on('close', handler); },
-    });
+    }, { skipMiddleware });
     sendApiResult(res, result);
     return true;
   }
@@ -835,6 +838,15 @@ export class AgentServer {
     }
 
     // Documentation is public (the browser injects a token for "Try it out").
+    const docsPathname = pathname === '/api/docs/' ? '/api/docs' : pathname;
+    const docsMatch = matchRoute(API_ROUTES, req.method ?? '', docsPathname);
+    if (
+      docsMatch
+      && (docsMatch.route.id === 'docs.openapi' || docsMatch.route.id === 'docs.swagger')
+      && this.bus.has(docsMatch.route.command)
+    ) {
+      return this.dispatchApiCommand(docsMatch.route.command, {}, projectId, req, res, undefined, true);
+    }
     if (await handleDocsRequest(req, res, pathname)) return true;
 
     // B7 — identity introspection is the only additive public data route: it

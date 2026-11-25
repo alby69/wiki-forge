@@ -29,7 +29,6 @@ import {
 } from '@frontend/core/types/study';
 import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { appStore } from '@frontend/store/appStore';
-import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
 import {
   ACTIVE_PROJECT_KEY,
@@ -86,7 +85,6 @@ export interface HelpTopic extends HelpTopicMeta {
 }
 
 export class ApiStorage implements IStorage {
-  private fallback = new FileStorage();
   /** Kept as an explicit client option for callers that supply a custom origin. */
   private baseUrl: string;
   private lastGraph: WikiGraphDto | null = null;
@@ -115,7 +113,21 @@ export class ApiStorage implements IStorage {
     req: EndpointRequest<K> = {} as EndpointRequest<K>,
     projectId?: string
   ): Promise<EndpointResponse<K>> {
-    return this.api.dispatch(id, req, projectId);
+    try {
+      return await this.api.dispatch(id, req, projectId, {
+        scopeQuery: true,
+        baseUrl: this.baseUrl,
+      });
+    } catch (err) {
+      if (err instanceof ApiClientError) throw err;
+      throw new ApiClientError(String(err), 0, err);
+    }
+  }
+
+  private requireOk(json: { success?: boolean }, message: string): void {
+    if (!json.success) {
+      throw new ApiClientError((json as { error?: string }).error || message, 200, json);
+    }
   }
 
   /** Keep the legacy JSON error envelope when the client throws on a non-2xx response. */
@@ -128,27 +140,21 @@ export class ApiStorage implements IStorage {
   }
 
   public async getProjects(): Promise<ProjectInfo[]> {
-    try {
-      const json = await this.request('projects.list', { query: {} });
-      if (json.success && json.projects) {
-        return json.projects;
-      }
-    } catch (_err) {
-      // Fallback
+    const json = await this.request('projects.list', { query: {} });
+    this.requireOk(json, 'projects.list failed');
+    if (!Array.isArray(json.projects)) {
+      throw new ApiClientError('projects.list returned no projects', 200, json);
     }
-    return [{ id: 'default', name: 'Default Wiki', path: '.' }];
+    return json.projects;
   }
 
   public async createProject(id: string, name: string): Promise<ProjectInfo | null> {
-    try {
-      const json = await this.request('projects.create', { body: { id, name } });
-      if (json.success && json.project) {
-        return json.project;
-      }
-    } catch (_err) {
-      // Fallback
+    const json = await this.request('projects.create', { body: { id, name } });
+    this.requireOk(json, 'projects.create failed');
+    if (!json.project) {
+      throw new ApiClientError('projects.create returned no project', 200, json);
     }
-    return null;
+    return json.project;
   }
 
   public async getProjectConfig(projectId?: string): Promise<Record<string, unknown> | null> {
@@ -189,16 +195,10 @@ export class ApiStorage implements IStorage {
   }
 
   public async getAllNotes(projectId?: string): Promise<WikiNote[]> {
-    try {
-      const json = await this.request('wiki.notes.list', {}, projectId);
-      if (json.graph) this.lastGraph = json.graph;
-      if (json.success && Array.isArray(json.notes) && json.notes.length > 0) {
-        return json.notes;
-      }
-    } catch (_err) {
-      // Backend unavailable; fallback to static FileStorage only for the active project
-    }
-    return projectId ? [] : this.fallback.getAllNotes();
+    const json = await this.request('wiki.notes.list', {}, projectId);
+    this.requireOk(json, 'wiki.notes.list failed');
+    if (json.graph) this.lastGraph = json.graph;
+    return Array.isArray(json.notes) ? json.notes : [];
   }
 
   public async getScratchpad(): Promise<ScratchpadEntry[]> {
@@ -232,39 +232,30 @@ export class ApiStorage implements IStorage {
   }
 
   public async saveNote(note: Partial<WikiNote> & { id: string }): Promise<WikiNote> {
-    try {
-      const json = await this.request('wiki.note.save', {
-        body: {
-          id: note.id,
-          content: note.content ?? '',
-          rawContent: note.rawContent,
-          path: note.path,
-          folder: note.folder,
-          title: note.title,
-        },
-      });
-      if (json.success && json.note) {
-        return json.note;
-      }
-    } catch (_err) {
-      // Backend unavailable; fallback
+    const json = await this.request('wiki.note.save', {
+      body: {
+        id: note.id,
+        content: note.content ?? '',
+        rawContent: note.rawContent,
+        path: note.path,
+        folder: note.folder,
+        title: note.title,
+      },
+    });
+    this.requireOk(json, 'wiki.note.save failed');
+    if (!json.note) {
+      throw new ApiClientError('wiki.note.save returned no note', 200, json);
     }
-
-    return this.fallback.saveNote(note);
+    return json.note;
   }
 
   public async attachNote(options: AttachOptions): Promise<WikiNote> {
-    try {
-      const json = await this.request('wiki.note.attach', { body: options });
-      if (json.success && json.note) {
-        return json.note;
-      }
-    } catch (_err) {
-      // Backend unavailable
+    const json = await this.request('wiki.note.attach', { body: options });
+    this.requireOk(json, 'wiki.note.attach failed');
+    if (!json.note) {
+      throw new ApiClientError('wiki.note.attach returned no note', 200, json);
     }
-
-    const targetId = options.noteId || options.title?.toLowerCase().replace(/\s+/g, '-') || `attached-${Date.now()}`;
-    return this.fallback.saveNote({ id: targetId, content: options.content });
+    return json.note;
   }
 
   public async applyEdit(edit: WikiEdit): Promise<ApplyEditResult> {
@@ -322,39 +313,28 @@ export class ApiStorage implements IStorage {
   }
 
   public async createFolder(folderPath: string): Promise<boolean> {
-    try {
-      const json = await this.request('wiki.folder.create', { body: { path: folderPath } });
-      return json.success;
-    } catch (_err) {
-      // Fallback
-    }
-    return this.fallback.createFolder(folderPath);
+    const json = await this.request('wiki.folder.create', { body: { path: folderPath } });
+    this.requireOk(json, 'wiki.folder.create failed');
+    return true;
   }
 
   public async createFile(folderPath: string, fileName: string, content?: string): Promise<WikiNote> {
-    try {
-      // An absent body field was previously omitted by JSON.stringify; keep that
-      // behaviour so a missing content still fails over to FileStorage.
-      const json = await this.request('wiki.file.create', {
-        body: { folder: folderPath, name: fileName, content: content as string },
-      });
-      if (json.success && json.note) return json.note;
-    } catch (_err) {
-      // Fallback
+    const json = await this.request('wiki.file.create', {
+      body: { folder: folderPath, name: fileName, content: content as string },
+    });
+    this.requireOk(json, 'wiki.file.create failed');
+    if (!json.note) {
+      throw new ApiClientError('wiki.file.create returned no note', 200, json);
     }
-    return this.fallback.createFile(folderPath, fileName, content);
+    return json.note;
   }
 
   public async renameItem(oldPath: string, newName: string): Promise<boolean> {
-    try {
-      const json = await this.request('wiki.rename', {
-        body: { from: oldPath, to: newName, newName, dryRun: false },
-      });
-      return json.success;
-    } catch (_err) {
-      // Fallback
-    }
-    return this.fallback.renameItem(oldPath, newName);
+    const json = await this.request('wiki.rename', {
+      body: { from: oldPath, to: newName, newName, dryRun: false },
+    });
+    this.requireOk(json, 'wiki.rename failed');
+    return true;
   }
 
   /** Rename a document by title: slugified filename + title update + wikilink repair. */
@@ -388,44 +368,36 @@ export class ApiStorage implements IStorage {
   }
 
   public async moveItem(sourcePath: string, targetFolder: string): Promise<boolean> {
-    try {
-      const json = await this.request('wiki.move', {
-        body: { from: sourcePath, to: targetFolder, dryRun: false },
-      });
-      return json.success;
-    } catch (_err) {
-      // Fallback
-    }
-    return this.fallback.moveItem(sourcePath, targetFolder);
+    const json = await this.request('wiki.move', {
+      body: { from: sourcePath, to: targetFolder, dryRun: false },
+    });
+    this.requireOk(json, 'wiki.move failed');
+    return true;
   }
 
   public async uploadFile(folderPath: string, fileName: string, content: string | ArrayBuffer): Promise<boolean> {
-    try {
-      let payloadContent = '';
-      if (typeof content === 'string') {
-        payloadContent = content;
-      } else {
-        const bytes = new Uint8Array(content);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        payloadContent = btoa(binary);
+    let payloadContent = '';
+    if (typeof content === 'string') {
+      payloadContent = content;
+    } else {
+      const bytes = new Uint8Array(content);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
       }
-
-      const joinedPath = folderPath ? `${folderPath.replace(/\/+$/, '')}/${fileName}` : fileName;
-      const json = await this.request('wiki.upload', {
-        body: {
-          path: joinedPath,
-          content: payloadContent,
-          encoding: typeof content !== 'string' ? 'base64' : 'utf-8',
-        },
-      });
-      return json.success;
-    } catch (_err) {
-      // Fallback
+      payloadContent = btoa(binary);
     }
-    return this.fallback.uploadFile(folderPath, fileName, content);
+
+    const joinedPath = folderPath ? `${folderPath.replace(/\/+$/, '')}/${fileName}` : fileName;
+    const json = await this.request('wiki.upload', {
+      body: {
+        path: joinedPath,
+        content: payloadContent,
+        encoding: typeof content !== 'string' ? 'base64' : 'utf-8',
+      },
+    });
+    this.requireOk(json, 'wiki.upload failed');
+    return true;
   }
 
   /**
@@ -513,7 +485,10 @@ export class ApiStorage implements IStorage {
           } catch (_e) {
             // ignore
           }
-        }
+        },
+        undefined,
+        undefined,
+        { scopeQuery: true, baseUrl: this.baseUrl }
       );
       return;
     } catch (_err) {

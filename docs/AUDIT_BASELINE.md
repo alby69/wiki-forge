@@ -98,7 +98,7 @@ alby69/wiki-forge/
 │   │   │   ├── agentServer.ts # Main AgentServer HTTP & REST router
 │   │   │   ├── httpServer.ts  # Node.js HTTP server entry point
 │   │   │   ├── llmClient.ts   # Multi-provider LLM client adapter
-│   │   │   ├── mcp_server.py  # Model Context Protocol Python server
+│   │   │   ├── mcp_server.py  # MCP compatibility shim (not the primary server; see §8)
 │   │   │   ├── routes/        # Express/REST route handlers (scriptRoutes, wikiRoutes)
 │   │   │   ├── services/      # Workflow engine & background services
 │   │   │   └── utils/         # Path resolvers, script builders, KE use cases
@@ -272,3 +272,38 @@ CI), mentre A4 è stato accettato come invariante del formato di ingestione.
 
 Vedi `docs/CHANGELOG.md` (sezione "Architettura coerente — Fase 77") per l'elenco dei file
 toccati e dei test di validazione.
+
+---
+
+## 8. Current state — 2026-11-25 (post-decoupling)
+
+The tree, phase table and risk verdicts above remain the Phase 0 / Fase 77 baseline.
+The verified final architecture is:
+
+- **MCP**: the authoritative implementation is the Node adapter
+  (`src/backend/mcp/adapter.ts`) with entrypoint `bin/mcp.ts`; `wf mcp` spawns it
+  as a child process. `src/backend/server/mcp_server.py` is a compatibility shim
+  only, so the tree entry above is historical.
+- **Shared contract**: 105 HTTP routes, 158 bus handlers, 51 slash commands (20
+  with a dedicated case), 113 MCP tools, 32 known gaps and zero
+  route-without-bus gaps. `npm run manifest:check` now fails on a
+  route-without-bus gap; CLI, MCP and UI all consume the generated manifest.
+- **Frontend**: a single `apiBus` facade; no `FileStorage` fallback in
+  `ApiStorage`, backend `WikiGraphDto` as the only graph source and an explicit
+  template fallback via `api:error`.
+- **State and governance**: sessions persisted in `StateStore`, scheduler state
+  protected by a lease lock, approval outbox relay, central command audit,
+  principal always present on bus dispatch, environment allowlist for
+  subprocesses and non-root containers. The historical A9 entry above is
+  superseded on these points.
+- **Runtime**: the API is a single process serving the SPA and `/api/healthz`;
+  no `VITE_*` runtime variables and no default `admin/admin` bootstrap.
+- **Paths**: `.wiki-forge/` is the active state root; `.wikiforge/` is historical
+  only.
+
+### Final verification
+
+- `npm test`: **593/593** with the Python venv installed from `requirements.txt`.
+- `pytest tests/python/test_semantic_engine.py -q`: **6/6**.
+- `npm run typecheck`, `npm run manifest:check`, `npm run build`,
+  `docker compose config --quiet` and `git diff --check`: all green.

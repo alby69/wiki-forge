@@ -3,21 +3,21 @@
 > GENERATED FILE — non modificare a mano. Rigenera con `npm run manifest`.
 > Fonte: `scripts/gen_command_manifest.mjs`, derivata da `src/shared/api/contracts.ts`,
 > `src/frontend/components/chat/commandCatalog.ts`, `src/backend/server/agentServer.ts`
-> e `src/shared/mcp/tools.ts`.
+> e `src/shared/mcp/definitions.ts`.
 
 - Route HTTP: **105**
-- Handler bus: **156**
+- Handler bus: **158**
 - Comandi slash catalogati: **51**
 - Comandi slash con case dedicato: **20**
 - Tool MCP: **113**
-- Gap noti: **34**
+- Gap noti: **32**
 
 ## Route HTTP
 
 | Operazione | Metodo | Path | Handler bus |
 |---|---|---|---|
-| `docs.openapi` | GET | `/api/openapi.json` | **no** |
-| `docs.swagger` | GET | `/api/docs` | **no** |
+| `docs.openapi` | GET | `/api/openapi.json` | sì |
+| `docs.swagger` | GET | `/api/docs` | sì |
 | `auth.me` | GET | `/api/auth/me` | sì |
 | `auth.login` | POST | `/api/auth/login` | sì |
 | `users.list` | GET | `/api/users` | sì |
@@ -300,8 +300,6 @@
 
 | Tipo | ID | Dettaglio |
 |---|---|---|
-| route-without-bus | `docs.openapi` | command 'docs.openapi' has no bus handler |
-| route-without-bus | `docs.swagger` | command 'docs.swagger' has no bus handler |
 | slash-without-implementation | `adversarial-review` | catalogued slash command has no dedicated case in processChatCommand |
 | slash-without-implementation | `backlinks` | catalogued slash command has no dedicated case in processChatCommand |
 | slash-without-implementation | `convert-only` | catalogued slash command has no dedicated case in processChatCommand |

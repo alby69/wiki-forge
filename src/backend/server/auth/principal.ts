@@ -62,7 +62,7 @@ export async function authenticateRequest(
 
   if (env.NODE_ENV === 'production') {
     if (bearer) {
-      const localPrincipal = userStore?.principalForToken(bearer);
+      const localPrincipal = await userStore?.principalForToken(bearer);
       if (localPrincipal) return { ok: true, principal: localPrincipal };
       if (idp) {
         const verified = await idp.verify(bearer);
@@ -82,7 +82,7 @@ export async function authenticateRequest(
   }
 
   if (bearer) {
-    const localPrincipal = userStore?.principalForToken(bearer);
+    const localPrincipal = await userStore?.principalForToken(bearer);
     if (localPrincipal) return { ok: true, principal: localPrincipal };
   }
   if (idp) {

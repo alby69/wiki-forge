@@ -7,10 +7,14 @@ Focus Mode provides a clean, 3-step interface for operators:
 2. **2. Compila Wiki**: Converts raw sources into interlinked OKF v0.2 Markdown notes.
 3. **3. Chiedi alla Wiki**: Ask questions, request syntheses, or generate study materials.
 
+Sign in before using Focus Mode: production forces authentication and RBAC,
+requires a token unless an IdP or user store is configured, and has no default
+`admin/admin` credentials. Sessions are persisted on the server via `StateStore`.
+
 ## Guided Wizards
 Focus Mode includes a guided **Onboarding Wizard** (also available in chat as `/wizard [scenario]`) that walks you through setting up a new project step by step, and scenario presets can be selected in the wizard itself.
 
-Backend progress for guided procedures is recorded in `.wikiforge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
+Backend progress for guided procedures is recorded in `.wiki-forge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
 
 ## Markdown Editor & Toolbar
 When editing notes, the editor view includes a built-in formatting toolbar:
@@ -164,6 +168,10 @@ copy them by hand, or — recommended — use the graphical workflow:
    editor. `{{TITLE}}`, `{{DATE}}`, `{{ID}}`, `{{AUTHOR}}`, `{{CHAPTER_NUMBER}}`
    and `{{SUBTITLE}}` are substituted automatically; descriptive placeholders
    such as `{{punto 1}}` are left for you to fill in.
+
+Built-in templates come from the backend `templates.list` command through the
+single `apiBus` facade. If the API is unavailable the canonical fallback is
+reported explicitly as `api:error`; there is no local `FileStorage` fallback.
 
 > **Chat commands:** `/template show` and `/new-article <nome>` are still listed
 > in the command catalogue and in the `wiki-curate` / `wiki-onboarding` skills,

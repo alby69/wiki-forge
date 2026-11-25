@@ -55,7 +55,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
       ],
       "projectScoped": false,
       "stream": null,
-      "hasBusHandler": false
+      "hasBusHandler": true
     },
     {
       "id": "docs.swagger",
@@ -67,7 +67,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
       ],
       "projectScoped": false,
       "stream": null,
-      "hasBusHandler": false
+      "hasBusHandler": true
     },
     {
       "id": "auth.me",
@@ -1370,6 +1370,8 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "cmd.validate-cq",
     "cmd.verify",
     "cmd.wizard",
+    "docs.openapi",
+    "docs.swagger",
     "files.download",
     "graph.clusters",
     "graph.cypher",
@@ -6349,16 +6351,6 @@ export const COMMAND_MANIFEST: CommandManifest = {
     }
   ],
   "gaps": [
-    {
-      "kind": "route-without-bus",
-      "id": "docs.openapi",
-      "detail": "command 'docs.openapi' has no bus handler"
-    },
-    {
-      "kind": "route-without-bus",
-      "id": "docs.swagger",
-      "detail": "command 'docs.swagger' has no bus handler"
-    },
     {
       "kind": "slash-without-implementation",
       "id": "adversarial-review",

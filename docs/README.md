@@ -1,6 +1,6 @@
 # Wiki-Forge Documentation Index
 
-Indice completo dei documenti in `docs/` (32 file), dei contenuti della guida in-app (`docs/help/`, 19 argomenti) e dei mockup in `docs/mockups/`.
+Indice completo dei documenti in `docs/` (34 file, di cui il manifest dei comandi generato), dei contenuti della guida in-app (`docs/help/`, 19 argomenti) e dei mockup in `docs/mockups/`.
 
 ## 📖 Per utenti ed operatori
 
@@ -28,9 +28,10 @@ Indice completo dei documenti in `docs/` (32 file), dei contenuti della guida in
 
 | Documento | Contenuto |
 |---|---|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: diagramma unico frontend/health engine/procedure/vault/Review Studio. |
-| [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP, export RDF, confronto con LLM locali. |
-| [`OPENAPI.md`](OPENAPI.md) | Contratto HTTP generato da TypeScript, browser Swagger self-hosted (`/api/docs`), bus backend, client tipizzato e bus UI. |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: frontend, gateway Node, kernel/modules/ports, health engine, procedure, vault, Review Studio e deployment. |
+| [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP Node, export RDF, confronto con LLM locali. |
+| [`OPENAPI.md`](OPENAPI.md) | Contratto HTTP generato da TypeScript (105 route), browser Swagger self-hosted (`/api/docs`), bus backend (158 handler), client tipizzato e bus UI. |
+| [`COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md) | Manifest generato: 105 route, 158 handler bus, 51 comandi slash / 20 con case, 113 tool MCP, 32 gap noti; non modificare a mano. |
 | [`SCRIPT_AUTOMATION_REFERENCE.md`](SCRIPT_AUTOMATION_REFERENCE.md) | Catalogo generato delle classi di sicurezza, dei job schedulabili e degli orari suggeriti per i 29 script. |
 | [`KE_AGENT_SCHEDULER_PLAN.md`](KE_AGENT_SCHEDULER_PLAN.md) | Piano F0–F6 e S0–S6: agenti schedulati, Policy Agent, approvazioni e automazione degli script via API/UI. |
 | [`ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md) | Piano A0–A5/B0–B7/C0–C8 per L4 autonomo, RBAC e Neo4j bidirezionale: baseline, dipendenze, criteri di accettazione, test e grado di implementazione aggiornato a ogni step. |
@@ -89,5 +90,10 @@ Indice completo dei documenti in `docs/` (32 file), dei contenuti della guida in
 ```bash
 python scripts/check_docs_sync.py   # struttura docs/ e frontmatter di docs/help/*.md
 npm run typecheck                   # TypeScript
-npm test                            # test backend (include /api/help)
+npm run manifest:check              # coerenza del manifest generato (zero route-without-bus)
+npm run build                       # build della SPA
+npm test                            # test JS (593/593 con venv Python da requirements.txt)
+python -m pytest tests/python       # 6/6 test semantici
+docker compose config               # validazione dei servizi Compose
+git diff --check                    # whitespace
 ```

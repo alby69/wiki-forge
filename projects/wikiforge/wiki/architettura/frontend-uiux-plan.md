@@ -408,3 +408,26 @@ priorità alle funzionalità progetto.
 4. **Delete progetto**: default su `trash` (consigliato) o `unregister`?
 5. **Rename id**: solo nome visualizzato ora, oppure anche id con migrazione?
 6. **Priorità**: implementare prima UI/UX (Fasi 1-4) o project lifecycle (Fase 5-6)?
+
+---
+
+## 10. Stato finale dell'architettura (2026-11-25)
+
+Questo documento resta la proposta della Fase 78: l'audit e le fasi qui sopra non
+sono state riscritte. Dopo il completamento del piano di disaccoppiamento:
+
+- Il frontend ha una sola facciata API, `src/frontend/core/apiBus.ts`: niente
+  `fetch` sparsi e nessun fallback `FileStorage` in `ApiStorage`. Il grafo arriva
+  solo dal `WikiGraphDto` del backend e il fallback dei template è esplicito via
+  `api:error`.
+- CLI, MCP e UI consumano lo stesso manifest generato (105 route HTTP, 158 handler
+  bus, 51 comandi slash di cui 20 con caso dedicato, 113 tool MCP, 32 gap noti,
+  zero route senza bus). L'entrypoint MCP è `bin/mcp.ts`, avviato da `wf mcp` come
+  processo figlio; `src/backend/server/mcp_server.py` è solo uno shim.
+- Il deploy su Render serve la SPA dall'API in processo unico insieme a
+  `/api/healthz`: non ci sono variabili `VITE_*` a runtime, né un bootstrap
+  predefinito `admin/admin`. Vite resta il build time.
+- La radice di stato attiva è `.wiki-forge/`; `.wikiforge/` è solo storico.
+- Verifica: `npm test` 593/593 con venv Python da `requirements.txt`,
+  `pytest tests/python/test_semantic_engine.py -q` 6/6, typecheck,
+  `manifest:check`, build, compose e `git diff --check` verdi.

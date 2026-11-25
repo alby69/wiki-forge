@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
 import type { WikiNote } from '@shared/domain/wiki';
+import { buildAllowedEnv } from './process/scriptRunner';
 
 export interface LlmConfig {
   provider: 'opencode' | 'anthropic' | 'openai_compatible' | 'ollama' | string;
@@ -44,7 +45,7 @@ export class OpenCodeCliClient implements LlmClient {
       let child: ReturnType<typeof spawn>;
       try {
         child = spawn(command, extraArgs, {
-          env: { ...process.env },
+          env: buildAllowedEnv(),
           stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch (err) {

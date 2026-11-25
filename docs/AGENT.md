@@ -29,7 +29,7 @@ You possess six fundamental capabilities:
 5. **Interactive Collaboration**: Continuous iterative dialogue, proactive suggestions, clear confidence disclosure, and user-guided note promotion.
 6. **Scenario Adaptation**: Dynamic adaptation of tone, taxonomy, and workflows to specific domain presets (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation), supporting dual-mode user workflows (**Simple Operator** in 🌱 Focus Mode vs **Knowledge Engineer** in 👑 Developer Mode / KE Workbench).
 
-**Session Startup Directive:** At the beginning of every session or task execution, always read `.wikiforge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
+**Session Startup Directive:** At the beginning of every session or task execution, always read `.wiki-forge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
 
 Read `config/config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
 
@@ -130,6 +130,17 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 | Presentation Slides | generate reveal.js slide deck from mature notes/chapters | `skills/wiki-slides/SKILL.md` |
 | KE Ontology Suite | schema lint/infer, CQ validation, ODP suggestions, neuro checks, KE maturity | `skills/wiki-ke-ontology/SKILL.md` |
 
+### 5.1 Managed command interfaces
+The CLI (`bin/wf.ts`), the MCP adapter (`bin/mcp.ts`, `npm run mcp`) and
+OpenAPI all consume the generated command manifest
+(`src/shared/api/generated/commandManifest.generated.ts`,
+[`docs/COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md)): 105 HTTP routes, 158 bus
+handlers, 51 catalogued slash commands / 20 with a dedicated case, 113 MCP tools
+and 32 non-blocking gaps. `npm run manifest:check` enforces zero
+`route-without-bus` gaps. `wf mcp` spawns the standalone Node adapter;
+`src/backend/server/mcp_server.py` is only a compatibility shim. No adapter
+imports another adapter.
+
 ---
 
 ## 6. Interaction Modes
@@ -151,8 +162,8 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`compile`**: Chained execution of source conversion → raw file ingestion → OKF frontmatter generation → index reindexing → light audit.
 - **`audit`**: Comprehensive check executing link verification → orphan detection → duplicate scanning → frontmatter linting (`okf_lint.py`) → metrics calculation.
 - **`consult`**: Multi-source context retrieval → passage-level claim tracing → interactive synthesis with confidence levels and `[[wikilinks]]`.
-- **`procedure run <id>`**: Executes a stateful, resumable procedure defined in `config/procedures/` (e.g. `ke.ontological-integrity`, `user.onboarding`, `user.add-sources`). Tracks step execution in `.wikiforge/state/<run_id>.json`.
-- **`changeset review` / `changeset apply <id>`**: Inspects and applies staged changeset proposals (`.wikiforge/changesets/`) ensuring Plan-Review-Apply safety.
+- **`procedure run <id>`**: Executes a stateful, resumable procedure defined in `config/procedures/` (e.g. `ke.ontological-integrity`, `user.onboarding`, `user.add-sources`). Tracks step execution in `.wiki-forge/state/<run_id>.json`.
+- **`changeset review` / `changeset apply <id>`**: Inspects and applies staged changeset proposals (`.wiki-forge/changesets/`) ensuring Plan-Review-Apply safety.
 - **`ke-usecase` / `ke-wizard`**: Guided execution of the 6 Knowledge Engineer Use Cases (Schema & Taxonomy Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, Semantic RDF Export, KE Maturity Evaluation).
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.
 - **`verify`** (alias `human-review`): Records a human verification event (`verified: - by: human:<id>`) on a note, promoting it to the `human-reviewed` trust tier (🟢) and optionally to `status: stable`. The same path is used by the Review Studio **Verifica** tab, which also snapshots the pre-write content.
@@ -185,6 +196,7 @@ Track and maintain wiki quality against key health metrics:
 - **Copyrighted Material**: Maintain strict separation between immutable original files in `sources/` (backup) and derived syntheses in `wiki/`.
 - **Path Traversal Containment**: All file operations (save, attach, rename, move, delete) must strictly enforce safety checks within `wiki/`, `raw/`, or `output/` directories.
 - **Destructive Actions Confirmation**: Always request explicit confirmation before executing destructive operations (`prune`, file deletion, article merging/splitting) when `agent.confirm_destructive = true`.
+- **Auth & Principal**: The server-derived `Principal` is the only source of identity; client-supplied `user`, `reviewer` or `actor` cannot override it. Production forces RBAC and requires a token unless an IdP or user store is configured; there are no default `admin/admin` credentials. Sessions are persisted via `StateStore`.
 
 ---
 

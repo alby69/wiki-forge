@@ -35,6 +35,19 @@ test('MessageBus dispatches commands, publishes events and normalises errors', a
   assert.deepEqual((blocked as { body: unknown }).body, { blocked: true });
 });
 
+test('bus supplies a process principal to non-HTTP dispatches', async () => {
+  const bus = createMessageBus();
+  let seen: unknown;
+  bus.register('principal.probe', (_payload, context) => {
+    seen = context.principal;
+    return json({ actor: context.principal?.actor });
+  });
+  const result = await bus.dispatch('principal.probe');
+  assert.equal(result.kind, 'json');
+  assert.deepEqual((result as { body: unknown }).body, { actor: 'process:kernel' });
+  assert.deepEqual(seen, { actor: 'process:kernel', roles: [], source: 'process' });
+});
+
 test('catalogue schemas drive JSON Schema validation', () => {
   const save = ROUTES.find((route) => route.id === 'wiki.note.save')!;
   assert.deepEqual(validateWithSchema(save.request.body!, { id: 'a', content: '# A' }).errors, []);

@@ -80,7 +80,7 @@
 | 65 | Research Studio (Query & Research UI) | ✅ Done | Six-tab query modal (`ResearchStudio.ts`), `/api/notes/research/*` endpoints, deterministic query helpers (`researchHelpers.ts`), LLM consult/deep research with fallback, `Ctrl+Alt+Q/S/B/L/T/H`, chat-command hand-off, and help topic `research-studio`. |
 | 66 | Study Studio (Study & Synthesis UI) | ✅ Done | Seven-tab study modal (`StudyStudio.ts`), `/api/notes/study/*` endpoints, deterministic study helpers (`studyHelpers.ts`), `Ctrl+Alt+G/K/M/A`, chat-command parity, canonical thesis draft refresh, and help topic `study-studio`. |
 | 67 | KE Workbench: Console Output nascondibile e ridimensionabile | ✅ Done | Toggle `▾/▴ Console`, drag handle con clamp, preferenze in `localStorage` |
-| 68 | Agenti schedulati per i 6 Use Case KE (F0–F4) | ✅ Done | **F0** runner condiviso, **F1** validazione cron/config, **F2** motore di scheduling (loop 30s, lock PID, single-flight, retry/backoff 1m+5m, timeout con abort, stato persistente, audit log), **F3** (API REST/SSE, adapter a `runUseCase()`, avvio in `httpServer.ts` con `SIGINT`/`SIGTERM`, override runtime e annullamento) e **F4** (tab 🤖 Agenti & Schedule nel Workbench: card job, toggle, cambio orario, Esegui ora con log SSE, annulla, stream live e storico). Piano e avanzamento in `docs/KE_AGENT_SCHEDULER_PLAN.md` |
+| 68 | Agenti schedulati per i 6 Use Case KE (F0–F4) | ✅ Done | **F0** runner condiviso, **F1** validazione cron/config, **F2** motore di scheduling (loop 30s, lock PID storico — oggi lock a lease su `StateStore` —, single-flight, retry/backoff 1m+5m, timeout con abort, stato persistente, audit log), **F3** (API REST/SSE, adapter a `runUseCase()`, avvio in `httpServer.ts` con `SIGINT`/`SIGTERM`, override runtime e annullamento) e **F4** (tab 🤖 Agenti & Schedule nel Workbench: card job, toggle, cambio orario, Esegui ora con log SSE, annulla, stream live e storico). Piano e avanzamento in `docs/KE_AGENT_SCHEDULER_PLAN.md` |
 | 69 | Policy Agent LLM e trigger da eventi con approvazione umana (F5–F6) | ✅ Done | **F5** Policy Agent consultivo e fail-closed: ogni decisione ha rationale e fonti in `output/scheduler/decisions.jsonl`; risposte LLM invalide o LLM assente ricadono sulla regola deterministica “sola lettura + approvazione”, gli step mutanti (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. **F6** trigger `note.created`/`note.modified`/`note.deleted` via webhook (`POST /api/ke/schedule/trigger`) o hook alla creazione note API, con debounce a 5 minuti; gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` e partono solo dopo `POST /approvals/:id/approve` con snapshot e audit `actor: human`. Nuove API decisioni/approvazioni/trigger e sezione Policy & Approvazioni nel Workbench con pulsanti ✅/❌ |
 | 70-75 | Wiki di self-documentazione da `docs/` | ✅ Done | **F70** piano e mapping completo (`docs/SELF_WIKI_PLAN.md`); **F71** generatore OKF deterministico (`scripts/docs_to_wiki.py`, 43 sorgenti → 51 file, `--check`); **F72** progetto dedicato `wikiforge` con bundle commitato; **F73** drift check in `check_docs_sync.py` + `okf_lint.py`; **F74** bottone **📚 Wiki Docs**, `Ctrl+Alt+D`, Research Studio con `projectId=wikiforge` (query + header), scope badge e help topic `wiki-di-wiki-forge`; **F75** note `sintesi/` con `verified: human:<id>` via `promote_doc_answer.py` e job consultivo `weekly-docs-wiki-drift` con rationale/fonti. Nessuna mutazione automatica. |
 | 76 | Ponte wiki → modifiche al programma (approvazione F6) | ✅ Done | Use Case 8 `ke_wiki_program_change`: `wiki_program_change_propose.py` (sola lettura) valida e accoda la proposta; `wiki_program_change_apply.py` (mutante, hard-blocked in `MUTATING_SCRIPT_IDS`) applica con snapshot e audit solo dopo `POST /approvals/:id/approve` con `--reviewer human:<id>` e `--confirm` iniettati dal server. Job `wiki-program-change` con `auto_apply = false`, disabilitato di default. Nessuna mutazione automatica. |
@@ -92,13 +92,41 @@
 | 82 | Automazione script — S4: UI di scheduling e gestione job | ✅ Done | Badge di sicurezza generato e pulsante **🕒 Schedula** nel Control Panel (ID automatico, argomenti del form, avvisi F6 via `apiBus`), badge "job script" e pulsante **🗑 Rimuovi** nella tab Agenti & Schedule solo per job script. Refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto e nessuna nuova route; test DOM/bus dedicati. |
 | 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
 | 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
-| 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 23/23 step: L4 ~4.5/5 (A0–A5), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi), proiezione wiki e gate completo. A4 introduce autonomia `bounded` con allowlist, doppia rivalidazione, rollback e audit `process:wiki-forge-autonomy`; A5 chiude l'auto-repair deterministico con conflitti a 0 scritture. `auto_apply=true` resta vietato. |
-| 86 | Accesso obbligatorio e bootstrap Admin | ✅ Done | Gateway di login bloccante all'avvio, credenziali predefinite `admin`/`admin` quando non configurate, sessioni locali bearer, gesture **👥 Utenti** in Modalità Sviluppo per creare utenti e assegnare ruoli Reader/Contributor/KnowledgeEngineer/Admin. |
+| 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 23/23 step: L4 ~4.5/5 (A0–A5), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi, conteggi storici; oggi 105 route/158 handler), proiezione wiki e gate completo. A4 introduce autonomia `bounded` con allowlist, doppia rivalidazione, rollback e audit `process:wiki-forge-autonomy`; A5 chiude l'auto-repair deterministico con conflitti a 0 scritture. `auto_apply=true` resta vietato. |
+| 86 | Accesso obbligatorio e bootstrap Admin | ✅ Done | Gateway di login bloccante all'avvio, credenziali predefinite `admin`/`admin` **storiche** (rimosse: in produzione servono credenziali configurate o un IdP/user store), sessioni locali bearer persistite via `StateStore`, gesture **👥 Utenti** in Modalità Sviluppo per creare utenti e assegnare ruoli Reader/Contributor/KnowledgeEngineer/Admin. |
 | 87 | Esportazione Wiki ZIP per progetto | ✅ Done | Azione **📦 Esporta Wiki ZIP** solo in Modalità Sviluppo; route additiva `GET /api/projects/:id/export/markdown.zip` con auth locale; ZIP `stored` generato senza dipendenze da tutti i `.md` della wiki path configurata, con nomi UTF-8 e path relativi. |
 | 88 | Matrice capabilities RBAC progressiva | ✅ Done | Source of truth condivisa in `src/shared/auth/capabilities.ts` per comandi e azioni; ruoli progressivi Reader → Contributor → KnowledgeEngineer → Admin applicati a backend e UI; operazioni KE (changeset apply/reject, sync/reconcile grafo, trigger scheduler) e approvazioni F6/admin separate; UI filtra header, command palette, scorciatoie, editor, studio, modali e chat. |
 | 89 | Accesso UI per utente e personalizzazione RBAC-aware | ✅ Done | Route additive `ui.access`, `ui.preferences.get`/`put` e azione `global:customize`; preferenze per utente sul server con fallback locale e filtro RBAC dopo il merge. Modale **Personalizza UI** per pannelli, pin, densità e scorciatoie effettive; **Gestione utenti** con descrizione ruoli, anteprima capacità e blocco del proprio account. Piano F0–F6 in `docs/USER_PERMISSIONS_UIUX_PLAN.md`; zero `fetch` diretti e envelope invariati. |
 
 Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
+
+### Verified implementation baseline (current)
+
+The published command manifest is generated from route contracts and shared MCP
+definitions into `src/shared/api/generated/commandManifest.generated.ts` and
+`docs/COMMAND_MANIFEST.md`, and is consumed by the CLI (`bin/wf.ts`), the MCP
+tool descriptors (`bin/mcp.ts`) and OpenAPI: **105 HTTP routes**, **158 bus
+handlers**, **51 catalogued slash commands / 20 with a dedicated case**, **113
+MCP tools**, **32 known non-blocking gaps** and **zero `route-without-bus`
+gaps**. `npm run manifest:check` enforces the last item. The backend follows
+kernel/modules/ports; no adapter imports another adapter, and
+`src/backend/server/mcp_server.py` is only a compatibility shim for the real
+Node MCP adapter.
+
+Production runs as one Node process that serves the built SPA and the API
+(`Dockerfile.render` + `bin/render-start.sh`) on `$PORT`: RBAC/auth forced,
+token required unless an IdP or user store is configured, CORS allowlist, body
+limit, correlation ids and `/api/healthz`, `/api/readyz`, `/api/metrics`.
+Sessions are persisted via `StateStore`, the scheduler uses a state lease lock
+(not PID), the approval outbox relay exists, command audit logs
+`command:handled`/`command:failed`, `CommandContext.principal` is always set by
+bus dispatch, subprocesses use an env allowlist and `@opentelemetry/api` has a
+local fallback. Docker Compose keeps the Vite `ui` service for development
+only, alongside API and worker (`WIKIFORGE_EMBED_SCHEDULER=false`). The active
+state root is `.wiki-forge/`; `.wikiforge/` paths in earlier phases are
+historical. Verification: typecheck, `manifest:check`, build, `docker compose
+config`, `git diff --check`, 593/593 JS tests with the Python venv from
+`requirements.txt` and 6/6 pytest semantic-engine tests.
 
 ---
 
@@ -244,6 +272,8 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 
 ## Phase 63 — Robustness, KE Cockpit & Guided Procedures (Master Brief) ✅ Done
 
+> Historical: the `.wikiforge/` paths below describe the v4.1.0 layout; the active state root is `.wiki-forge/`.
+
 **Goal:** Deliver complete robustness, stateful procedure execution, safe vault changeset management, and a unified Knowledge Engineer Cockpit UI in alignment with the Jules Master Implementation Brief v2.0.
 
 **Deliverables:**
@@ -314,6 +344,8 @@ Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
 - **Tests**: `tests/python/test_program_change.py` (7) and `tests/programChangeBridge.test.ts` (3).
 
 ## Phase 86 — Accesso obbligatorio e bootstrap Admin ✅ Done
+
+> Historical: the `admin`/`admin` bootstrap described below was removed; production now requires configured credentials or a configured IdP/user store.
 
 **Goal:** make authentication the entry point of the UI and guarantee an Admin owner for a fresh workspace, while keeping user/role management in Developer Mode.
 

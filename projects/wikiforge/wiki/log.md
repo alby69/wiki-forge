@@ -2,4 +2,4 @@
 
 ## 2026-11-19
 
-**Initialization** — Proiezione OKF v0.2 di `docs/` con 51 note in 5 aree tematiche, generata da `process:docs-to-wiki`.
+**Initialization** — Proiezione OKF v0.2 di `docs/` con 52 note in 5 aree tematiche, generata da `process:docs-to-wiki`.

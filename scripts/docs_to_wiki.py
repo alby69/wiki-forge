@@ -72,6 +72,7 @@ DOC_MAP: dict[str, str] = {
     "docs/SLASH_COMMANDS_REFERENCE.md": "riferimenti/slash-commands-reference",
     "docs/SCRIPT_AUTOMATION_REFERENCE.md": "riferimenti/script-automation-reference",
     "docs/AUDIT_BASELINE.md": "riferimenti/audit-baseline",
+    "docs/COMMAND_MANIFEST.md": "riferimenti/command-manifest",
     "docs/mockups/README.md": "riferimenti/mockups",
 }
 

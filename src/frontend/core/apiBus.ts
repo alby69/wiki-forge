@@ -17,20 +17,32 @@ export interface StreamEvent {
 }
 
 export interface FrontendApiBusOptions {
-  /**
-   * Mirror the explicit project id into `?projectId=` as legacy clients do.
-   * Enabled for the `ApiStorage` facade; the shared UI bus uses headers only.
-   */
   scopeQuery?: boolean;
+  baseUrl?: string;
+}
+
+export const ACTIVE_PROJECT_KEY = 'wiki-forge:active-project';
+
+export function getActiveProjectId(fallback: string = 'default'): string {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(ACTIVE_PROJECT_KEY);
+      if (stored) return stored;
+    } catch {
+      return appStore.getState().activeProjectId || fallback;
+    }
+  }
+  return appStore.getState().activeProjectId || fallback;
 }
 
 export class FrontendApiBus {
   constructor(
     private readonly client: TypedApiClient = createApiClient({
+      getProjectId: () => getActiveProjectId(),
       // B7 — the store feeds the bearer lazily: no token, no Authorization header.
       getBearerToken: () => appStore.getState().auth.token || undefined,
     }),
-    private readonly options: FrontendApiBusOptions = {},
+    private readonly defaults: FrontendApiBusOptions = {},
   ) {}
 
   /** Access the underlying typed client for advanced cases (e.g. raw Response). */
@@ -43,11 +55,17 @@ export class FrontendApiBus {
     id: K,
     request: EndpointRequest<K> = {} as EndpointRequest<K>,
     projectId?: string,
+    options: FrontendApiBusOptions = {},
   ): Promise<EndpointResponse<K>> {
     eventBus.emit('api:request', { id, projectId });
     try {
-      const response = await this.client.call(id, this.withProject(id, request, projectId));
-      eventBus.emit('api:result', { id, projectId });
+      const response = await this.client.call(id, this.withOptions(request, projectId, { ...this.defaults, ...options }));
+      const envelope = response as { success?: unknown; error?: unknown };
+      if (envelope.success === false) {
+        eventBus.emit('api:error', { id, error: String(envelope.error ?? 'request failed') });
+      } else {
+        eventBus.emit('api:result', { id, projectId });
+      }
       return response;
     } catch (err) {
       eventBus.emit('api:error', { id, error: String(err) });
@@ -62,10 +80,11 @@ export class FrontendApiBus {
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
     projectId?: string,
+    options: FrontendApiBusOptions = {},
   ): Promise<void> {
     eventBus.emit('api:request', { id, projectId });
     try {
-      await this.client.stream(id, this.withProject(id, request, projectId), (event) => {
+      await this.client.stream(id, this.withOptions(request, projectId, { ...this.defaults, ...options }), (event) => {
         eventBus.emit('api:stream', { id, event: event.data });
         onEvent(event);
       }, signal);
@@ -76,28 +95,30 @@ export class FrontendApiBus {
     }
   }
 
-  /**
-   * Explicit project scoping through the header. The compatibility facade also
-   * mirrors it in the query, as legacy clients and launchers did; an unscoped
-   * call keeps using the client's active-project header only.
-   */
-  private withProject<K extends EndpointId>(
-    _id: K,
+  private withOptions<K extends EndpointId>(
     request: EndpointRequest<K>,
-    projectId?: string,
+    projectId: string | undefined,
+    options: FrontendApiBusOptions,
   ): EndpointRequest<K> {
-    if (!projectId) return request;
-    const source = (request ?? {}) as {
-      headers?: Record<string, string>;
-      query?: Record<string, unknown>;
-    };
-    const headers = { ...(source.headers ?? {}) };
-    headers['X-Project-Id'] = projectId;
-    const next = { ...source, headers } as EndpointRequest<K>;
-    if (!this.options.scopeQuery) return next;
-    const query = { ...(source.query ?? {}) };
-    if (query.projectId === undefined) query.projectId = projectId;
-    return { ...next, query } as EndpointRequest<K>;
+    let next = (request ?? {}) as EndpointRequest<K>;
+    if (projectId) {
+      const source = next as {
+        headers?: Record<string, string>;
+        query?: Record<string, unknown>;
+      };
+      const headers = { ...(source.headers ?? {}) };
+      headers['X-Project-Id'] = projectId;
+      next = { ...source, headers } as EndpointRequest<K>;
+      if (options.scopeQuery) {
+        const query = { ...(source.query ?? {}) };
+        if (query.projectId === undefined) query.projectId = projectId;
+        next = { ...next, query } as EndpointRequest<K>;
+      }
+    }
+    if (options.baseUrl) {
+      next = { ...next, baseUrl: options.baseUrl } as EndpointRequest<K>;
+    }
+    return next;
   }
 }
 

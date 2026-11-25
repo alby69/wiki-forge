@@ -12,7 +12,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ROUTES } from '../../src/shared/api/contracts.ts';
-import { MCP_TOOL_DESCRIPTORS } from '../../src/shared/mcp/tools.ts';
+import { LEGACY_MCP_TOOLS, mcpInputSchemaForRoute, mcpToolNameForRoute } from '../../src/shared/mcp/definitions.ts';
 import { COMMAND_CATALOG } from '../../src/frontend/components/chat/commandCatalog.ts';
 import { AgentServer } from '../../src/backend/server/agentServer.ts';
 
@@ -69,7 +69,15 @@ export async function deriveCommandManifest() {
   ]);
 
   const implementedSlashCommands = collectImplementedSlashCommands(agentSource);
-  const mcpTools = MCP_TOOL_DESCRIPTORS.map((tool) => ({
+  const routeTools = ROUTES.map((route) => ({
+    name: mcpToolNameForRoute(route.id),
+    operationId: route.id,
+    description: `${route.summary} · ${route.method} ${route.path}`,
+    inputSchema: mcpInputSchemaForRoute(route),
+    mutating: route.method !== 'GET',
+    legacy: false,
+  }));
+  const mcpTools = [...routeTools, ...LEGACY_MCP_TOOLS].map((tool) => ({
     name: tool.name,
     operationId: tool.operationId,
     description: tool.description,
@@ -200,7 +208,7 @@ export function renderMarkdown(manifest) {
 > GENERATED FILE — non modificare a mano. Rigenera con \`npm run manifest\`.
 > Fonte: \`scripts/gen_command_manifest.mjs\`, derivata da \`src/shared/api/contracts.ts\`,
 > \`src/frontend/components/chat/commandCatalog.ts\`, \`src/backend/server/agentServer.ts\`
-> e \`src/shared/mcp/tools.ts\`.
+> e \`src/shared/mcp/definitions.ts\`.
 
 - Route HTTP: **${manifest.routes.length}**
 - Handler bus: **${manifest.busCommands.length}**

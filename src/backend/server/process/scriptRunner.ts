@@ -72,7 +72,7 @@ export function buildAllowedEnv(
     if (value !== undefined && isEnvAllowed(key, allowlist)) env[key] = value;
   }
   for (const [key, value] of Object.entries(extraEnv)) {
-    if (value !== undefined) env[key] = value;
+    if (value !== undefined && isEnvAllowed(key, allowlist)) env[key] = value;
   }
   return env;
 }

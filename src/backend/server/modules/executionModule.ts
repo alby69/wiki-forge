@@ -76,7 +76,6 @@ export class ExecutionModule implements DomainModule {
         })}\n\n`);
 
         const scriptEnv: NodeJS.ProcessEnv = {
-          ...process.env,
           PYTHONUNBUFFERED: '1',
           PYTHONIOENCODING: 'utf-8',
         };

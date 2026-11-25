@@ -70,6 +70,7 @@ import { ApprovalRequest, ApprovalStore } from '../scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from '../scheduler/eventTriggers';
 import { EventQueue } from '../scheduler/eventQueue';
 import { GENERATED_SCRIPT_REGISTRY } from '../generated/scriptRegistry.generated';
+import { buildAllowedEnv } from '../process/scriptRunner';
 import { getScriptSafety } from '../scheduler/scriptSafety';
 import { resolveToolScript } from '../toolPaths';
 import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from '../safeFs';
@@ -1221,6 +1222,7 @@ export const vaultMethods = {
     const res = spawnSync(PYTHON_CMD, [scriptPath, relWiki], {
       cwd: projRoot,
       encoding: 'utf-8',
+      env: buildAllowedEnv(),
     });
     if (res.error) {
       throw new Error(`Reindex script failed to start: ${res.error.message}`);

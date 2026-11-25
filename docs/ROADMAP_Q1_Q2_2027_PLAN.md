@@ -26,9 +26,12 @@ Il piano copre i tre blocchi della roadmap Q1–Q2 2027:
 ### 1.1 Vincoli invarianti (valgono per ogni step)
 
 1. **Nessuna rottura di contratto**: endpoint, envelope `{ success, ... }`, metodi
-   pubblici di `AgentServer`, `ApiStorage` e dei 15 moduli di dominio restano
+   pubblici di `AgentServer`, `ApiStorage` e dei moduli di dominio restano
    invariati. Le novità sono **additive** (nuovi campi opzionali, nuove route
-   dichiarate, nuovi eventi).
+   dichiarate, nuovi eventi). Lo studio iniziale contava **15 moduli**; nello
+   stato finale il kernel ne registra **14** (`src/backend/app/createKernel.ts`),
+   per **20 moduli complessivi** con quelli registrati da `AgentServer`, e il bus
+   espone **158 handler**.
 2. **Nessun `fetch` diretto nell'UI**: ogni chiamata passa da
    `src/frontend/api/client.ts` → `src/frontend/core/apiBus.ts`. Nuovi eventi
    vanno in `AppEvents` (`src/frontend/core/events.ts`).
@@ -493,8 +496,13 @@ test Python + 3 test Node dedicati verdi.
   campo `principal` del body viene rimosso prima del dispatch, gli altri restano
   invariati. I caller non-HTTP restano senza principal (additività). 6 nuovi
   test in `tests/principal.test.ts`; B0 rimane byte-identico (8/8), suite
-  completa 352 pass + 1 skip. Nessun enforcement attivo: B3/B5 lo introdurranno
-  dietro `enable_rbac`.
+   completa 352 pass + 1 skip. Nessun enforcement attivo: B3/B5 lo introdurranno
+   dietro `enable_rbac`.
+   **Nota stato finale (2026-11-25):** il "campo opzionale" è la forma storica di
+   B1; dopo il disaccoppiamento il `Principal` è sempre impostato dal dispatch del
+   bus (`MessageBus.dispatch`), con audit centralizzato dei comandi e attore
+   server-derived su ogni richiesta. I caller non-HTTP non possono più lasciarlo
+   assente.
 
 ### B2 — Config e catalogo ruoli (inerti)
 
@@ -1126,3 +1134,29 @@ Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM e chunk >500 kB.
 | `git diff --check` | OK |
 
 Warning noti e non bloccanti: Vite `configLoader: 'native'`/ESM e chunk >500 kB.
+
+### 13.4 Allineamento all'architettura finale — 2026-11-25
+
+Il piano resta chiuso 23/23: i paragrafi precedenti conservano la storia dello
+studio e dei gate. Lo stato finale verificato dopo il piano di disaccoppiamento è:
+
+- **Contratto unico**: 105 route HTTP, 158 handler bus, 51 comandi slash (20 con
+  caso dedicato), 113 tool MCP, 32 gap noti e **zero route senza handler bus**.
+  `npm run manifest:check` ora fallisce se compare un gap `route-without-bus`.
+- CLI, MCP e UI consumano lo stesso manifest generato; l'entrypoint MCP è
+  `bin/mcp.ts` e `wf mcp` lo avvia come processo figlio.
+  `src/backend/server/mcp_server.py` è solo uno shim di compatibilità, mentre
+  l'adapter Node (`src/backend/mcp/adapter.ts`) è autoritativo.
+- La UI ha una sola facciata API (`src/frontend/core/apiBus.ts`): nessun fallback
+  `FileStorage` in `ApiStorage`, `WikiGraphDto` del backend come unica fonte del
+  grafo e fallback template esplicito segnalato via `api:error`.
+- Stato e governance: sessioni in `StateStore`, lock a lease per lo stato dello
+  scheduler, relay dell'outbox delle approvazioni, audit centralizzato dei
+  comandi, principal sempre presente nel dispatch del bus, allowlist env per i
+  subprocess e container non-root.
+- Deploy: API in processo unico che serve la SPA e `/api/healthz`; nessuna
+  variabile `VITE_*` a runtime e nessun bootstrap predefinito `admin/admin`.
+- `.wiki-forge/` è la radice di stato attiva; `.wikiforge/` resta solo storico.
+- Verifica: `npm test` 593/593 con venv Python ricostruito da `requirements.txt`,
+  `pytest tests/python/test_semantic_engine.py -q` 6/6, typecheck,
+  `manifest:check`, build, compose e `git diff --check` verdi.

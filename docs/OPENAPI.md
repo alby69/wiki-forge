@@ -54,10 +54,10 @@ rimasto senza tipi.
 
 ## 3. Cosa contiene la specifica
 
-- **104 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
+- **105 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
-  Files, Catalogues, Knowledge Graph/Neo4j, Identity, UI access/preferences e
-  Documentazione.
+  Files, Catalogues, Knowledge Graph/Neo4j, Identity, UI access/preferences,
+  Templates e Documentazione.
 - `components.schemas` con i DTO condivisi (per esempio `WikiNote`, `Changeset`,
   `SchedulerStatus`, `ResearchAnswer`).
 - `securitySchemes.WikiForgeToken`: header `X-WikiForge-Token`, richiesto solo
@@ -111,36 +111,47 @@ Il backend è stato disaccoppiato senza toccare la facciata pubblica:
 
 ```text
 AgentServer.handleRequest()
-  ├─ handleDocsRequest() / auth.me                → pubblici
+  ├─ auth.me / auth.login                         → pubblici/sessione
+  ├─ docs.openapi / docs.swagger                  → bus, middleware saltato
   ├─ auth B4 (token + CORS)                       → prima del dispatch e del proxy
-  ├─ reverse proxy FastAPI (sync/validate/rag)    → byte-compatibile
   ├─ matchRoute(ROUTES, method, path)             → command + params + schema
   ├─ payload = query + headers + body + params   → i params sono authoritative
   └─ MessageBus.dispatch(command, payload, context)
-       ├─ CatalogueModule    3    help/skills
-       ├─ ToolsModule        3    script registry, KE use cases
-       ├─ ReviewModule       3    coda recensioni (.llm-wiki/reviews.json)
-       ├─ IngestionModule    3    coda SQLite e conversione CoT
-        ├─ GraphModule        7    cluster, insight, Neo4j (query/sync/status),
-        │                           reconcile stage-only e SSE graph.events
-       ├─ ProjectsModule    12    CRUD progetti, config, import/export
-       ├─ ChangesetsModule   5    stages plan → review → apply
-       ├─ FilesModule        1    download binario con containment check
-       ├─ SchedulerModule   12    F3/F5/F6, SSE events/run, approvali, job script (S3)
-       ├─ ExecutionModule    2    script SSE e KE use case SSE
-       ├─ VaultModule       16    note, cartelle, trash, upload, ingest
-       ├─ ReviewStudioModule 7    meta/verify/digest/critica/snapshot
-       ├─ ResearchModule     7    search/backlinks/related/trace/consult
-       ├─ StudyModule        7    guide/quiz/mindmap/audio/note/thesis
-       ├─ ChatModule         1    chat JSON e SSE
-        └─ UiModule           3    ui.access, ui.preferences.get/put
+       ├─ AgentServer            2    auth.login, auth.me
+       ├─ CatalogueModule        5    docs.openapi/swagger, help, skills
+       ├─ ToolsModule            3    script registry, KE use cases
+       ├─ ReviewModule           3    coda recensioni
+       ├─ IngestionModule        3    coda SQLite e conversione CoT
+       ├─ GraphModule            7    cluster, insight, Neo4j (query/sync/status),
+       │                           reconcile stage-only e SSE graph.events
+       ├─ GraphProxyModule       3    graph.sync/validate/rag → byte-compatibile
+       ├─ ProjectsModule        13    CRUD progetti, config, import/export, stats
+       ├─ ChangesetsModule       5    stages plan → review → apply
+       ├─ FilesModule            1    download binario con containment check
+       ├─ SchedulerModule       12    F3/F5/F6, SSE events/run, approvazioni, job script (S3)
+       ├─ ExecutionModule        2    script SSE e KE use case SSE
+       ├─ VaultModule           16    note, cartelle, trash, upload, ingest
+       ├─ TemplateModule         1    templates.list (fallback canonico via api:error)
+       ├─ ReviewStudioModule     7    meta/verify/digest/critica/snapshot
+       ├─ ResearchModule         7    search/backlinks/related/trace/consult
+       ├─ StudyModule            7    guide/quiz/mindmap/audio/note/thesis
+       ├─ ChatModule             1    chat.send JSON e SSE
+       ├─ SlashModule           53    chat.command + 52 comandi cmd.*
+       ├─ UserModule             4    users CRUD
+       └─ UiModule               3    ui.access, ui.preferences.get/put
 ```
 
-Degli **104 endpoint** del catalogo, **99 comandi** sono instradati sul bus. Il piano F0–F6 prevedeva 98 endpoint sulla baseline documentale storica di 95; il catalogo reale era già a 101 prima delle tre route `ui.*`, quindi il conteggio è stato riallineato al codice.
-I cinque rimanenti restano deliberatamente nel gateway: `docs.openapi` e
-`docs.swagger` sono pubblici e serviti da `docsBrowser.ts`, mentre i tre
-`graph.proxy` sono protetti dal gate B4 come ogni ingresso non pubblico e
-preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
+Degli **105 endpoint** del catalogo, tutti sono instradati su **158 handler** del
+bus. I contatori storici (95/98/99/101/104 endpoint, 90/99 comandi) appartengono
+ai checkpoint precedenti: `docs.openapi` e `docs.swagger` ora sono comandi
+pubblici dispatchati con middleware saltato (`handleDocsRequest()` resta come
+fallback), mentre i tre `graph.sync|validate|rag` passano dal gate B4 come ogni
+ingresso non pubblico e preservano byte-per-byte il proxy FastAPI.
+Il manifest generato (`src/shared/api/generated/commandManifest.generated.ts`,
+[`COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md)) riporta **51 comandi slash
+catalogati / 20 con case dedicato**, **113 tool MCP** e **32 gap noti non
+bloccanti**, tutti di tipo `slash-without-implementation`: `npm run
+manifest:check` vieta ogni `route-without-bus`.
 
 - **B7 — identità**: `GET /api/auth/me` (tag `Identity`, comando `auth.me`,
   schema `AuthIdentity`) è la route additiva che il frontend usa per risolvere
@@ -194,7 +205,7 @@ preservano byte-per-byte il proxy FastAPI `/api/v1/graph/sync|validate|rag`.
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (104 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (105 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -210,9 +221,12 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (104 id, assertion 
   `changesets:changed`, `schedule:changed`, `scripts:executed`), così i componenti
   possono reagire senza conoscersi. Il composition root (`index.ts`) resta l'unico
   punto che collega i callback UI.
-- `ApiStorage` conserva tutti i **51 metodi pubblici** e i loro fallback;
+- `ApiStorage` conserva tutti i **51 metodi pubblici** come facciata su `apiBus`:
+  non esiste più un fallback `FileStorage` (`tests/apiStorageNoFallback.test.ts`).
   `projectService`, `ToolsModal`, `ReviewQueueModal`, `ChangesetReviewModal` e
-  `KEWorkbenchModal` non contengono più `fetch` diretti. L'unico `fetch` frontend
+  `KEWorkbenchModal` non contengono più `fetch` diretti; il grafo è mappato solo
+  dal `WikiGraphDto` del backend e il fallback dei template canonici è esplicito
+  via `api:error` (`tests/templateFallback.test.ts`). L'unico `fetch` frontend
   è quello del client tipizzato (quello di `llmClient.ts` parla con provider LLM
   esterni, non con le API di Wiki-Forge).
 - I body legacy sono ancora accettati dal backend; il client invia le forme del
@@ -229,9 +243,9 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (104 id, assertion 
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, 16 moduli più `auth.me`, 99 comandi su bus (3 di `UiModule`) |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (104 id), client generato, `apiBus`, facciate senza `fetch` diretto |
-| 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check e verifica completa |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, kernel/modules/ports con 20 moduli di dominio, 158 handler su bus e zero `route-without-bus` |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (105 id), client generato, `apiBus`, facciate senza `fetch` diretto e senza fallback `FileStorage` |
+| 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check, `npm run manifest:check` e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici
 di `AgentServer` non sono cambiati. Le nuove chiamate API passano solo dal

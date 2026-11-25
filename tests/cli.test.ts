@@ -67,4 +67,27 @@ describe('CLI wf — Fase 3 del piano di disaccoppiamento', () => {
       (error: { code?: number }) => error.code === 2,
     );
   });
+
+  for (const [status, expected] of [[401, 3], [403, 4]] as const) {
+    it(`usa exit code ${expected} per HTTP ${status}`, async () => {
+      const server = createServer((_req, res) => {
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: status === 403 ? 'policy denied' : 'unauthorized' }));
+      });
+      await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+      const address = server.address();
+      assert.ok(address && typeof address !== 'string');
+
+      try {
+        await assert.rejects(
+          () => runCli(['api', 'wiki.notes.list'], {
+            WIKI_FORGE_API_URL: `http://127.0.0.1:${address.port}`,
+          }),
+          (error: { code?: number }) => error.code === expected,
+        );
+      } finally {
+        await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      }
+    });
+  }
 });

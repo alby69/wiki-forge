@@ -70,6 +70,7 @@ import { ApprovalRequest, ApprovalStore } from './scheduler/approvalStore';
 import { EventTriggerBus, isSupportedTriggerEvent } from './scheduler/eventTriggers';
 import { EventQueue } from './scheduler/eventQueue';
 import { GENERATED_SCRIPT_REGISTRY } from './generated/scriptRegistry.generated';
+import { buildAllowedEnv } from './process/scriptRunner';
 import { getScriptSafety } from './scheduler/scriptSafety';
 import { resolveToolScript } from './toolPaths';
 import { atomicWriteFile, listTrash, restoreFromTrash, softDelete, type TrashEntry } from './safeFs';
@@ -115,7 +116,7 @@ import { ROUTES as API_ROUTES } from '../../shared/api/contracts';
 export function resolvePythonCommand(): string {
   const probe = (cmd: string): boolean => {
     try {
-      return spawnSync(cmd, ['--version'], { stdio: 'ignore' }).status === 0;
+      return spawnSync(cmd, ['--version'], { stdio: 'ignore', env: buildAllowedEnv() }).status === 0;
     } catch (_e) {
       return false;
     }

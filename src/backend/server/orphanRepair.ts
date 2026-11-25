@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { buildAllowedEnv } from './process/scriptRunner';
 import type { Changeset, ChangesetStore, StageChangesetInput } from './changesetStore';
 import {
   FINDINGS_SCHEMA,
@@ -180,7 +181,7 @@ export function collectRepairFindings(
       '--wiki-rel',
       wikiRel,
     ],
-    { cwd: rootDir, encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024 },
+    { cwd: rootDir, encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024, env: buildAllowedEnv() },
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {

@@ -4,8 +4,9 @@
 > Ogni UI (web, CLI, MCP, TUI futura) deve essere un **adapter** che consuma lo stesso contratto,
 > senza che il backend debba essere modificato per cambiare interfaccia.
 
-- **Stato**: 🟧 In corso
+- **Stato**: ✅ Completata
 - **Iniziato**: 2026-11-25
+- **Completato e verificato**: 2026-11-25
 - **Responsabile**: lavoro iterativo, una fase alla volta
 - **Documenti collegati**: [`ROADMAP.md`](ROADMAP.md), [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md), [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md), [`SCRIPT_AUTOMATION_REFERENCE.md`](SCRIPT_AUTOMATION_REFERENCE.md)
 
@@ -26,9 +27,13 @@ un client Tauri) che consumi solo `/api/*` e il manifest, con **zero modifiche a
 
 ---
 
-## 2. Stato attuale (baseline 2026-11-25)
+## 2. Baseline storica (pre-implementazione, 2026-11-25)
 
-### 2.1 Punti di forza già presenti
+I numeri e le criticità di questa sezione sono la fotografia **storica precedente
+all'implementazione del piano**: non descrivono lo stato finale. I conteggi e le
+verifiche finali sono nel §8.
+
+### 2.1 Punti di forza già presenti nella baseline storica
 
 | Elemento | Posizione | Perché è utile |
 |---|---|---|
@@ -40,7 +45,7 @@ un client Tauri) che consumi solo `/api/*` e il manifest, con **zero modifiche a
 | Registry script generata | `scripts/gen_script_registry.py`, `src/backend/server/generated/scriptRegistry.generated.ts` | Modello già collaudato di codegen con `--check` |
 | FastAPI separata | `src/backend/wikiforge/api/api_server.py:54-116` | Secondo processo per il grafo |
 
-### 2.2 Problemi da risolvere
+### 2.2 Problemi da risolvere (rilevati nella baseline storica)
 
 1. **`AgentServer` è un god object da 5257 righe** (`src/backend/server/agentServer.ts`).
    Contiene gateway, auth, RBAC, LLM, chat, slash router, snapshot, proxy FastAPI,
@@ -68,7 +73,7 @@ un client Tauri) che consumi solo `/api/*` e il manifest, con **zero modifiche a
    bootstrap `admin/admin`, CORS `*`, nessun body size limit, `spawn` che eredita
    tutti i segreti (`executionModule.ts:78-92`), nessun log strutturato o tracing.
 
-### 2.3 Baseline verifiche (prima di ogni modifica)
+### 2.3 Verifiche della baseline storica (prima di ogni modifica)
 
 ```bash
 npm run typecheck   # OK
@@ -146,13 +151,15 @@ impedisca nuovo drift mentre si lavora alle fasi successive.
 - [x] Test `tests/commandManifest.test.ts` con parità route ↔ manifest ↔ bus ↔ slash ↔ MCP
 - [x] Script npm `manifest:check` e `--check` nel generatore
 
-**Risultato (2026-11-25)**: 104 route, 99 comandi bus, 51 slash command, 8 tool MCP,
-37 gap noti espliciti. `manifest:check` e 4/4 test di parità verdi.
+**Risultato storico (2026-11-25, pre-implementazione)**: 104 route, 99 comandi bus,
+51 slash command, 8 tool MCP, 37 gap noti espliciti. `manifest:check` e 4/4 test di
+parità verdi.
 
 **Accettazione**
-- `npm run manifest:check` fallisce se una route non ha handler bus.
+- `npm run manifest:check` fallisce se compare un gap `route-without-bus`.
 - Il drift noto è **esplicito** nel manifest (campo `gaps`), non nascosto.
-- `npm run typecheck` resta verde; `npm test` non peggiora la baseline (2 fail noti).
+- `npm run typecheck` resta verde; la baseline finale è verde con le dipendenze Python
+  installate, senza venv restano 2 fail noti.
 
 **Rischi**: la costruzione di `AgentServer` nel generatore deve usare una root temporanea
 e RBAC disattivato per evitare effetti collaterali.
@@ -278,7 +285,7 @@ dell'API, esattamente come la CLI e la UI.
 - [x] Actor/reviewer sempre da `Principal`
 - [x] Template canonici nel backend, preview locale in UI
 
-**Accettazione**: test di accettazione finale del §1 superato. `typecheck`, `manifest:check`, `git diff --check` verdi; manifest 105 route, 156 bus command, 34 gap.
+**Accettazione**: test di accettazione finale del §1 superato. `typecheck`, `manifest:check`, `git diff --check` verdi; manifest 105 route, 158 bus command, 32 gap.
 
 ---
 
@@ -300,14 +307,18 @@ dell'API, esattamente come la CLI e la UI.
 **Accettazione**
 - `enable_rbac=false` impossibile in prod; health/metrics esposti su prefisso `/api`; sessioni persistenti via `StateStore`.
 - Nessun processo backend gira come root; scheduler embedded disattivabile con `WIKIFORGE_EMBED_SCHEDULER=false` quando gira il worker separato.
-- Verifica finale: `typecheck`, `manifest:check`, `git diff --check` verdi; suite 575/575 con le dipendenze Python di `requirements.txt` installate.
+- Verifica finale: `npm run typecheck`, `npm run manifest:check`, `npm run build`,
+  `docker compose config --quiet` e `git diff --check` verdi; `npm test` 593/593 con le
+  dipendenze Python di `requirements.txt` installate e
+  `pytest tests/python/test_semantic_engine.py -q` 6/6. Senza venv Python restano 2 fail
+  noti (`graphRoutes`, `rdflib`).
 
 ---
 
 ## 5. Regole di lavoro
 
 1. **Una fase alla volta**, senza mischiare refactor e nuove funzionalità.
-2. Ogni fase termina con `npm run typecheck` e `npm test`; la baseline è 2 fail noti.
+2. Ogni fase termina con `npm run typecheck` e `npm test`; la baseline finale è verde con dipendenze Python installate, senza venv restano 2 fail noti.
 3. Ogni deviazione dal piano va registrata nel §6 con data e motivazione.
 4. Le fasi non si segnano complete finché non sono verificate, non solo scritte.
 
@@ -354,6 +365,8 @@ dell'API, esattamente come la CLI e la UI.
 | 2026-11-25 | Fase 6 | `StateStore` selezionabile, outbox approvals, lock lease, worker separato, subprocess hardening, container non-root | ✅ |
 | 2026-11-25 | Fase 6 | API serve asset statici da `dist/`; scheduler embedded disattivabile; Compose avvia worker dedicato | ✅ |
 | 2026-11-25 | Fase 6 | Verifica finale verde: `typecheck`, `manifest:check`, `git diff --check`; suite 575/575 con dipendenze Python installate | ✅ |
+| 2026-11-25 | — | Audit post-commit completato: manifest finale 105 route, 158 handler bus, 51 slash command (20 con case dedicato), 113 tool MCP, 32 gap; azzerati i gap `route-without-bus`, `docs.openapi` e `docs.swagger` su handler bus e `manifest:check` con guardia dedicata | ✅ |
+| 2026-11-25 | — | Verifica finale: `typecheck`, `manifest:check`, `build`, `docker compose config --quiet` e `git diff --check` verdi; `npm test` 593/593 con venv Python da `requirements.txt` e `pytest tests/python/test_semantic_engine.py -q` 6/6; piano completo | ✅ |
 
 ## 7. Decisioni e domande aperte
 
@@ -363,3 +376,57 @@ dell'API, esattamente come la CLI e la UI.
   `gen_script_registry.py`.
 - **D3** — Risolto in Fase 4: SDK MCP Node, per condividere il client tipizzato con CLI e UI.
 - **D4** — Risolto in Fase 6: `WIKIFORGE_STATE_BACKEND` seleziona `file`/`memory` oppure un adapter HTTP per Postgres/Redis/S3. Default `file` in sviluppo; in produzione le chiavi di stato, sessioni e approvals possono essere instradate a backend remoti senza driver nativi nel gateway.
+- **D5** — Le operazioni su note/vault continuano a passare dal filesystem tramite gli adapter `safeFs`; lo stato transazionale enterprise (sessioni locali, outbox approvals, lock) usa `StateStore`.
+- **D6** — Il manifest generato è la source of truth per gli adapter (CLI, descrittori MCP, OpenAPI); il generatore lo deriva dai cataloghi a livello di codice (sorgenti route/contratti e definizioni MCP condivise), senza import circolari.
+
+---
+
+## 8. Stato finale verificato (2026-11-25)
+
+Piano completo: tutte le fasi 0–6 sono ✅ Completata e le verifiche finali sono verdi.
+I numeri della §2 restano la baseline storica pre-implementazione e non vanno letti come
+conteggi correnti.
+
+### 8.1 Manifest e adapter
+
+- Manifest finale: **105 route HTTP**, **158 handler bus**, **51 slash command** catalogate
+  (20 con case dedicato), **113 tool MCP**, **32 gap noti**. Non restano gap
+  `route-without-bus`: anche `docs.openapi` e `docs.swagger` sono handler bus.
+  `manifest:check` ora fallisce se compare un gap `route-without-bus`.
+- Il backend registra **20 moduli di dominio**: 14 in `createKernel.ts` e 6
+  direttamente in `AgentServer`, per 158 handler complessivi su `MessageBus`.
+- Il manifest generato è il contratto runtime consumato da CLI, descrittori MCP e OpenAPI;
+  è generato dalle sorgenti route/contratti e dalle definizioni MCP condivise, senza
+  import circolari.
+- CLI: exit code `0` ok, `2` validazione, `3` auth, `4` policy, `5` backend; HTTP 403 → `4`.
+- MCP: server standalone `bin/mcp.ts` avviato via `npm run mcp`; `wf mcp` ne fa lo spawn
+  del processo, quindi nessun adapter importa un altro adapter.
+- UI: unica facciata `apiBus`; `ApiStorage` non ha più fallback `FileStorage`; i dati del
+  grafo arrivano solo dal `WikiGraphDto` del backend; il fallback ai template canonici è
+  esplicito tramite `api:error`.
+
+### 8.2 Enterprise e deploy
+
+- Audit dei comandi centralizzato; `CommandContext.principal` sempre presente sul dispatch
+  del bus; sessioni locali persistite in `StateStore`; scheduler e worker embedded usano
+  il lock a lease sullo stato; outbox delle approvals con relay in produzione; allowlist
+  dell'ambiente per i subprocess; container non-root; dipendenza `@opentelemetry/api`
+  dichiarata.
+- Correzioni post-audit: il bus assegna `PROCESS_PRINCIPAL` ai dispatch non-HTTP;
+  `UserStore` usa `WIKIFORGE_STATE_DIR` e su `StateConflictError` conserva le sessioni
+  scritte da altre istanze; il worker avvia il relay delle approvals solo dopo aver
+  ottenuto il lease e si ferma quando il lease viene perso; lo scheduler embedded avvia
+  lo stesso relay nel deploy single-process; le allowlist env filtrano anche `extraEnv`
+  e i subprocess non ereditano `process.env`.
+- Deploy: Render serve la SPA buildata dalla API Node, health su `/api/healthz`, nessuna
+  variabile `VITE_*` a runtime, nessun default `admin/admin`, directory di stato
+  configurata, processo singolo via `bin/render-start.sh`.
+
+### 8.3 Verifiche finali
+
+- Verdi: `npm run typecheck`, `npm run manifest:check`, `npm run build`,
+  `docker compose config --quiet`, `git diff --check`.
+- `npm test` **593/593** con l'ambiente virtuale Python creato da `requirements.txt`;
+  `pytest tests/python/test_semantic_engine.py -q` **6/6**.
+- Senza le dipendenze Python restano 2 failure noti (`graphRoutes` e `rdflib`): il venv è
+  obbligatorio per la suite verde.

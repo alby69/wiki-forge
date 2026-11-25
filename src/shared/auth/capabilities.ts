@@ -13,6 +13,8 @@ export const ROLE_RANK: Record<CapabilityRole, number> = {
 };
 
 export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
+  'docs.openapi': 'Reader',
+  'docs.swagger': 'Reader',
   'auth.me': 'Reader',
   'auth.login': 'Reader',
   'ui.access': 'Reader',

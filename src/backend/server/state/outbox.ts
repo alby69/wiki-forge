@@ -1,3 +1,4 @@
+import type { JobKind } from '../scheduler/jobStore';
 import type { StateStore } from './types';
 
 export const APPROVAL_OUTBOX_KEY = 'outbox/approvals';
@@ -15,6 +16,9 @@ export interface ApprovalRequiredEvent {
   type: 'approval.required';
   jobId: string;
   approvalIds: string[];
+  steps?: number[];
+  jobKind?: JobKind;
+  scriptIds?: string[];
   rationale: string;
   sources: string[];
   at: string;
@@ -38,11 +42,15 @@ export interface ApprovalOutboxFilter {
 }
 
 export class ApprovalOutbox {
+  readonly key: string;
+
   constructor(
     private readonly store: StateStore,
-    private readonly key: string = APPROVAL_OUTBOX_KEY,
+    key: string = APPROVAL_OUTBOX_KEY,
     private readonly now: () => Date = () => new Date(),
-  ) {}
+  ) {
+    this.key = key;
+  }
 
   public async append(event: ApprovalEvent): Promise<void> {
     const payload = { ...event, at: event.at || this.now().toISOString() } as ApprovalEvent;

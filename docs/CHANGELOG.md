@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Completamento del piano di disaccoppiamento architetturale (F0–F6) — 2026-11-25
+
+- **Piano**: `docs/ARCHITECTURE_DECOUPLING_PLAN.md` passa da `In corso` a `Completata`; tutte le fasi 0–6 sono verificate e la baseline storica resta distinta dallo stato finale.
+- **Manifest**: 105 route HTTP, 158 handler bus, 51 slash command catalogate (20 con case dedicato), 113 tool MCP, 32 gap noti. Non restano gap `route-without-bus` (`docs.openapi` e `docs.swagger` sono handler bus) e `manifest:check` fallisce se ne compare uno. Il manifest generato è il contratto runtime per CLI, descrittori MCP e OpenAPI, derivato da sorgenti route/contratti e definizioni MCP condivise senza import circolari.
+- **Adapter**: CLI con exit code 0 ok, 2 validazione, 3 auth, 4 policy, 5 backend e HTTP 403 → 4; MCP standalone `bin/mcp.ts` via `npm run mcp`, con `wf mcp` che ne avvia il processo, quindi nessun adapter importa un altro adapter; UI con unica facciata `apiBus`, `ApiStorage` senza fallback `FileStorage`, dati del grafo solo dal `WikiGraphDto` del backend e fallback ai template canonici esplicito via `api:error`.
+- **Enterprise e deploy**: audit comandi centralizzato, `CommandContext.principal` sempre presente sul dispatch del bus, sessioni locali persistite in `StateStore`, scheduler e worker embedded con lock a lease sullo stato, outbox approvals con relay in produzione, allowlist env per i subprocess, container non-root e dipendenza `@opentelemetry/api` dichiarata; Render serve la SPA buildata dalla API Node con health `/api/healthz`, nessuna `VITE_*` a runtime, nessun default `admin/admin`, directory di stato configurata e processo singolo via `bin/render-start.sh`.
+- **Correzioni post-audit**: il bus assegna `PROCESS_PRINCIPAL` ai dispatch non-HTTP; `UserStore` usa `WIKIFORGE_STATE_DIR` e su `StateConflictError` conserva le sessioni scritte da altre istanze; il worker avvia il relay delle approvals solo dopo aver ottenuto il lease e si ferma quando il lease viene perso; lo scheduler embedded avvia lo stesso relay nel deploy single-process; le allowlist env filtrano anche `extraEnv` e i subprocess non ereditano `process.env`.
+- **Verifica finale**: `npm run typecheck`, `npm run manifest:check`, `npm run build`, `docker compose config --quiet` e `git diff --check` verdi; `npm test` 593/593 con venv Python da `requirements.txt` e `pytest tests/python/test_semantic_engine.py -q` 6/6. Senza dipendenze Python restano 2 failure noti (`graphRoutes`, `rdflib`): il venv è obbligatorio.
+
 ### Permessi utente e UI modulare/personalizzabile (F0–F6)
 
 - **Piano**: nuovo `docs/USER_PERMISSIONS_UIUX_PLAN.md` con audit F0, route F1/F2, pipeline frontend F3, catalogo pannelli F4, UX utenti F5 e gate F6; registro di avanzamento compilato a ogni step.

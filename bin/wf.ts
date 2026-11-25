@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { Command, Option } from 'commander';
 
 import { ApiClientError, createApiClient } from '@shared/api/client';
-import { ROUTES } from '@shared/api/contracts';
 import type { EndpointId } from '@shared/api/contracts';
 import { COMMAND_MANIFEST } from '@shared/api/generated/commandManifest.generated';
 import { interpolatePath } from '@shared/api/router';
@@ -33,7 +34,8 @@ class CliError extends Error {
   }
 }
 
-const OPERATION_IDS = new Set(ROUTES.map((route) => route.id));
+const OPERATION_IDS = new Set(COMMAND_MANIFEST.routes.map((route) => route.id));
+const MCP_ENTRYPOINT = fileURLToPath(new URL('./mcp.ts', import.meta.url));
 
 async function loadPayload(options: RequestOptions): Promise<Record<string, any>> {
   const text = options.body ?? (options.input ? await readFile(options.input, 'utf-8') : undefined);
@@ -74,7 +76,7 @@ async function callRoute(
   globals: GlobalOptions,
 ): Promise<void> {
   if (!OPERATION_IDS.has(id)) throw new CliError(`OperationId sconosciuto: ${id}`, 2);
-  const route = ROUTES.find((item) => item.id === id)!;
+  const route = COMMAND_MANIFEST.routes.find((item) => item.id === id)!;
   const params = (request.params ?? {}) as Record<string, string | number>;
   const query = (request.query ?? {}) as Record<string, unknown>;
 
@@ -344,15 +346,33 @@ function buildProgram(): Command {
     .option('--host <host>', 'host HTTP', '0.0.0.0')
     .action(async (options: { http?: boolean; port: string; host: string }) => {
       const globals = program.opts<GlobalOptions>();
-      const adapter = await import('@backend/mcp/adapter');
-      const config = {
-        baseUrl: globals.baseUrl ?? process.env.WIKI_FORGE_API_URL ?? 'http://127.0.0.1:3001',
-        projectId: globals.project,
-        token: globals.token ?? process.env.WIKI_FORGE_TOKEN,
-        bearerToken: process.env.WIKI_FORGE_BEARER,
+      const args = [
+        '--base-url', globals.baseUrl ?? process.env.WIKI_FORGE_API_URL ?? 'http://127.0.0.1:3001',
+        '--project', globals.project,
+      ];
+      if (globals.token) args.push('--token', globals.token);
+      if (options.http) args.push('--http');
+      args.push('--port', options.port, '--host', options.host);
+      const childEnv: NodeJS.ProcessEnv = {
+        PATH: process.env.PATH ?? '',
+        HOME: process.env.HOME ?? '',
+        TMPDIR: process.env.TMPDIR ?? '',
+        NODE_ENV: process.env.NODE_ENV ?? '',
       };
-      if (options.http) await adapter.runMcpHttp(config, Number(options.port), options.host);
-      else await adapter.runMcpStdio(config);
+      for (const key of ['WIKI_FORGE_API_URL', 'WIKI_FORGE_TOKEN', 'WIKI_FORGE_BEARER'] as const) {
+        if (process.env[key] !== undefined) childEnv[key] = process.env[key];
+      }
+      const child = spawn(process.execPath, ['--import', 'tsx', MCP_ENTRYPOINT, ...args], {
+        stdio: 'inherit',
+        env: childEnv,
+      });
+      await new Promise<void>((resolve, reject) => {
+        child.once('error', reject);
+        child.once('exit', (code, signal) => {
+          if (code === 0) resolve();
+          else reject(new CliError(`MCP adapter terminated (${signal ?? `exit ${code ?? 1}`})`, code ?? 5));
+        });
+      });
     });
 
   program.command('manifest')
@@ -374,7 +394,8 @@ function buildProgram(): Command {
 function exitCodeFor(error: unknown): number {
   if (error instanceof CliError) return error.code;
   if (error instanceof ApiClientError) {
-    if (error.status === 401 || error.status === 403) return 3;
+    if (error.status === 401) return 3;
+    if (error.status === 403) return 4;
     if (error.status === 400 || error.status === 422) return 2;
     if (error.status === 409 || error.status === 412) return 4;
     return 5;

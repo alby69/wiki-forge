@@ -20,6 +20,65 @@ export interface McpAdapterOptions {
   bearerToken?: string;
 }
 
+export interface McpConfig {
+  readonly options: McpAdapterOptions;
+  readonly http: boolean;
+  readonly port: number;
+  readonly host: string;
+}
+
+export function parseMcpConfig(
+  argv: readonly string[] = process.argv.slice(2),
+  env: NodeJS.ProcessEnv = process.env,
+): McpConfig {
+  let baseUrl: string | undefined;
+  let projectId: string | undefined;
+  let token: string | undefined;
+  let http = false;
+  let port: string | undefined;
+  let host: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const raw = argv[index];
+    const separator = raw.indexOf('=');
+    const flag = separator < 0 ? raw : raw.slice(0, separator);
+    const inline = separator < 0 ? undefined : raw.slice(separator + 1);
+    const value = (): string => {
+      if (inline !== undefined) return inline;
+      const next = argv[++index];
+      if (next === undefined) throw new Error(`Missing value for ${flag}`);
+      return next;
+    };
+    if (flag === '--http') {
+      http = true;
+      continue;
+    }
+    if (flag === '--base-url') baseUrl = value();
+    else if (flag === '--project') projectId = value();
+    else if (flag === '--token') token = value();
+    else if (flag === '--port') port = value();
+    else if (flag === '--host') host = value();
+    else throw new Error(`Unknown MCP option: ${flag}`);
+  }
+
+  const parsedPort = Number(port ?? '8080');
+  if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+    throw new Error(`Invalid MCP port: ${String(port)}`);
+  }
+
+  return {
+    options: {
+      baseUrl: baseUrl ?? env.WIKI_FORGE_API_URL ?? 'http://127.0.0.1:3001',
+      projectId: projectId ?? 'default',
+      token: token ?? env.WIKI_FORGE_TOKEN,
+      bearerToken: env.WIKI_FORGE_BEARER,
+    },
+    http,
+    port: parsedPort,
+    host: host ?? '0.0.0.0',
+  };
+}
+
 interface ToolResult {
   [key: string]: unknown;
   content: Array<{ type: 'text'; text: string }>;

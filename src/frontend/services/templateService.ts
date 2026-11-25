@@ -71,7 +71,7 @@ export function listTemplates(): TemplateDefinition[] {
 export async function loadCanonicalTemplates(): Promise<TemplateDefinition[]> {
   try {
     const json = await api.dispatch('templates.list', {});
-    return json.success && Array.isArray(json.templates) ? json.templates : BUILT_IN_TEMPLATES;
+    return json.success && Array.isArray(json.templates) ? json.templates : [];
   } catch {
     return BUILT_IN_TEMPLATES;
   }

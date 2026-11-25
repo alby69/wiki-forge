@@ -1,14 +1,24 @@
 import { GraphData, GraphNode, GraphLink, GraphFilterOptions } from '@frontend/core/types/graph';
-import { WikiNote } from '@frontend/core/types/wiki';
 import type { WikiGraphDto } from '@shared/api/types';
-import { buildWikiGraph } from '@shared/domain/wikiGraph';
 
 export class GraphService {
-  /**
-   * Transforms WikiNotes into standard GraphData JSON for Graph Viewer engine
-   */
-  public generateGraphData(notes: WikiNote[], backendGraph?: WikiGraphDto | null): GraphData {
-    return backendGraph ?? buildWikiGraph(notes);
+  public generateGraphData(backendGraph: WikiGraphDto | null | undefined): GraphData {
+    if (!backendGraph) return { nodes: [], links: [] };
+    return {
+      nodes: backendGraph.nodes.map(node => ({
+        id: node.id,
+        label: node.label,
+        ...(node.group !== undefined ? { group: node.group } : {}),
+        val: node.val,
+        ...(node.color !== undefined ? { color: node.color } : {}),
+        ...(node.tags !== undefined ? { tags: [...node.tags] } : {}),
+      })),
+      links: backendGraph.links.map(link => ({
+        source: link.source,
+        target: link.target,
+        ...(link.type !== undefined ? { type: link.type } : {}),
+      })),
+    };
   }
 
   /**

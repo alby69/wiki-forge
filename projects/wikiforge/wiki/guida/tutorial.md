@@ -34,6 +34,8 @@ Wiki-Forge risolve questo problema mettendo a disposizione un'interfaccia grafic
 
 > **L'Analogia del Bibliotecario e dell'Ingegnere:** L'operatore semplice consegna i libri al bibliotecario (pulsanti **📥 1. Carica** e **⚡ 2. Compila**) e consulta gli scaffali. L'Ingegnere della Conoscenza progetta la tassonomia della biblioteca, definisce le regole di classificazione ontologica e ne garantisce la coerenza formale.
 
+> **Primo accesso:** nell'installazione pubblica (Render/Docker) l'accesso è obbligatorio e non esistono credenziali `admin`/`admin`: servono un account configurato, un IdP o uno user store. La pagina e le API sono servite dallo stesso processo Node, quindi non devi configurare indirizzi `VITE_*` a runtime.
+
 ---
 
 ## 2. 🌟 Guida Rapida per l'Operatore Semplice (Modalità Focus 🌱)

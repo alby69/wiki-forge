@@ -35,3 +35,5 @@ make skills-link
 ```
 
 This ensures a **Single Source of Truth**: any modification made in `skills/` is instantly available to the agent without manual synchronization, preventing drift and adhering to DRY/KISS principles. The same logic applies to other agent-specific folders (e.g., `.jules/skills/`) if needed.
+
+Runtime note (2026-11-25): skill invocation semantics are unchanged. Command execution goes through the generated command manifest shared by the CLI, MCP and UI adapters (MCP entrypoint `bin/mcp.ts`). `.wiki-forge/` is the active state root; `.wikiforge/` is historical only.

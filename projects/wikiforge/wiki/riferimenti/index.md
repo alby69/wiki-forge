@@ -7,6 +7,7 @@
 * [Catalogo sicurezza e automazione degli script](script-automation-reference.md) — Questo è il catalogo unico usato dal Policy Agent F5, dalla coda F6, dal pannello Script Control Panel e dalla tab 🤖 Agenti & Schedule. Le classi workspace…
 * [Catalogo unico dei comandi slash](slash-commands-reference.md) — Questo documento è la sorgente umana unica dei comandi slash di Wiki-Forge. README.md, TUTORIAL.md, docs/help/chat-comandi.md e l'agente fanno riferimento a…
 * [Changelog](changelog.md) — All notable changes to the wiki-forge template will be documented in this file.
+* [Command Manifest (generato)](command-manifest.md) — Documentazione wiki-forge: Command Manifest (generato).
 * [Compilare le fonti](help-compilare.md) — Argomenti: compila, compile, compilazione, ingesta, ingest, recompile, convert, pipeline, barra avanzamento
 * [Developer Mode e strumenti](help-modalita-dev.md) — Argomenti: dev, developer, modalità, mode, workbench, ke, tools, script, avanzato, skills, automazione, schedulazione, agenti
 * [Esportare: PDF, slide, RDF](help-esportare.md) — Argomenti: esporta, export, pdf, slide, presentazione, rdf, json-ld, turtle, tesi, pandoc, scarica, studio, thesis
@@ -27,6 +28,6 @@
 * [Study Studio](help-study-studio.md) — Argomenti: study, studio, studio-studio, guida di studio, study-guide, quiz, autovalutazione, mindmap, mappa concettuale, audio, audio-overview, podcast, note…
 * [Viste: File, Editor, Scratchpad, Graph, Split](help-viste-grafo.md) — Argomenti: viste, vista, file, editor, scratchpad, graph, grafo, split, affiancata, visualizzazione, nodi, spazio
 * [Wiki di wiki-forge](help-wiki-di-wiki-forge.md) — Argomenti: wiki, docs, documentazione, architettura, consult, projectid, self-documentation, sintesi
-* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (32 file), dei contenuti della guida in-app (docs/help/, 19 argomenti) e dei mockup in docs/mockups/.
+* [Wiki-Forge Documentation Index](docs-readme.md) — Indice completo dei documenti in docs/ (34 file, di cui il manifest dei comandi generato), dei contenuti della guida in-app (docs/help/, 19 argomenti) e dei…
 * [🚀 Wiki-Forge: Roadmap di Sviluppo](roadmap.md) — I comandi implementati sono nel SLASHCOMMANDSREFERENCE.md; questo evita di documentare come esistenti funzionalità ancora assenti dal router chat.
 

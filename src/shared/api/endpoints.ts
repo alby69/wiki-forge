@@ -70,6 +70,7 @@ export interface ApiRequest<
   query?: Q;
   body?: B;
   headers?: Record<string, string>;
+  baseUrl?: string;
 }
 
 /** Request for an endpoint that takes no params, query or body (`{}` is valid). */

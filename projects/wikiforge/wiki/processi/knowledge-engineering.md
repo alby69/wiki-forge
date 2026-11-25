@@ -190,17 +190,22 @@ make neuro-check
 ## 7. Semantic Interoperability & External Ecosystems
 
 ### A. Model Context Protocol (MCP Server)
-The MCP server (`src/backend/server/mcp_server.py`) exposes tools to external AI clients:
-- `search_wiki(query)`: Search notes.
-- `get_concept_metadata(note_id)`: Retrieve metadata and trust tier.
-- `get_line_anchored_citation(note_id, start_line, end_line)`: Grounded passage retrieval.
-- `validate_competency_question(question)`: CQ coverage status.
-- `get_ontology_gaps()`: Active ODP suggestions and logical contradictions.
+The MCP adapter (`src/backend/mcp/adapter.ts`, `bin/mcp.ts`) exposes tools generated from `COMMAND_MANIFEST.mcpTools` to external AI clients:
+- `search_wiki(query)`, `get_concept_metadata(note_id)`, `get_line_anchored_citation(note_id, line_start, line_end)`: API-backed read tools.
+- `list_trust_tiers()`, `get_version_history(note_id)`: OKF metadata and snapshot history.
+- `validate_competency_question(question)`, `get_ontology_gaps()`, `execute_ke_use_case(use_case_id)`: delegated to the backend use-case kernel with honest status and SSE progress.
 
 Start server:
 ```bash
 make mcp-serve
 ```
+
+Stdio client:
+```bash
+npm run mcp -- --project <id> --token <token>
+```
+
+**Current state (2026-11-25):** the tool list above is generated from the shared command manifest, which the MCP, CLI and UI adapters all consume; MCP exposes 113 tools from 105 HTTP routes and 158 bus handlers. The authoritative entrypoint is `bin/mcp.ts` (spawned by `wf mcp` as a child process) and `src/backend/server/mcp_server.py` is only a compatibility shim. Every dispatch is recorded by the central command audit, with the principal always present on the bus. `.wiki-forge/` is the active state root (`.wikiforge/` is historical only).
 
 ### B. W3C Semantic Export (RDF / JSON-LD / Turtle)
 Export knowledge base into W3C RDF graph standards (`output/wiki_export.jsonld`, `output/wiki_export.ttl`):

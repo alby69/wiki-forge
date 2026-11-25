@@ -5,7 +5,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { AgentServer } from '@backend/server/agentServer';
 import { json } from '@backend/server/api/http';
-import { createMessageBus, type CommandContext } from '@backend/server/bus/messageBus';
+import { createMessageBus, PROCESS_PRINCIPAL, type CommandContext } from '@backend/server/bus/messageBus';
 import {
   deriveRequestPrincipal,
   legacyPrincipal,
@@ -175,7 +175,7 @@ describe('Principal derivato dal server (B1)', () => {
     assert.notStrictEqual(entries[0].context.principal, entries[1].context.principal);
   });
 
-  it('stays additive: non-HTTP callers dispatch with no principal', async () => {
+  it('supplies a trusted process principal to non-HTTP callers', async () => {
     const bus = createMessageBus();
     let seen: CommandContext | undefined;
     bus.register('test.principal', (_payload, context) => {
@@ -184,6 +184,6 @@ describe('Principal derivato dal server (B1)', () => {
     });
     await bus.dispatch('test.principal', {});
     assert.ok(seen);
-    assert.strictEqual(seen.principal, undefined);
+    assert.deepStrictEqual(seen.principal, PROCESS_PRINCIPAL);
   });
 });

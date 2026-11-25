@@ -20,7 +20,11 @@ I comandi implementati sono nel [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_R
 Wiki-Forge rispetta rigorosamente i principi di progettazione software **Unix KISS (Keep It Simple, Stupid)** e **DRY (Don't Repeat Yourself)**:
 - **Disaccoppiamento Comandi / API**: Ogni script in `scripts/` è un tool CLI standalone, eseguibile in ambiente Unix indipendente dal server Node.js. Accetta argomenti standard `argparse` e restituisce JSON strutturato su stdout (`--json`).
 - **Librerie di Supporto Condivise**: La logica comune (parsing YAML, caricamento OKF, risoluzione wikilink) è centralizzata in `scripts/ke_common.py` senza duplicazione di codice.
-- **Interfacce Disaccoppiate**: Il server MCP (`src/server/mcp_server.py`) e l'API Server HTTP/REST (`src/server/agentServer.ts`) usano dichiarazioni di comandi top-level e delegano l'esecuzione ai singoli tool CLI isolati via subprocess.
+- **Interfacce Disaccoppiate**: L'adapter MCP reale è Node (`bin/mcp.ts`, `src/backend/mcp/adapter.ts`) e l'API Server HTTP/REST è `src/backend/server/agentServer.ts`; entrambi consumano il manifest generato dei comandi. `src/backend/server/mcp_server.py` è solo uno shim di compatibilità che delega a `bin/wf.ts mcp`. Nessun adapter importa un altro adapter.
+
+### Stato verificato (baseline attuale)
+
+Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, `docs/COMMAND_MANIFEST.md`) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **105 route HTTP**, **158 handler bus**, **51 comandi slash catalogati / 20 con case dedicato**, **113 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, garantiti da `npm run manifest:check`. Il backend segue kernel/modules/ports. In produzione RBAC e auth sono forzati, il token è richiesto salvo IdP o user store configurati, con CORS allowlist, body limit, correlation id e `/api/healthz`, `/api/readyz`, `/api/metrics`; le sessioni usano `StateStore`, lo scheduler un lock a lease (non PID), l'outbox delle approvazioni ha un relay, l'audit registra `command:handled`/`command:failed`, `CommandContext.principal` è sempre impostato dal dispatch, i subprocess usano un allowlist env e `@opentelemetry/api` ha un fallback locale. Render usa `Dockerfile.render` + `bin/render-start.sh` (un solo processo Node per SPA e API su `$PORT`, senza `VITE_*` runtime e senza default `admin/admin`, con `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state` e utente non-root); Docker Compose mantiene `ui` solo in sviluppo, con API e worker (`WIKIFORGE_EMBED_SCHEDULER=false`). La root attiva è `.wiki-forge/`; i percorsi `.wikiforge/` nei task storici seguenti sono da leggere come storici.
 
 ---
 
@@ -46,7 +50,7 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Aggiunta del controllo "Attiva Clustering" nella barra dei comandi del grafo (`GraphControls.ts`).
 
 - [x] **Task 5: Estensione del Server MCP con Tool KE Workbench**
-  - Registrazione del tool `execute_ke_use_case(use_case_id)` nel server MCP (`src/server/mcp_server.py`).
+  - Registrazione del tool `execute_ke_use_case(use_case_id)` nell'adapter MCP Node (oggi nelle definizioni condivise `src/shared/mcp/definitions.ts` e nel manifest generato); `src/backend/server/mcp_server.py` resta solo uno shim.
   - Mappatura completa dei 6 Use Case di Knowledge Engineering (Schema Modeling, SHACL Validation, CQ Assessment, Neuro-Symbolic, Semantic Export, Platform Maturity Evaluation).
 
 - [x] **Task 6: Master Implementation Brief v2.0 (KE Cockpit & Procedure Engine Core)**
@@ -54,6 +58,7 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
   - Implementazione del Safe Vault & Changeset Manager (`src/backend/wikiforge/vault.py`) per modifiche atomiche, cestino soft-delete `.wikiforge/trash/` e review queue di modifiche staged in `.wikiforge/changesets/`.
   - Motore di Procedure TOML dichiarative e resummabili (`src/backend/wikiforge/procedures.py`) con supporto per grafi di dipendenze DAG, esecuzione automatica di script, pause per revisione umana e stato persistente in `.wikiforge/state/<run_id>.json`.
   - Integrazione completa nella Web UI: cruscotto KE Cockpit (`KECockpitModal.ts`), Command Palette (`Ctrl+K`), Changeset Review Queue (`ChangesetReviewModal.ts`), Live Sync SSE ed ETag SHA256 per la prevenzione delle collisioni in scrittura.
+  - **Nota storica**: i percorsi `.wikiforge/trash/`, `.wikiforge/changesets/`, `.wikiforge/state/` e il vecchio `wikiforge/vault.py` appartengono alla v4.1.0; l'implementazione attiva usa `.wiki-forge/` e `safeFs.ts`/`changesetStore.ts`.
 
 - [x] **Task 7: Review Studio (UI di revisione unificata)**
   - Modale unica con quattro schede orizzontali: **Verifica**, **Critica**, **Digest**, **Confronta versioni** (`ReviewStudio.ts`, `review-studio.css`).
@@ -78,7 +83,7 @@ L'obiettivo principale del Q4 2026 è elevamento della Developer Experience (DX)
 
 - [x] **Task 10: Accesso obbligatorio, bootstrap Admin ed esportazione Wiki ZIP**
   - Gateway di login all'avvio: `refreshIdentity()` viene risolto prima di graph events, vault e onboarding; sessioni anonime o scadute mostrano una modale bloccante e il sign-out riapre il gate.
-  - Bootstrap predefinito `admin`/`admin` in `UserStore` quando le variabili `WIKIFORGE_ADMIN_USERNAME` / `WIKIFORGE_ADMIN_PASSWORD` non sono impostate; credenziali configurate mantengono la precedenza. La modale **👥 Utenti** resta in Modalità Sviluppo per creare utenti e assegnare ruoli.
+  - Bootstrap predefinito `admin`/`admin` in `UserStore` **storico**: oggi senza `WIKIFORGE_ADMIN_USERNAME` / `WIKIFORGE_ADMIN_PASSWORD`, IdP o user store il server non espone credenziali di default. La modale **👥 Utenti** resta in Modalità Sviluppo per creare utenti e assegnare ruoli.
   - Nuova route additiva `GET /api/projects/:id/export/markdown.zip` (`projects.exportMarkdownZip`, `application/zip`, auth locale obbligatoria).
   - Writer ZIP store-only in `src/backend/server/zipFile.ts` (CRC32, nomi UTF-8, timestamp DOS, validazione path, nessuna dipendenza runtime) e raccolta deterministica di tutti i `.md` sotto `[paths].wiki` in `ProjectService`.
   - Azione **📦 Esporta Wiki ZIP** pinata in Modalità Sviluppo e nascosta in Modalità Focus; download tramite `apiBus` con nome `<project>-wiki.zip`.
@@ -138,7 +143,8 @@ L'evoluzione futura di Wiki-Forge si focalizzerà sull'autonomia agentica comple
 > eventi strutturati), **C3** (Cypher live read-only con whitelist e modi
 > mock/live espliciti) e **C4** (tre route Neo4j additive dichiarate in TS,
 > protette da B4 con ruoli RBAC espliciti e proxy FastAPI legacy invariato;
-> OpenAPI 95 endpoint/90 comandi su bus). **C5** chiude la direzione DB → vault
+> OpenAPI 95 endpoint/90 comandi su bus, conteggi storici del checkpoint C8,
+> oggi 105 route/158 handler). **C5** chiude la direzione DB → vault
 > con proposte staged via `process:neo4j-reconciler`, conflitti su `wf:baseHash`
 > e nessuna scrittura prima di `changesets.apply`. **C6** aggiunge metadata
 > `wf:origin/localHash/dbHash`, ledger di dedupe ed echo suppression e staging

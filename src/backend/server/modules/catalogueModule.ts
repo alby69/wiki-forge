@@ -7,6 +7,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { openApiResult, swaggerHtmlResult } from '../api/docsBrowser';
 import { json, error, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 
@@ -112,6 +113,8 @@ export class CatalogueModule implements DomainModule {
   }
 
   register(bus: MessageBus): void {
+    bus.register('docs.openapi', () => openApiResult());
+    bus.register('docs.swagger', () => swaggerHtmlResult());
     bus.register('help.list', () => this.listHelp());
     bus.register<{ topicId: string }>('help.get', (payload) => this.getHelp(payload.topicId));
     bus.register('skills.list', (_payload, context) => this.listSkills(context));

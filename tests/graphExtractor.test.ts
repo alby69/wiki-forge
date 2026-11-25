@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { MarkdownParser } from '@frontend/services/markdownParser';
 import { GraphService } from '@frontend/services/graphService';
+import { buildWikiGraph } from '@shared/domain/wikiGraph';
 
 describe('Wiki-Forge Graph & Link Extractor Test Suite', () => {
   const parser = new MarkdownParser();
@@ -123,7 +124,7 @@ Body.
     const note2 = parser.parseNote('note2', 'Note2', 'Destination', 'wiki');
     const processedNotes = parser.computeBacklinks([note1, note2]);
 
-    const graphData = graphService.generateGraphData(processedNotes);
+    const graphData = graphService.generateGraphData(buildWikiGraph(processedNotes));
 
     assert.strictEqual(graphData.nodes.length, 2);
     assert.strictEqual(graphData.links.length, 1);
@@ -134,11 +135,18 @@ Body.
   test('should filter graph nodes based on search query', () => {
     const note1 = parser.parseNote('note1', 'Index', '', 'wiki');
     const note2 = parser.parseNote('note2', 'C64 Development', '', 'wiki');
-    const graphData = graphService.generateGraphData([note1, note2]);
+    const graphData = graphService.generateGraphData(buildWikiGraph([note1, note2]));
 
     const filtered = graphService.filterGraphData(graphData, { searchQuery: 'C64' });
 
     assert.strictEqual(filtered.nodes.length, 1);
     assert.strictEqual(filtered.nodes[0].label, 'C64 Development');
+  });
+
+  test('should not synthesize a graph when the backend graph is absent', () => {
+    const note = parser.parseNote('note1', 'Index', 'Link to [[Note2]]', 'wiki');
+    assert.deepStrictEqual(graphService.generateGraphData(null), { nodes: [], links: [] });
+    assert.deepStrictEqual(graphService.generateGraphData(undefined), { nodes: [], links: [] });
+    assert.ok(buildWikiGraph([note]).nodes.length > 0);
   });
 });

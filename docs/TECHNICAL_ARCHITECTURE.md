@@ -41,8 +41,8 @@ graph TD
     GW --> Core
 ```
 
-I tre processi (`ui`, `api`, `kg-api`) sono servizi separati in `docker-compose.yml`.
-`vite.config.ts` non importa il backend: in locale `npm run dev:all` avvia insieme gateway e UI.
+I processi di sviluppo (`ui`, `api`, `kg-api`, `worker`, MCP) sono servizi separati in `docker-compose.yml`.
+`vite.config.ts` non importa il backend: in locale `npm run dev:all` avvia insieme gateway e UI. In produzione `Dockerfile.render` + `bin/render-start.sh` eseguono un solo processo Node (`node --import tsx src/backend/server/httpServer.ts`) che serve SPA buildata e API su `$PORT`, con health `/api/healthz`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state`, utente non-root e nessuna variabile `VITE_*` a runtime. RBAC e auth sono sempre forzati con token richiesto salvo IdP/user store configurati, CORS allowlist, body limit, correlation id ed endpoint `/api/readyz`, `/api/metrics`.
 
 ---
 
@@ -90,8 +90,8 @@ Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/componen
 - **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Version history and rollback are UI-only; the deterministic diff lives in the **Review Studio** (§2.11) and the chat `/diff` command remains LLM best-effort.
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
-Implemented as an HTTP-only adapter in `src/backend/mcp/adapter.ts` and exposed through `npm run mcp` (`bin/wf.ts mcp`). `src/backend/server/mcp_server.py` is now a thin compatibility shim and `docker-compose.yml` starts the Node adapter:
-- **Tools Exposed**: generated from `COMMAND_MANIFEST.mcpTools` (`src/shared/mcp/tools.ts`); every API operation has a `wf_*` tool, plus eight legacy aliases (`search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, `get_version_history`, `validate_competency_question`, `get_ontology_gaps`, `execute_ke_use_case`).
+Implemented as an HTTP-only adapter in `src/backend/mcp/adapter.ts` and exposed through `npm run mcp`, which starts the standalone Node entrypoint `bin/mcp.ts`. `wf mcp` spawns that entrypoint; `src/backend/server/mcp_server.py` is now a thin compatibility shim and `docker-compose.yml` starts the Node adapter. No adapter imports another adapter:
+- **Tools Exposed**: generated from `COMMAND_MANIFEST.mcpTools` (shared definitions in `src/shared/mcp/`, manifest in `src/shared/api/generated/commandManifest.generated.ts`): 113 MCP tools, with every API operation exposed as a `wf_*` tool plus eight legacy aliases (`search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, `get_version_history`, `validate_competency_question`, `get_ontology_gaps`, `execute_ke_use_case`).
 - **Multi-Agent Ecosystem Support**: standard MCP over stdio and Streamable HTTP; every tool call goes through the typed API client, so project scope, token, RBAC, F5/F6 policy, path containment and SSE progress stay in the backend.
 
 ### 2.7 W3C Semantic RDF Exporter & Ontology Rule Engine
@@ -119,7 +119,7 @@ Implemented in `projects/` and `src/frontend/components/ConfigManager.ts`:
 Implemented in `src/backend/server/agentServer.ts` and `src/backend/server/httpServer.ts`:
 - **Route Dispatch**: `AgentServer.handleRequest()` dispatches every request and returns `true` once it has written a response, or `false` when no route matches. `httpServer.ts` inspects this value and answers `404` (JSON) for unmatched paths and `500` for uncaught handler errors when headers have not yet been sent. Previously the return value was ignored, leaving unknown paths (including routes missing from a stale process) unanswered and hanging the client.
 - **Explicit runtime boundary (A2/A3)**: `AgentServer` lives **only** in the standalone process `src/backend/server/httpServer.ts` (`:3001`), started by `npm run api` or the compose `api` service. `vite.config.ts` is a pure static server + reverse proxy: one shared `apiProxy()` is registered on both `configureServer` and `configurePreviewServer`, and it pipes the upstream body so SSE streams are not buffered. On proxy failure the client receives a JSON 502 that suggests `npm run api` / `npm run dev:all`.
-- **Dual Base URL Resolution**: The browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service.
+- **Development-only base URL resolution**: in Compose development the browser resolves the API via `resolveApiBaseUrl()` (`VITE_API_BASE_URL`, e.g. `http://127.0.0.1:3001`), while the Vite dev server proxies `/api/*` using `VITE_PROXY_TARGET` (`http://api:3001`). These must differ: inside the `ui` container, `127.0.0.1` is not the `api` service. In production the same Node process serves the SPA and `/api/*`, so no `VITE_*` variable is set at runtime.
 - **Standalone Python API (A2)**: `src/backend/wikiforge/api/api_server.py` (`/api/v1/health`, `/api/v1/graph/sync|validate|rag`) runs as the compose service `kg-api` on internal port `:8000`; the Node gateway sets `FASTAPI_SERVER_URL=http://kg-api:8000` and proxies `/api/v1/graph/*` there, preserving a single public API surface.
 - **Hot Reload Support**: The `api` service runs `npx tsx watch src/backend/server/httpServer.ts`, which automatically watches `src/backend/server/**` for changes and restarts the HTTP server during development without requiring container restarts. `scripts/devAll.mjs` provides the equivalent two-process launcher for local `npm run dev:all`.
 
@@ -130,17 +130,24 @@ Implemented in `src/shared/api/{types,contracts,router}.ts` and
 
 - `defineRoute<Req, Res>()` declares each endpoint once (method, `:param` path,
   `operationId`, tag, request/response JSON Schema, `x-command`, SSE/binary flag,
-  project scope). `ROUTES` currently describes 70+ Node operations.
+  project scope). `ROUTES` currently describes 105 Node HTTP routes.
+- The published manifest derives from `ROUTES` plus the shared MCP definitions and
+  is consumed by CLI, MCP descriptors and OpenAPI: 158 bus handlers, 51
+  catalogued slash commands / 20 with a dedicated case, 113 MCP tools and 32
+  known non-blocking gaps (all `slash-without-implementation`). `npm run
+  manifest:check` enforces zero `route-without-bus` gaps. See
+  `docs/COMMAND_MANIFEST.md`.
 - `buildOpenApiDocument()` emits OpenAPI 3.1 with `components.schemas`,
   `X-WikiForge-Token` security and reusable DTOs. `loadOpenApiDocument()` merges
   the FastAPI service spec from `FASTAPI_SERVER_URL` (default
   `http://localhost:8000`) with a checked-in Pydantic snapshot; conflicting
   operations are preserved and the upstream definition is attached under
   `x-upstream-contract`. MCP tools are described in `x-wikiforge.mcp`.
-- `handleDocsRequest()` is called after CORS and before token validation, so
-  `GET /api/docs` and `GET /api/openapi.json` are always reachable. Swagger UI
-  is served from `swagger-ui-dist` via a strict asset allowlist; no CDN is used.
-  The browser injects `X-WikiForge-Token` / `X-Project-Id` from `localStorage`.
+- `docs.openapi` and `docs.swagger` are bus commands dispatched with middleware
+  skipped, so `GET /api/docs` and `GET /api/openapi.json` are always reachable;
+  `handleDocsRequest()` remains as the public fallback. Swagger UI is served
+  from `swagger-ui-dist` via a strict asset allowlist; no CDN is used. The
+  browser injects `X-WikiForge-Token` / `X-Project-Id` from `localStorage`.
 - Fase 1 was purely additive and moved no handler, preserving the gateway
   dispatch order and the public facade. The catalogue now drives request
   validation, the backend bus and the typed frontend client. Full details in
@@ -158,11 +165,13 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   correlation id. `AgentServer.getBus()` exposes the instance without changing
   the existing HTTP facade. `CommandContext.onClose()` lets SSE handlers remove
   scheduler/chat clients when the connection closes.
-- Sixteen modules are wired in the constructor (`UiModule` included) and serve
-  98 of the 99 bus commands; `auth.me` is registered directly in `AgentServer`.
-  `docs.openapi`, `docs.swagger` and the three `graph.proxy` operations remain
-  in the gateway: the docs are public and the FastAPI proxies run before
-  CORS/token validation.
+- Twenty domain modules serve the 158 bus commands. `createKernel()` wires
+  projects, template, changesets, files, scheduler, execution, vault, review
+  studio, research, study, chat, slash, graph and graph proxy; `AgentServer`
+  registers user, UI, catalogue, tools, reviews and ingestion directly plus
+  `auth.me`. All 105 routes dispatch to the bus: docs are public (middleware
+  skipped) and the three `graph.sync|validate|rag` proxies pass the B4 auth gate
+  before forwarding raw bytes to FastAPI.
 - Handlers return transport-neutral results: `json`, `binary` (verbatim bytes)
   or `sse`. `sendApiResult()` is the single place that writes `ServerResponse`,
   including the SSE headers and the `[DONE]` terminator. Streamed ingestion,
@@ -177,7 +186,7 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
 
 #### 2.10.3 Typed client and frontend bus (Fase 3)
 
-- `src/shared/api/endpoints.ts` maps all 104 `EndpointId`s to request/response
+- `src/shared/api/endpoints.ts` maps all 105 `EndpointId`s to request/response
   types. An `IsExact<keyof EndpointTypes, EndpointId>` assertion makes a missing
   endpoint a compile-time error; stream/binary/document routes resolve to the
   raw fetch `Response`.
@@ -191,10 +200,13 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   `api:error` / `api:stream`, plus `reviews:changed`, `changesets:changed`,
   `schedule:changed` and `scripts:executed`. The composition root wires UI
   callbacks; features do not call one another.
-- `ApiStorage` (51 public methods), `projectService` and the Tools, Review Queue,
-  Changeset Review and KE Workbench modals no longer contain direct `fetch`
-  calls. Legacy body field names are still accepted by the backend, while the
-  facade sends the contract shapes.
+- `ApiStorage` (51 public methods) is a compatibility facade over `apiBus` only:
+  there is no `FileStorage` fallback (`tests/apiStorageNoFallback.test.ts`).
+  `projectService` and the Tools, Review Queue, Changeset Review and KE Workbench
+  modals no longer contain direct `fetch` calls. The graph service maps only the
+  backend `WikiGraphDto`, canonical template fallback is explicit via `api:error`
+  (`tests/templateFallback.test.ts`), and legacy body field names are still
+  accepted by the backend while the facade sends the contract shapes.
 
 #### 2.10.4 Per-user UI access and preferences (Fase 89)
 
@@ -229,14 +241,16 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
 
 - The browser consumes typed DTOs for graph, templates and review snapshots.
   `NewDocumentModal` renders local previews but loads canonical templates from
-  `templates.list`, falling back to the checked-in definitions when the API is
-  unreachable. `OfflineBanner` surfaces API failures explicitly; `VersionTimeline`
-  uses real snapshots instead of synthetic timestamps.
+  `templates.list`; when the API is unreachable the canonical fallback is
+  explicit via `api:error`, not a `FileStorage` read. `OfflineBanner` surfaces
+  API failures explicitly; `VersionTimeline` uses real snapshots instead of
+  synthetic timestamps.
 - Auth-derived `Principal` is the only source of actor/reviewer identity;
   client-supplied `reviewer`, `user` and `actor` cannot override it.
 - `api/http.ts` centralises CORS, body limits, JSON validation, correlation ids
   and structured logs. `/api/healthz`, `/api/readyz` and `/api/metrics` expose
-  liveness, readiness and counters; production forces RBAC and token checks.
+  liveness, readiness and counters; production forces RBAC and requires a token
+  unless an IdP or user store is configured, with no default `admin/admin`.
 - `src/backend/server/state/` implements a selectable `StateStore` (`file`,
   `memory` or an HTTP adapter for Postgres/Redis/S3). Approvals use an outbox and
   the standalone worker uses a lease-based leader lock instead of the legacy PID
@@ -244,6 +258,12 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   second scheduler when `npm run worker` is active.
 - `httpServer.ts` serves the built SPA from `dist/` and delegates every `/api/*`
   request to `AgentServer`, so the API is the single public process in production.
+- `createKernel()` wires domain modules through ports; adapters (HTTP, CLI, MCP,
+  worker) do not import one another. Bus dispatch always sets
+  `CommandContext.principal`, the command-audit subscriber emits
+  `command:handled`/`command:failed` with a correlation id, and the approval
+  outbox relay feeds decisions back through the bus. `@opentelemetry/api` is
+  declared with a local fallback.
 - Subprocesses use `src/backend/server/process/scriptRunner.ts` with an env
   allowlist, timeout and bounded stdout/stderr. Compose starts API, UI, Python KG,
   MCP and worker as non-root services.
@@ -451,7 +471,7 @@ Per mantenere il codice pulito e manutenibile, tutti i contributori (umani e AI)
 ## 5. Final Recommendation
 
 1. **For Production Knowledge Base Management**:
-   Use `wiki-forge` with your preferred LLM provider (`ollama`, `anthropic`, `openai_compatible`, or `opencode`). Run `docker compose up` (UI + API + FastAPI), `make dev-all` / `npm run dev:all` in locale, or `make ui-docker` for the UI container alone. `npm run dev` starts Vite only: keep `npm run api` running alongside it.
+   Use `wiki-forge` with your preferred LLM provider (`ollama`, `anthropic`, `openai_compatible`, or `opencode`). For production deploy `Dockerfile.render` + `bin/render-start.sh` (single Node process for SPA + API, health `/api/healthz`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state`, no default credentials). For development run `docker compose up` (UI + API + FastAPI + worker + MCP), `make dev-all` / `npm run dev:all` in locale, or `make ui-docker` for the UI container alone. `npm run dev` starts Vite only: keep `npm run api` running alongside it.
 
 2. **For Thesis & Academic Research**:
    Follow the 5-phase chronological workflow (Ingestion -> Incremental KB Compilation -> Study & Maturity Analysis -> Dynamic Interrogation -> PDF Export via Pandoc).
