@@ -9,7 +9,8 @@
 
 import { json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices, JsonObject, ProjectId } from './services';
+import type { JsonObject, ProjectId } from './services';
+import type { ReviewPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
@@ -49,7 +50,7 @@ function asBool(value: unknown): boolean | undefined {
 export class ReviewStudioModule implements DomainModule {
   readonly name = 'review-studio';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: ReviewPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('review.meta', (payload, context) => this.meta(payload, context.projectId));
@@ -83,7 +84,6 @@ export class ReviewStudioModule implements DomainModule {
     try {
       const result = (await this.services.recordHumanVerification({
         noteRef,
-        reviewer: asString(payload.reviewer),
         comment: asString(payload.comment),
         setStable: asBool(payload.setStable),
         projectId,
@@ -197,6 +197,6 @@ export class ReviewStudioModule implements DomainModule {
   }
 }
 
-export function createReviewStudioModule(services: DomainServices): ReviewStudioModule {
+export function createReviewStudioModule(services: ReviewPort): ReviewStudioModule {
   return new ReviewStudioModule(services);
 }

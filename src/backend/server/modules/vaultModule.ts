@@ -2,7 +2,7 @@
  * Vault domain module: wiki notes, folders, scratchpad, trash and uploads.
  *
  * Replaces the inline `/api/wiki/*` handlers. Every command calls the injected
- * `DomainServices` and returns an HTTP-neutral `ApiResult`; the legacy field
+ * `VaultPort` and returns an HTTP-neutral `ApiResult`; the legacy field
  * names, response envelopes and error statuses are kept intact, including the
  * contract-to-legacy payload aliases used by the generated API client.
  */
@@ -10,7 +10,9 @@
 import * as path from 'node:path';
 import { error, json, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices, JsonObject, ProjectId } from './services';
+import type { JsonObject, ProjectId } from './services';
+import type { VaultPort } from '../../app/ports';
+import { buildWikiGraph } from '@shared/domain/wikiGraph';
 
 type Payload = Record<string, unknown>;
 
@@ -30,7 +32,7 @@ function errorStatus(err: unknown): number {
 export class VaultModule implements DomainModule {
   readonly name = 'vault';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: VaultPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('wiki.notes.list', (_payload, context) => this.notes(context.projectId));
@@ -54,7 +56,7 @@ export class VaultModule implements DomainModule {
   private async notes(projectId: ProjectId): Promise<ApiResult> {
     try {
       const notes = await this.services.readAllWikiNotes(projectId);
-      return json({ success: true, notes });
+      return json({ success: true, notes, graph: buildWikiGraph(notes) });
     } catch (err) {
       return error(String(err), 500);
     }
@@ -240,6 +242,6 @@ export class VaultModule implements DomainModule {
   }
 }
 
-export function createVaultModule(services: DomainServices): VaultModule {
+export function createVaultModule(services: VaultPort): VaultModule {
   return new VaultModule(services);
 }

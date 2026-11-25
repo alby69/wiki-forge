@@ -143,7 +143,7 @@ describe('Binding della provenance (B5)', () => {
     await approvals.close();
   });
 
-  it('strict ignora l\'attore del body; legacy lo conserva', () => {
+  it('l\'attore deriva sempre dal principal, anche in legacy', () => {
     assert.strictEqual(strict.agentServer.isStrictProvenance(), true);
     assert.strictEqual(legacy.agentServer.isStrictProvenance(), false);
     assert.strictEqual(
@@ -152,7 +152,7 @@ describe('Binding della provenance (B5)', () => {
     );
     assert.strictEqual(
       legacy.agentServer.provenanceActorFor(human('alice'), 'human:raw'),
-      'human:raw',
+      'human:alice',
     );
     assert.strictEqual(strict.agentServer.provenanceActorFor(undefined), 'process:api-token');
   });
@@ -190,7 +190,7 @@ describe('Binding della provenance (B5)', () => {
     assert.ok(!content.includes('verified:'));
   });
 
-  it('verify legacy mantiene il reviewer grezzo e la promozione stable', async () => {
+  it('verify legacy usa il principal e ignora il reviewer del body', async () => {
     await writeNote(legacy.tmpDir, 'verify-legacy');
     const result = await legacy.agentServer.recordHumanVerification({
       noteRef: 'verify-legacy',
@@ -200,9 +200,10 @@ describe('Binding della provenance (B5)', () => {
       principal: processPrincipal(),
     });
     assert.strictEqual(result.success, true);
-    assert.strictEqual(result.actor, 'human:studente');
+    assert.strictEqual(result.actor, 'human:local');
     const content = await fs.readFile(path.join(legacy.tmpDir, 'wiki', 'verify-legacy.md'), 'utf-8');
-    assert.ok(content.includes('by: human:studente'));
+    assert.ok(content.includes('by: human:local'));
+    assert.ok(!content.includes('by: human:studente'));
   });
 
   it('changeset strict registra actor su stage/apply e rejected_by su reject', async () => {

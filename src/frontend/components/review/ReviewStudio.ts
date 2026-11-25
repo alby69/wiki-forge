@@ -248,9 +248,6 @@ export class ReviewStudio {
 
     const actor = this.authenticatedActor();
     this.reviewer = actor || reviewerInput?.value.trim() || 'local';
-    // In strict mode provenance is bound server-side; do not persist a raw
-    // client reviewer that could drift from the verified Principal.
-    if (!actor) localStorage.setItem('wiki-forge:reviewer', this.reviewer);
 
     if (button) {
       button.disabled = true;
@@ -259,7 +256,6 @@ export class ReviewStudio {
 
     const result = await this.storage.verifyNote({
       note: this.noteRef() || this.noteId || '',
-      reviewer: this.reviewer,
       comment: commentInput?.value.trim() || undefined,
       setStable: stableInput?.checked === true,
     });

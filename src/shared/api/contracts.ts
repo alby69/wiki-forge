@@ -34,6 +34,7 @@ import type {
   SearchResultDto,
   SkillDto,
   SseEventDto,
+  TemplateDefinitionDto,
   StudyMindmapDto,
   StudyOutputDto,
   StudyPromoteDto,
@@ -47,6 +48,7 @@ import type {
   TrashEntryDto,
   UseCaseDefDto,
   UseCaseEventDto,
+  WikiGraphDto,
   WikiNoteDto,
 } from './types';
 import type { EndpointTypes, TypedApiClient } from './endpoints';
@@ -203,6 +205,16 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     updatedAt: str(),
     staleAfter: str(),
   }, ['id', 'title', 'content', 'path', 'tags', 'frontmatter', 'outboundLinks', 'backlinks']),
+  WikiGraphNode: obj({
+    id: str(), label: str(), group: str(), val: num(), color: str(), tags: arr(str()),
+  }, ['id', 'label', 'val']),
+  WikiGraphLink: obj({ source: str(), target: str(), type: str() }, ['source', 'target']),
+  WikiGraph: obj({
+    nodes: arr(ref('WikiGraphNode')), links: arr(ref('WikiGraphLink')),
+  }, ['nodes', 'links']),
+  TemplateDefinition: obj({
+    id: str(), name: str(), description: str(), content: str(), builtIn: bool(),
+  }, ['id', 'name', 'description', 'content', 'builtIn']),
   ProjectEntry: obj({
     id: str(), name: str(), path: str(), archived: bool(), docsManaged: bool(),
   }, ['id', 'name', 'path']),
@@ -254,7 +266,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     snapshotCount: int(), history: arr(free()), error: str(),
   }, ['success']),
   ReviewDigest: obj({ success: bool(), days: int(), scope: str(), entries: arr(free()), summary: str(), markdown: str() }, ['success']),
-  ReviewSnapshot: obj({ id: str(), at: str(), reason: str(), bytes: int() }, ['id', 'at', 'reason', 'bytes']),
+  ReviewSnapshot: obj({ id: str(), at: str(), reason: str(), bytes: int(), content: str() }, ['id', 'at', 'reason', 'bytes']),
   ReviewDiff: obj({
     success: bool(),
     rows: arr(obj({ type: str('ctx | add | del', ['ctx', 'add', 'del']), leftNo: int(), rightNo: int(), left: str(), right: str() }, ['type'])),
@@ -412,7 +424,7 @@ export const ROUTES = [
     id: 'graph.sync', method: 'POST', path: '/api/v1/graph/sync', tags: ['Knowledge Graph'],
     summary: 'Convert wiki notes to an RDF/Turtle knowledge graph',
     description: 'Proxied verbatim to the FastAPI kg-api service. GET is also accepted for legacy clients.',
-    command: 'graph.proxy',
+    command: 'graph.sync',
     request: {
       body: obj({ wiki_dir: str('Default: wiki'), output_ttl: str('Default: knowledge_graph.ttl') }, [], 'Sync request'),
     },
@@ -421,7 +433,7 @@ export const ROUTES = [
   defineRoute({
     id: 'graph.validate', method: 'POST', path: '/api/v1/graph/validate', tags: ['Knowledge Graph'],
     summary: 'Validate the RDF graph against W3C SHACL shapes',
-    command: 'graph.proxy',
+    command: 'graph.validate',
     request: {
       body: obj({
         graph_path: str('Default: knowledge_graph.ttl'),
@@ -433,7 +445,7 @@ export const ROUTES = [
   defineRoute({
     id: 'graph.rag', method: 'POST', path: '/api/v1/graph/rag', tags: ['Knowledge Graph'],
     summary: 'Run the stateful GraphRAG pipeline on a question',
-    command: 'graph.proxy',
+    command: 'graph.rag',
     request: { body: obj({ question: str() }, ['question'], 'RAG query') },
     response: { schema: free('question, entities, cypher_query, final_answer') },
   }),
@@ -1107,7 +1119,13 @@ export const ROUTES = [
     id: 'wiki.notes.list', method: 'GET', path: '/api/wiki/notes', tags: ['Vault'],
     summary: 'Read every wiki note with backlinks computed',
     command: 'wiki.notes.list', projectScoped: true,
-    request: {}, response: { schema: ok({ notes: arr(ref('WikiNote')) }) },
+    request: {}, response: { schema: ok({ notes: arr(ref('WikiNote')), graph: ref('WikiGraph') }) },
+  }),
+  defineRoute({
+    id: 'templates.list', method: 'GET', path: '/api/templates', tags: ['Templates'],
+    summary: 'List canonical note templates managed by the backend',
+    command: 'templates.list', projectScoped: false,
+    request: {}, response: { schema: ok({ templates: arr(ref('TemplateDefinition')) }) },
   }),
   defineRoute({
     id: 'wiki.folders.list', method: 'GET', path: '/api/wiki/folders', tags: ['Vault'],
@@ -1217,7 +1235,7 @@ export const ROUTES = [
     id: 'wiki.delete', method: 'POST', path: '/api/wiki/delete', tags: ['Vault'],
     summary: 'Soft-delete a note/folder into .wiki-forge/trash/',
     command: 'wiki.delete', projectScoped: true,
-    request: { body: obj({ path: str('Wiki-relative path'), type: str('file | folder') }, ['path']) },
+    request: { body: obj({ targetPath: str('Wiki-relative path'), path: str('Legacy alias of targetPath'), type: str('file | folder') }) },
     response: { schema: ok({ trashed: ref('TrashEntry') }) },
   }),
   defineRoute({
@@ -1270,7 +1288,7 @@ export type ContractDtos =
   | ApiErrorBody | ApprovalRequestDto | AuthIdentityDto | ChangesetDto | HelpTopicDto | ManagedUserDto | PolicyDecisionDto
   | ProjectBundleDto | ProjectEntryDto | ProjectStatsDto | ReviewMetaDto | ReviewDigestDto
   | ReviewDiffDto | ReviewSnapshotDto | SchedulerEventDto | SchedulerStatusDto | SkillDto
-  | SseEventDto | SuccessDto | TrashEntryDto | WikiNoteDto | SearchResultDto | TraceResultDto
+  | SseEventDto | SuccessDto | TemplateDefinitionDto | TrashEntryDto | WikiGraphDto | WikiNoteDto | SearchResultDto | TraceResultDto
   | ScratchpadEntryDto | ScriptDefDto | UseCaseDefDto | UseCaseEventDto | RelatedNoteDto
   | BacklinkResultDto | DeepResearchDto | ResearchAnswerDto | ResearchPromoteDto
   | StudyOutputDto | StudyQuizDto | StudyMindmapDto | StudyQuickNoteDto | StudyPromoteDto

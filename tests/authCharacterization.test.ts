@@ -9,14 +9,19 @@ import { AgentServer } from '@backend/server/agentServer';
  * Auth characterization — B0 baseline plus the B4 hardening.
  *
  * B0 pinned the envelope and the two then-known gaps. B4 closed the graph
- * proxy bypass; B5 binds provenance to the server Principal only in strict
- * mode, so the raw reviewer documented here is the intentional legacy path.
+ * proxy bypass; F5 binds provenance to the server Principal in every mode.
  */
 
 const UNAUTHORIZED = {
   success: false,
   error: 'Unauthorized: Invalid or missing X-WikiForge-Token',
 };
+
+function assertUnauthorized(body: unknown, response: Response): void {
+  const value = body as Record<string, unknown>;
+  assert.deepStrictEqual({ success: value.success, error: value.error }, UNAUTHORIZED);
+  assert.strictEqual(value.correlationId, response.headers.get('x-correlation-id'));
+}
 
 interface Harness {
   agentServer: AgentServer;
@@ -97,7 +102,7 @@ describe('Auth characterization (B0)', () => {
     await withEnv({ WIKIFORGE_API_TOKEN: 'secret-token' }, async () => {
       const res = await fetch(`${h.baseUrl}/api/help`);
       assert.strictEqual(res.status, 401);
-      assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+      assertUnauthorized(await res.json(), res);
     });
   });
 
@@ -107,7 +112,7 @@ describe('Auth characterization (B0)', () => {
         headers: { 'X-WikiForge-Token': 'wrong-token' },
       });
       assert.strictEqual(res.status, 401);
-      assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+      assertUnauthorized(await res.json(), res);
     });
   });
 
@@ -158,14 +163,14 @@ describe('Auth characterization (B0)', () => {
             body: JSON.stringify({}),
           });
           assert.strictEqual(missing.status, 401, `${route} without token`);
-          assert.deepStrictEqual(await missing.json(), UNAUTHORIZED);
+          assertUnauthorized(await missing.json(), missing);
 
           const wrong = await fetch(`${h.baseUrl}${route}`, {
             method: 'GET',
             headers: { 'X-WikiForge-Token': 'wrong-token' },
           });
           assert.strictEqual(wrong.status, 401, `${route} with wrong token`);
-          assert.deepStrictEqual(await wrong.json(), UNAUTHORIZED);
+          assertUnauthorized(await wrong.json(), wrong);
         }
       },
     );
@@ -212,7 +217,7 @@ describe('Auth characterization (B0)', () => {
     });
   });
 
-  it('LEGACY PROVENANCE (B5): reviewer is taken raw from the client body, default human', async () => {
+  it('LEGACY PROVENANCE (F5): reviewer is always the server-derived principal', async () => {
     const calls: Array<{ decision: string; reviewer?: string }> = [];
     const original = h.agentServer.decideApproval.bind(h.agentServer);
     h.agentServer.decideApproval = async (approvalId, decision, reviewer) => {
@@ -232,7 +237,7 @@ describe('Auth characterization (B0)', () => {
         body: JSON.stringify({ reviewer: 'mario' }),
       });
       assert.strictEqual(explicit.status, 200);
-      assert.strictEqual(((await explicit.json()) as any).approval.decidedBy, 'mario');
+      assert.strictEqual(((await explicit.json()) as any).approval.decidedBy, 'human:local');
 
       const implicit = await fetch(`${h.baseUrl}/api/ke/schedule/approvals/a-2/approve`, {
         method: 'POST',
@@ -240,11 +245,11 @@ describe('Auth characterization (B0)', () => {
         body: JSON.stringify({}),
       });
       assert.strictEqual(implicit.status, 200);
-      assert.strictEqual(((await implicit.json()) as any).approval.decidedBy, 'human');
+      assert.strictEqual(((await implicit.json()) as any).approval.decidedBy, 'human:local');
 
       assert.deepStrictEqual(calls, [
-        { decision: 'approved', reviewer: 'mario' },
-        { decision: 'approved', reviewer: 'human' },
+        { decision: 'approved', reviewer: 'human:local' },
+        { decision: 'approved', reviewer: 'human:local' },
       ]);
     } finally {
       h.agentServer.decideApproval = original;

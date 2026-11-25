@@ -24,10 +24,12 @@ import type {
   ScratchpadEntryDto,
   ScriptDefDto,
   SkillDto,
+  TemplateDefinitionDto,
   TrashEntryDto,
   UiAccessDto,
   UiPreferencesDto,
   UseCaseDefDto,
+  WikiGraphDto,
 } from './types';
 import type {
   ResearchBacklinksResponse,
@@ -38,7 +40,7 @@ import type {
   ResearchRelatedResponse,
   ResearchSearchResponse,
   ResearchTraceResponse,
-} from '@frontend/core/types/research';
+} from '../domain/research';
 import type {
   ReviewCritiqueResponse,
   ReviewDiffResponse,
@@ -46,7 +48,7 @@ import type {
   ReviewMetaResponse,
   ReviewSnapshot,
   ReviewVerifyResponse,
-} from '@frontend/core/types/review';
+} from '../domain/review';
 import type {
   StudyMindmapResponse,
   StudyOutputResponse,
@@ -54,8 +56,8 @@ import type {
   StudyQuickNoteResponse,
   StudyQuizResponse,
   StudyThesisResponse,
-} from '@frontend/core/types/study';
-import type { RenameResult, WikiNote } from '@frontend/core/types/wiki';
+} from '../domain/study';
+import type { RenameResult, WikiNote } from '../domain/wiki';
 import type { EndpointId } from './contracts';
 
 /** Generic transport request. Path params, query params and JSON body. */
@@ -167,6 +169,7 @@ export type EndpointTypes = {
   // Catalogues
   'skills.list': { req: EmptyRequest; res: Ok<{ skills: SkillDto[] }> };
   'help.list': { req: EmptyRequest; res: Ok<{ topics: HelpTopicDto[] }> };
+  'templates.list': { req: EmptyRequest; res: Ok<{ templates: TemplateDefinitionDto[] }> };
   'help.get': { req: WithParams<{ topicId: string | number }>; res: Ok<{ topic: HelpTopicDto }> };
   'scripts.list': { req: EmptyRequest; res: Ok<{ registry: Json; scripts: ScriptDefDto[] }> };
   'scripts.registry': { req: EmptyRequest; res: Ok<{ registry: Json; scripts: ScriptDefDto[] }> };
@@ -358,7 +361,7 @@ export type EndpointTypes = {
   };
 
   // Vault / notes / chat
-  'wiki.notes.list': { req: EmptyRequest; res: Ok<{ notes: WikiNote[] }> };
+  'wiki.notes.list': { req: EmptyRequest; res: Ok<{ notes: WikiNote[]; graph?: WikiGraphDto }> };
   'wiki.folders.list': { req: EmptyRequest; res: Ok<{ folders: string[] }> };
   'wiki.scratchpad.list': { req: EmptyRequest; res: Ok<{ entries: ScratchpadEntryDto[] }> };
   'wiki.scratchpad.delete': { req: WithBody<{ id: string }>; res: Ok };

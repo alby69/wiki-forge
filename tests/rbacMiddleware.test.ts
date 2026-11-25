@@ -310,10 +310,11 @@ wikiforge = ["Reader"]
         body: JSON.stringify({ event: 'note.created' }),
       });
       assert.strictEqual(denied.status, 403);
-      assert.deepStrictEqual(denied.body, {
+      assert.deepStrictEqual({ success: denied.body.success, error: denied.body.error }, {
         success: false,
         error: "Forbidden: 'schedule.trigger' requires the KnowledgeEngineer role in project 'wikiforge'",
       });
+      assert.ok(denied.body.correlationId);
 
       const allowed = await json(`${h.baseUrl}/api/ke/schedule/trigger?projectId=default`, {
         method: 'POST',

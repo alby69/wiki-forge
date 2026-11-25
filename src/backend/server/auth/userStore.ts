@@ -179,7 +179,7 @@ export class UserStore {
   }
 
   private bootstrapPassword(): string {
-    return this.env.WIKIFORGE_ADMIN_PASSWORD || 'admin';
+    return (this.env.WIKIFORGE_ADMIN_PASSWORD ?? '').trim();
   }
 
   private sessionTtlMs(): number {

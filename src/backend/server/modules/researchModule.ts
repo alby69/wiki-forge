@@ -10,7 +10,8 @@
 import { error, json, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
 import { findBacklinks, searchNotes, suggestRelated } from '../researchHelpers';
-import type { DomainServices, ProjectId } from './services';
+import type { ProjectId } from './services';
+import type { ResearchPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
@@ -34,7 +35,7 @@ function asBool(value: unknown): boolean | undefined {
 export class ResearchModule implements DomainModule {
   readonly name = 'research';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: ResearchPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('research.search', (payload, context) => this.search(payload, context.projectId));
@@ -144,6 +145,6 @@ export class ResearchModule implements DomainModule {
   }
 }
 
-export function createResearchModule(services: DomainServices): ResearchModule {
+export function createResearchModule(services: ResearchPort): ResearchModule {
   return new ResearchModule(services);
 }

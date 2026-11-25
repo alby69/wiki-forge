@@ -1,4 +1,5 @@
 import type { ManagedUserRole } from '../api/types';
+import { GENERIC_SLASH_COMMANDS } from '../domain/slashCommands';
 
 export type CapabilityRole = ManagedUserRole;
 
@@ -22,6 +23,8 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'graph.cypher': 'Reader',
   'graph.events': 'Reader',
   'graph.insights': 'Reader',
+  'graph.rag': 'Reader',
+  'graph.validate': 'Reader',
   'graph.status': 'Reader',
   'help.get': 'Reader',
   'help.list': 'Reader',
@@ -48,6 +51,7 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'scripts.list': 'Reader',
   'scripts.registry': 'Reader',
   'skills.list': 'Reader',
+  'templates.list': 'Reader',
   'wiki.folders.list': 'Reader',
   'wiki.notes.list': 'Reader',
   'wiki.scratchpad.list': 'Reader',
@@ -56,6 +60,22 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'changesets.list': 'Contributor',
   'changesets.stage': 'Contributor',
   'chat.send': 'Contributor',
+  'chat.command': 'Contributor',
+  'cmd.applica': 'Contributor',
+  'cmd.apply': 'Contributor',
+  'cmd.audio-overview': 'Contributor',
+  'cmd.audit': 'Contributor',
+  'cmd.compile': 'Contributor',
+  'cmd.mindmap': 'Contributor',
+  'cmd.note': 'Contributor',
+  'cmd.promote-note': 'Contributor',
+  'cmd.quiz': 'Contributor',
+  'cmd.reindex': 'Contributor',
+  'cmd.study-guide': 'Contributor',
+  'cmd.thesis-chapter': 'Contributor',
+  'cmd.trace': 'Contributor',
+  'cmd.help': 'Reader',
+  'cmd.skill': 'Reader',
   'ingest.queue.add': 'Contributor',
   'ingest.queue.process': 'Contributor',
   'reviews.action': 'Contributor',
@@ -81,7 +101,12 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'wiki.upload': 'Contributor',
   'changesets.apply': 'KnowledgeEngineer',
   'changesets.reject': 'KnowledgeEngineer',
+  'cmd.consult': 'KnowledgeEngineer',
+  'cmd.deep-research': 'KnowledgeEngineer',
+  'cmd.human-review': 'KnowledgeEngineer',
+  'cmd.verify': 'KnowledgeEngineer',
   'graph.reconcile': 'KnowledgeEngineer',
+  'graph.sync': 'KnowledgeEngineer',
   'graph.sync.neo4j': 'KnowledgeEngineer',
   'ke.useCases.execute': 'KnowledgeEngineer',
   'research.consult': 'KnowledgeEngineer',
@@ -100,6 +125,7 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'scripts.unschedule': 'KnowledgeEngineer',
   'projects.archive': 'Admin',
   'projects.clone': 'Admin',
+  'cmd.wizard': 'Admin',
   'projects.config.put': 'Admin',
   'projects.create': 'Admin',
   'projects.delete': 'Admin',
@@ -112,6 +138,10 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'users.list': 'Admin',
   'users.update': 'Admin',
 };
+
+for (const verb of GENERIC_SLASH_COMMANDS) {
+  OPERATION_MIN_ROLE[`cmd.${verb}`] = 'Contributor';
+}
 
 export const ACTION_MIN_ROLE: Record<string, CapabilityRole> = {
   'global:projects': 'Reader',

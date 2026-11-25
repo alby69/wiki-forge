@@ -19,6 +19,34 @@ export interface BacklinkDto {
   contextSnippet?: string;
 }
 
+export interface WikiGraphNodeDto {
+  id: string;
+  label: string;
+  group?: string;
+  val: number;
+  color?: string;
+  tags?: string[];
+}
+
+export interface WikiGraphLinkDto {
+  source: string;
+  target: string;
+  type?: string;
+}
+
+export interface WikiGraphDto {
+  nodes: WikiGraphNodeDto[];
+  links: WikiGraphLinkDto[];
+}
+
+export interface TemplateDefinitionDto {
+  id: string;
+  name: string;
+  description: string;
+  content: string;
+  builtIn: boolean;
+}
+
 export interface WikiNoteDto {
   id: string;
   title: string;

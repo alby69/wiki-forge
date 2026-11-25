@@ -11,7 +11,7 @@
  */
 
 import { GENERATED_SCRIPT_REGISTRY } from '../generated/scriptRegistry.generated';
-import type { ScriptAutomation, ScriptSafety } from '../agentServer';
+import type { ScriptAutomation, ScriptSafety } from '@shared/domain/scripts';
 
 export type ResolvedScriptSafety = ScriptSafety | 'unknown';
 

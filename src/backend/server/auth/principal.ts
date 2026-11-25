@@ -58,6 +58,29 @@ export async function authenticateRequest(
 ): Promise<RequestAuthentication> {
   const legacy = legacyPrincipal();
   const bearer = bearerTokenFromRequest(req);
+  const sharedToken = env.WIKIFORGE_API_TOKEN;
+
+  if (env.NODE_ENV === 'production') {
+    if (bearer) {
+      const localPrincipal = userStore?.principalForToken(bearer);
+      if (localPrincipal) return { ok: true, principal: localPrincipal };
+      if (idp) {
+        const verified = await idp.verify(bearer);
+        return verified.ok && verified.principal
+          ? { ok: true, principal: verified.principal }
+          : { ok: false, principal: legacy };
+      }
+      if (sharedToken && verifyApiToken(apiTokenFromRequest(req), sharedToken)) {
+        return { ok: true, principal: legacy };
+      }
+      return { ok: false, principal: legacy };
+    }
+    if (sharedToken && verifyApiToken(apiTokenFromRequest(req), sharedToken)) {
+      return { ok: true, principal: legacy };
+    }
+    return { ok: false, principal: legacy };
+  }
+
   if (bearer) {
     const localPrincipal = userStore?.principalForToken(bearer);
     if (localPrincipal) return { ok: true, principal: localPrincipal };
@@ -69,14 +92,12 @@ export async function authenticateRequest(
         ? { ok: true, principal: verified.principal }
         : { ok: false, principal: legacy };
     }
-    const sharedToken = env.WIKIFORGE_API_TOKEN;
     if (sharedToken && verifyApiToken(apiTokenFromRequest(req), sharedToken)) {
       return { ok: true, principal: legacy };
     }
     return { ok: false, principal: legacy };
   }
 
-  const sharedToken = env.WIKIFORGE_API_TOKEN;
   if (!sharedToken) return { ok: true, principal: legacy };
   return {
     ok: verifyApiToken(apiTokenFromRequest(req), sharedToken),

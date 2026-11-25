@@ -8,6 +8,7 @@
  */
 
 import { ROUTES, SCHEMAS } from '../../../shared/api/contracts';
+import { MCP_TOOL_DESCRIPTORS } from '../../../shared/mcp/tools';
 import { matchRoute } from '../../../shared/api/router';
 import type { ApiRoute, JsonSchema } from '../../../shared/api/contracts';
 
@@ -264,9 +265,9 @@ export function buildOpenApiDocument(): OpenApiDocument {
       source: 'src/shared/api/contracts.ts',
       routeCount: ROUTES.length,
       mcp: {
-        transport: ['stdio', 'HTTP/SSE JSON-RPC 2.0'],
-        tools: ['search_wiki', 'get_concept_metadata', 'find_backlinks', 'query_graph', 'get_graph_schema'],
-        documentation: 'src/backend/server/mcp_server.py',
+        transport: ['stdio', 'Streamable HTTP'],
+        tools: MCP_TOOL_DESCRIPTORS.map((tool) => tool.name),
+        documentation: 'bin/wf.ts mcp',
       },
       upstreamSpecs: [],
     },
@@ -371,20 +372,17 @@ export async function loadOpenApiDocument(fetchFn: typeof fetch = fetch): Promis
   return document;
 }
 
-/** MCP tool catalogue used by the documentation browser (runtime metadata lives in Python). */
 export interface McpToolSummary {
   name: string;
   description: string;
   required: string[];
 }
 
-export const MCP_TOOLS: McpToolSummary[] = [
-  { name: 'search_wiki', description: 'Search interlinked Markdown notes for matching terms.', required: ['query'] },
-  { name: 'get_concept_metadata', description: 'Read YAML frontmatter and OKF status of a note.', required: ['filename'] },
-  { name: 'find_backlinks', description: 'Find notes linking to a target concept.', required: ['concept'] },
-  { name: 'query_graph', description: 'Run a SPARQL query against the RDF knowledge graph.', required: ['query'] },
-  { name: 'get_graph_schema', description: 'Describe classes and predicates of the knowledge graph.', required: [] },
-];
+export const MCP_TOOLS: McpToolSummary[] = MCP_TOOL_DESCRIPTORS.map((tool) => ({
+  name: tool.name,
+  description: tool.description,
+  required: Array.isArray(tool.inputSchema.required) ? tool.inputSchema.required.map(String) : [],
+}));
 
 /** Utility used by tests and by validation in the next phase. */
 export function findRoute(method: string, pathname: string): ApiRoute | undefined {

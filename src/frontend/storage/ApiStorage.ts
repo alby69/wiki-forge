@@ -31,9 +31,18 @@ import { IStorage, IngestResult } from '@frontend/core/interfaces/IStorage';
 import { appStore } from '@frontend/store/appStore';
 import { FileStorage } from './FileStorage';
 import { WikiEdit } from '@frontend/core/utils/wikiEdit';
-import { FrontendApiBus } from '@frontend/core/apiBus';
-import { ApiClientError, createApiClient } from '@frontend/api/client';
+import {
+  ACTIVE_PROJECT_KEY,
+  FrontendApiBus,
+  createStorageApi,
+  getActiveProjectId,
+  resolveApiBaseUrl,
+} from '@frontend/core/apiFacade';
+import { ApiClientError } from '@frontend/api/client';
 import type { EndpointId, EndpointRequest, EndpointResponse } from '@shared/api/contracts';
+import type { WikiGraphDto } from '@shared/api/types';
+
+export { ACTIVE_PROJECT_KEY, getActiveProjectId, resolveApiBaseUrl };
 
 export interface AttachOptions {
   noteId?: string;
@@ -53,29 +62,6 @@ export interface ProjectInfo {
   id: string;
   name: string;
   path: string;
-}
-
-/** Shared key for the wiki currently selected in the header project picker.
- * Kept as an export for external launchers; appStore is the only writer. */
-export const ACTIVE_PROJECT_KEY = 'wiki-forge:active-project';
-
-/** Read the active project id outside of an ApiStorage instance.
- *
- * Script launchers (Script Control Panel, KE workbench, ...) must use this so
- * every API call is scoped to the wiki the user actually selected. appStore is
- * the single source of truth and mirrors its value to localStorage; we read the
- * persisted value first so external launchers and tests that set it directly
- * are honoured, then fall back to the in-memory store. */
-export function getActiveProjectId(fallback: string = 'default'): string {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(ACTIVE_PROJECT_KEY);
-      if (stored) return stored;
-    } catch (_e) {
-      // Storage can be unavailable in embedded contexts.
-    }
-  }
-  return appStore.getState().activeProjectId || fallback;
 }
 
 export interface ScratchpadEntry {
@@ -99,33 +85,20 @@ export interface HelpTopic extends HelpTopicMeta {
   markdown: string;
 }
 
-/** Resolve the API origin in the browser.
- *
- *  Components must call this instead of using bare `/api/...` paths: in the
- *  Docker setup the UI (Vite, :5173) and the API (:3001) are separate origins,
- *  and a relative URL would be resolved against the Vite dev server instead. */
-export function resolveApiBaseUrl(fallback: string = ''): string {
-  if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL) {
-    return (import.meta as any).env.VITE_API_BASE_URL;
-  }
-  return fallback;
-}
-
 export class ApiStorage implements IStorage {
   private fallback = new FileStorage();
   /** Kept as an explicit client option for callers that supply a custom origin. */
   private baseUrl: string;
-  /** Per-instance bus: same transport, but honours the constructor's base URL. */
+  private lastGraph: WikiGraphDto | null = null;
   private readonly api: FrontendApiBus;
 
   constructor(baseUrl: string = '') {
     this.baseUrl = resolveApiBaseUrl(baseUrl);
-    this.api = new FrontendApiBus(createApiClient({
-      baseUrl: this.baseUrl,
-      getProjectId: () => getActiveProjectId(),
-      // B7 — same session as the shared bus, no direct fetch in facades.
-      getBearerToken: () => appStore.getState().auth.token || undefined,
-    }), { scopeQuery: true });
+    this.api = createStorageApi(this.baseUrl);
+  }
+
+  public getWikiGraph(): WikiGraphDto | null {
+    return this.lastGraph;
   }
 
   public getActiveProjectId(): string {
@@ -218,6 +191,7 @@ export class ApiStorage implements IStorage {
   public async getAllNotes(projectId?: string): Promise<WikiNote[]> {
     try {
       const json = await this.request('wiki.notes.list', {}, projectId);
+      if (json.graph) this.lastGraph = json.graph;
       if (json.success && Array.isArray(json.notes) && json.notes.length > 0) {
         return json.notes;
       }

@@ -192,7 +192,7 @@ describe('KE scheduler F5/F6 — policy, events and approvals', () => {
     });
     assert.strictEqual(rejected.status, 200);
     assert.strictEqual(rejected.body.approval.status, 'rejected');
-    assert.strictEqual(rejected.body.approval.decidedBy, 'qa');
+    assert.strictEqual(rejected.body.approval.decidedBy, 'human:local');
 
     const after = await json(`${h.baseUrl}/api/ke/schedule/runs?jobId=event-review`);
     assert.strictEqual(after.body.runs.length, before.body.runs.length, 'no human audit added on reject');
@@ -221,7 +221,7 @@ describe('KE scheduler F5/F6 — policy, events and approvals', () => {
     });
     assert.strictEqual(approved.status, 200, approved.body.error ?? '');
     assert.strictEqual(approved.body.approval.status, 'approved');
-    assert.strictEqual(approved.body.approval.decidedBy, 'mario');
+    assert.strictEqual(approved.body.approval.decidedBy, 'human:local');
 
     const runs = await json(`${h.baseUrl}/api/ke/schedule/runs?jobId=event-review`);
     const humanRun = runs.body.runs.find((run: any) => run.actor === 'human');

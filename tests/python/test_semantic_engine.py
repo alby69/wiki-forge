@@ -69,14 +69,10 @@ def test_cq_runner_malformed_yaml_handling(tmp_path):
     assert result.failed_count == 0
     assert result.error_count == 0
 
-def test_mcp_execute_ke_use_case(temp_wiki_dir):
-    repo_root = temp_wiki_dir.parent
-    from src.backend.server.mcp_server import execute_tool, TOOLS
+def test_mcp_server_delegates_to_node_adapter():
+    source = (Path(__file__).resolve().parents[2] / "src/backend/server/mcp_server.py").read_text(encoding="utf-8")
 
-    tool_names = [t["name"] for t in TOOLS]
-    assert "execute_ke_use_case" in tool_names
-
-    res = execute_tool(repo_root, "execute_ke_use_case", {"use_case_id": "ke_ontological_validation"})
-    assert res["status"] == "completed"
-    assert res["use_case_id"] == "ke_ontological_validation"
-    assert "executed_steps" in res
+    assert "KE_USE_CASE_COMMANDS" not in source
+    assert "execute_tool" not in source
+    assert "bin/wf.ts" in source
+    assert "subprocess.call" in source

@@ -131,6 +131,54 @@ export class CatalogueModule implements DomainModule {
     return json({ success: true, topic: { ...topic.meta, markdown: topic.body } });
   }
 
+  async renderHelpAnswer(query: string): Promise<string> {
+    const topics = await this.help.list();
+    if (topics.length === 0) {
+      return '### ❓ Guida\n\nContenuti della guida non trovati: manca la cartella `docs/help/`.';
+    }
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      const list = topics.map((topic) => `- ${topic.icon} \`${topic.id}\` — **${topic.title}**`).join('\n');
+      return (
+        '### ❓ Guida Wiki-Forge\n\n' +
+        'Apri la guida completa in-app con il pulsante **?** in alto o il tasto **F1**.\n\n' +
+        `Argomenti disponibili:\n\n${list}\n\n` +
+        '*Esempio: `/help caricare-documenti`*'
+      );
+    }
+    const qCompact = q.replace(/\s+/g, '-');
+    const exact =
+      topics.find((topic) => topic.id === qCompact) ||
+      topics.find((topic) => topic.title.toLowerCase() === q) ||
+      topics.find((topic) => topic.keywords.some((keyword) => keyword.toLowerCase() === q));
+    const fuzzy =
+      topics.find((topic) => topic.id.includes(qCompact)) ||
+      topics.find((topic) => topic.title.toLowerCase().includes(q)) ||
+      topics.find((topic) => topic.keywords.some((keyword) => keyword.toLowerCase().includes(q)));
+    const target = exact || fuzzy;
+    if (!target) {
+      const suggestions = topics
+        .filter(
+          (topic) =>
+            topic.id.includes(qCompact) ||
+            topic.keywords.some((keyword) => q.split(/\s+/).some((word) => word.length > 3 && keyword.includes(word))),
+        )
+        .slice(0, 5);
+      const sugList = (suggestions.length ? suggestions : topics.slice(0, 5))
+        .map((topic) => `- \`${topic.id}\` — ${topic.title}`)
+        .join('\n');
+      return `### ❓ Nessun argomento per "${query}"\n\nProva uno di questi:\n\n${sugList}\n\n*Elenco completo: \`/help\`*`;
+    }
+    const topic = await this.help.get(target.id);
+    if (!topic) {
+      return `### ❓ Guida\n\nArgomento "${target.id}" non leggibile.`;
+    }
+    return (
+      `### ${target.icon} ${target.title}\n\n${topic.body.trim()}\n\n` +
+      `---\n*Guida in-app: pulsante **?** o tasto **F1** — argomento \`${target.id}\`.*`
+    );
+  }
+
   private async listSkills(_context: CommandContext): Promise<ApiResult> {
     try {
       const skillsDir = path.resolve(this.rootDir, 'skills');

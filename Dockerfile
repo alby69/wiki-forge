@@ -17,6 +17,12 @@ RUN apt-get update \
 
 WORKDIR /wiki
 
+RUN useradd --uid 10001 --create-home node \
+    && mkdir -p /wiki/output /wiki/raw /wiki/projects /wiki/.wiki-forge/state \
+    && chown -R node:node /wiki/output /wiki/raw /wiki/projects /wiki/.wiki-forge
+
+USER node
+
 # Install Python dependencies first (better layer caching).
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

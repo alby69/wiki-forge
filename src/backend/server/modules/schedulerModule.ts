@@ -16,7 +16,8 @@ import type { ApprovalStatus } from '../scheduler/approvalStore';
 import { isSupportedTriggerEvent } from '../scheduler/eventTriggers';
 import { ScriptScheduleError, type ScriptScheduleCreateInput } from '../scheduler/scriptJobStore';
 import type { TriggerEvent } from '../scheduler/scheduler';
-import type { DomainServices, JsonObject } from './services';
+import type { JsonObject } from './services';
+import type { ProvenancePort, SchedulerPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 /** `onClose` is supplied by the HTTP gateway (added to CommandContext by the migration). */
@@ -32,7 +33,7 @@ function asString(value: unknown): string | undefined {
 export class SchedulerModule implements DomainModule {
   readonly name = 'scheduler';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: SchedulerPort & ProvenancePort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('schedule.status', () => this.status());
@@ -219,10 +220,7 @@ export class SchedulerModule implements DomainModule {
   private async approvalDecision(payload: Payload, context: CommandContext): Promise<ApiResult> {
     const approvalId = asString(payload.id) ?? '';
     const action = asString(payload.action) === 'reject' ? 'reject' : 'approve';
-    const rawReviewer = asString(payload.reviewer);
-    const reviewer = this.services.isStrictProvenance()
-      ? this.services.provenanceActor(context.principal)
-      : rawReviewer?.trim() ? rawReviewer.trim() : 'human';
+    const reviewer = this.services.provenanceActor(context.principal);
     const result = await this.services.decideApproval(
       approvalId,
       action === 'approve' ? 'approved' : 'rejected',
@@ -284,6 +282,6 @@ export class SchedulerModule implements DomainModule {
   }
 }
 
-export function createSchedulerModule(services: DomainServices): SchedulerModule {
+export function createSchedulerModule(services: SchedulerPort & ProvenancePort): SchedulerModule {
   return new SchedulerModule(services);
 }

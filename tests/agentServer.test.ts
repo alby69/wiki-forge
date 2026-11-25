@@ -179,7 +179,7 @@ Body of the target note.
       'utf-8'
     );
 
-    const reply = await apiStorage.sendChat('/verify human-target reviewer=studente stable');
+    const reply = await apiStorage.sendChat('/verify human-target reviewer=studente');
     assert.ok(reply.includes('Human Verification Recorded'));
     assert.ok(reply.includes('human-reviewed'));
 
@@ -187,11 +187,10 @@ Body of the target note.
     const target = notes.find(n => n.id === 'human-target');
     assert.ok(target);
     assert.equal(target.trustTier, 'human-reviewed');
-    assert.equal(target.status, 'stable');
 
     const onDisk = await fs.readFile(path.join(wikiDir, 'human-target.md'), 'utf-8');
-    assert.ok(onDisk.includes('by: human:studente'));
-    assert.ok(onDisk.includes('status: stable'));
+    assert.ok(onDisk.includes('by: human:local'));
+    assert.ok(!onDisk.includes('by: human:studente'));
 
     const log = await fs.readFile(path.join(wikiDir, 'log.md'), 'utf-8');
     assert.ok(log.includes('Human-verified'));
@@ -205,8 +204,7 @@ Body of the target note.
     assert.equal(meta.note?.trustTier, 'human-reviewed');
     assert.equal(meta.quality?.total, 5);
     assert.ok((meta.quality?.passed ?? 0) >= 3);
-    assert.ok(meta.history?.some(event => event.actor === 'human:studente'));
-    assert.equal(meta.suggestedReviewer, 'studente');
+    assert.ok(meta.history?.some(event => event.actor === 'human:local'));
   });
 
   await t.test('Review Studio: meta reports a missing note instead of throwing', async () => {
@@ -215,7 +213,7 @@ Body of the target note.
     assert.ok(meta.error?.includes('Nota non trovata'));
   });
 
-  await t.test('Review Studio: verify endpoint records the reviewer and refreshes meta', async () => {
+  await t.test('Review Studio: verify endpoint records the principal and refreshes meta', async () => {
     await fs.writeFile(
       path.join(wikiDir, 'review-target.md'),
       `---
@@ -242,13 +240,13 @@ Body used by the Review Studio tests, linking to [[sample-note]].
 
     assert.equal(result.success, true);
     assert.equal(result.changed, true);
-    assert.equal(result.actor, 'human:alice');
+    assert.equal(result.actor, 'human:local');
     assert.equal(result.note?.trustTier, 'human-reviewed');
     assert.equal(result.note?.status, 'stable');
-    assert.equal(result.meta?.suggestedReviewer, 'alice');
 
     const onDisk = await fs.readFile(path.join(wikiDir, 'review-target.md'), 'utf-8');
-    assert.ok(onDisk.includes('by: human:alice'));
+    assert.ok(onDisk.includes('by: human:local'));
+    assert.ok(!onDisk.includes('by: human:alice'));
 
     // The verification is a write, so a pre-write snapshot must exist.
     const snapshots = await apiStorage.listReviewSnapshots('review-target');

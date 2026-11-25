@@ -175,7 +175,7 @@ describe('Script jobs end-to-end (S1)', () => {
     const approvedBody = await approved.json();
     assert.strictEqual(approved.status, 200, JSON.stringify(approvedBody));
     assert.strictEqual(approvedBody.approval.status, 'approved');
-    assert.strictEqual(approvedBody.approval.decidedBy, 'mario');
+    assert.strictEqual(approvedBody.approval.decidedBy, 'human:local');
 
     const log = await fs.readFile(path.join(h.tmpDir, 'wiki', 'log.md'), 'utf-8');
     assert.match(log, /Approvazione S2 di prova/);

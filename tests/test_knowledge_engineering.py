@@ -17,7 +17,6 @@ from scripts.cq_validator import extract_competency_questions, evaluate_cq, load
 from scripts.odp_suggester import load_odp_catalog, analyze_note_for_odp
 from scripts.neuro_symbolic_check import check_neuro_symbolic_consistency
 from scripts.ke_maturity import assess_ke_maturity
-from src.backend.server.mcp_server import execute_tool
 
 
 class TestKnowledgeEngineering(unittest.TestCase):
@@ -232,15 +231,13 @@ Links to [[note-b]].
         self.assertIn("overall_stage", assessment)
         self.assertIn("average_level", assessment)
 
-    def test_mcp_new_tools(self):
-        cq_file = self.wiki_dir / "competency_questions.md"
-        cq_file.write_text("""- CQ1: Test question?""", encoding="utf-8")
+    def test_mcp_tools_are_declared_in_typescript(self):
+        source = (Path(__file__).resolve().parent.parent / "src/shared/mcp/tools.ts").read_text(encoding="utf-8")
 
-        res_cq = execute_tool(self.wiki_dir.parent, "validate_competency_question", {"question": "Test question?"})
-        self.assertIn("cq_id", res_cq)
-
-        res_gaps = execute_tool(self.wiki_dir.parent, "get_ontology_gaps", {})
-        self.assertIn("summary", res_gaps)
+        self.assertIn("validate_competency_question", source)
+        self.assertIn("get_ontology_gaps", source)
+        self.assertIn("execute_ke_use_case", source)
+        self.assertNotIn("KE_USE_CASE_COMMANDS", source)
 
 
 if __name__ == "__main__":

@@ -122,6 +122,16 @@ test('catalogue HTTP routes are served through the backend bus without behaviour
   };
   assert.equal(useCases.success, true);
   assert.equal(useCases.useCases.length, 8);
+
+  const invalidSave = await fetch(`http://localhost:${port}/api/wiki/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: 'a' }),
+  });
+  assert.equal(invalidSave.status, 400);
+  const invalidSaveBody = await invalidSave.json() as { success: boolean; error: string };
+  assert.equal(invalidSaveBody.success, false);
+  assert.match(invalidSaveBody.error, /content/);
 });
 
 test('review queue routes keep their payload, storage path and atomic writes', async (t) => {
@@ -184,6 +194,6 @@ test('review queue routes keep their payload, storage path and atomic writes', a
     headers: { 'Content-Type': 'application/json' },
     body: '{not json',
   });
-  assert.equal(malformed.status, 500);
+  assert.equal(malformed.status, 400);
   assert.match(String((await malformed.json() as { error: string }).error), /Invalid JSON body/);
 });

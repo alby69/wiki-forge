@@ -95,7 +95,7 @@ def assess_ke_maturity(repo_root: Path, wiki_dir: Path) -> dict:
 
     # Check existence of key infrastructure artifacts
     rdf_export_exists = (repo_root / "output" / "wiki_export.jsonld").exists() or (repo_root / "output" / "wiki_export.ttl").exists()
-    mcp_server_exists = (repo_root / "src" / "server" / "mcp_server.py").exists()
+    mcp_server_exists = (repo_root / "src" / "backend" / "mcp" / "adapter.ts").exists()
     cq_file_exists = (repo_root / "wiki" / "competency_questions.md").exists()
     skills_exist = (repo_root / "skills").exists() and len(list((repo_root / "skills").glob("*"))) > 0
 

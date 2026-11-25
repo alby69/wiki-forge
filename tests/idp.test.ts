@@ -20,6 +20,12 @@ const UNAUTHORIZED = {
   error: 'Unauthorized: Invalid or missing X-WikiForge-Token',
 };
 
+function assertUnauthorized(body: unknown, response: Response): void {
+  const value = body as Record<string, unknown>;
+  assert.deepStrictEqual({ success: value.success, error: value.error }, UNAUTHORIZED);
+  assert.strictEqual(value.correlationId, response.headers.get('x-correlation-id'));
+}
+
 const ISSUER = 'https://idp.example.test';
 const AUDIENCE = 'wiki-forge';
 const JWKS_URL = `${ISSUER}/.well-known/jwks.json`;
@@ -238,7 +244,7 @@ describe('IdP adapters (B6)', () => {
         ]) {
           const res = await fetch(`${h.baseUrl}/api/help`, { headers: bearer(token) });
           assert.strictEqual(res.status, 401);
-          assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+          assertUnauthorized(await res.json(), res);
         }
       });
       assert.strictEqual(h.captures.length, 0);
@@ -341,7 +347,7 @@ describe('IdP adapters (B6)', () => {
           headers: bearer(Buffer.from('<Assertion/>').toString('base64')),
         });
         assert.strictEqual(res.status, 401);
-        assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+        assertUnauthorized(await res.json(), res);
       });
       assert.strictEqual(h.captures.length, 0);
     } finally {
@@ -382,7 +388,7 @@ describe('IdP adapters (B6)', () => {
       await withEnvToken(undefined, async () => {
         const res = await fetch(`${h.baseUrl}/api/help`);
         assert.strictEqual(res.status, 401);
-        assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+        assertUnauthorized(await res.json(), res);
       });
       assert.strictEqual(h.captures.length, 0);
     } finally {

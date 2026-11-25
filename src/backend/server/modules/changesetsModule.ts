@@ -10,7 +10,8 @@ import { error, json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { ChangesetStatus, ChangesetStore, StageChangesetInput } from '../changesetStore';
 import { GraphEventHub, graphChangedFrame } from '../graphEvents';
-import type { DomainServices, ProjectId } from './services';
+import type { ProjectId } from './services';
+import type { ChangesetPort, ProvenancePort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
@@ -35,7 +36,7 @@ export class ChangesetsModule implements DomainModule {
   readonly name = 'changesets';
 
   constructor(
-    private readonly services: DomainServices,
+    private readonly services: ChangesetPort & ProvenancePort,
     private readonly graphEvents?: GraphEventHub,
   ) {}
 
@@ -123,7 +124,7 @@ export class ChangesetsModule implements DomainModule {
 }
 
 export function createChangesetsModule(
-  services: DomainServices,
+  services: ChangesetPort & ProvenancePort,
   graphEvents?: GraphEventHub,
 ): ChangesetsModule {
   return new ChangesetsModule(services, graphEvents);

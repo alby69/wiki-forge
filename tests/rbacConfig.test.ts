@@ -27,6 +27,12 @@ const UNAUTHORIZED = {
   error: 'Unauthorized: Invalid or missing X-WikiForge-Token',
 };
 
+function assertUnauthorized(body: unknown, response: Response): void {
+  const value = body as Record<string, unknown>;
+  assert.deepStrictEqual({ success: value.success, error: value.error }, UNAUTHORIZED);
+  assert.strictEqual(value.correlationId, response.headers.get('x-correlation-id'));
+}
+
 async function withEnv(
   values: Partial<Record<'WIKIFORGE_API_TOKEN', string | undefined>>,
   fn: () => Promise<void>,
@@ -153,7 +159,7 @@ describe('Config RBAC dichiarativa e inerte (B2)', () => {
       await withHarness(configToml, async (baseUrl) => {
         const missing = await fetch(`${baseUrl}/api/help`);
         assert.strictEqual(missing.status, 401);
-        assert.deepStrictEqual(await missing.json(), UNAUTHORIZED);
+        assertUnauthorized(await missing.json(), missing);
 
         const docs = await fetch(`${baseUrl}/api/docs`);
         assert.strictEqual(docs.status, 200);

@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import type { KEUseCaseDef, ScriptDef } from './agentServer';
+import type { KEUseCaseDef, ScriptDef } from '@shared/domain/scripts';
 import { resolveToolScript } from './toolPaths';
 
 /**

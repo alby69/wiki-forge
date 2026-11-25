@@ -4,8 +4,9 @@ import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { AgentServer } from '@backend/server/agentServer';
-import { buildOpenApiDocument, loadOpenApiDocument, mergeUpstreamSpec, FASTAPI_SNAPSHOT } from '@backend/server/api/openapi';
+import { buildOpenApiDocument, loadOpenApiDocument, mergeUpstreamSpec, FASTAPI_SNAPSHOT, MCP_TOOLS } from '@backend/server/api/openapi';
 import { ROUTES, SCHEMAS } from '@shared/api/contracts';
+import { COMMAND_MANIFEST } from '@shared/api/generated/commandManifest.generated';
 import { matchRoute, interpolatePath } from '@shared/api/router';
 
 test('OpenAPI catalogue is the single source of truth', () => {
@@ -40,6 +41,17 @@ test('OpenAPI catalogue is the single source of truth', () => {
   assert.ok(doc.paths['/api/v1/changesets']?.get);
   assert.ok(doc.paths['/api/docs']?.get);
   assert.equal(Object.keys(SCHEMAS).length > 20, true);
+});
+
+test('MCP metadata is generated from the tool manifest', () => {
+  const doc = buildOpenApiDocument();
+  const mcp = (doc['x-wikiforge'] as { mcp: { tools: string[]; documentation: string; transport: string[] } }).mcp;
+  assert.deepEqual(mcp.tools, MCP_TOOLS.map((tool) => tool.name));
+  assert.equal(mcp.tools.length, COMMAND_MANIFEST.mcpTools.length);
+  assert.equal(mcp.documentation, 'bin/wf.ts mcp');
+  assert.deepEqual(mcp.transport, ['stdio', 'Streamable HTTP']);
+  assert.ok(mcp.tools.includes('execute_ke_use_case'));
+  assert.ok(!mcp.tools.includes('find_backlinks'));
 });
 
 test('shared router matches specific paths before parameterized ones', () => {

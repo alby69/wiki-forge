@@ -1,7 +1,7 @@
 /** Shared adapter for the repository's Python command-line tools. */
 
-import { spawn } from 'node:child_process';
 import { binary, error, type ApiResult } from '../api/http';
+import { runScript } from '../process/scriptRunner';
 
 export interface PythonTool {
   resolveRoot(projectId: string): Promise<string>;
@@ -24,20 +24,14 @@ export async function runPythonText(
 ): Promise<string> {
   const cwd = await tool.resolveRoot(projectId);
   const script = tool.pathFor(relativePath);
-  const child = spawn(tool.pythonCmd, [script, ...args], { cwd });
-  if (stdin !== undefined) {
-    // A tool may exit before consuming its input; a broken pipe is not an error.
-    child.stdin.on('error', () => { /* ignore EPIPE */ });
-    child.stdin.end(stdin);
-  }
-  let out = '';
-  child.stdout.on('data', (chunk) => { out += chunk.toString('utf-8'); });
-  await new Promise<void>((resolve, reject) => {
-    // Without an error listener a failed spawn crashes the whole gateway.
-    child.on('error', reject);
-    child.on('close', () => resolve());
+  const result = await runScript({
+    command: tool.pythonCmd,
+    args: [script, ...args],
+    cwd,
+    stdin,
   });
-  return out;
+  if (result.error) throw result.error;
+  return result.stdout;
 }
 
 /** Pass stdout through unchanged; `fallback` preserves the old empty envelope. */

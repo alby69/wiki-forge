@@ -1,55 +1,14 @@
 import { GraphData, GraphNode, GraphLink, GraphFilterOptions } from '@frontend/core/types/graph';
 import { WikiNote } from '@frontend/core/types/wiki';
-import { MarkdownParser } from './markdownParser';
+import type { WikiGraphDto } from '@shared/api/types';
+import { buildWikiGraph } from '@shared/domain/wikiGraph';
 
 export class GraphService {
-  private parser = new MarkdownParser();
-
   /**
    * Transforms WikiNotes into standard GraphData JSON for Graph Viewer engine
    */
-  public generateGraphData(notes: WikiNote[]): GraphData {
-    // Index pages (bundle-root and topic `index.md`) and the audit trail
-    // (`log.md`) are structural files, not articles: keep them out of the graph.
-    const articleNotes = notes.filter(note => !this.isStructural(note));
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
-    const knownNoteIds = new Set<string>();
-
-    articleNotes.forEach(note => knownNoteIds.add(note.id));
-
-    // 1. Create nodes
-    articleNotes.forEach(note => {
-      const inDegree = note.backlinks?.length || 0;
-      const outDegree = note.outboundLinks?.length || 0;
-      const val = Math.max(1, inDegree + outDegree);
-
-      nodes.push({
-        id: note.id,
-        label: note.title,
-        group: note.folder || 'default',
-        val,
-        color: this.getNodeColor(note),
-        tags: note.tags,
-      });
-    });
-
-    // 2. Create edges from wiki links (resolves same- and cross-folder links)
-    articleNotes.forEach(note => {
-      note.outboundLinks.forEach(target => {
-        const targetNote = this.parser.resolveLinkTarget(target, notes);
-
-        if (targetNote && knownNoteIds.has(targetNote.id)) {
-          links.push({
-            source: note.id,
-            target: targetNote.id,
-            type: 'wikilink',
-          });
-        }
-      });
-    });
-
-    return { nodes, links };
+  public generateGraphData(notes: WikiNote[], backendGraph?: WikiGraphDto | null): GraphData {
+    return backendGraph ?? buildWikiGraph(notes);
   }
 
   /**
@@ -160,24 +119,4 @@ export class GraphService {
     return { nodes: superNodes, links: superLinks };
   }
 
-  /**
-   * Helper to select node color based on tag or folder
-   */
-  private getNodeColor(note: WikiNote): string {
-    if (note.tags.includes('architecture')) return '#4fc3f7';
-    if (note.tags.includes('assembly')) return '#ffb74d';
-    if (note.tags.includes('python')) return '#81c784';
-    if (note.tags.includes('llm') || note.tags.includes('agent')) return '#ba68c8';
-    if (note.folder === 'wiki') return '#64b5f6';
-    return '#90a4ae';
-  }
-
-  /**
-   * Structural files (bundle-root / topic indexes and the OKF audit log) that
-   * should never render as article nodes in the graph.
-   */
-  private isStructural(note: WikiNote): boolean {
-    const fileName = (note.path || note.id).toLowerCase().split('/').pop() || '';
-    return fileName === 'index' || fileName === 'index.md' || fileName === 'log' || fileName === 'log.md';
-  }
 }

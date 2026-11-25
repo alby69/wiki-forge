@@ -19,7 +19,11 @@ ENV NODE_ENV=production \
     VITE_API_BASE_URL= \
     VITE_PROXY_TARGET=http://127.0.0.1:3001
 
-RUN npm run build
+RUN npm run build \
+    && mkdir -p /app/output/scheduler /app/.wiki-forge/state \
+    && chown -R node:node /app
+
+USER node
 
 EXPOSE 10000
 

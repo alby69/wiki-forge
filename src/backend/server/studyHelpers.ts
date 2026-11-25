@@ -1,4 +1,4 @@
-import { WikiNote } from '../../frontend/core/types/wiki';
+import type { WikiNote } from '@shared/domain/wiki';
 
 /**
  * Deterministic building blocks behind the Study Studio.

@@ -8,7 +8,8 @@
 
 import { json, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices, ProjectId } from './services';
+import type { ProjectId } from './services';
+import type { StudyPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
@@ -28,7 +29,7 @@ function asNumber(value: unknown): number | undefined {
 export class StudyModule implements DomainModule {
   readonly name = 'study';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: StudyPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('study.guide', (payload, context) => this.guide(payload, context.projectId));
@@ -118,6 +119,6 @@ export class StudyModule implements DomainModule {
   }
 }
 
-export function createStudyModule(services: DomainServices): StudyModule {
+export function createStudyModule(services: StudyPort): StudyModule {
   return new StudyModule(services);
 }

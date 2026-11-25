@@ -1,4 +1,4 @@
-import { ScriptDef, ScriptParamDef } from '@backend/server/agentServer';
+import type { ScriptDef, ScriptParamDef } from '@shared/domain/scripts';
 import { getActiveProjectId } from '@frontend/storage/ApiStorage';
 import { apiBus } from '@frontend/core/apiBus';
 import { ApiClientError } from '@frontend/api/client';

@@ -62,9 +62,9 @@ export interface RbacDecision {
   visibleProjects: string[];
 }
 
-export function defaultRbacConfig(): RbacConfig {
+export function defaultRbacConfig(env: NodeJS.ProcessEnv = process.env): RbacConfig {
   return {
-    enabled: false,
+    enabled: env.NODE_ENV === 'production',
     roles: [...DEFAULT_ROLES],
     permissionsByRole: {},
     projectAcls: {},
@@ -91,11 +91,11 @@ function asStringArray(value: unknown): string[] | undefined {
     .filter(Boolean);
 }
 
-export function normalizeRbacConfig(raw: unknown): RbacConfig {
-  const config = defaultRbacConfig();
+export function normalizeRbacConfig(raw: unknown, env: NodeJS.ProcessEnv = process.env): RbacConfig {
+  const config = defaultRbacConfig(env);
   const enterprise = asRecord(asRecord(raw).enterprise);
 
-  config.enabled = enterprise.enable_rbac === true;
+  if (env.NODE_ENV !== 'production') config.enabled = enterprise.enable_rbac === true;
 
   for (const [role, permissions] of Object.entries(asRecord(enterprise.roles))) {
     config.permissionsByRole[role] = asStringArray(permissions) ?? [];
@@ -159,17 +159,20 @@ export function rolesForScope(config: RbacConfig, projectId: string, scopePath?:
 }
 
 /** Load the RBAC catalogue from the first config.toml found under `rootDir`. */
-export async function loadRbacConfig(rootDir: string): Promise<RbacConfig> {
+export async function loadRbacConfig(
+  rootDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<RbacConfig> {
   for (const relative of ['config/config.toml', 'config.toml']) {
     try {
       const content = await fs.readFile(path.join(rootDir, relative), 'utf-8');
-      return normalizeRbacConfig(toml.parse(content) as unknown);
+      return normalizeRbacConfig(toml.parse(content) as unknown, env);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
       throw err;
     }
   }
-  return defaultRbacConfig();
+  return defaultRbacConfig(env);
 }
 
 /**
@@ -178,15 +181,18 @@ export async function loadRbacConfig(rootDir: string): Promise<RbacConfig> {
  * back to the legacy (disabled) catalogue so opt-in stays strictly opt-in:
  * an invalid file can never turn enforcement on by accident.
  */
-export function loadRbacConfigSync(rootDir: string): RbacConfig {
+export function loadRbacConfigSync(
+  rootDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+): RbacConfig {
   for (const relative of ['config/config.toml', 'config.toml']) {
     try {
       const content = fsSync.readFileSync(path.join(rootDir, relative), 'utf-8');
-      return normalizeRbacConfig(toml.parse(content) as unknown);
+      return normalizeRbacConfig(toml.parse(content) as unknown, env);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
-      return defaultRbacConfig();
+      return defaultRbacConfig(env);
     }
   }
-  return defaultRbacConfig();
+  return defaultRbacConfig(env);
 }

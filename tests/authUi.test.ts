@@ -24,6 +24,12 @@ const UNAUTHORIZED = {
   error: 'Unauthorized: Invalid or missing X-WikiForge-Token',
 };
 
+function assertUnauthorized(body: unknown, response: Response): void {
+  const value = body as Record<string, unknown>;
+  assert.deepStrictEqual({ success: value.success, error: value.error }, UNAUTHORIZED);
+  assert.strictEqual(value.correlationId, response.headers.get('x-correlation-id'));
+}
+
 const ISSUER = 'https://idp.example.test';
 const AUDIENCE = 'wiki-forge';
 const JWKS_URL = `${ISSUER}/.well-known/jwks.json`;
@@ -156,7 +162,6 @@ describe('GET /api/auth/me (B7)', () => {
       assert.deepStrictEqual(body.auth, {
         actor: 'process:api-token', roles: [], source: 'legacy-token',
         authenticated: false, rbacEnabled: false, strict: false, idpConfigured: false,
-        userStoreConfigured: true,
       });
     } finally {
       await h.close();
@@ -198,7 +203,7 @@ describe('GET /api/auth/me (B7)', () => {
         headers: { Authorization: 'Bearer not-a-jwt' },
       });
       assert.strictEqual(res.status, 401);
-      assert.deepStrictEqual(await res.json(), UNAUTHORIZED);
+      assertUnauthorized(await res.json(), res);
     } finally {
       await h.close();
     }
@@ -215,7 +220,6 @@ describe('GET /api/auth/me (B7)', () => {
       assert.deepStrictEqual(body.auth, {
         actor: 'human:alice', roles: ['Admin'], source: 'idp',
         authenticated: true, rbacEnabled: true, strict: true, idpConfigured: true,
-        userStoreConfigured: true,
       });
     } finally {
       await h.close();

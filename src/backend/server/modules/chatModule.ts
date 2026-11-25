@@ -9,8 +9,8 @@
 
 import { error, json, sse, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices } from './services';
-import type { ChatRequest } from '../agentServer';
+import type { ChatPort } from '../../app/ports';
+import type { ChatRequest } from '@shared/domain/scripts';
 
 type Payload = Record<string, unknown>;
 
@@ -25,7 +25,7 @@ function asBool(value: unknown): boolean | undefined {
 export class ChatModule implements DomainModule {
   readonly name = 'chat';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: ChatPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('chat.send', (payload, context) => this.send(payload, context));
@@ -67,6 +67,6 @@ export class ChatModule implements DomainModule {
   }
 }
 
-export function createChatModule(services: DomainServices): ChatModule {
+export function createChatModule(services: ChatPort): ChatModule {
   return new ChatModule(services);
 }

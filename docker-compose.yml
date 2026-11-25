@@ -13,6 +13,7 @@ services:
   wiki:
     image: ghcr.io/alby69/wiki-forge:latest
     build: .
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/wiki
     working_dir: /wiki
@@ -23,6 +24,7 @@ services:
   kg-api:
     image: ghcr.io/alby69/wiki-forge:latest
     build: .
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/wiki
     working_dir: /wiki
@@ -37,6 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ui
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
       - /app/node_modules
@@ -46,6 +49,7 @@ services:
       # Compose DNS name of the standalone FastAPI service. The Node gateway
       # proxies /api/v1/graph/* here instead of expecting localhost:8000.
       - FASTAPI_SERVER_URL=http://kg-api:8000
+      - WIKIFORGE_EMBED_SCHEDULER=false
     working_dir: /app
     ports:
       - "3001:3001"
@@ -58,6 +62,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ui
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
       - /app/node_modules
@@ -76,12 +81,33 @@ services:
     depends_on:
       - api
 
+  worker:
+    image: ghcr.io/alby69/wiki-forge-ui:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      - WIKIFORGE_STATE_BACKEND=${WIKIFORGE_STATE_BACKEND:-file}
+      - WIKIFORGE_STATE_DIR=/app/.wiki-forge/state
+      - WIKIFORGE_WORKER_CONCURRENCY=${WIKIFORGE_WORKER_CONCURRENCY:-2}
+      - WIKIFORGE_WORKER_LEASE_MS=${WIKIFORGE_WORKER_LEASE_MS:-30000}
+      - WIKIFORGE_WORKER_ID=${WIKIFORGE_WORKER_ID:-worker-compose}
+    command: npm run worker
+    depends_on:
+      - kg-api
+
   mcp-server:
     image: ghcr.io/alby69/wiki-forge:latest
     build: .
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/wiki
     working_dir: /wiki
     ports:
       - "8080:8080"
-    command: ["python3", "src/backend/server/mcp_server.py", "--http", "--port", "8080"]
+    command: ["npm", "run", "mcp", "--", "--http", "--port", "8080"]

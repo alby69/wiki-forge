@@ -7,7 +7,7 @@
  * last coupling points left in the legacy facade while they are being migrated.
  */
 
-import type { WikiNote } from '../../../frontend/core/types/wiki';
+import type { WikiNote } from '@shared/domain/wiki';
 import type { TrashEntry } from '../safeFs';
 import type { ProjectService } from '../projectService';
 import type { ChangesetStore } from '../changesetStore';
@@ -17,7 +17,7 @@ import type { EventTriggerBus } from '../scheduler/eventTriggers';
 import type { ScriptScheduleCreateInput } from '../scheduler/scriptJobStore';
 import type { MessageBus, Principal } from '../bus/messageBus';
 import type { PythonTool } from './pythonTool';
-import type { ScriptDef, ChatRequest } from '../agentServer';
+import type { ScriptDef, ChatRequest } from '@shared/domain/scripts';
 
 export type ProjectId = string;
 export type JsonObject = Record<string, unknown>;

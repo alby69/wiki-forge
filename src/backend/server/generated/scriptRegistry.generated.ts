@@ -3,7 +3,7 @@
  * Source of truth: src/backend/wikiforge/core/script_schema.py
  * Regenerate with: python scripts/gen_script_registry.py
  */
-import type { ScriptDef } from '../agentServer';
+import type { ScriptDef } from '@shared/domain/scripts';
 
 export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
     "conv2md": {

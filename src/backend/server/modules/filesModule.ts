@@ -9,14 +9,15 @@
 import * as path from 'node:path';
 import { binary, error, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
-import type { DomainServices, ProjectId } from './services';
+import type { ProjectId } from './services';
+import type { FilesPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
 export class FilesModule implements DomainModule {
   readonly name = 'files';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: FilesPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('files.download', (payload, context) => this.download(payload, context.projectId));
@@ -40,6 +41,6 @@ export class FilesModule implements DomainModule {
   }
 }
 
-export function createFilesModule(services: DomainServices): FilesModule {
+export function createFilesModule(services: FilesPort): FilesModule {
   return new FilesModule(services);
 }

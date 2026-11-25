@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
-import { WikiNote } from '../../frontend/core/types/wiki';
+import type { WikiNote } from '@shared/domain/wiki';
 
 export interface LlmConfig {
   provider: 'opencode' | 'anthropic' | 'openai_compatible' | 'ollama' | string;

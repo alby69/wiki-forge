@@ -67,8 +67,8 @@ rimasto senza tipi.
 - Parametro `X-Project-Id` sui route project-scoped, con fallback a `?projectId=`.
 - Risposte SSE documentate come `text/event-stream`; i frame terminano con
   `data: [DONE]\n\n`.
-- Sezione `x-wikiforge.mcp` con trasporti (stdio e HTTP/SSE JSON-RPC 2.0) e i
-  tool esposti da `src/backend/server/mcp_server.py`.
+- Sezione `x-wikiforge.mcp` con trasporti (stdio e Streamable HTTP) e i tool
+  generati da `COMMAND_MANIFEST.mcpTools` (`src/shared/mcp/tools.ts`).
 
 ### Servizio FastAPI
 

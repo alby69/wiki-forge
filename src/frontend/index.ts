@@ -23,6 +23,7 @@ import { appStore } from '@frontend/store/appStore';
 import type { ViewMode } from '@frontend/store/appStore';
 import { isSingleView, nextViewMode, SingleViewMode } from '@frontend/core/utils/viewMode';
 import { MainLayout } from '@frontend/components/ui/MainLayout';
+import { installOfflineBanner } from '@frontend/components/ui/OfflineBanner';
 import { Header } from '@frontend/components/ui/Header';
 import { Sidebar } from '@frontend/components/ui/Sidebar';
 import { MarkdownEditor } from '@frontend/components/editor/MarkdownEditor';
@@ -109,6 +110,7 @@ export class WikiForgeApp {
 
   constructor(rootContainer: HTMLElement) {
     applyStoredLanguage();
+    installOfflineBanner();
     this.layout = new MainLayout(rootContainer);
     this.initUI();
     this.bindGlobalActions();
@@ -490,7 +492,7 @@ Backlink to [[01-index]].
     this.graphControls = new GraphControls(this.layout.graphControlsContainer, {
       onFilterChange: options => {
         this.excludedFolders = options.excludedFolders ?? [];
-        const fullData = this.graphService.generateGraphData(this.notes);
+        const fullData = this.graphService.generateGraphData(this.notes, this.storage.getWikiGraph());
         const filtered = this.graphService.filterGraphData(fullData, {
           ...options,
           selectedTags: this.filterTags,
@@ -644,7 +646,7 @@ Backlink to [[01-index]].
 
   private refreshGraph(): void {
     this.graphControls.setAvailableFolders(this.collectFolders(), this.excludedFolders);
-    const full = this.graphService.generateGraphData(this.notes);
+    const full = this.graphService.generateGraphData(this.notes, this.storage.getWikiGraph());
     const filtered = this.graphService.filterGraphData(full, {
       selectedTags: this.filterTags,
       excludedFolders: this.excludedFolders,

@@ -172,7 +172,7 @@ describe('Fase 76 — wiki-to-program-change bridge (F5 withholding + F6 approva
     });
     assert.strictEqual(approved.status, 200, approved.body.error ?? '');
     assert.strictEqual(approved.body.approval.status, 'approved');
-    assert.strictEqual(approved.body.approval.decidedBy, 'mario');
+    assert.strictEqual(approved.body.approval.decidedBy, 'human:local');
 
     const after = await fs.readFile(path.join(h.tmpDir, TARGET_REL), 'utf-8');
     assert.ok(after.includes('Valore finale.'), 'F6 approval wrote the program change');
@@ -187,7 +187,7 @@ describe('Fase 76 — wiki-to-program-change bridge (F5 withholding + F6 approva
     const entries = audit.trim().split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
     assert.strictEqual(entries.length, 1);
     assert.strictEqual(entries[0].actor, 'human');
-    assert.strictEqual(entries[0].reviewer, 'human:mario');
+    assert.strictEqual(entries[0].reviewer, 'human:local');
 
     const snapshots = await fs.readdir(path.join(h.tmpDir, '.wikiforge', 'program-change-snapshots'));
     assert.ok(snapshots.length > 0, 'target file was snapshotted before mutation');

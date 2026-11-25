@@ -20,6 +20,12 @@ const UNAUTHORIZED = {
   error: 'Unauthorized: Invalid or missing X-WikiForge-Token',
 };
 
+function assertUnauthorized(body: unknown, response: Response, label?: string): void {
+  const value = body as Record<string, unknown>;
+  assert.deepStrictEqual({ success: value.success, error: value.error }, UNAUTHORIZED, label);
+  assert.strictEqual(value.correlationId, response.headers.get('x-correlation-id'), label);
+}
+
 interface Harness {
   agentServer: AgentServer;
   baseUrl: string;
@@ -74,11 +80,22 @@ describe('C4 — declarative Neo4j graph routes', () => {
   let h: Harness;
   let upstream: http.Server;
   let upstreamUrl: string;
+  let lastProxyRequest: { method?: string; path?: string; body: string; trace?: string } | undefined;
 
   before(async () => {
     upstream = http.createServer((req, res) => {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ proxied: true, path: req.url }));
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer | string) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      req.on('end', () => {
+        lastProxyRequest = {
+          method: req.method,
+          path: req.url,
+          body: Buffer.concat(chunks).toString('utf-8'),
+          trace: typeof req.headers['x-trace'] === 'string' ? req.headers['x-trace'] : undefined,
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ proxied: true, path: req.url }));
+      });
     });
     await new Promise<void>((resolve) => upstream.listen(0, '127.0.0.1', () => resolve()));
     upstreamUrl = `http://127.0.0.1:${(upstream.address() as { port: number }).port}`;
@@ -127,7 +144,7 @@ describe('C4 — declarative Neo4j graph routes', () => {
           body: body === undefined ? undefined : JSON.stringify(body),
         });
         assert.equal(res.status, 401, routePath);
-        assert.deepStrictEqual(await res.json(), UNAUTHORIZED, routePath);
+        assertUnauthorized(await res.json(), res, routePath);
       }
     });
   });
@@ -142,7 +159,7 @@ describe('C4 — declarative Neo4j graph routes', () => {
           body: '{}',
         });
         assert.equal(denied.status, 401, routePath);
-        assert.deepStrictEqual(await denied.json(), UNAUTHORIZED, routePath);
+        assertUnauthorized(await denied.json(), denied, routePath);
 
         // With a valid token the original FastAPI proxy behaviour is untouched.
         const res = await fetch(`${h.baseUrl}${routePath}`, {
@@ -205,14 +222,41 @@ describe('C4 — declarative Neo4j graph routes', () => {
     });
   });
 
+  it('dispatches the proxied graph routes through the bus with transport-neutral payloads', async () => {
+    await withEnv({ FASTAPI_SERVER_URL: upstreamUrl }, async () => {
+      const result = await h.agentServer.getBus().dispatch('graph.rag', {
+        method: 'POST',
+        search: '?trace=1',
+        headers: { 'x-trace': 'bus' },
+        body: { question: 'che succede?' },
+        bodyText: '{"question":"che succede?"}',
+      }, { rootDir: process.cwd(), projectId: 'default', correlationId: 'graph-proxy-test' });
+
+      assert.equal(result.kind, 'binary');
+      if (result.kind !== 'binary') return;
+      assert.equal(result.status, 200);
+      assert.deepStrictEqual(JSON.parse(String(result.body)), {
+        proxied: true,
+        path: '/api/v1/graph/rag?trace=1',
+      });
+      assert.equal(lastProxyRequest?.method, 'POST');
+      assert.equal(lastProxyRequest?.body, '{"question":"che succede?"}');
+      assert.equal(lastProxyRequest?.trace, 'bus');
+    });
+  });
+
   it('maps the new commands to explicit RBAC roles and registers them on the bus', () => {
     assert.equal(OPERATION_ROLES['graph.cypher'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.status'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.sync.neo4j'], 'KnowledgeEngineer');
     assert.equal(OPERATION_ROLES['graph.events'], 'Reader');
     assert.equal(OPERATION_ROLES['graph.reconcile'], 'KnowledgeEngineer');
+    assert.equal(OPERATION_ROLES['graph.rag'], 'Reader');
+    assert.equal(OPERATION_ROLES['graph.validate'], 'Reader');
+    assert.equal(OPERATION_ROLES['graph.sync'], 'KnowledgeEngineer');
     for (const command of [
       'graph.cypher', 'graph.status', 'graph.sync.neo4j', 'graph.events', 'graph.reconcile',
+      'graph.rag', 'graph.validate', 'graph.sync',
     ]) {
       assert.ok(h.agentServer.getBus().has(command), `${command} is not registered`);
     }

@@ -2,9 +2,10 @@ import { escapeHtml } from '@frontend/core/utils/html';
 import { t } from '@frontend/core/i18n/strings';
 import {
   getDefaultTemplateId,
-  getTemplate,
   listTemplates,
+  loadCanonicalTemplates,
   renderTemplate,
+  type TemplateDefinition,
 } from '@frontend/services/templateService';
 import { ensureOkfFrontmatter } from '@frontend/services/okfFrontmatter';
 
@@ -52,6 +53,7 @@ export class NewDocumentModal {
   private ownsHost: boolean;
   private options: NewDocumentModalOptions;
   private openFlag = false;
+  private templates: TemplateDefinition[] = listTemplates();
 
   constructor(options: NewDocumentModalOptions) {
     this.options = options;
@@ -81,6 +83,31 @@ export class NewDocumentModal {
     this.bindEvents();
     this.updatePreview();
     this.host.querySelector<HTMLInputElement>('#new-doc-name')?.focus?.();
+    void this.refreshTemplates();
+  }
+
+  private async refreshTemplates(): Promise<void> {
+    const canonical = await loadCanonicalTemplates();
+    if (!this.openFlag) return;
+    const current = this.host.querySelector<HTMLSelectElement>('#new-doc-template')?.value || getDefaultTemplateId();
+    this.templates = [...canonical, ...listTemplates().filter(template => !template.builtIn)];
+    const select = this.host.querySelector<HTMLSelectElement>('#new-doc-template');
+    if (!select) return;
+    select.innerHTML = this.templateOptions(current);
+    this.updatePreview();
+  }
+
+  private templateOptions(selectedId: string): string {
+    return this.templates
+      .map(template => {
+        const suffix = template.builtIn ? t('builtInTemplate') : t('customTemplate');
+        return `<option value="${escapeHtml(template.id)}" ${template.id === selectedId ? 'selected' : ''}>${escapeHtml(template.name)} — ${escapeHtml(suffix)}</option>`;
+      })
+      .join('');
+  }
+
+  private findTemplate(id: string): TemplateDefinition | undefined {
+    return this.templates.find(template => template.id === id);
   }
 
   public close(): void {
@@ -92,14 +119,8 @@ export class NewDocumentModal {
   }
 
   private markup(defaultPath: string): string {
-    const templates = listTemplates();
     const selectedId = getDefaultTemplateId();
-    const options = templates
-      .map(template => {
-        const suffix = template.builtIn ? t('builtInTemplate') : t('customTemplate');
-        return `<option value="${escapeHtml(template.id)}" ${template.id === selectedId ? 'selected' : ''}>${escapeHtml(template.name)} — ${escapeHtml(suffix)}</option>`;
-      })
-      .join('');
+    const options = this.templateOptions(selectedId);
     const initialPath = defaultPath.replace(/^\/?wiki\/?/i, '');
 
     return `
@@ -154,7 +175,7 @@ export class NewDocumentModal {
     const select = this.host.querySelector<HTMLSelectElement>('#new-doc-template');
     const name = this.host.querySelector<HTMLInputElement>('#new-doc-name')?.value ?? '';
     const preview = this.host.querySelector<HTMLTextAreaElement>('#new-doc-preview');
-    const template = getTemplate(select?.value || getDefaultTemplateId());
+    const template = this.findTemplate(select?.value || getDefaultTemplateId());
     if (!template || !preview) return;
     const title = name.trim().replace(/\.md$/i, '') || 'Titolo';
     preview.value = renderTemplate(template.content, { title });
@@ -171,7 +192,7 @@ export class NewDocumentModal {
     }
     const pathInput = this.host.querySelector<HTMLInputElement>('#new-doc-path');
     const select = this.host.querySelector<HTMLSelectElement>('#new-doc-template');
-    const template = getTemplate(select?.value ?? '') ?? getTemplate(getDefaultTemplateId());
+    const template = this.findTemplate(select?.value ?? '') ?? this.findTemplate(getDefaultTemplateId());
     if (!template) return;
 
     const title = name.replace(/\.md$/i, '') || name;

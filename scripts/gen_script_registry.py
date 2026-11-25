@@ -137,7 +137,7 @@ def render(schemas: dict[str, dict[str, Any]]) -> str:
         " * Source of truth: src/backend/wikiforge/core/script_schema.py\n"
         " * Regenerate with: python scripts/gen_script_registry.py\n"
         " */\n"
-        "import type { ScriptDef } from '../agentServer';\n\n"
+        "import type { ScriptDef } from '@shared/domain/scripts';\n\n"
         "export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = "
         + indented.lstrip()
         + ";\n"

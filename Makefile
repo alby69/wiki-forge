@@ -29,22 +29,22 @@ shell:
 	docker compose run --rm wiki shell
 
 audit:
-	@echo "Run 'audit' in your agent (AGENT.md §5.3)"
+	@npm run wf -- --yes cmd audit
 
 stats:
 	@python3 scripts/wiki_stats.py
 
 reindex:
-	@echo "Run 'reindex' in your agent (AGENT.md §5.3)"
+	@npm run wf -- --yes cmd reindex
 
 clean-output:
 	rm -rf output/*
 
 export-json:
-	@echo "Run 'export json' in your agent (AGENT.md §5.5)"
+	@npm run wf -- api projects.export --body '{"params":{"id":"$(or $(PROJECT_ID),default)"}}' --output "$(or $(OUTPUT),projects-export.json)"
 
 lint:
-	@echo "Run 'lint-frontmatter' in your agent (AGENT.md §5.3)"
+	@npm run wf -- --yes cmd audit
 
 schema-lint:
 	@python3 scripts/schema_lint.py
@@ -53,19 +53,19 @@ schema-infer:
 	@python3 scripts/schema_infer.py
 
 study-guide:
-	@echo "Run '/study-guide <topic>' in chat drawer or agent CLI"
+	@npm run wf -- study guide "$(or $(TOPIC),wiki-forge)"
 
 quiz:
-	@echo "Run '/quiz <topic>' in chat drawer or agent CLI"
+	@npm run wf -- study quiz "$(or $(TOPIC),wiki-forge)" --count "$(or $(COUNT),5)"
 
 deep-research:
-	@echo "Run '/deep-research <question>' in chat drawer or agent CLI"
+	@npm run wf -- --yes cmd deep-research "$(or $(QUESTION),wiki-forge)"
 
 mindmap:
-	@echo "Run '/mindmap <article-path>' in chat drawer or agent CLI"
+	@npm run wf -- study mindmap "$(or $(TARGET),index)"
 
 note:
-	@echo "Run '/note <text>' in chat drawer or agent CLI"
+	@npm run wf -- study note "$(or $(TEXT),nota rapida)"
 
 docs-sync:
 	python3 scripts/check_docs_sync.py
@@ -137,12 +137,21 @@ thesis-pdf:
 	python3 scripts/export_thesis_pdf.py --input output/thesis_compiled.md --output output/thesis_final.pdf
 
 mcp-serve:
-	python3 src/backend/server/mcp_server.py --http --port 8080
+	npm run mcp -- --http --port 8080
 
 # A2/A3 — explicit runtime boundary. The Node API and the Python KG API are
 # separate processes; Vite only proxies to the Node API.
 api:
 	npm run api
+
+worker:
+	@npm run worker
+
+worker-docker:
+	docker compose up worker
+
+worker-deploy:
+	docker compose up -d worker
 
 kg-api:
 	python3 -m uvicorn src.backend.wikiforge.api.api_server:app --host 0.0.0.0 --port 8000
@@ -151,7 +160,7 @@ dev-all:
 	npm run dev:all
 
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, api, kg-api, dev-all, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, api, worker, worker-docker, worker-deploy, kg-api, dev-all, help"
 
 ui:
 	npm run dev
@@ -188,4 +197,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve api kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve api worker worker-docker worker-deploy kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link

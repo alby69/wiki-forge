@@ -4,17 +4,17 @@
  * Both commands stream their progress as SSE; the gateway owns only the
  * response headers, while this module writes every frame and the terminal
  * `[DONE]` exactly as the legacy inline handlers did. All registries and
- * process settings come from the injected `DomainServices`, so there is no
+ * process settings come from the injected `ExecutionPort`, so there is no
  * runtime dependency on `AgentServer` or on HTTP request/response types.
  */
 
-import { spawn } from 'node:child_process';
 import * as path from 'node:path';
 import { error, sse, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
+import { spawnManaged } from '../process/scriptRunner';
 import { resolveToolScript } from '../toolPaths';
 import { runUseCase, type UseCaseEvent } from '../useCaseRunner';
-import type { DomainServices } from './services';
+import type { ExecutionPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 /** Avoid a runtime import of `agentServer` just for the Use Case shape. */
@@ -37,7 +37,7 @@ function effectiveProject(contextProjectId: string, payload: Payload): string {
 export class ExecutionModule implements DomainModule {
   readonly name = 'execution';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: ExecutionPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('scripts.execute', (payload, context) => this.executeScript(payload, context.projectId));
@@ -86,25 +86,27 @@ export class ExecutionModule implements DomainModule {
           scriptEnv.WIKI_FORGE_WIKI_DIR = path.join(projRoot, 'wiki');
         }
 
-        const child = spawn(this.services.pythonTool.pythonCmd, [scriptPath, ...cliArgs], {
+        const managed = spawnManaged({
+          command: this.services.pythonTool.pythonCmd,
+          args: [scriptPath, ...cliArgs],
           cwd: projRoot,
-          env: scriptEnv,
+          extraEnv: scriptEnv,
+          onStdout: (text) => {
+            res.write(`data: ${JSON.stringify({ type: 'stdout', text })}\n\n`);
+          },
+          onStderr: (text) => {
+            res.write(`data: ${JSON.stringify({ type: 'stderr', text })}\n\n`);
+          },
         });
 
-        child.stdout.on('data', (data: Buffer) => {
-          res.write(`data: ${JSON.stringify({ type: 'stdout', text: data.toString('utf-8') })}\n\n`);
-        });
-        child.stderr.on('data', (data: Buffer) => {
-          res.write(`data: ${JSON.stringify({ type: 'stderr', text: data.toString('utf-8') })}\n\n`);
-        });
-        child.on('error', (err: Error) => {
-          res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Failed to start process: ${err.message}` })}\n\n`);
-          res.write(`data: ${JSON.stringify({ type: 'exit', code: -1 })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
-        });
-        child.on('close', (code: number | null) => {
-          res.write(`data: ${JSON.stringify({ type: 'exit', code: code ?? 0 })}\n\n`);
+        void managed.done.then((result) => {
+          if (result.error) {
+            res.write(`data: ${JSON.stringify({ type: 'stderr', text: `Failed to start process: ${result.error.message}` })}\n\n`);
+          }
+          if (result.truncated) {
+            res.write(`data: ${JSON.stringify({ type: 'stderr', text: 'Output truncated by subprocess limit' })}\n\n`);
+          }
+          res.write(`data: ${JSON.stringify({ type: 'exit', code: result.code })}\n\n`);
           res.write('data: [DONE]\n\n');
           res.end();
         });
@@ -161,6 +163,6 @@ export class ExecutionModule implements DomainModule {
   }
 }
 
-export function createExecutionModule(services: DomainServices): ExecutionModule {
+export function createExecutionModule(services: ExecutionPort): ExecutionModule {
   return new ExecutionModule(services);
 }

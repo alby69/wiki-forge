@@ -9,7 +9,7 @@
 import { binary, error, json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { CloneInclude, ProjectBundle, ProjectDeleteMode } from '../projectService';
-import type { DomainServices } from './services';
+import type { ProjectsPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
 
@@ -54,7 +54,7 @@ function bodyExcept(payload: Payload, ...keys: string[]): Payload {
 export class ProjectsModule implements DomainModule {
   readonly name = 'projects';
 
-  constructor(private readonly services: DomainServices) {}
+  constructor(private readonly services: ProjectsPort) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('projects.list', (payload, context) => this.list(payload, context));
@@ -225,6 +225,6 @@ export class ProjectsModule implements DomainModule {
   }
 }
 
-export function createProjectsModule(services: DomainServices): ProjectsModule {
+export function createProjectsModule(services: ProjectsPort): ProjectsModule {
   return new ProjectsModule(services);
 }

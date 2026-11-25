@@ -90,9 +90,9 @@ Implemented in `scripts/versioning.py`, `wiki/versions/`, `src/frontend/componen
 - **Web UI**: the **🕐 Cronologia** button in the editor header opens the **Version History & Rollback** modal (`VersionTimeline.ts`), which lists the snapshots and offers 1-click **🔄 Rollback to vN** restore. Version history and rollback are UI-only; the deterministic diff lives in the **Review Studio** (§2.11) and the chat `/diff` command remains LLM best-effort.
 
 ### 2.6 OKF Model Context Protocol (MCP) Server
-Implemented in `src/backend/server/mcp_server.py` and `docker-compose.yml`:
-- **Tools Exposed**: `search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, and `get_version_history`.
-- **Multi-Agent Ecosystem Support**: Enables external LLM agents (Claude, GPT) to query and cite the OKF knowledge base over standard MCP JSON-RPC protocol.
+Implemented as an HTTP-only adapter in `src/backend/mcp/adapter.ts` and exposed through `npm run mcp` (`bin/wf.ts mcp`). `src/backend/server/mcp_server.py` is now a thin compatibility shim and `docker-compose.yml` starts the Node adapter:
+- **Tools Exposed**: generated from `COMMAND_MANIFEST.mcpTools` (`src/shared/mcp/tools.ts`); every API operation has a `wf_*` tool, plus eight legacy aliases (`search_wiki`, `get_concept_metadata`, `get_line_anchored_citation`, `list_trust_tiers`, `get_version_history`, `validate_competency_question`, `get_ontology_gaps`, `execute_ke_use_case`).
+- **Multi-Agent Ecosystem Support**: standard MCP over stdio and Streamable HTTP; every tool call goes through the typed API client, so project scope, token, RBAC, F5/F6 policy, path containment and SSE progress stay in the backend.
 
 ### 2.7 W3C Semantic RDF Exporter & Ontology Rule Engine
 Implemented in `scripts/export_semantic.py` and `scripts/ontology_rules.py`:
@@ -224,6 +224,29 @@ Implemented in `src/backend/server/bus/messageBus.ts`,
   `ACTION_MIN_ROLE`. Local accounts whose actor is `human:<username>` matching
   the signed-in user are marked as self: edit/delete are disabled, the form is
   not opened and a staged update is refused if the identity changes before save.
+
+#### 2.10.5 Presentation-only UI and enterprise hardening (Fase 5-6)
+
+- The browser consumes typed DTOs for graph, templates and review snapshots.
+  `NewDocumentModal` renders local previews but loads canonical templates from
+  `templates.list`, falling back to the checked-in definitions when the API is
+  unreachable. `OfflineBanner` surfaces API failures explicitly; `VersionTimeline`
+  uses real snapshots instead of synthetic timestamps.
+- Auth-derived `Principal` is the only source of actor/reviewer identity;
+  client-supplied `reviewer`, `user` and `actor` cannot override it.
+- `api/http.ts` centralises CORS, body limits, JSON validation, correlation ids
+  and structured logs. `/api/healthz`, `/api/readyz` and `/api/metrics` expose
+  liveness, readiness and counters; production forces RBAC and token checks.
+- `src/backend/server/state/` implements a selectable `StateStore` (`file`,
+  `memory` or an HTTP adapter for Postgres/Redis/S3). Approvals use an outbox and
+  the standalone worker uses a lease-based leader lock instead of the legacy PID
+  lock. `WIKIFORGE_EMBED_SCHEDULER=false` prevents the API process from running a
+  second scheduler when `npm run worker` is active.
+- `httpServer.ts` serves the built SPA from `dist/` and delegates every `/api/*`
+  request to `AgentServer`, so the API is the single public process in production.
+- Subprocesses use `src/backend/server/process/scriptRunner.ts` with an env
+  allowlist, timeout and bounded stdout/stderr. Compose starts API, UI, Python KG,
+  MCP and worker as non-root services.
 
 ### 2.11 Review Studio API & Local Snapshot Store
 Implemented in `src/frontend/components/review/ReviewStudio.ts`, `ReviewContextMenu.ts`, `src/frontend/core/types/review.ts`, `src/frontend/storage/ApiStorage.ts`, `src/frontend/styles/review-studio.css`, and `src/backend/server/agentServer.ts`.
