@@ -189,7 +189,7 @@ describe('Fase 76 — wiki-to-program-change bridge (F5 withholding + F6 approva
     assert.strictEqual(entries[0].actor, 'human');
     assert.strictEqual(entries[0].reviewer, 'human:local');
 
-    const snapshots = await fs.readdir(path.join(h.tmpDir, '.wikiforge', 'program-change-snapshots'));
+    const snapshots = await fs.readdir(path.join(h.tmpDir, '.wiki-forge', 'program-change-snapshots'));
     assert.ok(snapshots.length > 0, 'target file was snapshotted before mutation');
   });
 

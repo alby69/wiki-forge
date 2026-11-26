@@ -249,10 +249,10 @@ def atomic_write(path: Path, content: str) -> None:
 
 
 def snapshot_file(root: Path, rel: str, at: str) -> str:
-    """Copy the current file to .wikiforge/ before mutating it."""
+    """Copy the current file to .wiki-forge/ before mutating it."""
     target = resolve_target(root, rel)
     stamp = at.replace(":", "-")
-    snapshot = root / ".wikiforge" / "program-change-snapshots" / rel.replace("/", "__") / f"{stamp}.bak"
+    snapshot = root / ".wiki-forge" / "program-change-snapshots" / rel.replace("/", "__") / f"{stamp}.bak"
     snapshot.parent.mkdir(parents=True, exist_ok=True)
     snapshot.write_bytes(target.read_bytes())
     return snapshot.relative_to(root).as_posix()

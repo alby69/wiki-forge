@@ -189,7 +189,7 @@ Stdio client:
 npm run mcp -- --project <id> --token <token>
 ```
 
-**Current state (2026-11-25):** the tool list above is generated from the shared command manifest, which the MCP, CLI and UI adapters all consume; MCP exposes 113 tools from 105 HTTP routes and 158 bus handlers. The authoritative entrypoint is `bin/mcp.ts` (spawned by `wf mcp` as a child process) and `src/backend/server/mcp_server.py` is only a compatibility shim. Every dispatch is recorded by the central command audit, with the principal always present on the bus. `.wiki-forge/` is the active Node runtime state root; `.wikiforge/` remains a separate Python health/procedure root and the boundary is tracked in ROADMAP.
+**Current state (2026-11-25):** the tool list above is generated from the shared command manifest, which the MCP, CLI and UI adapters all consume; MCP exposes 113 tools from 105 HTTP routes and 158 bus handlers. The authoritative entrypoint is `bin/mcp.ts` (spawned by `wf mcp` as a child process) and `src/backend/server/mcp_server.py` is only a compatibility shim. Every dispatch is recorded by the central command audit, with the principal always present on the bus. `.wiki-forge/` is the unified state root for the Node runtime and the Python health/procedure engine: the Node StateStore remains in `.wiki-forge/state/`, while legacy `.wikiforge/` files are read as a fallback and migrated explicitly.
 
 ### B. W3C Semantic Export (RDF / JSON-LD / Turtle)
 Export knowledge base into W3C RDF graph standards (`output/wiki_export.jsonld`, `output/wiki_export.ttl`):
@@ -214,8 +214,9 @@ verificabili:
 Per la valutazione usare `/ke-maturity` in chat, il comando
 `python3 scripts/ke_maturity.py --json` o l'endpoint Python
 `GET /api/v1/health` per lo Health Score 0-100 con azioni successive. I due
-percorsi usano radici di stato diverse (`.wiki-forge/` per Node,
-`.wikiforge/` per il motore Python storico): l'allineamento è in ROADMAP.
+percorsi usano la radice unica `.wiki-forge/` (Node in `state/`, Python in
+`health/` e `procedures/`); i vecchi file `.wikiforge/` sono solo un fallback
+di compatibilità.
 
 ### Procedure TOML personalizzate
 

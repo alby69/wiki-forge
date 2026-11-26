@@ -56,6 +56,17 @@ CONFIG_SCHEMA: dict[str, Any] = {
             "timeout_seconds": frozenset({int, float}),
         },
     },
+    "llm": {
+        "local": {
+            "enabled": bool,
+            "model_path": str,
+            "n_ctx": int,
+            "n_threads": int,
+            "n_batch": int,
+            "n_gpu_layers": int,
+            "temperature": frozenset({int, float}),
+        },
+    },
     "naming": {
         "article_case": str,
         "wiki_folder_case": str,

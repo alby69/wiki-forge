@@ -1075,6 +1075,7 @@ export const reviewMethods = {
       'Sei un revisore critico accademico esperto di knowledge management e OKF v0.2.',
       'Il tuo compito è stress-testare una nota di una tesi, non riscriverla.',
       'Rispondi in italiano, in Markdown, con questa struttura esatta:',
+      'Usa un blocco <think>...</think> per l’analisi passo-passo, poi chiudi il blocco prima della struttura finale.',
       '## Sintesi',
       '## Finding',
       'Una tabella con colonne: Gravità | Tipo | Dettaglio | Riferimento.',

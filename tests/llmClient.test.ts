@@ -7,6 +7,7 @@ import {
   LlmClient,
   LlmCompletionParams,
   LlmClientFactory,
+  LlamaCppClient,
   ensureOpenCodeConfigured,
   extractResponseText,
   parseConfigToml,
@@ -96,12 +97,34 @@ timeout_seconds = 30
 
     const opencodeClient = LlmClientFactory.createClient({ provider: 'opencode' });
     assert.ok(opencodeClient);
+
+    const localClient = LlmClientFactory.createClient({ provider: 'local' });
+    assert.ok(localClient instanceof LlamaCppClient);
   });
 
   await t.test('parseConfigToml defaults to valid opencode args when omitted', () => {
     const parsed = parseConfigToml('[agent.llm]\nprovider = "opencode"\n');
     assert.equal(parsed.agentLlmConfig.provider, 'opencode');
     assert.deepEqual(parsed.agentLlmConfig.opencode_args, ['run', '--format', 'json']);
+  });
+
+  await t.test('parseConfigToml reads llm.local CPU settings', () => {
+    const parsed = parseConfigToml(`
+[llm.local]
+enabled = true
+model_path = "./models/test.gguf"
+n_ctx = 4096
+n_threads = 4
+n_batch = 256
+n_gpu_layers = 0
+temperature = 0.2
+`);
+    assert.equal(parsed.agentLlmConfig.local_enabled, true);
+    assert.equal(parsed.agentLlmConfig.local_model_path, './models/test.gguf');
+    assert.equal(parsed.agentLlmConfig.local_n_ctx, 4096);
+    assert.equal(parsed.agentLlmConfig.local_n_threads, 4);
+    assert.equal(parsed.agentLlmConfig.local_n_batch, 256);
+    assert.equal(parsed.agentLlmConfig.local_temperature, 0.2);
   });
 
   await t.test('extractResponseText parses opencode JSON event stream', () => {

@@ -155,17 +155,17 @@ def test_gate_can_reach_l4_when_report_is_clean(tmp_path: Path, monkeypatch: pyt
     assert all(a["id"] != "ke.validate-cq" for a in result["next_best_actions"])
 
 
-def test_health_artifacts_stay_in_python_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_health_artifacts_stay_in_unified_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     _gate(_make_repo(tmp_path, CLEAN_REPORT), monkeypatch)
 
-    assert (tmp_path / ".wikiforge" / "STATUS.md").is_file()
-    assert (tmp_path / ".wikiforge" / "metrics" / "history.jsonl").is_file()
-    assert not (tmp_path / ".wiki-forge").exists()
+    assert (tmp_path / ".wiki-forge" / "health" / "STATUS.md").is_file()
+    assert (tmp_path / ".wiki-forge" / "health" / "metrics" / "history.jsonl").is_file()
+    assert not (tmp_path / ".wikiforge").exists()
 
 
-def test_procedure_state_stays_in_python_root(tmp_path: Path):
+def test_procedure_state_stays_in_unified_root(tmp_path: Path):
     engine = ProcedureEngine(tmp_path, procedures_dir=tmp_path / "config" / "procedures")
 
-    assert engine.state_dir == tmp_path / ".wikiforge" / "state"
+    assert engine.state_dir == tmp_path / ".wiki-forge" / "procedures" / "state"
     assert engine.state_dir.is_dir()
-    assert not (tmp_path / ".wiki-forge" / "state").exists()
+    assert not (tmp_path / ".wikiforge" / "state").exists()

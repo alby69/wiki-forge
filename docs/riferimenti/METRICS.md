@@ -11,7 +11,7 @@ generated: 2026-11-26
 | Broken links | 0 |
 | Orphan articles | 0 |
 | Thematic wikis | 7 |
-| Sources ingested | 9 |
+| Sources ingested | 0 |
 
 ## Most Linked Articles
 

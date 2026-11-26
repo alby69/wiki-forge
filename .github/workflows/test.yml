@@ -29,6 +29,18 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Test conv2md CLI
         run: python scripts/conv2md.py --help
 
@@ -41,7 +53,18 @@ jobs:
       - name: Test docs-sync consistency
         run: python scripts/check_docs_sync.py
 
-      - name: Run Python unit tests with coverage
+      - name: Run Python coverage gates
         run: |
-          pip install pytest pytest-cov
-          PYTHONPATH=.:scripts pytest tests/python/ --cov=scripts --cov=src/backend/wikiforge/semantics --cov-report=term-missing
+          npm run test:coverage
+          npm run test:coverage:semantics
+
+      - name: Run Playwright E2E flow
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-py${{ matrix.python-version }}
+          path: playwright-report
+          if-no-files-found: ignore

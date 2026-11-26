@@ -21,7 +21,7 @@ FIXTURE_CONFIG = Path(__file__).resolve().parents[1] / "fixtures" / "ke_wiki" / 
 
 
 def test_schema_is_a_single_declarative_source():
-    for section in ("project", "paths", "conversion", "audio", "agent", "okf"):
+    for section in ("project", "paths", "conversion", "audio", "agent", "llm", "okf"):
         assert section in CONFIG_SCHEMA
 
 

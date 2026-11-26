@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Local CPU-only reasoning SLM — 2026-11-26
+
+- Nuovo provider additivo `[llm.local]` con `llama-cpp-python` lazy, GGUF Q4_K_M, `n_gpu_layers = 0` e streaming token per token.
+- Endpoint FastAPI `POST /api/v1/llm/reasoning/stream` con SSE `{"token", "is_thinking"}` e bridge JSON-lines `LlamaCppClient` per Chat Panel e Review Studio.
+- System prompt e prompt di critica usano blocchi `<think>...</think>` già renderizzati come tracce collassabili dal frontend; i provider cloud restano invariati.
+
 ### Completamento del piano di disaccoppiamento architetturale (F0–F6) — 2026-11-25
 
 - **Piano**: `docs/ARCHITECTURE_DECOUPLING_PLAN.md` passa da `In corso` a `Completata`; tutte le fasi 0–6 sono verificate e la baseline storica resta distinta dallo stato finale.

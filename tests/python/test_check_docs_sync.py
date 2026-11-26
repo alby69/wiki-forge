@@ -77,9 +77,14 @@ def test_stale_semantic_hash_is_reported_and_fixed(tmp_path: Path) -> None:
 
 def _state_root_fixture(tmp_path: Path) -> Path:
     for rel, content in {
-        "README.md": ".wikiforge/STATUS.md .wikiforge/metrics/history.jsonl .wiki-forge/state/",
-        "docs/architettura/ARCHITECTURE.md": ".wikiforge/STATUS.md .wiki-forge/state/",
-        "docs/processi/KNOWLEDGE_ENGINEERING.md": ".wikiforge/ .wiki-forge/",
+        "README.md": (
+            ".wiki-forge/health/STATUS.md .wiki-forge/health/metrics/history.jsonl "
+            ".wiki-forge/procedures/state/ .wiki-forge/state/"
+        ),
+        "docs/architettura/ARCHITECTURE.md": (
+            ".wiki-forge/health/STATUS.md .wiki-forge/procedures/state/ .wiki-forge/state/"
+        ),
+        "docs/processi/KNOWLEDGE_ENGINEERING.md": ".wiki-forge/ .wiki-forge/state/",
     }.items():
         path = tmp_path / rel
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -87,18 +92,18 @@ def _state_root_fixture(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_state_root_boundary_is_accepted(tmp_path: Path) -> None:
+def test_unified_state_root_is_accepted(tmp_path: Path) -> None:
     root = _state_root_fixture(tmp_path)
     assert check_docs_sync.check_state_roots(root) == []
 
 
-def test_single_root_claim_is_rejected(tmp_path: Path) -> None:
+def test_missing_unified_root_marker_is_rejected(tmp_path: Path) -> None:
     root = _state_root_fixture(tmp_path)
-    ke = root / "docs" / "processi" / "KNOWLEDGE_ENGINEERING.md"
-    ke.write_text(ke.read_text(encoding="utf-8") + " `.wikiforge/` is historical only.", encoding="utf-8")
+    readme = root / "README.md"
+    readme.write_text(readme.read_text(encoding="utf-8").replace(".wiki-forge/health/STATUS.md", ""), encoding="utf-8")
 
     errors = check_docs_sync.check_state_roots(root)
-    assert any("historical only" in error for error in errors)
+    assert any("health/STATUS.md" in error for error in errors)
 
 
 def _local_cloud_fixture(tmp_path: Path) -> Path:

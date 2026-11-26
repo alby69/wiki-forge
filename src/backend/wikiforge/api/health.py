@@ -3,8 +3,9 @@ src/backend/wikiforge/api/health.py
 
 Unified Knowledge Base Health & Metrics Engine for Wiki-Forge.
 Aggregates metrics from okf_stats, shacl_validator, ke_maturity, cq_runner,
-calculates L1-L4 Maturity Level, generates Next Best Actions, writes .wikiforge/STATUS.md,
-and appends historical snapshots to .wikiforge/metrics/history.jsonl.
+calculates L1-L4 Maturity Level, generates Next Best Actions, writes
+.wiki-forge/health/STATUS.md and appends historical snapshots to
+.wiki-forge/health/metrics/history.jsonl.
 """
 
 import json
@@ -14,6 +15,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.backend.wikiforge.state_root import HEALTH_HISTORY, HEALTH_STATUS, canonical_path
 from src.backend.wikiforge.semantics.shacl_validator import validate_shacl
 from src.backend.wikiforge.semantics.markdown_parser import parse_markdown_file
 from rdflib import Graph
@@ -68,10 +70,10 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
         wiki_dir = repo_root / "wiki"
 
     raw_dir = repo_root / "raw"
-    wikiforge_dir = repo_root / ".wikiforge"
-    metrics_dir = wikiforge_dir / "metrics"
-    wikiforge_dir.mkdir(parents=True, exist_ok=True)
-    metrics_dir.mkdir(parents=True, exist_ok=True)
+    status_md_path = canonical_path(repo_root, HEALTH_STATUS)
+    history_file = canonical_path(repo_root, HEALTH_HISTORY)
+    status_md_path.parent.mkdir(parents=True, exist_ok=True)
+    history_file.parent.mkdir(parents=True, exist_ok=True)
 
     # 1. Pipeline counts
     raw_pending = 0
@@ -303,13 +305,11 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
         "next_best_actions": next_best_actions,
     }
 
-    # Write .wikiforge/STATUS.md
-    status_md_path = wikiforge_dir / "STATUS.md"
+    # Write .wiki-forge/health/STATUS.md
     status_content = generate_status_markdown(payload)
     status_md_path.write_text(status_content, encoding="utf-8")
 
-    # Append snapshot to .wikiforge/metrics/history.jsonl
-    history_file = metrics_dir / "history.jsonl"
+    # Append snapshot to .wiki-forge/health/metrics/history.jsonl
     with history_file.open("a", encoding="utf-8") as f:
         f.write(json.dumps(payload) + "\n")
 

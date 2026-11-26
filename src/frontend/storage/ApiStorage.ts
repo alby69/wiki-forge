@@ -466,7 +466,7 @@ export class ApiStorage implements IStorage {
 
   public async sendChatStream(
     message: string,
-    onChunk: (chunk: string) => void,
+    onChunk: (chunk: string, isThinking?: boolean) => void,
     command?: string,
     contextNoteId?: string
   ): Promise<void> {
@@ -477,9 +477,9 @@ export class ApiStorage implements IStorage {
         (event) => {
           if (event.data === '[DONE]') return;
           try {
-            const parsed = JSON.parse(event.data) as { chunk?: string; error?: string };
+            const parsed = JSON.parse(event.data) as { chunk?: string; is_thinking?: boolean; error?: string };
             if (parsed.chunk) {
-              onChunk(parsed.chunk);
+              onChunk(parsed.chunk, parsed.is_thinking);
             }
             // In-stream `{ error }` frames were parsed and ignored by the legacy reader.
           } catch (_e) {
@@ -497,6 +497,45 @@ export class ApiStorage implements IStorage {
 
     const fallbackResponse = await this.sendChat(message, command, contextNoteId);
     onChunk(fallbackResponse);
+  }
+
+  public async streamLocalReasoning(
+    prompt: string,
+    onToken: (token: string, isThinking: boolean) => void,
+    context?: string,
+    maxTokens = 512
+  ): Promise<void> {
+    const configured = import.meta.env?.VITE_FASTAPI_BASE_URL as string | undefined;
+    const baseUrl = (configured || 'http://localhost:8000').replace(/\/+$/, '');
+    const response = await fetch(`${baseUrl}/api/v1/llm/reasoning/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+      body: JSON.stringify({ prompt, context, max_tokens: maxTokens }),
+    });
+    if (!response.ok || !response.body) {
+      throw new Error(`Reasoning stream failed: HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split(/\r?\n\r?\n/);
+      buffer = frames.pop() || '';
+      for (const frame of frames) {
+        const line = frame.split(/\r?\n/).find(part => part.startsWith('data:'));
+        if (!line) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === '[DONE]') continue;
+        const parsed = JSON.parse(data) as { token?: string; is_thinking?: boolean; error?: string; done?: boolean };
+        if (parsed.error) throw new Error(parsed.error);
+        if (parsed.token !== undefined) onToken(parsed.token, Boolean(parsed.is_thinking));
+        if (parsed.done) return;
+      }
+    }
   }
 
   public async getHelpTopics(): Promise<HelpTopicMeta[]> {

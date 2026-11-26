@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from rdflib import Graph
 
+from src.backend.wikiforge.api.reasoning_router import router as reasoning_router
 from src.backend.wikiforge.core.config import get_project_config
 from src.backend.wikiforge.core.exceptions import WikiForgeError, GraphValidationError, QueryExecutionError
 from src.backend.wikiforge.semantics.markdown_to_rdf import ZettelToRDFConverter
@@ -25,6 +26,7 @@ app = FastAPI(
     description="REST API interface for Enterprise Knowledge Graph operations, SHACL validation, and GraphRAG querying.",
     version="1.0.0"
 )
+app.include_router(reasoning_router)
 
 # Request / Response Schemas
 class SyncRequest(BaseModel):

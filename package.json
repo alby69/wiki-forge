@@ -11,9 +11,12 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:coverage": "PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ --cov=scripts --cov-report=term-missing --cov-fail-under=24",
+    "test:coverage:semantics": "PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ --cov=src/backend/wikiforge/semantics --cov-report=term-missing --cov-fail-under=64",
     "manifest": "node --import tsx scripts/gen_command_manifest.mjs",
     "manifest:check": "node --import tsx scripts/gen_command_manifest.mjs --check",
-    "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run typecheck && npm run build && npm test && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/",
+    "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run typecheck && npm run build && npm test && npm run test:coverage && npm run test:coverage:semantics && npm run test:e2e && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/",
     "wf": "node --import tsx bin/wf.ts",
     "mcp": "node --import tsx bin/mcp.ts",
     "worker": "node --import tsx bin/worker.ts"
@@ -40,6 +43,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^20.19.43",
     "tsx": "^4.19.0",
     "typescript": "^5.3.3",

@@ -106,12 +106,27 @@ Il servizio FastAPI autonomo espone `/api/v1/health` (risposta semplice `ok`)
 e `/api/v1/graph/sync|validate|rag`; il gateway ne fa il proxy solo per le
 route grafo. Il motore di salute aggregato (`api/health.py`) calcola uno score
 0-100, il livello L1-L4 e le azioni successive scrivendo
-`.wikiforge/STATUS.md` e `.wikiforge/metrics/history.jsonl`: questa è una
-radice legacy separata da `.wiki-forge/` e la cosa è tracciata in ROADMAP.
+`.wiki-forge/health/STATUS.md` e `.wiki-forge/health/metrics/history.jsonl`.
 Il Procedure Engine (`procedures.py`) esegue procedure TOML con DAG, pause
-umane e criteri di uscita, persistendo in `.wikiforge/state/<run_id>.json`,
-mentre lo StateStore Node usa `.wiki-forge/state/`. Il lock a lease appartiene
-allo scheduler Node, non al Procedure Engine.
+umane e criteri di uscita, persistendo in
+`.wiki-forge/procedures/state/<run_id>.json`, mentre lo StateStore Node usa
+`.wiki-forge/state/`. La radice è unica: i vecchi file `.wikiforge/` restano
+leggibili in fallback e `scripts/migrate_state_roots.py` li copia con backup e
+rollback. Il lock a lease appartiene allo scheduler Node, non al Procedure Engine.
+
+### 3.3.1 Provider LLM locale CPU-only
+
+Il provider additivo `[llm.local]` carica un modello GGUF tramite
+`llama-cpp-python` solo al primo utilizzo, con `n_gpu_layers = 0`. Il modulo
+`src/backend/wikiforge/llm/local_engine.py` espone uno streaming di token e il
+system prompt richiede blocchi `<think>...</think>`; il router
+`api/reasoning_router.py` espone `POST /api/v1/llm/reasoning/stream`, che invia
+frame SSE `{"token": "...", "is_thinking": true|false}` e un frame finale
+`{"done": true}`. Il client Node `LlamaCppClient` usa lo stesso motore tramite
+un bridge JSON-lines, quindi Review Studio e Chat Panel continuano a passare
+per `/api/chat` e per il bus senza nuove route pubbliche. I provider cloud
+restano invariati: il provider locale è selezionabile con
+`[agent.llm].provider = "local"` o come fallback quando il provider è vuoto.
 
 ### 3.4 Studio di revisione, ricerca e studio
 

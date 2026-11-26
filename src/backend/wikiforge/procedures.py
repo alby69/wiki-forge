@@ -4,7 +4,7 @@ src/backend/wikiforge/procedures.py
 Procedure Engine for Wiki-Forge.
 Parses TOML procedure definitions from config/procedures/*.toml, validates DAG requirements,
 manages step execution (auto scripts vs human review pauses), evaluates exit criteria,
-and persists run state in .wikiforge/state/<run_id>.json.
+and persists run state in .wiki-forge/procedures/state/<run_id>.json.
 """
 
 import json
@@ -24,14 +24,22 @@ except ImportError:
         import smol_toml as tomllib
 
 from src.backend.wikiforge.api.health import compute_health_metrics
+from src.backend.wikiforge.state_root import (
+    PROCEDURE_STATE,
+    PROCEDURE_WIZARD,
+    canonical_root,
+    iter_read_paths,
+    resolve_read_path,
+)
 
 
 class ProcedureEngine:
     def __init__(self, repo_root: Path, procedures_dir: Optional[Path] = None):
         self.repo_root = repo_root.resolve()
         self.procedures_dir = (procedures_dir or (self.repo_root / "config" / "procedures")).resolve()
-        self.wikiforge_dir = self.repo_root / ".wikiforge"
-        self.state_dir = self.wikiforge_dir / "state"
+        self.wikiforge_dir = canonical_root(self.repo_root)
+        self.state_dir = self.wikiforge_dir / PROCEDURE_STATE
+        self.wizard_file = self.wikiforge_dir / PROCEDURE_WIZARD
 
         self.procedures_dir.mkdir(parents=True, exist_ok=True)
         self.wikiforge_dir.mkdir(parents=True, exist_ok=True)
@@ -117,15 +125,18 @@ class ProcedureEngine:
 
         # Also write wizard_state.json if role == 'user'
         if proc.get("role") == "user":
-            wizard_file = self.wikiforge_dir / "wizard_state.json"
-            wizard_file.write_text(json.dumps(run_data, indent=2), encoding="utf-8")
+            self.wizard_file.write_text(json.dumps(run_data, indent=2), encoding="utf-8")
 
         # Automatically advance initial step
         return self.advance_run(run_id)
 
     def get_run(self, run_id: str) -> Optional[Dict[str, Any]]:
-        state_file = self.state_dir / f"{run_id}.json"
-        if not state_file.exists():
+        state_file = resolve_read_path(
+            self.repo_root,
+            f"{PROCEDURE_STATE}/{run_id}.json",
+            f"state/{run_id}.json",
+        )
+        if state_file is None:
             return None
         try:
             return json.loads(state_file.read_text(encoding="utf-8"))
@@ -144,12 +155,15 @@ class ProcedureEngine:
 
         # Update wizard_state.json if user wizard
         if run_data.get("role") == "user":
-            wizard_file = self.wikiforge_dir / "wizard_state.json"
-            wizard_file.write_text(json.dumps(run_data, indent=2), encoding="utf-8")
+            self.wizard_file.write_text(json.dumps(run_data, indent=2), encoding="utf-8")
 
     def list_runs(self, procedure_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
         runs = []
-        for file_p in self.state_dir.glob("run-*.json"):
+        for _name, file_p in iter_read_paths(
+            self.repo_root,
+            f"{PROCEDURE_STATE}/run-*.json",
+            "state/run-*.json",
+        ):
             try:
                 data = json.loads(file_p.read_text(encoding="utf-8"))
                 if procedure_id and data.get("procedure_id") != procedure_id:

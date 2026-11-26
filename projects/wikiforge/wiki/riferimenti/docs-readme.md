@@ -105,9 +105,13 @@ versioni e menu contestuale).
 
 Con l'ambiente Python di `requirements.txt` attivo, un solo comando esegue
 tutti i gate (docs/help, proiezione wiki, manuale, registry, manifest, typecheck,
-build, test Node e test Python) e stampa i conteggi aggiornati:
+build, test Node e Python con soglie di copertura, E2E Playwright) e stampa i
+conteggi aggiornati:
 
 ```bash
 npm run verify
 git diff --check
 ```
+
+I gate mirati sono `npm run test:coverage`, `npm run test:coverage:semantics` e
+`npm run test:e2e`; il report Playwright viene salvato in `playwright-report/`.

@@ -32,18 +32,16 @@ async function readStateFiles(dir: string): Promise<string> {
 }
 
 describe('user sessions in StateStore', () => {
-  it('keeps the Node state root separate from the Python health root', async () => {
+  it('uses the unified Node state root', async () => {
     const rootDir = await makeTempDir();
     const config = readStateStoreConfig({}, rootDir);
 
     assert.equal(config.dir, path.join(rootDir, '.wiki-forge', 'state'));
-    assert.notEqual(config.dir, path.join(rootDir, '.wikiforge', 'state'));
 
     const state = createFileSystemStateStore(config.dir);
-    await state.put('boundary-check', true);
+    await state.put('unified-check', true);
 
     assert.equal(await fs.stat(path.join(rootDir, '.wiki-forge', 'state')).then(() => true, () => false), true);
-    assert.equal(await fs.stat(path.join(rootDir, '.wikiforge')).then(() => true, () => false), false);
   });
 
   it('hydrates sessions in a new UserStore using the same state directory', async () => {

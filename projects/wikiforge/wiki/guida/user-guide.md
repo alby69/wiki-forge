@@ -30,7 +30,20 @@ requires a token unless an IdP or user store is configured, and has no default
 ## Guided Wizards
 Focus Mode includes a guided **Onboarding Wizard** (also available in chat as `/wizard [scenario]`) that walks you through setting up a new project step by step, and scenario presets can be selected in the wizard itself.
 
-Backend progress for guided procedures is recorded in `.wikiforge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
+Backend progress for guided procedures is recorded in `.wiki-forge/procedures/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
+
+## Local CPU-only Reasoning
+
+A local SLM can replace cloud providers without removing them. Install
+`llama-cpp-python` from `requirements.txt`, place a Q4_K_M `.gguf` model in
+`models/` (the default is `deepseek-r1-distill-qwen-1.5b-q4_k_m.gguf`), then
+check `[llm.local]` in `config/config.toml`: `enabled = true` registers the
+engine and `n_gpu_layers = 0` keeps inference CPU-only. Set
+`[agent.llm].provider = "local"` to activate it for chat and Review Studio, or
+leave the provider empty to use it as the fallback when no cloud provider is
+configured. The model is never loaded on startup; the first request reports a
+clear error if the GGUF file is missing. Streamed `<think>...</think>` blocks
+appear as collapsible traces in chat and critique output.
 
 ## Markdown Editor & Toolbar
 When editing notes, the editor view includes a built-in formatting toolbar:

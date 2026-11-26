@@ -39,6 +39,21 @@ export const FASTAPI_SNAPSHOT: Record<string, unknown> = {
     version: '1.0.0',
   },
   paths: {
+    '/api/v1/llm/reasoning/stream': {
+      post: {
+        tags: ['FastAPI', 'LLM'], summary: 'Stream Local Reasoning', operationId: 'reasoning_stream_api_v1_llm_reasoning_stream_post',
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ReasoningRequest' } } },
+        },
+        responses: {
+          '200': {
+            description: 'SSE token stream',
+            content: { 'text/event-stream': { schema: { type: 'string' } } },
+          },
+        },
+      },
+    },
     '/api/v1/health': {
       get: {
         tags: ['FastAPI'], summary: 'Health Check', operationId: 'health_check_api_v1_health_get',
@@ -94,6 +109,15 @@ export const FASTAPI_SNAPSHOT: Record<string, unknown> = {
   },
   components: {
     schemas: {
+      ReasoningRequest: {
+        type: 'object', required: ['prompt'],
+        properties: {
+          prompt: { type: 'string', title: 'Prompt' },
+          context: { anyOf: [{ type: 'string' }, { type: 'null' }], title: 'Context' },
+          max_tokens: { type: 'integer', title: 'Max Tokens', default: 512 },
+        },
+        title: 'ReasoningRequest',
+      },
       HealthResponse: {
         type: 'object', required: ['status', 'service'],
         properties: {

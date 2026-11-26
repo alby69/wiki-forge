@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import type { WikiNote } from '@shared/domain/wiki';
 import { buildAllowedEnv } from './process/scriptRunner';
 
@@ -14,6 +14,12 @@ export interface LlmConfig {
   model?: string;
   max_tokens?: number;
   timeout_seconds?: number;
+  local_enabled?: boolean;
+  local_model_path?: string;
+  local_n_ctx?: number;
+  local_n_threads?: number;
+  local_n_batch?: number;
+  local_temperature?: number;
 }
 
 export interface LlmCompletionParams {
@@ -117,6 +123,102 @@ export class OpenCodeCliClient implements LlmClient {
     const full = await this.complete(params);
     onChunk(full);
     return full;
+  }
+}
+
+export class LlamaCppClient implements LlmClient {
+  private config: LlmConfig;
+
+  constructor(config: LlmConfig) {
+    this.config = config;
+  }
+
+  private run(params: LlmCompletionParams, onChunk?: (chunk: string) => void): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const command = resolvePythonCommand();
+      const timeoutMs = (this.config.timeout_seconds || 600) * 1000;
+      const payload = {
+        systemPrompt: params.systemPrompt,
+        userMessage: params.userMessage,
+        contextNotes: params.contextNotes || [],
+        maxTokens: this.config.max_tokens || 512,
+      };
+
+      let child: ReturnType<typeof spawn>;
+      try {
+        child = spawn(command, ['-m', 'src.backend.wikiforge.llm.cli'], {
+          cwd: process.cwd(),
+          env: buildAllowedEnv(),
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (err) {
+        reject(new Error(`Python process for the local LLM failed to spawn (${command}): ${String(err)}`));
+        return;
+      }
+
+      let buffer = '';
+      let stderr = '';
+      let collected = '';
+      const timer = setTimeout(() => {
+        child.kill('SIGTERM');
+        reject(new Error(`Local LLM process timed out after ${this.config.timeout_seconds || 600} seconds.`));
+      }, timeoutMs);
+
+      const handleLine = (line: string): void => {
+        if (!line.trim()) return;
+        let frame: any;
+        try {
+          frame = JSON.parse(line);
+        } catch (_err) {
+          return;
+        }
+        if (frame.error) {
+          clearTimeout(timer);
+          reject(new Error(`Local LLM error: ${String(frame.error)}`));
+          return;
+        }
+        const delta = String(frame.delta || '');
+        if (!delta) return;
+        collected += delta;
+        onChunk?.(delta);
+      };
+
+      child.stdout?.on('data', chunk => {
+        buffer += chunk.toString();
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || '';
+        for (const line of lines) handleLine(line);
+      });
+      child.stderr?.on('data', chunk => {
+        stderr += chunk.toString();
+      });
+      child.on('error', err => {
+        clearTimeout(timer);
+        reject(new Error(`Local LLM process error: ${err.message}`));
+      });
+      child.on('close', code => {
+        clearTimeout(timer);
+        if (buffer.trim()) handleLine(buffer);
+        if (code === 0) {
+          resolve(collected);
+          return;
+        }
+        reject(new Error(`Local LLM exited with code ${code}. ${stderr ? `Error details: ${stderr.trim()}` : ''}`));
+      });
+
+      if (child.stdin) {
+        child.stdin.write(`${JSON.stringify(payload)}\n`);
+        child.stdin.end();
+      }
+    });
+  }
+
+  public complete(params: LlmCompletionParams): Promise<string> {
+    return this.run(params);
+  }
+
+  public completeStream(params: LlmCompletionParams, onChunk: (chunk: string) => void): Promise<string> {
+    return this.run(params, onChunk);
   }
 }
 
@@ -512,6 +614,12 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
   let model = 'claude-sonnet-4-6';
   let maxTokens = 4096;
   let timeoutSeconds = 60;
+  let localEnabled = false;
+  let localModelPath = './models/deepseek-r1-distill-qwen-1.5b-q4_k_m.gguf';
+  let localNCtx = 8192;
+  let localNThreads = 8;
+  let localNBatch = 512;
+  let localTemperature = 0.2;
   let projectContext = '';
   let projectTitle = '';
 
@@ -554,6 +662,13 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
     if (currentSection === 'project') {
       if (key === 'context') projectContext = parseStringVal(rawVal);
       if (key === 'title') projectTitle = parseStringVal(rawVal);
+    } else if (currentSection === 'llm.local') {
+      if (key === 'enabled') localEnabled = rawVal.toLowerCase() === 'true';
+      if (key === 'model_path') localModelPath = parseStringVal(rawVal);
+      if (key === 'n_ctx') localNCtx = parseInt(rawVal, 10) || localNCtx;
+      if (key === 'n_threads') localNThreads = parseInt(rawVal, 10) || localNThreads;
+      if (key === 'n_batch') localNBatch = parseInt(rawVal, 10) || localNBatch;
+      if (key === 'temperature') localTemperature = parseFloat(rawVal) || localTemperature;
     } else if (currentSection === 'agent.llm') {
       if (key === 'provider') provider = parseStringVal(rawVal);
       if (key === 'opencode_command') opencodeCommand = parseStringVal(rawVal);
@@ -582,10 +697,32 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
       model,
       max_tokens: maxTokens,
       timeout_seconds: timeoutSeconds,
+      local_enabled: localEnabled,
+      local_model_path: localModelPath,
+      local_n_ctx: localNCtx,
+      local_n_threads: localNThreads,
+      local_n_batch: localNBatch,
+      local_temperature: localTemperature,
     },
     projectContext,
     projectTitle,
   };
+}
+
+function resolvePythonCommand(): string {
+  const probe = (command: string): boolean => {
+    try {
+      return spawnSync(command, ['--version'], { stdio: 'ignore', env: buildAllowedEnv() }).status === 0;
+    } catch (_err) {
+      return false;
+    }
+  };
+  if (process.env.WIKIFORGE_PYTHON_BIN && probe(process.env.WIKIFORGE_PYTHON_BIN)) {
+    return process.env.WIKIFORGE_PYTHON_BIN;
+  }
+  if (probe('python3')) return 'python3';
+  if (probe('python')) return 'python';
+  return 'python3';
 }
 
 export class LlmClientFactory {
@@ -596,8 +733,15 @@ export class LlmClientFactory {
         return new HttpLlmClient(config);
       case 'ollama':
         return new OllamaClient(config);
+      case 'local':
+      case 'llama_cpp':
+        return new LlamaCppClient(config);
       case 'opencode':
+        return new OpenCodeCliClient(config);
       default:
+        if (config.local_enabled && (!config.provider || config.provider === 'auto')) {
+          return new LlamaCppClient(config);
+        }
         return new OpenCodeCliClient(config);
     }
   }
