@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import type { LocalModelDto } from '@shared/api/types';
+import { GGUF_CHUNK_BYTES } from '@shared/llm/gguf';
 import { atomicWriteFile } from '../safeFs';
 import type { ProjectService } from '../projectService';
 
@@ -9,7 +10,7 @@ export const LOCAL_MODEL_LIMITS = {
   maxBytes: 16 * 1024 * 1024 * 1024,
   maxChunkBytes: 8 * 1024 * 1024,
   maxChunks: 4096,
-  chunkBytes: 4 * 1024 * 1024,
+  chunkBytes: GGUF_CHUNK_BYTES,
 } as const;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

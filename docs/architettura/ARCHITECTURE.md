@@ -118,7 +118,7 @@ L'upload di un modello GGUF è una sequenza di cinque operazioni Admin sul bus:
 `projects.gguf.uploadStart`, `projects.gguf.uploadChunk`,
 `projects.gguf.uploadFinalize`, `projects.gguf.list` e
 `projects.gguf.activate`. Il gateway Node accetta solo JSON, quindi i chunk sono
-base64 (4 MiB per chunk lato UI, 8 MiB limite server) invece di multipart.
+base64 (512 KiB per chunk lato UI, 8 MiB limite server) invece di multipart: 512 KiB restano sotto il limite JSON predefinito del gateway di 1 MiB dopo la codifica base64.
 `LocalModelService` valida basename, estensione, dimensione dichiarata e magic
 `GGUF`, assembla i chunk in `models/<nome>.gguf` e registra nome, percorso
 relativo, dimensione e SHA256 in `.wiki-forge/llm/models.json`. Le sessioni

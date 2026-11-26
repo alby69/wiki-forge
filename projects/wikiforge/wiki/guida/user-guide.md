@@ -52,9 +52,11 @@ appear as collapsible traces in chat and critique output.
    Prefer `Q4_K_M` for CPU-only inference; the file must keep a `.gguf` basename.
 2. Open **⚙️ Config → LLM & Agent** in Developer Mode. The **Local GGUF (CPU-only)**
    section lists registered models and the active path from `config/config.toml`.
-3. Choose the downloaded `.gguf` in the file picker and press **Upload & activate**.
-   The browser sends 4 MiB base64 chunks; the maximum accepted size is 16 GiB
-   and 4096 chunks.
+3.    Choose the downloaded `.gguf` in the file picker and press **Upload & activate**.
+   The browser sends 512 KiB base64 chunks so each JSON request stays below the
+   gateway's 1 MiB body limit; the UI accepts up to 2 GiB (4096 chunks). API
+   clients can send larger chunks and up to 16 GiB when
+   `WIKIFORGE_MAX_BODY_BYTES` is raised.
 4. Wait for `Registered <name>; activating...`: the backend verifies the `GGUF`
    magic, computes SHA256, writes `models/<name>.gguf`, and sets
    `[agent.llm].provider = "local"` plus `[llm.local].model_path`.
@@ -89,7 +91,7 @@ if token:
 path = "/tmp/wf-models/model.Q4_K_M.gguf"
 name = os.path.basename(path)
 size = os.path.getsize(path)
-chunk_bytes = 4 * 1024 * 1024
+chunk_bytes = 512 * 1024
 chunks = (size + chunk_bytes - 1) // chunk_bytes
 
 def call(action, payload=None):

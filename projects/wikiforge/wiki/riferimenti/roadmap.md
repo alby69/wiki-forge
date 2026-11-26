@@ -50,7 +50,7 @@ Baseline verificata: **110 route HTTP**, **163 handler bus** in 20 moduli,
 **51 comandi slash / 20 con caso dedicato**, **118 tool MCP**, **32 gap noti**,
 zero gap `route-without-bus`. `npm run manifest:check` applica l'invariante.
 Verifica corrente: `npm run verify` con venv Python da `requirements.txt`
-esegue docs/wiki/registry/manifest, typecheck, build, `npm test` 601/601, pytest
+esegue docs/wiki/registry/manifest, typecheck, build, `npm test` 602/602, pytest
 168/168, E2E Playwright 1/1 e gate copertura `scripts/` 26% (soglia 24%) e
 `semantics/` 64% (soglia 64%).
 `git diff --check` resta verde.

@@ -2,8 +2,7 @@ import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { canUseOperation } from '@frontend/core/auth';
 import type { LocalModelDto } from '@shared/api/types';
-
-const GGUF_CHUNK_BYTES = 4 * 1024 * 1024;
+import { GGUF_CHUNK_BYTES } from '@shared/llm/gguf';
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({

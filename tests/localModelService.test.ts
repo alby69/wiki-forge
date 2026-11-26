@@ -2,8 +2,10 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { DEFAULT_MAX_BODY_BYTES } from '@backend/server/api/http';
 import { ProjectService } from '@backend/server/projectService';
-import { LocalModelService } from '@backend/server/services/localModelService';
+import { LocalModelService, LOCAL_MODEL_LIMITS } from '@backend/server/services/localModelService';
+import { GGUF_CHUNK_BYTES } from '@shared/llm/gguf';
 
 function split(base64: string, parts: number): string[] {
   const bytes = Buffer.from(base64, 'base64');
@@ -34,6 +36,12 @@ describe('Local GGUF model registry', () => {
 
   afterEach(async () => {
     await fs.rm(rootDir, { recursive: true, force: true });
+  });
+
+  it('keeps the GGUF chunk below the default gateway JSON body limit after base64 encoding', () => {
+    assert.equal(LOCAL_MODEL_LIMITS.chunkBytes, GGUF_CHUNK_BYTES);
+    const encodedBytes = Math.ceil(GGUF_CHUNK_BYTES / 3) * 4;
+    assert.ok(encodedBytes + 1024 < DEFAULT_MAX_BODY_BYTES);
   });
 
   async function upload(payload: Buffer, fileName = 'tiny.Q4_K_M.gguf') {

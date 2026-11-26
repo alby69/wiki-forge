@@ -25,10 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upload GGUF e attivazione locale dalla Config UI — 2026-11-26
 
-- Nuove operazioni Admin `projects.gguf.list`, `uploadStart`, `uploadChunk`, `uploadFinalize` e `activate`: upload chunked base64 (4 MiB lato UI, 8 MiB limite server, 16 GiB totali), validazione basename/magic/dimensione e registro SHA256 in `.wiki-forge/llm/models.json`.
+- Nuove operazioni Admin `projects.gguf.list`, `uploadStart`, `uploadChunk`, `uploadFinalize` e `activate`: upload chunked base64 (512 KiB lato UI, sotto il limite JSON di 1 MiB del gateway; 8 MiB limite server, 16 GiB totali via API), validazione basename/magic/dimensione e registro SHA256 in `.wiki-forge/llm/models.json`.
 - File finali in `models/`; l'attivazione aggiorna `[llm.local].enabled`, `[llm.local].model_path` e `[agent.llm].provider = "local"` nella config root e invalida il client LLM cacheato, senza riavvio.
 - Config Manager: sezione **Local GGUF (CPU-only)** nella scheda LLM con elenco modelli, path attivo, caricamento e pulsante **Use**; tutti i call passano da `ApiStorage` e dal bus tipizzato.
-- Baseline aggiornata: 110 route HTTP, 163 handler bus, 118 tool MCP, 32 gap noti invariati; test Node 601/601.
+- Baseline aggiornata: 110 route HTTP, 163 handler bus, 118 tool MCP, 32 gap noti invariati; test Node 602/602.
+- Fix limite gateway: chunk UI ridotto a 512 KiB e condiviso via `src/shared/llm/gguf.ts`, con test di regressione sul limite JSON di 1 MiB.
 
 ### Local CPU-only reasoning SLM — 2026-11-26
 
