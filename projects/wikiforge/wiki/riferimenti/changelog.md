@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nuovo provider additivo `[llm.local]` con `llama-cpp-python` lazy, GGUF Q4_K_M, `n_gpu_layers = 0` e streaming token per token.
 - Endpoint FastAPI `POST /api/v1/llm/reasoning/stream` con SSE `{"token", "is_thinking"}` e bridge JSON-lines `LlamaCppClient` per Chat Panel e Review Studio.
 - System prompt e prompt di critica usano blocchi `<think>...</think>` già renderizzati come tracce collassabili dal frontend; i provider cloud restano invariati.
+- Avvio Docker affidabile: build locale delle immagini con wheel CPU precompilata per `llama-cpp-python`, porta UI configurabile via `WIKIFORGE_UI_PORT`, controllo esplicito degli errori di Compose, worker/MCP sull'immagine Node e stato runtime ignorato da Git.
 
 ### Completamento del piano di disaccoppiamento architetturale (F0–F6) — 2026-11-25
 

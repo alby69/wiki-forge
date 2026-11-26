@@ -12,7 +12,7 @@ FROM python:3.12-slim
 
 # Install pandoc (no recommended packages, keep the image small).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends pandoc \
+    && apt-get install -y --no-install-recommends pandoc build-essential cmake \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /wiki
@@ -21,11 +21,11 @@ RUN useradd --uid 10001 --create-home node \
     && mkdir -p /wiki/output /wiki/raw /wiki/projects /wiki/.wiki-forge/state \
     && chown -R node:node /wiki/output /wiki/raw /wiki/projects /wiki/.wiki-forge
 
-USER node
-
 # Install Python dependencies first (better layer caching).
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+USER node
 
 # Copy the converter and helpers (the rest is mounted from the host).
 COPY scripts/conv2md.py entrypoint.sh ./

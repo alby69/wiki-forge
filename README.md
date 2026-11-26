@@ -27,7 +27,7 @@ Non serve installare Python o Node.js! Segui questi tre semplici passaggi:
    - 🍎 macOS: `bin/Start_WikiForge.command` *(al primo avvio: clic destro → "Apri")*
    - 🐧 Linux: `bin/Start_WikiForge.sh` *(assicurati che sia eseguibile: `chmod +x bin/Start_WikiForge.sh`)*
 
-L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http://localhost:5173**.
+L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http://localhost:5173**. Gli script di avvio ricostruiscono le immagini locali e interrompono l'avvio se un servizio non parte; se la porta 5173 è già occupata, imposta `WIKIFORGE_UI_PORT` prima dell'avvio per usare una porta diversa.
 
 ---
 

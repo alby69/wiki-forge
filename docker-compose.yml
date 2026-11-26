@@ -42,7 +42,6 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
-      - /app/node_modules
     environment:
       - OPENCODE_BIN=/usr/local/bin/opencode
       - PORT=3001
@@ -65,7 +64,6 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
-      - /app/node_modules
     environment:
       - OPENCODE_BIN=/usr/local/bin/opencode
       # Browser-facing origin: from the user's browser 127.0.0.1:3001 is the
@@ -76,7 +74,7 @@ services:
       - VITE_PROXY_TARGET=http://api:3001
     working_dir: /app
     ports:
-      - "5173:5173"
+      - "${WIKIFORGE_UI_PORT:-5173}:5173"
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - api
@@ -89,7 +87,6 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
-      - /app/node_modules
     working_dir: /app
     environment:
       - WIKIFORGE_STATE_BACKEND=${WIKIFORGE_STATE_BACKEND:-file}
@@ -97,17 +94,19 @@ services:
       - WIKIFORGE_WORKER_CONCURRENCY=${WIKIFORGE_WORKER_CONCURRENCY:-2}
       - WIKIFORGE_WORKER_LEASE_MS=${WIKIFORGE_WORKER_LEASE_MS:-30000}
       - WIKIFORGE_WORKER_ID=${WIKIFORGE_WORKER_ID:-worker-compose}
-    command: npm run worker
+    command: sh -c "npm install && npm run worker"
     depends_on:
       - kg-api
 
   mcp-server:
-    image: ghcr.io/alby69/wiki-forge:latest
-    build: .
+    image: ghcr.io/alby69/wiki-forge-ui:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      - .:/wiki
-    working_dir: /wiki
+      - .:/app
+    working_dir: /app
     ports:
       - "8080:8080"
-    command: ["npm", "run", "mcp", "--", "--http", "--port", "8080"]
+    command: sh -c "npm install && npm run mcp -- --http --port 8080"

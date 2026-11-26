@@ -34,6 +34,8 @@ Thumbs.db
 **/.wiki-forge/archive/
 **/.wiki-forge/trash/
 # Scheduler runtime state, PID lock and approval queue (F2/F6): machine-local, never versioned.
+.wiki-forge/state/
+.wiki-forge/ui-preferences.json
 .wiki-forge/scheduler-state.json
 .wiki-forge/scheduler.lock
 .wiki-forge/scheduler-approvals.json

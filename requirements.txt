@@ -15,4 +15,5 @@ networkx>=3.4,<4.0
 watchdog
 fastapi
 uvicorn
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 llama-cpp-python>=0.2.90
