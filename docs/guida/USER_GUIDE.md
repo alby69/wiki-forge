@@ -41,7 +41,7 @@ Ways to open it:
 
 Review history is stored locally in `.wiki-forge/snapshots/<note-path>/` as a `.md` snapshot plus a `.json` sidecar (timestamp and reason). The last **25** snapshots per note are kept and the folder is gitignored. The chat `/verify` (alias `/human-review`) shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` stay available as agent commands, while their Review Studio tabs are deterministic.
 
-See [`TUTORIAL.md`](TUTORIAL.md) §5.1 for trust tiers and [`mockups/`](mockups/README.md) for the design preview.
+See [`TUTORIAL.md`](TUTORIAL.md) §5.1 for trust tiers and [`mockups/`](../riferimenti/mockups/README.md) for the design preview.
 
 ## Research Studio
 The **🔎 Research** button in the top bar and the **🔎 Ricerca** button in the editor header open the **Research Studio**, a single modal with six horizontal tabs matching the six query commands:
@@ -63,7 +63,7 @@ Ways to open it:
 
 Search, backlinks, related and trace are deterministic and work offline. Consult and deep research use the configured LLM and fall back to a deterministic, clearly labelled response when no provider is available; the deep-research report and synthesis note are written only when the backend responds.
 
-See [`TUTORIAL.md`](TUTORIAL.md) §2 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) §2.12 for the API.
+See [`TUTORIAL.md`](TUTORIAL.md) §2 for the tab table and [`ARCHITECTURE.md`](../architettura/ARCHITECTURE.md) §3.4 for the API.
 
 ## Study Studio
 The **📚 Studio** button in the top bar (global action) opens the **Study Studio**, a single modal with seven horizontal tabs matching the 📚 study commands:
@@ -85,7 +85,7 @@ Ways to open it:
 
 All seven tabs are deterministic: they use the same builders as the chat commands (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`) and need no LLM. Generated artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and promoted articles to `wiki/`.
 
-See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) §2.13 for the API.
+See [`TUTORIAL.md`](TUTORIAL.md) §2/§4 for the tab table and [`ARCHITECTURE.md`](../architettura/ARCHITECTURE.md) §3.4 for the API.
 
 ## Top bar, languages and keyboard shortcuts (Fase 78)
 
@@ -177,7 +177,7 @@ reported explicitly as `api:error`; there is no local `FileStorage` fallback.
 > in the command catalogue and in the `wiki-curate` / `wiki-onboarding` skills,
 > but the chat router has no handler for them — they fall through to the LLM
 > free-form path. Use the graphical UI above for reliable template-based
-> creation. See [`help/chat-comandi.md`](help/chat-comandi.md).
+> creation. See [`help/chat-comandi.md`](../help/chat-comandi.md).
 
 ## Managing projects (Fase 78)
 
@@ -185,4 +185,4 @@ Open **📁 Projects** in the top bar to use the **Project Manager**. From there
 can create, clone, rename, archive/restore, export/import and delete wikis.
 **Delete moves the project to the trash by default** (recoverable); a separate
 danger action performs a permanent delete after an explicit confirmation. The
-`default` project cannot be removed. See [`help/progetti-config.md`](help/progetti-config.md).
+`default` project cannot be removed. See [`help/progetti-config.md`](../help/progetti-config.md).

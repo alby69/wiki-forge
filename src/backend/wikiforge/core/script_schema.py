@@ -120,7 +120,7 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
         "path": "scripts/wiki_stats.py",
         "displayName": "Global Wiki Statistics",
         "category": "Analysis & Metrics",
-        "description": "Calculates global wiki statistics and updates docs/METRICS.md.",
+        "description": "Calculates global wiki statistics and updates docs/riferimenti/METRICS.md.",
         "parameters": [],
     },
     "maturity_calculator": {
@@ -354,7 +354,7 @@ SCRIPT_SCHEMAS: Dict[str, Dict[str, Any]] = {
 
 # S0 — automation/safety metadata. This mapping is merged into SCRIPT_SCHEMAS so
 # the Python registry, the generated TypeScript registry, the /api/scripts/list
-# payload and docs/SCRIPT_AUTOMATION_REFERENCE.md all share ONE definition.
+# payload and docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md all share ONE definition.
 # Rule: anything that writes outside output/ is disabled by default and always
 # goes through the F5/F6 approval gate when scheduled. `argSafety` contains
 # arg-dependent overrides (e.g. `docs_wiki_drift --check` is read-only) so the
@@ -369,7 +369,7 @@ SCRIPT_AUTOMATION: Dict[str, Dict[str, Any]] = {
     "okf_log": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "0 6 * * *", "defaultArgs": {"type": "Update"}, "requires": [], "notes": "Accoda a wiki/log.md: richiede F6."},
     "okf_reindex": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "10 6 * * *", "defaultArgs": {}, "requires": [], "notes": "Rigenera wiki/index.md e indici tematici: richiede F6."},
     "okf_stats": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "10 2 * * *", "defaultArgs": {}, "requires": [], "notes": "Report statistiche OKF."},
-    "wiki_stats": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "20 6 * * 1", "defaultArgs": {}, "requires": [], "notes": "Aggiorna docs/METRICS.md: richiede F6."},
+    "wiki_stats": {"safety": "workspace", "schedulable": True, "enabledDefault": False, "defaultSchedule": "20 6 * * 1", "defaultArgs": {}, "requires": [], "notes": "Aggiorna docs/riferimenti/METRICS.md: richiede F6."},
     "maturity_calculator": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "30 6 * * 1", "defaultArgs": {"path": "wiki"}, "requires": [], "notes": "Con --write modifica il frontmatter: richiede F6.", "argSafety": [{"when": {"write": True}, "safety": "wiki-write"}]},
     "check_docs_sync": {"safety": "read-only", "schedulable": True, "enabledDefault": True, "defaultSchedule": "0 6 * * 1", "defaultArgs": {}, "requires": [], "notes": "Con --fix riscrive docs/help/: in quel caso diventa workspace.", "argSafety": [{"when": {"fix": True}, "safety": "workspace"}]},
     "suggest_tags": {"safety": "wiki-write", "schedulable": True, "enabledDefault": False, "defaultSchedule": "40 6 * * 1", "defaultArgs": {"all": True, "wiki": "wiki"}, "requires": [], "notes": "Con --write modifica il frontmatter: richiede F6.", "argSafety": [{"when": {"write": True}, "safety": "wiki-write"}]},

@@ -726,7 +726,7 @@ ${bodyText.slice(0, 500)}
    *
    * This is the operation that flips a node's trust tier to `human-reviewed`
    * (🟢 instead of 🟡/⚪), because the tier is derived from the `verified`
-   * list (docs/OKF_SPEC.md §6). Optionally promotes `status` to `stable`,
+    * list (docs/standard/OKF_SPEC.md §6). Optionally promotes `status` to `stable`,
    * which ontology Rule 3 only allows for human-verified notes.
    */
 

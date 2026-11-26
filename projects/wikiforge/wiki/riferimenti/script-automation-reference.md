@@ -2,15 +2,15 @@
 type: Reference
 title: "Catalogo sicurezza e automazione degli script"
 description: "Questo è il catalogo unico usato dal Policy Agent F5, dalla coda F6, dal pannello Script Control Panel e dalla tab 🤖 Agenti & Schedule. Le classi workspace…"
-resource: docs/SCRIPT_AUTOMATION_REFERENCE.md
+resource: docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-script-automation-reference-md
-    resource: docs/SCRIPT_AUTOMATION_REFERENCE.md
+  - id: source-docs-riferimenti-script-automation-reference-md
+    resource: docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md
     title: "Catalogo sicurezza e automazione degli script"
     author: human:alby69
 ---
@@ -54,7 +54,7 @@ Questo è il catalogo unico usato dal Policy Agent F5, dalla coda F6, dal pannel
 | `check_docs_sync` | 🟢 read-only — nessuna scrittura rilevante | sì | sì | `0 6 * * 1` | fix=true → workspace | — | Con --fix riscrive docs/help/: in quel caso diventa workspace. |
 | `graph_analytics` | 🟢 read-only — nessuna scrittura rilevante | sì | sì | `0 2 * * 0` | — | — | Analisi Louvain in sola lettura. |
 | `maturity_calculator` | 🟠 wiki-write — scrive nella wiki | sì | no (F6) | `30 6 * * 1` | write=true → wiki-write | — | Con --write modifica il frontmatter: richiede F6. Args: `{"path": "wiki"}` |
-| `wiki_stats` | 🟡 workspace — scrive in `raw/`, `sources/` o `docs/` | sì | no (F6) | `20 6 * * 1` | — | — | Aggiorna docs/METRICS.md: richiede F6. |
+| `wiki_stats` | 🟡 workspace — scrive in `raw/`, `sources/` o `docs/` | sì | no (F6) | `20 6 * * 1` | — | — | Aggiorna docs/riferimenti/METRICS.md: richiede F6. |
 
 ### Taxonomy
 

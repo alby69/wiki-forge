@@ -2,15 +2,15 @@
 type: Reference
 title: "LLM Wiki — by Andrej Karpathy"
 description: "A pattern for building personal knowledge bases using LLMs."
-resource: docs/KARPATHY_LLM_WIKI.md
+resource: docs/standard/KARPATHY_LLM_WIKI.md
 tags: [scope/docs, layer/generated, area/standard, lang/en]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-karpathy-llm-wiki-md
-    resource: docs/KARPATHY_LLM_WIKI.md
+  - id: source-docs-standard-karpathy-llm-wiki-md
+    resource: docs/standard/KARPATHY_LLM_WIKI.md
     title: "LLM Wiki — by Andrej Karpathy"
     author: human:alby69
 ---

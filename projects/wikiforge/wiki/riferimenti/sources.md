@@ -2,15 +2,15 @@
 type: Reference
 title: "Sources"
 description: "Registry of all documentary sources ingested into the project (folder raw/,"
-resource: docs/SOURCES.md
+resource: docs/riferimenti/SOURCES.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-sources-md
-    resource: docs/SOURCES.md
+  - id: source-docs-riferimenti-sources-md
+    resource: docs/riferimenti/SOURCES.md
     title: "Sources"
     author: human:alby69
 ---

@@ -3,7 +3,7 @@
 # S1: i job script generati dalla UI stanno in config/script_schedules.toml e
 # vengono uniti qui dal parser; qui restano i 9 job Use Case originali.
 # Gli orari sono stati confermati; tutti i job hanno auto_apply = false.
-# I job cron non toccano la wiki: scrivono solo in output/ o in docs/METRICS.md.
+# I job cron non toccano la wiki: scrivono solo in output/ o in docs/riferimenti/METRICS.md.
 # F5/F6: ogni decisione è registrata con rationale e fonti in
 # output/scheduler/decisions.jsonl; gli step mutanti non vengono mai eseguiti
 # automaticamente, ma accodati in .wiki-forge/scheduler-approvals.json.

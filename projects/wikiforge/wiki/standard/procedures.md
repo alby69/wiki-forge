@@ -2,15 +2,15 @@
 type: Reference
 title: "Procedure Engine Specification"
 description: "Procedures are TOML files located in config/procedures/."
-resource: docs/PROCEDURES.md
+resource: docs/processi/PROCEDURES.md
 tags: [scope/docs, layer/generated, area/standard, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-procedures-md
-    resource: docs/PROCEDURES.md
+  - id: source-docs-processi-procedures-md
+    resource: docs/processi/PROCEDURES.md
     title: "Procedure Engine Specification"
     author: human:alby69
 ---

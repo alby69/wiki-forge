@@ -41,4 +41,4 @@ Per ogni ruolo l'anteprima mostra ✓/✕ su alcune capacità chiave e il conteg
 
 L'account che corrisponde all'identità locale corrente (`human:<username>`) è etichettato **Tu**. I pulsanti **Modifica** ed **Elimina** sono disabilitati: non puoi toglierti il ruolo Admin, disattivarti o eliminarti. Anche un tentativo di salvataggio dopo un cambio di identità viene bloccato. Tutte le conferme usano finestre in-app accessibili, mai `alert`, `confirm` o `prompt` del browser.
 
-**Approfondisci:** `docs/USER_GUIDE.md` (sezione *Personalizzazione UI, ruoli e permessi*), `docs/USER_PERMISSIONS_UIUX_PLAN.md` (piano F0–F6), `docs/OPENAPI.md` (route `ui.*`).
+**Approfondisci:** `docs/guida/USER_GUIDE.md` (sezione *Personalizzazione UI, ruoli e permessi*), `docs/architettura/ARCHITECTURE.md` §4 (filtro RBAC), `docs/architettura/OPENAPI.md` (route `ui.*`).

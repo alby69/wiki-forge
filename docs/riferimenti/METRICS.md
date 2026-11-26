@@ -1,5 +1,5 @@
 ---
-generated: 2026-11-24
+generated: 2026-11-26
 ---
 
 # Wiki Metrics
@@ -11,14 +11,14 @@ generated: 2026-11-24
 | Broken links | 0 |
 | Orphan articles | 0 |
 | Thematic wikis | 7 |
-| Sources ingested | 16 |
+| Sources ingested | 9 |
 
 ## Most Linked Articles
 
 | Article | Inbound Links |
 |---------|---------------|
-| [[competenze-e-hr]] | 17 |
 | [[governance-controllo-responsabilita]] | 17 |
+| [[competenze-e-hr]] | 17 |
 | [[linee-guida-tesi-hr]] | 15 |
 | [[sostituzione-o-trasformazione]] | 12 |
 | [[concezioni-dell-ia]] | 11 |

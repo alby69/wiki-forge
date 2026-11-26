@@ -42,4 +42,4 @@ Sulla sinistra c'è la colonna con l'**albero dei file** della wiki e la **tag c
 
 La riga in fondo mostra lo stato di connessione del backend (`Status: Connected | Vault: /wiki`). Se dice altro, il server non è raggiungibile — vedi *Problemi frequenti*.
 
-**Approfondisci:** `docs/USER_GUIDE.md` (descrizione dell'interfaccia), `docs/TUTORIAL.md` §2 (viste e barre).
+**Approfondisci:** `docs/guida/USER_GUIDE.md` (descrizione dell'interfaccia), `docs/guida/TUTORIAL.md` §2 (viste e barre).

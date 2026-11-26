@@ -123,7 +123,7 @@ export class MarkdownParser {
   /**
    * Extracts the verification actors from an OKF v0.2 `verified` block.
    *
-   * The spec allows several shapes (docs/OKF_SPEC.md §4-§6):
+    * The spec allows several shapes (docs/standard/OKF_SPEC.md §4-§6):
    *   verified:
    *     - by: human:alby69
    *       at: 2026-09-02T12:30:00Z

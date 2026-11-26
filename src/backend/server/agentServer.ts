@@ -563,7 +563,7 @@ export class AgentServer {
 
   /**
    * The repository root `AGENT.md` is often just a one-line pointer to the
-   * real operating manual (e.g. `docs/AGENT.md`). Following the pointer makes
+    * real operating manual (e.g. `docs/processi/AGENT.md`). Following the pointer makes
    * the manual actually reach the LLM instead of the bare pointer string.
    */
   private async resolveAgentManual(content: string): Promise<string> {

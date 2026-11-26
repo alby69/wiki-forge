@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-problematic-md
     resource: docs/help/problematic.md
@@ -56,4 +56,4 @@ sources:
 
 Apri la guida con **F1**, cerca l'argomento e usa **💬 Chiedi all'agente**: la domanda parte precompilata con il contesto giusto. Per segnalare bug: issue su GitHub (link del logo in alto).
 
-**Approfondisci:** `docs/PROCEDURES.md` (procedure di ripristino), `docs/STARTUP.md` (avvio e struttura), `docs/ARCHITECTURE.md` (dove sta cosa).
+**Approfondisci:** `docs/processi/PROCEDURES.md` (procedure di ripristino), `docs/guida/STARTUP.md` (avvio e struttura), `docs/architettura/ARCHITECTURE.md` (dove sta cosa).

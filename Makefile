@@ -11,6 +11,9 @@
 #   make clean-output     Remove output/ directory contents
 #   make export-json      Export projects through the CLI
 #   make lint             Run wiki lint through the CLI
+#   make docs-sync        Check docs/help, changelog and wiki projection sync
+#   make docs-book        Build output/manuale-wiki-forge.md from the didactic path
+#   make docs-book-check  Verify the printable manual is up to date
 #   make help             Display available target commands
 
 convert:
@@ -69,6 +72,12 @@ note:
 
 docs-sync:
 	python3 scripts/check_docs_sync.py
+
+docs-book:
+	python3 scripts/docs_book.py
+
+docs-book-check:
+	python3 scripts/docs_book.py --check
 
 # Effective OKF wiki directories: the template default wiki/, or (when the
 # root wiki/ is absent, e.g. a fresh CI checkout) every populated project wiki.
@@ -160,7 +169,7 @@ dev-all:
 	npm run dev:all
 
 help:
-	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, mcp-serve, api, worker, worker-docker, worker-deploy, kg-api, dev-all, help"
+	@echo "Available targets: convert, convert-docker, wizard, build, shell, audit, stats, reindex, schema-lint, schema-infer, okf-validate, okf-lint, okf-reindex, okf-log, okf-stats, ontology-check, export-semantic, validate-cq, suggest-odp, neuro-check, ke-maturity, maturity, thesis-compile, thesis-pdf, study-guide, quiz, deep-research, mindmap, note, clean-output, export-json, lint, docs-sync, docs-book, docs-book-check, mcp-serve, api, worker, worker-docker, worker-deploy, kg-api, dev-all, help"
 
 ui:
 	npm run dev
@@ -197,4 +206,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync mcp-serve api worker worker-docker worker-deploy kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync docs-book docs-book-check mcp-serve api worker worker-docker worker-deploy kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link

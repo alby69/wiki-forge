@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-ui-personalizzazione-md
     resource: docs/help/ui-personalizzazione.md
@@ -46,4 +46,4 @@ Per ogni ruolo l'anteprima mostra ✓/✕ su alcune capacità chiave e il conteg
 
 L'account che corrisponde all'identità locale corrente (`human:<username>`) è etichettato **Tu**. I pulsanti **Modifica** ed **Elimina** sono disabilitati: non puoi toglierti il ruolo Admin, disattivarti o eliminarti. Anche un tentativo di salvataggio dopo un cambio di identità viene bloccato. Tutte le conferme usano finestre in-app accessibili, mai `alert`, `confirm` o `prompt` del browser.
 
-**Approfondisci:** `docs/USER_GUIDE.md` (sezione *Personalizzazione UI, ruoli e permessi*), `docs/USER_PERMISSIONS_UIUX_PLAN.md` (piano F0–F6), `docs/OPENAPI.md` (route `ui.*`).
+**Approfondisci:** `docs/guida/USER_GUIDE.md` (sezione *Personalizzazione UI, ruoli e permessi*), `docs/architettura/ARCHITECTURE.md` §4 (filtro RBAC), `docs/architettura/OPENAPI.md` (route `ui.*`).

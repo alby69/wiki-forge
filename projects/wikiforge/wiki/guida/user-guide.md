@@ -2,15 +2,15 @@
 type: Playbook
 title: "User Guide — Simple Focus Mode & Guided Procedures"
 description: "Focus Mode provides a clean, 3-step interface for operators:"
-resource: docs/USER_GUIDE.md
+resource: docs/guida/USER_GUIDE.md
 tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-user-guide-md
-    resource: docs/USER_GUIDE.md
+  - id: source-docs-guida-user-guide-md
+    resource: docs/guida/USER_GUIDE.md
     title: "User Guide — Simple Focus Mode & Guided Procedures"
     author: human:alby69
 ---
@@ -79,7 +79,7 @@ Ways to open it:
 
 Search, backlinks, related and trace are deterministic and work offline. Consult and deep research use the configured LLM and fall back to a deterministic, clearly labelled response when no provider is available; the deep-research report and synthesis note are written only when the backend responds.
 
-See [`TUTORIAL.md`](tutorial.md) §2 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) §2.12 for the API.
+See [`TUTORIAL.md`](tutorial.md) §2 for the tab table and [`ARCHITECTURE.md`](../architettura/architecture.md) §3.4 for the API.
 
 ## Study Studio
 The **📚 Studio** button in the top bar (global action) opens the **Study Studio**, a single modal with seven horizontal tabs matching the 📚 study commands:
@@ -101,7 +101,7 @@ Ways to open it:
 
 All seven tabs are deterministic: they use the same builders as the chat commands (`src/backend/server/studyHelpers.ts`, `POST /api/notes/study/*`) and need no LLM. Generated artefacts go to `output/`, quick notes to `notes/quick-notes.md`, and promoted articles to `wiki/`.
 
-See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`TECHNICAL_ARCHITECTURE.md`](../architettura/technical-architecture.md) §2.13 for the API.
+See [`TUTORIAL.md`](tutorial.md) §2/§4 for the tab table and [`ARCHITECTURE.md`](../architettura/architecture.md) §3.4 for the API.
 
 ## Top bar, languages and keyboard shortcuts (Fase 78)
 

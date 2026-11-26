@@ -51,4 +51,4 @@ Oltre alla fiducia, le note OKF v0.2 portano nel frontmatter: `type` (tipo), `st
 - **`/audit`** — controlla link rotti, note orfane e problemi strutturali.
 - **OKF Bundle Analytics** (🛠️ Tools) — report con conteggi per tipo, stato e trust tier.
 
-**Approfondisci:** `docs/OKF_SPEC.md` (specifica completa OKF v0.2), `docs/TUTORIAL.md` §5.1 (fiducia e stati).
+**Approfondisci:** `docs/standard/OKF_SPEC.md` (specifica completa OKF v0.2), `docs/guida/TUTORIAL.md` §5.1 (fiducia e stati).

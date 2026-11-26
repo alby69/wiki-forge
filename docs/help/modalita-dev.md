@@ -38,9 +38,9 @@ Il **pannello degli script** (Python) del progetto, per categoria:
 - **Knowledge Engineering** — Infer Domain Schema, Lint Schema, Competency Questions, ODP Suggester, Neuro-Symbolic Check, KE Maturity, Semantic RDF Exporter, Ontology Rule Engine
 - **Wizard** — Domain Setup Wizard
 
-Ogni script mostra **parametri con descrizione**, pulsanti **▶ Run Tool** e **🕒 Schedula** e **console di log** con l'output. Il pulsante Schedula crea un job nell'orario suggerito usando gli stessi argomenti del form, assegna un ID automatico e avvisa quando il job mutante resta disabilitato fino all'approvazione F6; gli script `blocked` non sono schedulabili. Il badge accanto al nome (🟢 read-only, 🔵 report, 🟡 workspace, 🟠 wiki-write, 🔴 blocked) proviene dal **catalogo unico di sicurezza e automazione** — classe di rischio, orario suggerito, requisiti e argomenti predefiniti — [`SCRIPT_AUTOMATION_REFERENCE.md`](../SCRIPT_AUTOMATION_REFERENCE.md): non duplicarlo qui.
+Ogni script mostra **parametri con descrizione**, pulsanti **▶ Run Tool** e **🕒 Schedula** e **console di log** con l'output. Il pulsante Schedula crea un job nell'orario suggerito usando gli stessi argomenti del form, assegna un ID automatico e avvisa quando il job mutante resta disabilitato fino all'approvazione F6; gli script `blocked` non sono schedulabili. Il badge accanto al nome (🟢 read-only, 🔵 report, 🟡 workspace, 🟠 wiki-write, 🔴 blocked) proviene dal **catalogo unico di sicurezza e automazione** — classe di rischio, orario suggerito, requisiti e argomenti predefiniti — [`SCRIPT_AUTOMATION_REFERENCE.md`](../riferimenti/SCRIPT_AUTOMATION_REFERENCE.md): non duplicarlo qui.
 
-<!-- DOC_BLOCK_REF:script-automation docs/SCRIPT_AUTOMATION_REFERENCE.md sha256:4578868ea434b746f5fbe14f5f0f259614699cc9f325335ddf15537336982c6b -->
+<!-- DOC_BLOCK_REF:script-automation docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md sha256:2df717de28f7b1470632f22bbb1c9c3c8faaa641ad4fe8ea174826c0e3d0bc65 -->
 
 ### ⚙️ Config
 Impostazioni del progetto (LLM, cartelle, OKF...): vedi *Progetti e configurazione*.
@@ -54,4 +54,4 @@ La cartella `skills/` contiene i pacchetti di competenza dell'agente. In chat, `
 - **Focus Mode** per la routine: caricare, compilare, chiedere.
 - **Developer Mode** quando serve uno **script**, una **metrica**, la **configurazione** o il **Knowledge Engineering**.
 
-**Approfondisci:** `docs/KE_PLAYBOOK.md` (flussi KE), `docs/KNOWLEDGE_ENGINEERING.md`, `docs/PROCEDURES.md` (operazioni su script).
+**Approfondisci:** `docs/processi/KNOWLEDGE_ENGINEERING.md` (flussi KE), `docs/processi/PROCEDURES.md` (operazioni su script), `docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md`.

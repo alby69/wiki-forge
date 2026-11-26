@@ -9,7 +9,7 @@
 # blocked nascono sempre disabilitati e passano dalla coda di approvazione F6.
 # Le classi e gli override dipendenti dagli argomenti sono generate da
 # src/backend/wikiforge/core/script_schema.py in
-# docs/SCRIPT_AUTOMATION_REFERENCE.md.
+# docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md.
 
 [[script_jobs]]
 id = "example-script-okf-lint"

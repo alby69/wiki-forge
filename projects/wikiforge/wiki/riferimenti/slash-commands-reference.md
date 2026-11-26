@@ -2,15 +2,15 @@
 type: Reference
 title: "Catalogo unico dei comandi slash"
 description: "Questo documento è la sorgente umana unica dei comandi slash di Wiki-Forge. README.md, TUTORIAL.md, docs/help/chat-comandi.md e l'agente fanno riferimento a…"
-resource: docs/SLASH_COMMANDS_REFERENCE.md
+resource: docs/riferimenti/SLASH_COMMANDS_REFERENCE.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-slash-commands-reference-md
-    resource: docs/SLASH_COMMANDS_REFERENCE.md
+  - id: source-docs-riferimenti-slash-commands-reference-md
+    resource: docs/riferimenti/SLASH_COMMANDS_REFERENCE.md
     title: "Catalogo unico dei comandi slash"
     author: human:alby69
 ---
@@ -44,7 +44,7 @@ Il pannello **⚡ Comandi** della chat è generato da `skills/*/SKILL.md`: quand
 | `/validate-cq` | Audit | Verifica la copertura delle Competency Questions | **🛠️ Strumenti → cq_runner** |
 | `/suggest-odp` | Audit | Suggerisce Ontology Design Patterns | **🛠️ Strumenti** |
 | `/neuro-check` | Audit | Controllo logico e inferenza di collegamenti concettuali | **🛠️ Strumenti** |
-| `/stats` | Audit | Metriche di crescita della wiki | `docs/METRICS.md` |
+| `/stats` | Audit | Metriche di crescita della wiki | `docs/riferimenti/METRICS.md` |
 | `/ke-maturity` | Audit | Valutazione della maturità su 6 dimensioni | **KE Workbench** |
 | `/maturity` | Audit | Sintesi L1-L4 della maturità KE | **`GET /api/v1/health`** |
 | `/consult <argomento>` | Ricerca | Sintesi multi-fonte con citazioni `[[wikilink]]` | **🔎 Research Studio → Consult** |

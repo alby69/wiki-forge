@@ -52,8 +52,8 @@ $shots = @(
 foreach ($s in $shots) {
   & $edge --headless=new --disable-gpu --hide-scrollbars --window-size=1440,900 `
     --virtual-time-budget=1200 --run-all-compositor-stages-before-draw `
-    --screenshot="$base/docs/mockups/$($s.file)" `
-    "file:///$base/docs/mockups/review-studio.html$($s.hash)"
+    --screenshot="$base/docs/riferimenti/mockups/$($s.file)" `
+    "file:///$base/docs/riferimenti/mockups/review-studio.html$($s.hash)"
 }
 ```
 
@@ -62,4 +62,4 @@ foreach ($s in $shots) {
 - I dati sono finti e servono solo a valutare densità, gerarchia e palette.
 - Palette: `#0b1220` / `#0f172a` / `#1e293b`, testo `#e2e8f0`, accento **emerald** `#10b981`, poi amber/sky/violet per gli stati.
 - Il prototipo non usa dipendenze esterne né font remoti.
-- Uso nell'app reale: `docs/TUTORIAL.md` §2 (Review Studio), guida in-app `docs/help/review-studio.md`.
+- Uso nell'app reale: `docs/guida/TUTORIAL.md` §2 (Review Studio), guida in-app `docs/help/review-studio.md`.

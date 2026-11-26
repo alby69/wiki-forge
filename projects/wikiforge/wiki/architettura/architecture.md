@@ -1,186 +1,205 @@
 ---
 type: Concept
-title: "Technical Architecture — Wiki-Forge v4.1"
-description: "Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only in development), a standalone Node.js API gateway backed by a…"
-resource: docs/ARCHITECTURE.md
-tags: [scope/docs, layer/generated, area/architettura, lang/en]
+title: "Architettura — Wiki-Forge v4.1"
+description: "Questo è il documento tecnico canonico: parte dalla topologia, scende nei"
+resource: docs/architettura/ARCHITECTURE.md
+tags: [scope/docs, layer/generated, area/architettura, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-architecture-md
-    resource: docs/ARCHITECTURE.md
-    title: "Technical Architecture — Wiki-Forge v4.1"
+  - id: source-docs-architettura-architecture-md
+    resource: docs/architettura/ARCHITECTURE.md
+    title: "Architettura — Wiki-Forge v4.1"
     author: human:alby69
 ---
-# Technical Architecture — Wiki-Forge v4.1
+# Architettura — Wiki-Forge v4.1
 
-## Overview & Unified System Diagram
+Questo è il documento tecnico canonico: parte dalla topologia, scende nei
+componenti e chiude con i vincoli di sviluppo. Per il percorso didattico
+ dall'utente allo sviluppatore vedi [`docs/README.md`](../riferimenti/docs-readme.md); per i
+ miglioramenti aperti vedi [`ROADMAP.md`](../riferimenti/roadmap.md).
 
-Wiki-Forge integrates a TypeScript/Vite frontend (static assets + reverse proxy only in development), a standalone Node.js API gateway backed by a kernel/modules/ports architecture, a standalone Python FastAPI service, the stateful Procedure Engine, a live Plan/Review/Apply changeset store, and W3C SHACL/RDF semantics. In production the API process serves the built SPA from `dist/` on `$PORT`; no `VITE_*` runtime variables are used.
+## 1. Modello mentale: memoria parametrica e non parametrica
+
+Wiki-Forge non addestra un modello: mantiene una **memoria non parametrica**
+di note Markdown interconnesse (`wiki/`) e usa un LLM come **Knowledge
+Engineer** che estrae, sintetizza e collega. La memoria parametrica (pesi del
+modello) può cambiare stile e associazioni, ma non garantisce provenienza di
+ogni affermazione; per questo le risposte importanti sono ancorate a note e
+sorgenti citate.
+
+Confronto sintetico con l'addestramento da zero (es. *nanochat*):
+
+| Aspetto | Wiki-Forge (RAG + KB) | Addestramento da zero |
+|---|---|---|
+| Scopo | Knowledge Engineering e KB di produzione | Ricerca sull'architettura dei transformer |
+| Dove sta la conoscenza | File Markdown esterni e indicizzabili | Pesi del modello |
+| Precisione fattuale | Alta, con citazioni e anchor di riga | Bassa sui dettagli, soggetta ad allucinazioni |
+| Aggiornamento | Aggiungi una nota ed esegui la compilazione | Richiede riaddestramento/SFT |
+| Costo computazionale | Basso, anche su hardware consumer | Alto, richiede cluster multi-GPU |
+
+## 2. Topologia e confini di runtime
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Web UI (TypeScript / Vite)                      │
-│  [Focus Mode: Guided Pills] [KE Workbench & Chat] [Review Studio]       │
-│  Dev: Vite = static server + one shared /api proxy (no AgentServer in-process)│
-└───────────────────────────────┬─────────────────────────────────────────┘
-                                │ HTTP / SSE (Server-Sent Events)
-┌───────────────────────────────▼─────────────────────────────────────────┐
-│          Node API Gateway — standalone AgentServer (port 3001)          │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 1. Health Engine — proxied /api/v1/health                        │  │
-│  │    - Aggregates: okf_stats, shacl_validator, ke_maturity, cq      │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 2. Safe FS + Changesets (safeFs.ts, changesetStore.ts)            │  │
-│  │    - atomic writes, .wiki-forge/trash/, .wiki-forge/changesets/   │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 3. Review Studio API & Snapshot Store (agentServer.ts)            │  │
-│  │    - /api/notes/review/*, .wiki-forge/snapshots/ (25 per note)    │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ 4. API Contract Layer (src/shared/api/, api/openapi.ts)          │  │
-│  │    - ROUTES -> OpenAPI 3.1 + /api/docs (Swagger self-hosted)      │  │
-│  │ 5. MessageBus + domain modules (bus/, modules/)                  │  │
-│  │    - catalogue, tools, reviews, ingestion, graph (14 commands)    │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-└───────────────┬──────────────────────────────────────┬──────────────────┘
-                │ proxy /api/v1/graph/*                │ spawn python3
-                │ (FASTAPI_SERVER_URL)                 │ (project-scoped env)
-┌───────────────▼────────────────────┐   ┌─────────────▼──────────────────┐
-│ FastAPI kg-api — standalone :8000  │   │ Scripts + domain modules      │
-│  - api_server.py, health.py        │   │  - LangGraph GraphRAG, SHACL  │
-│  - procedures.py                   │   │  - RDF/Cypher export          │
-└────────────────────────────────────┘   └────────────────────────────────┘
+UI TypeScript/Vite ──HTTP/SSE──> Node API Gateway (:3001, kernel/modules/ports)
+                                   ├─ API Contract Layer + OpenAPI /api/docs
+                                   ├─ MessageBus + 20 moduli di dominio
+                                   ├─ SafeFs, changeset store, snapshot store
+                                   └─ proxy /api/v1/graph/* ──> Python FastAPI (:8000)
+                                         ├─ health, procedure, SHACL/RDF
+                                         └─ script Python e knowledge engineering
 ```
 
-The diagram shows the development Compose topology (`ui`, `api`, `kg-api`,
-`worker`, MCP). Production uses `Dockerfile.render` + `bin/render-start.sh`:
-one Node process serves the built SPA and the API on `$PORT`, with health at
-`/api/healthz`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state`, a non-root user
-and no `admin`/`admin` default credentials.
+- **Sviluppo**: `docker-compose.yml` avvia `ui`, `api`, `kg-api`, `worker` e
+  MCP; in locale `npm run dev:all` avvia gateway e UI insieme. `npm run dev`
+  avvia solo Vite: il gateway deve restare in ascolto su `:3001`.
+- **Produzione**: `Dockerfile.render` + `bin/render-start.sh` avviano un solo
+  processo Node non-root che serve la SPA buildata da `dist/` e le API su
+  `$PORT`, con health su `/api/healthz`, stato in
+  `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state`, nessuna variabile `VITE_*` a
+  runtime e nessun default `admin/admin`. Compose mantiene `ui` solo per lo
+  sviluppo (`WIKIFORGE_EMBED_SCHEDULER=false` quando gira il worker).
 
-## Key Backend Components
+## 3. Componenti del backend
 
-### 1. Unified Health Engine (`src/backend/wikiforge/api/health.py`)
-Aggregates health indicators (SHACL violations, CQ gaps, orphan ratio, broken links, raw pending sources) into a single 0-100 score and L1-L4 maturity level. Automatically generates `.wiki-forge/STATUS.md` and appends historical data to `.wiki-forge/metrics/history.jsonl`.
+### 3.1 Contratto API, bus e moduli
 
-### 2. Procedure Engine (`src/backend/wikiforge/procedures.py`)
-Executes declarative TOML workflows (`config/procedures/*.toml`). Features DAG prerequisite checking, automatic script invocation, human review pauses, exit criteria validation, and persistent state in `.wiki-forge/state/` with a lease lock (the old PID lock is historical).
+`ROUTES` in `src/shared/api/contracts.ts` è l'unica sorgente di verità per
+metodo, percorso, schemi, `operationId`, comando bus e ambito progetto. Da esso
+derivano OpenAPI 3.1, il client tipizzato e il manifest generato
+(`src/shared/api/generated/commandManifest.generated.ts`), consumato da CLI,
+MCP e Swagger. Stato verificato: **105 route HTTP**, **158 handler bus** in
+20 moduli, **51 comandi slash catalogati / 20 con case dedicato**, **113 tool
+MCP**, **32 gap noti non bloccanti**, zero gap `route-without-bus`.
+`npm run manifest:check` applica quest'ultima invariante. Dettagli in
+[`OPENAPI.md`](openapi.md) e nel manifest generato.
 
-### 3. Safe Filesystem & Changeset Store (`src/backend/server/safeFs.ts`, `src/backend/server/changesetStore.ts`)
-Enforces atomic writes via a temp file + rename, soft-deletes files to `<project>/.wiki-forge/trash/` with a JSONL manifest and restore endpoint, and stages AI-proposed edits into `<project>/.wiki-forge/changesets/` for human review before applying. This is the live implementation that replaces the old, never-wired `wikiforge/vault.py` (removed). The active state root is `.wiki-forge/` throughout.
+`AgentServer.handleRequest()` risolve la route e Dispatcha sul `MessageBus`;
+gli handler ricevono un `CommandContext` con `principal` sempre impostato e
+restituiscono risultati `json`, `binary` o `sse`, senza toccare
+`IncomingMessage`/`ServerResponse`. Il gateway è l'unico adapter HTTP, quindi
+gli stessi comandi sono richiamabili da scheduler e test senza duplicare la
+logica. Il bus emette audit `command:handled` / `command:failed` con correlation
+id; il relay dell'outbox riporta le decisioni F6 nel flusso di approvazione.
 
-### 4. Review Studio API & Snapshot Store (`src/backend/server/agentServer.ts`)
-Serves the four-tab Review Studio (`/api/notes/review/meta|verify|digest|critique|snapshots|diff|restore`). The quality gate, digest, diff and human verification are deterministic; the critique tab uses the configured LLM with a deterministic fallback. Before every save, verification or restore the previous note content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a JSON sidecar (reason and timestamp); the latest 25 snapshots per note are retained. The folder is gitignored and independent of the git-based `VersionTimeline` history.
+### 3.2 Stato, sicurezza e scritture
 
-### 5. Research Studio API & Query Helpers (`src/backend/server/agentServer.ts`, `researchHelpers.ts`)
-Serves the six-tab Research Studio (`/api/notes/research/search|backlinks|related|trace` on `GET`, `consult|deep-research` on `POST`). Search, backlinks, related and trace are pure deterministic functions over the loaded notes (`researchHelpers.ts`, unit-tested); consult and deep-research use the configured LLM with a deterministic fallback. Deep research writes `output/research-*.md` and `wiki/synthesis/<slug>.md` with a source-attribution matrix and knowledge gaps.
+- `src/backend/server/state/` fornisce `StateStore` (file, memoria o adapter
+  HTTP) per sessioni, stato procedure, cursori e lease dello scheduler. Il
+  scheduler usa un lock a lease, non più il vecchio lock PID.
+- `safeFs.ts` scrive in modo atomico (file temporaneo + rename), sposta i file
+  nel cestino `<progetto>/.wiki-forge/trash/` con manifest JSONL e offre
+  ripristino. `changesetStore.ts` mette in stage le proposte LLM in
+  `.wiki-forge/changesets/` finché un umano non le approva.
+- I percorsi REST sono confinati a `wiki/` o `raw/`; l'HTML generato viene
+  sanitizzato. Subprocessi usano un allowlist di variabili d'ambiente, timeout
+  e output limitato.
+- In produzione RBAC e auth sono forzati; il token è richiesto salvo IdP o user
+  store configurati. CORS allowlist, body limit, correlation id,
+  `/api/healthz`, `/api/readyz` e `/api/metrics` completano l'indurimento.
 
-### 6. API Contract Layer & Documentation Browser (`src/shared/api/`, `src/backend/server/api/`)
-`ROUTES` in `contracts.ts` is the single source of truth for method, path,
-validation schemas, operation ids and bus command names. `openapi.ts` renders it
-as OpenAPI 3.1, merges the FastAPI graph service (live spec or checked-in
-snapshot) and adds MCP tool metadata. `docsBrowser.ts` serves
-`GET /api/openapi.json` and `GET /api/docs` with Swagger UI assets from the
-`swagger-ui-dist` npm package: the browser works offline and in Docker, with no
-CDN. The published manifest is generated from `ROUTES` plus the shared MCP
-definitions, is checked by `npm run manifest:check`, and is consumed by the CLI,
-MCP descriptors and OpenAPI. Existing endpoints and `AgentServer`'s public
-methods are unchanged. See `docs/OPENAPI.md`.
+### 3.3 Servizi Python
 
-### 6.1 Backend MessageBus & Domain Modules (`src/backend/server/bus/`, `modules/`)
-`AgentServer.handleRequest()` matches the request against `ROUTES` and dispatches
-the resulting command to an in-process `MessageBus`. Twenty domain modules own
-the 158 bus commands; `createKernel()` wires projects, template, changesets,
-files, scheduler, execution, vault, review studio, research, study, chat, slash,
-graph and graph proxy, while `AgentServer` registers user, UI, catalogue, tools,
-reviews and ingestion directly plus `auth.me`. All 105 routes are bus-dispatched,
-including the two public docs endpoints (with middleware skipped) and the three
-FastAPI graph proxies (after the B4 auth gate).
-Handlers return `json`, `binary` or `sse` results and never receive
-`http.IncomingMessage` or `ServerResponse`. The gateway is the only HTTP adapter,
-which keeps the facade and every existing endpoint intact while allowing the
-same commands to be called from a scheduler or a test. See `docs/OPENAPI.md`.
+Il servizio FastAPI autonomo espone `/api/v1/health` (risposta semplice `ok`)
+e `/api/v1/graph/sync|validate|rag`; il gateway ne fa il proxy solo per le
+route grafo. Il motore di salute aggregato (`api/health.py`) calcola uno score
+0-100, il livello L1-L4 e le azioni successive scrivendo
+`.wikiforge/STATUS.md` e `.wikiforge/metrics/history.jsonl`: questa è una
+radice legacy separata da `.wiki-forge/` e la cosa è tracciata in ROADMAP.
+Il Procedure Engine (`procedures.py`) esegue procedure TOML con DAG, pause
+umane e criteri di uscita, persistendo in `.wikiforge/state/<run_id>.json`.
+Il lock a lease appartiene allo scheduler Node, non al Procedure Engine.
 
-### 6.2 Typed API Client & Frontend Bus (`src/shared/api/`, `src/frontend/api/`, `core/apiBus.ts`)
-`endpoints.ts` attaches request/response types to every `EndpointId` and fails
-`typecheck` if a catalogue route is left untyped. `createApiClient()` generates
-one method per endpoint from `ROUTES`, handles path interpolation, query
-serialization, project/token headers, `ApiClientError` and incremental SSE
-parsing. `apiBus.dispatch()/stream()` adds typed UI events so features react to
-API results without calling each other; `ApiStorage` keeps its 51 public methods
-as a compatibility facade over the single `apiBus` transport — there is no
-`FileStorage` fallback —, the graph service maps only the backend `WikiGraphDto`
-and canonical template fallback is explicit via `api:error`. No UI component
-builds an API URL or calls `fetch` directly. See `docs/OPENAPI.md`.
+### 3.4 Studio di revisione, ricerca e studio
 
-### 6.3 Kernel, Modules, Ports and Persistence
-`createKernel()` wires domain modules through ports; adapters (HTTP, CLI, MCP,
-worker) never import one another. `StateStore` persists sessions, procedure
-state, scheduler cursor/lease and the approval outbox under `.wiki-forge/state/`;
-the outbox relay forwards decisions back into the bus. The scheduler uses a
-state lease lock rather than the old PID lock, and command handlers emit
-`command:handled`/`command:failed` audit events. `CommandContext.principal` is
-always set by bus dispatch, subprocesses receive an explicit environment
-allowlist and `@opentelemetry/api` has a local fallback.
+| Console | Schede | Natura |
+|---|---|---|
+| **Review Studio** | Verifica, Critica, Digest, Confronta versioni | Quality gate, verifica umana e diff deterministici; critica con fallback deterministico. Sette endpoint `/api/notes/review/*`. |
+| **Research Studio** | Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research | Ricerca/backlink/correlate/trace deterministici; consult e deep research con LLM e fallback. Sette azioni API, incl. `research.promoteAnswer`. |
+| **Study Studio** | Guida, Quiz, Mindmap, Audio, Note, Promuovi, Tesi | Sette builder deterministici in `studyHelpers.ts`; gli artefatti finiscono in `output/`, le note rapide in `notes/quick-notes.md`. |
 
-### 6.4 Production Hardening
-The production gateway forces RBAC and authentication (token required unless an
-IdP or user store is configured), applies a CORS allowlist and body limit,
-propagates correlation ids and exposes `/api/healthz`, `/api/readyz` and
-`/api/metrics`. `Dockerfile.render` + `bin/render-start.sh` run a single
-non-root Node process serving the built SPA and API on `$PORT`, with no default
-`admin/admin` credentials and no `VITE_*` runtime variables. Development Compose
-keeps the Vite `ui` service alongside API and worker
-(`WIKIFORGE_EMBED_SCHEDULER=false`).
+Gli snapshot pre-scrittura vivono in `.wiki-forge/snapshots/<nota>/<timestamp>.md`
+con sidecar JSON, 25 per nota, e sono condivisi tra Review Studio e
+`VersionTimeline`. La cronologia git di `scripts/versioning.py` è un meccanismo
+separato. Research e Studio sono azioni **globali**: non sono più duplicate
+nell'header dell'editor, che mantiene solo Info, Revisione e Cronologia.
 
-## Key Frontend Components
+## 4. Componenti del frontend
 
-### 7. Adapter-based Note Editor (`src/frontend/components/editor/`)
-`MarkdownEditor.ts` is the stable shell; the editing surface sits behind the `NoteEditorAdapter` interface (`EditorAdapter.ts`) with two implementations: `CodeMirrorAdapter.ts` (source view / fallback) and `milkdown/MilkdownAdapter.ts` (Crepe 7.23 WYSIWYG, vanilla TS, no React). `resolveEngine()` auto-selects Milkdown in browsers and CodeMirror under mock DOMs/tests; the Milkdown module is dynamically imported so Crepe's ESM-only subpaths never reach the Node test runner. Toolbar actions are semantic (`toggleInline`, `applyBlock`, `insertColor`, `insertAlignment`) with shared pure helpers in `editorMarkdownOps.ts`. OKF frontmatter is preserved byte-for-byte via `WikiNote.frontmatterRaw` and the `rawContent` save path. A custom remark plugin + inline atom (`milkdown/wikilink*.ts`) keeps `[[wikilinks]]` unescaped through serialisation and bridges clicks to navigation. See `docs/EDITOR_MIGRATION.md`.
+L'editor è un guscio stabile (`MarkdownEditor.ts`) con adapter intercambiabile:
+`CodeMirrorAdapter` (sorgente/fallback) e `milkdown/MilkdownAdapter` (Crepe
+WYSIWYG, vanilla TS, nessun React). Il frontmatter OKF viene preservato
+byte-per-byte e i wikilink sopravvivono alla serializzazione. Dettagli in
+[`EDITOR_MIGRATION.md`](editor-migration.md).
 
-## Shared Frontend Foundations (Fase 78)
+Fondamentali trasversali, tutti in `src/frontend/core/`: catalogo azioni
+unico (`actions.ts`), registro scorciatoie (`shortcuts.ts`, un solo listener
+globalmente; `Ctrl+Alt+D` = Digest, `Ctrl+Alt+W` = Wiki Docs), event bus
+tipizzato (`events.ts`), `apiBus` come unico ingresso API (`apiBus.ts`),
+dizionario IT/EN (`i18n/strings.ts`), resizer condiviso (`ui/resizer.ts`),
+toast e dialog accessibili (`notificationService.ts`) e `appStore` come
+sorgente del progetto attivo. `ApiStorage` è una facciata su `apiBus` senza
+fallback `FileStorage`.
 
-The UI now has a small set of cross-cutting modules so features no longer
-reimplement the same behaviour in each component:
+Il ciclo di vita dei progetti è servito da `projectService.ts`: creazione,
+clone, rename, archiviazione, import/export JSON e cancellazione con cestino
+predefinito. La UI corrispondente è `ProjectManagerModal.ts`; `ConfigManager`
+non duplica più la gestione progetti.
 
-| Module | Responsibility |
-|---|---|
-| `styles/tokens.css` | Colours, spacing, radii, motion — one source of truth mirrored to the legacy `theme.css` aliases. |
-| `styles/primitives.css` | Reusable `.wf-btn`, `.wf-field`, `.wf-modal*`, `.wf-menu*`, `.wf-toast*`, `.wf-tab*`, `.wf-palette*` classes. |
-| `core/actions.ts` | **Single action catalogue** (`global`, `note`, `studio` groups). Header, note header, context menu and command palette render from it; handlers are bound once in `WikiForgeApp.bindGlobalActions()`. |
-| `core/shortcuts.ts` | **One** global `keydown` listener, all combos registered through `registerShortcut()`. Fixed the old `Ctrl+Alt+D` collision (digest = `Ctrl+Alt+D`, wiki docs = `Ctrl+Alt+W`). |
-| `core/events.ts` | Typed `eventBus` (`project:changed`, `vault:changed`, `note:selected`, `note:saved`, API lifecycle and studio-change events). |
-| `core/apiBus.ts` | Frontend command bus: components dispatch catalogue ids instead of calling APIs or each other. |
-| `core/i18n/strings.ts` | IT/EN dictionary with `t(key, vars)`, persisted language selection, updates `document.documentElement.lang`. |
-| `core/ui/resizer.ts` | Shared `bindResizer()` — replaces four separate drag implementations. |
-| `services/notificationService.ts` | Styled toasts + accessible `confirm()` / `prompt()` dialogs. No native `alert`/`confirm`/`prompt` remains in the frontend. |
-| `store/appStore.ts` | Single source of truth for the active project; `ApiStorage` delegates to it. |
+## 5. Knowledge Engineering, semantica e automazione
 
-Research and Studio are now **global-only** actions: the duplicated buttons were
-removed from the note header. The note header keeps only Node Info, Review,
-History, Save/Edit. The header includes a language selector (IT/EN) and an
-overflow menu generated from the action catalogue.
+- **KE Workbench**: otto use case guidati (schema, ontologia, competency
+  questions, neuro-symbolico/ODP, export semantico, maturità, docs-wiki drift,
+  program change). Maturità L1-L4: seeded → structured → connected → trusted;
+  il gate L4 richiede zero CQ gap e note `stable` verificate umanamente.
+- **OKF v0.2**: frontmatter con `type`, `status`, provenance e trust tier;
+  strumenti `okf_lint.py`, `okf_reindex.py`, `okf_log.py`, `okf_stats.py`.
+  Lo standard upstream è stato spostato: vedi la nota di versione in
+  [`OKF_SPEC.md`](../standard/okf-spec.md).
+- **Grafo**: SHACL, RDF/Turtle, Cypher Neo4j e pipeline GraphRAG stateful;
+  la sincronizzazione inversa DB → vault produce changeset, non scritture
+  dirette. Dettagli in [`GRAPH_RAG.md`](graph-rag.md).
+- **Automazione**: la classificazione di sicurezza dei 29 script è solo in
+  `SCRIPT_SCHEMAS` Python → registry TS generato → catalogo generato; i job
+  mutanti richiedono approvazione F6 e `auto_apply = false`. Il Policy Agent è
+  consultivo e fail-closed. Vedi
+  [`SCRIPT_AUTOMATION_REFERENCE.md`](../riferimenti/script-automation-reference.md).
 
-## Project Lifecycle (Fase 78)
+## 6. Documentazione come wiki
 
-Backend (`src/backend/server/projectService.ts`, routes in `agentServer.ts`):
+`docs/` è la sorgente canonica; `scripts/docs_to_wiki.py` proietta i documenti
+in `projects/wikiforge/wiki/` come bundle OKF con provenienza, lingua del
+sorgente e indici deterministici. Le note in `sintesi/` sono scritte a mano e
+non vengono mai sovrascritte. La promozione di una risposta e le modifiche al
+programma richiedono entrambe un revisore umano. Regole e comandi in
+[`SELF_WIKI.md`](../standard/self-wiki.md).
 
-- `GET /api/projects?includeArchived=true`, `POST /api/projects`
-- `PATCH /api/projects/:id` (display name only; `config.toml` stays in sync)
-- `POST /api/projects/:id/clone`, `/archive`, `/restore`
-- `DELETE /api/projects/:id?mode=unregister|trash|permanent&confirm=<id>` —
-  **default mode is `trash`**: files are moved to `.wiki-forge/trash/` and can be
-  restored. `permanent` requires an explicit confirm token and never targets the
-  `default` project.
-- `GET /api/projects/:id/export`, `POST /api/projects/import`, `GET /api/projects/:id/stats`
+## 7. Regole di sviluppo (KISS/DRY)
 
-Frontend (`src/frontend/services/projectService.ts` +
-`components/projects/ProjectManagerModal.ts`) exposes the same operations with
-inline forms and trash-by-default deletion. `ConfigManager` no longer owns
-project creation/deletion; its project selector bar was removed to avoid
-duplication. See `docs/help/progetti-config.md`.
+1. Conversione formato (`conv2md.py`) ed arricchimento LLM (`enrich_cot.py`)
+   restano separati.
+2. Niente `except Exception:` generici: usare la gerarchia `WikiForgeError`.
+3. I form UI non hardcodedano parametri: leggono il registry generato da
+   `SCRIPT_SCHEMAS`; dopo una modifica eseguire
+   `python3 scripts/gen_script_registry.py --check`.
+4. Ogni nuovo esportatore di grafo estende `BaseGraphExporter` per riusare il
+   parsing di frontmatter e wikilink.
+
+## 8. Verifica operativa
+
+```bash
+npm run typecheck
+npm run manifest:check
+npm run build
+python3 scripts/check_docs_sync.py
+python3 scripts/docs_to_wiki.py --check
+npm test
+python3 -m pytest tests/python
+git diff --check
+```
+
+I conteggi storici pre-disaccoppiamento (95 endpoint/90 comandi) non sono più
+quelli correnti: la baseline verificata è nella sezione 3.1 e in
+[`COMMAND_MANIFEST.md`](../riferimenti/command-manifest.md).

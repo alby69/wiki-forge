@@ -41,4 +41,4 @@ genera una presentazione **reveal.js** (alias: `/generate-slides`).
 - Chat: `/export [formato]` — esporta la wiki nel formato indicato.
 - Per un backup "da umani": la wiki **è già Markdown**: copia la cartella `wiki/` dove vuoi.
 
-**Approfondisci:** `docs/THESIS_GUIDE.md` (dalla tesi al PDF), `docs/TUTORIAL.md` §6 (export), `docs/OKF_SPEC.md` §interoperabilità (JSON-LD/Turtle).
+**Approfondisci:** `docs/guida/THESIS_GUIDE.md` (dalla tesi al PDF), `docs/guida/TUTORIAL.md` §6 (export), `docs/standard/OKF_SPEC.md` §interoperabilità (JSON-LD/Turtle).

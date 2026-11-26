@@ -65,4 +65,4 @@ Le modifiche vengono scritte direttamente su `config.toml` (fonte unica di verit
 2. Quando ti servono strumenti avanzati, passa a **Developer Mode** (badge o Ctrl+Shift+D).
 3. La guida (**F1**) ti suggerisce sempre l'argomento giusto per ciò che stai facendo.
 
-**Approfondisci:** `docs/STARTUP.md` (progetti e cartelle), `docs/USER_GUIDE.md` (wizard e configurazione), `docs/TECHNICAL_ARCHITECTURE.md` (`config.toml`).
+**Approfondisci:** `docs/guida/STARTUP.md` (progetti e cartelle), `docs/guida/USER_GUIDE.md` (wizard e configurazione), `docs/architettura/ARCHITECTURE.md` (`config.toml`).

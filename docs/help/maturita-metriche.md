@@ -33,7 +33,7 @@ Le metriche dicono **quanto è solida** la tua wiki: note complete, collegamenti
 | Script | Uso |
 |---|---|
 | **Calculate Maturity Score** | Calcola gli score (0-100); parametri: `--write` (salva nel frontmatter), `--dry-run` (anteprima), `--min-score` (filtro) |
-| **Global Wiki Statistics** | Ricalcola le statistiche e aggiorna `docs/METRICS.md` |
+| **Global Wiki Statistics** | Ricalcola le statistiche e aggiorna `docs/riferimenti/METRICS.md` |
 | **OKF Bundle Analytics** | Report per tipo, stato e trust tier |
 | **KE Maturity Assessment** | Report di maturità KE (`output/ke_maturity_report.md`) |
 | **Graph Louvain Analytics** | Comunità e insights dal grafo |
@@ -41,8 +41,8 @@ Le metriche dicono **quanto è solida** la tua wiki: note complete, collegamenti
 
 ## Il primo controllo rapido
 
-Scrivi **`/stats`** poi **`/maturity`**: in due comandi capisci dimensioni e qualità. Per un quadro completo aggiungi **`/audit`** (struttura) e guarda `docs/METRICS.md`.
+Scrivi **`/stats`** poi **`/maturity`**: in due comandi capisci dimensioni e qualità. Per un quadro completo aggiungi **`/audit`** (struttura) e guarda `docs/riferimenti/METRICS.md`.
 
 > Consiglio: usa il punteggio di maturità anche come **filtro per la tesi** (`min_maturity` in *Compile Thesis Draft*): nel documento finiscono solo le note mature.
 
-**Approfondisci:** `docs/METRICS.md` (definizioni e valori correnti), `docs/OKF_SPEC.md` (campi maturity), `docs/THESIS_GUIDE.md` (uso del filtro in tesi).
+**Approfondisci:** `docs/riferimenti/METRICS.md` (definizioni e valori correnti), `docs/standard/OKF_SPEC.md` (campi maturity), `docs/guida/THESIS_GUIDE.md` (uso del filtro in tesi).

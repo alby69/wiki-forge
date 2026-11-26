@@ -12,8 +12,8 @@ reads:
   - templates/article.md
   - wiki/**/*.md
 writes:
-  - docs/SOURCES.md
-  - docs/METRICS.md
+  - docs/riferimenti/SOURCES.md
+  - docs/riferimenti/METRICS.md
   - output/**/*
 confirm_destructive: false
 ---
@@ -45,10 +45,10 @@ confirm_destructive: false
 - Total articles, total wikilinks, broken links, orphan articles.
 - Coverage gaps (concepts cited >3 times without article).
 - Number of thematic wikis, sources ingested.
-- Last compile date, last audit date (from `docs/METRICS.md` or infer).
+- Last compile date, last audit date (from `docs/riferimenti/METRICS.md` or infer).
 - Top 10 most linked articles.
 - Top 10 tags by frequency.
-**Output:** Structured report. Propose saving to `docs/METRICS.md`.
+**Output:** Structured report. Propose saving to `docs/riferimenti/METRICS.md`.
 
 ### `export <format>`
 **Scope:** Export the wiki to another format.
@@ -70,12 +70,12 @@ confirm_destructive: false
 **Output:** Template content.
 
 ### `sources regenerate`
-**Scope:** Rebuild `docs/SOURCES.md` from the current wiki state.
+**Scope:** Rebuild `docs/riferimenti/SOURCES.md` from the current wiki state.
 **Action:**
 1. Scan all articles for `sources:` in frontmatter.
 2. Aggregate unique sources.
 3. Group by author (if parseable) and by topic (using tags).
-4. Write updated `docs/SOURCES.md` with proper YAML frontmatter.
+4. Write updated `docs/riferimenti/SOURCES.md` with proper YAML frontmatter.
 **Output:** Confirmation + summary of sources found.
 
 ### `tag-suggest [file-or-folder]`

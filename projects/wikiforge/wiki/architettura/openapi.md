@@ -2,15 +2,15 @@
 type: Concept
 title: "Browser OpenAPI / Swagger — Wiki-Forge v4.1"
 description: "Questo documento descrive il contratto HTTP unificato di Wiki-Forge e il browser"
-resource: docs/OPENAPI.md
+resource: docs/architettura/OPENAPI.md
 tags: [scope/docs, layer/generated, area/architettura, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-openapi-md
-    resource: docs/OPENAPI.md
+  - id: source-docs-architettura-openapi-md
+    resource: docs/architettura/OPENAPI.md
     title: "Browser OpenAPI / Swagger — Wiki-Forge v4.1"
     author: human:alby69
 ---

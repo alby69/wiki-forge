@@ -9,11 +9,11 @@ import check_docs_sync
 
 MASTER_BLOCKS = {
     "slash-commands": (
-        "docs/SLASH_COMMANDS_REFERENCE.md",
+        "docs/riferimenti/SLASH_COMMANDS_REFERENCE.md",
         "| `/compile` | Compila le fonti |",
     ),
     "script-automation": (
-        "docs/SCRIPT_AUTOMATION_REFERENCE.md",
+        "docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md",
         "| `okf_lint` | 🟢 read-only — nessuna scrittura rilevante |",
     ),
 }

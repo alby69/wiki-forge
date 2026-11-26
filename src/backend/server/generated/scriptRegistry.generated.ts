@@ -342,7 +342,7 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
       "path": "scripts/wiki_stats.py",
       "displayName": "Global Wiki Statistics",
       "category": "Analysis & Metrics",
-      "description": "Calculates global wiki statistics and updates docs/METRICS.md.",
+      "description": "Calculates global wiki statistics and updates docs/riferimenti/METRICS.md.",
       "parameters": [],
       "automation": {
         "safety": "workspace",
@@ -351,7 +351,7 @@ export const GENERATED_SCRIPT_REGISTRY: Record<string, ScriptDef> = {
         "defaultSchedule": "20 6 * * 1",
         "defaultArgs": {},
         "requires": [],
-        "notes": "Aggiorna docs/METRICS.md: richiede F6."
+        "notes": "Aggiorna docs/riferimenti/METRICS.md: richiede F6."
       }
     },
     "maturity_calculator": {

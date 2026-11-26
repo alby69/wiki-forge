@@ -11,7 +11,7 @@ and sources, so the F5 Policy Agent can log a grounded decision.
 Usage:
     python scripts/wiki_program_change_propose.py --proposal proposal.json --json
     python scripts/wiki_program_change_propose.py --answer-file answer.md \
-        --rationale "..." --sources docs/SELF_WIKI_PLAN.md --json
+        --rationale "..." --sources docs/standard/SELF_WIKI.md --json
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from program_change_common import (
 )
 
 BASELINE_SOURCES = [
-    "docs/SELF_WIKI_PLAN.md",
+    "docs/standard/SELF_WIKI.md",
     "config/agent_schedule.toml",
     "config/projects.json",
 ]

@@ -2,15 +2,15 @@
 type: Reference
 title: "Command Manifest (generato)"
 description: "Documentazione wiki-forge: Command Manifest (generato)."
-resource: docs/COMMAND_MANIFEST.md
+resource: docs/riferimenti/COMMAND_MANIFEST.md
 tags: [scope/docs, layer/generated, area/riferimenti, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-command-manifest-md
-    resource: docs/COMMAND_MANIFEST.md
+  - id: source-docs-riferimenti-command-manifest-md
+    resource: docs/riferimenti/COMMAND_MANIFEST.md
     title: "Command Manifest (generato)"
     author: human:alby69
 ---

@@ -2,15 +2,15 @@
 type: Playbook
 title: "TUTORIAL — Guida Operativa all'Uso di Wiki-Forge"
 description: "Quando affronti un progetto complesso — come una Tesi Magistrale, una ricerca di mercato o un manuale operativo — accumuli decine di PDF, articoli e appunti…"
-resource: docs/TUTORIAL.md
+resource: docs/guida/TUTORIAL.md
 tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-tutorial-md
-    resource: docs/TUTORIAL.md
+  - id: source-docs-guida-tutorial-md
+    resource: docs/guida/TUTORIAL.md
     title: "TUTORIAL — Guida Operativa all'Uso di Wiki-Forge"
     author: human:alby69
 ---
@@ -354,7 +354,7 @@ Per la manutenzione ricorrente usa soprattutto `/audit`, `/reindex`, `/stats`, `
 
 ### 5.1 🏷️ Stati OKF dei Documenti: Come Leggerli e Modificarli
 
-Ogni nota della wiki espone tre informazioni di stato definite dal formato **Open Knowledge Format (OKF v0.2)**, descritto in `docs/OKF_SPEC.md` (§3 Frontmatter, §6 Trust Tiers). Sono tre livelli distinti che spesso vengono confusi:
+Ogni nota della wiki espone tre informazioni di stato definite dal formato **Open Knowledge Format (OKF v0.2)**, descritto in [`docs/standard/OKF_SPEC.md`](../standard/okf-spec.md) (§3 Frontmatter, §6 Trust Tiers). Sono tre livelli distinti che spesso vengono confusi:
 
 #### a) Trust Tier (livello di fiducia) — derivato automaticamente
 

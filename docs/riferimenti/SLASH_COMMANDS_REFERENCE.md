@@ -28,7 +28,7 @@ Il pannello **⚡ Comandi** della chat è generato da `skills/*/SKILL.md`: quand
 | `/validate-cq` | Audit | Verifica la copertura delle Competency Questions | **🛠️ Strumenti → cq_runner** |
 | `/suggest-odp` | Audit | Suggerisce Ontology Design Patterns | **🛠️ Strumenti** |
 | `/neuro-check` | Audit | Controllo logico e inferenza di collegamenti concettuali | **🛠️ Strumenti** |
-| `/stats` | Audit | Metriche di crescita della wiki | `docs/METRICS.md` |
+| `/stats` | Audit | Metriche di crescita della wiki | `docs/riferimenti/METRICS.md` |
 | `/ke-maturity` | Audit | Valutazione della maturità su 6 dimensioni | **KE Workbench** |
 | `/maturity` | Audit | Sintesi L1-L4 della maturità KE | **`GET /api/v1/health`** |
 | `/consult <argomento>` | Ricerca | Sintesi multi-fonte con citazioni `[[wikilink]]` | **🔎 Research Studio → Consult** |
@@ -67,4 +67,4 @@ Il pannello **⚡ Comandi** della chat è generato da `skills/*/SKILL.md`: quand
 
 ## Comandi pianificati
 
-`/rollback` e `/history` **non sono implementati** come comandi chat. Lo storico e il ripristino sono disponibili solo dalla UI (🕐 Cronologia e Review Studio). Gli eventuali comandi chat sono elencati in [`ROADMAP.md`](ROADMAP.md) nella sezione *Comandi chat pianificati*.
+`/rollback` e `/history` **non sono implementati** come comandi chat. Lo storico e il ripristino sono disponibili solo dalla UI (🕐 Cronologia e Review Studio). Gli eventuali comandi chat sono elencati in [`ROADMAP.md`](../../ROADMAP.md) nella sezione *Comandi chat pianificati*.

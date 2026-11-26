@@ -2,15 +2,15 @@
 type: Reference
 title: "Typed Schema Guide (`[schema]`)"
 description: "Wiki-forge provides an opt-in, enforceable type system configured via config.toml. When enabled, the schema linter (schemalint.py or make schema-lint) checks…"
-resource: docs/SCHEMA.md
+resource: docs/standard/SCHEMA.md
 tags: [scope/docs, layer/generated, area/standard, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-schema-md
-    resource: docs/SCHEMA.md
+  - id: source-docs-standard-schema-md
+    resource: docs/standard/SCHEMA.md
     title: "Typed Schema Guide (`[schema]`)"
     author: human:alby69
 ---

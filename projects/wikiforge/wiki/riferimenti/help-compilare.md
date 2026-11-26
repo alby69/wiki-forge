@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-compilare-md
     resource: docs/help/compilare.md
@@ -49,4 +49,4 @@ Esempio: scrivi `/compile` nella chat e premi Invio; la risposta arriva in strea
 - Dopo una compilazione controlla la nota **Index** della wiki e usa `/audit` per trovare link rotti o note orfane.
 - Se il risultato non ti piace, puoi **modificare le note a mano** — sono solo file Markdown.
 
-**Approfondisci:** `docs/WORKFLOW.md` (flusso completo fonte→wiki), `docs/TUTORIAL.md` §3, `docs/PROCEDURES.md` (procedure di ingesta e ri-compilazione).
+**Approfondisci:** `docs/guida/THESIS_GUIDE.md` §7 (flusso completo fonte→wiki), `docs/guida/TUTORIAL.md` §3, `docs/processi/PROCEDURES.md` (procedure di ingesta e ri-compilazione).

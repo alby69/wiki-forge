@@ -105,4 +105,4 @@ Le sette schede sono il percorso grafico; gli stessi comandi restano disponibili
 - `/promote-note <id> [cartella]`
 - `/thesis-chapter [argomento] [title=<titolo>] [maturity=<soglia>]`
 
-**Approfondisci:** `docs/TUTORIAL.md` §4 (studio e sintesi), `docs/USER_GUIDE.md` (Study Studio), `docs/TECHNICAL_ARCHITECTURE.md` §2.13 (API e determinismo), `docs/THESIS_GUIDE.md` (flusso tesi completo).
+**Approfondisci:** `docs/guida/TUTORIAL.md` §4 (studio e sintesi), `docs/guida/USER_GUIDE.md` (Study Studio), `docs/architettura/ARCHITECTURE.md` §3.4 (API e determinismo), `docs/guida/THESIS_GUIDE.md` (flusso tesi completo).

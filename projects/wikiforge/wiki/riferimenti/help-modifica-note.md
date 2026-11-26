@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-modifica-note-md
     resource: docs/help/modifica-note.md
@@ -58,7 +58,7 @@ Scrivi `[[nome-della-nota]]` per collegare due note:
 - L'icona **cronologia** sulla nota ne mostra le **versioni** con data e riepilogo, e permette di **ripristinare** una versione precedente.
 - Ogni nota ha anche una `version` nel suo frontmatter: è la versione "documentale" usata dai processi OKF.
 
-> Nota: il ripristino versioni agisce sull'interfaccia della storia; per cambiamenti strutturati usa i flussi della **cronologia di progetto** (vedi `docs/PROCEDURES.md`).
+> Nota: il ripristino versioni agisce sull'interfaccia della storia; per cambiamenti strutturati usa i flussi della **cronologia di progetto** (vedi `docs/processi/PROCEDURES.md`).
 
 ## Revisione e confronto versioni (Review Studio)
 
@@ -102,4 +102,4 @@ Scorciatoie: `Ctrl+Alt+G` (Guida), `Ctrl+Alt+K` (Quiz), `Ctrl+Alt+M` (Mindmap), 
 
 La vista **📒 Note** raccoglie appunti rapidi (`/note <testo>` dalla chat, o il campo apposito). Un appunto utile si **promuove a nota vera** con il pulsante dedicato, con `/promote-note <id>` oppure dalla scheda **🚀 Promuovi** della Study Studio.
 
-**Approfondisci:** `docs/USER_GUIDE.md` (editor), `docs/OKF_SPEC.md` (frontmatter e versioni), `docs/PROCEDURES.md`.
+**Approfondisci:** `docs/guida/USER_GUIDE.md` (editor), `docs/standard/OKF_SPEC.md` (frontmatter e versioni), `docs/processi/PROCEDURES.md`.

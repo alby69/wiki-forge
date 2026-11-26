@@ -720,10 +720,10 @@ Sintesi matura pronta per la tesi.
 
 test('getSystemPrompt follows a root AGENT.md pointer to the real manual', async () => {
   const dir = path.join(process.cwd(), 'tests', 'tmp-agent-' + Date.now());
-  await fs.mkdir(path.join(dir, 'docs'), { recursive: true });
-  await fs.writeFile(path.join(dir, 'AGENT.md'), 'docs/AGENT.md\n', 'utf-8');
+  await fs.mkdir(path.join(dir, 'docs', 'processi'), { recursive: true });
+  await fs.writeFile(path.join(dir, 'AGENT.md'), 'docs/processi/AGENT.md\n', 'utf-8');
   await fs.writeFile(
-    path.join(dir, 'docs', 'AGENT.md'),
+    path.join(dir, 'docs', 'processi', 'AGENT.md'),
     '# Real Manual\n\nUNIQUE_MANUAL_SENTINEL about how to operate.\n',
     'utf-8'
   );
@@ -732,7 +732,7 @@ test('getSystemPrompt follows a root AGENT.md pointer to the real manual', async
   try {
     const prompt = await serverInstance.getSystemPrompt();
     assert.ok(prompt.includes('UNIQUE_MANUAL_SENTINEL'));
-    assert.ok(!prompt.includes('OPERATING MANUAL (AGENT.md) ===\ndocs/AGENT.md'));
+    assert.ok(!prompt.includes('OPERATING MANUAL (AGENT.md) ===\ndocs/processi/AGENT.md'));
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

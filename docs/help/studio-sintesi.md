@@ -38,4 +38,4 @@ Senza argomento lavorano sull'intera wiki; con l'argomento restringono il campo 
 - Per domande libere usa la chat senza slash: l'agente usa le note come contesto.
 - Se la risposta è troppo generica, prova a **compilare prima** le note sull'argomento (`/compile`) o a indicare il nome di una nota.
 
-**Approfondisci:** `docs/TUTORIAL.md` §4 (studio e sintesi), `docs/THESIS_GUIDE.md` (flusso tesi completo), `docs/KNOWLEDGE_ENGINEERING.md`.
+**Approfondisci:** `docs/guida/TUTORIAL.md` §4 (studio e sintesi), `docs/guida/THESIS_GUIDE.md` (flusso tesi completo), `docs/processi/KNOWLEDGE_ENGINEERING.md`.

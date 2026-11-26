@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-caricare-documenti-md
     resource: docs/help/caricare-documenti.md
@@ -46,4 +46,4 @@ Nell'albero dei file a sinistra puoi **caricare file dentro una cartella specifi
 
 I file caricati sono solo *fonti*: diventano **note della wiki** con la **compilazione** (pulsante ⚡ Compila o `/compile`). Se non hai ancora configurato un modello LLM, i file restano in attesa in `raw/` e puoi compilarli in seguito.
 
-**Approfondisci:** `docs/TUTORIAL.md` §3 (ingestione), `docs/SOURCES.md` (formati e pipeline delle fonti), `docs/STARTUP.md` (struttura delle cartelle).
+**Approfondisci:** `docs/guida/TUTORIAL.md` §3 (ingestione), `docs/riferimenti/SOURCES.md` (formati e pipeline delle fonti), `docs/guida/STARTUP.md` (struttura delle cartelle).

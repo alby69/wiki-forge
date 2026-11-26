@@ -55,7 +55,7 @@ async function createHarness(): Promise<Harness> {
   const proposal = {
     title: 'Aggiorna valore documentato',
     rationale: 'La wiki di wiki-forge documenta il nuovo valore approvato.',
-    sources: ['docs/SELF_WIKI_PLAN.md', 'projects/wikiforge/wiki/index.md'],
+    sources: ['docs/standard/SELF_WIKI.md', 'projects/wikiforge/wiki/index.md'],
     project: 'wikiforge',
     edits: [{ file: TARGET_REL, find: 'Valore iniziale.', replace: 'Valore finale.' }],
   };
@@ -74,7 +74,7 @@ async function createHarness(): Promise<Harness> {
         action: 'require_approval',
         steps: [0],
         rationale: 'Lo step di apply è mutante: richiede approvazione umana F6.',
-        sources: ['config/agent_schedule.toml', 'docs/SELF_WIKI_PLAN.md'],
+        sources: ['config/agent_schedule.toml', 'docs/standard/SELF_WIKI.md'],
       });
     },
   };

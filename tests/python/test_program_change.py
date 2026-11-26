@@ -27,7 +27,7 @@ def _proposal(find: str = "Valore iniziale.", replace: str = "Valore finale.", f
     return {
         "title": "Aggiorna valore",
         "rationale": "La wiki documenta il nuovo valore approvato.",
-        "sources": ["docs/SELF_WIKI_PLAN.md", "projects/wikiforge/wiki/index.md"],
+        "sources": ["docs/standard/SELF_WIKI.md", "projects/wikiforge/wiki/index.md"],
         "project": "wikiforge",
         "edits": [{"file": file, "find": find, "replace": replace}],
     }
@@ -75,7 +75,7 @@ def test_propose_is_read_only_deterministic_and_grounded(repo: Path):
     assert second["staged"] is False
     assert first["id"] == second["id"]
     assert first["rationale"]
-    assert "docs/SELF_WIKI_PLAN.md" in first["sources"]
+    assert "docs/standard/SELF_WIKI.md" in first["sources"]
     assert (repo / TARGET).read_text(encoding="utf-8") == ORIGINAL, "propose must not write program files"
     record = json.loads((stage_dir / f"{first['id']}.json").read_text(encoding="utf-8"))
     assert record["status"] == "pending"

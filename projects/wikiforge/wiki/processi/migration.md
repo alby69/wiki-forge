@@ -2,15 +2,15 @@
 type: Process
 title: "Migration Guide — Safe Changeset Review System"
 description: "In Wiki-Forge v4.1, AI file modifications follow a Plan-Review-Apply validation flow instead of un-reviewed LLM file overwrites."
-resource: docs/MIGRATION.md
+resource: docs/processi/MIGRATION.md
 tags: [scope/docs, layer/generated, area/processi, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-migration-md
-    resource: docs/MIGRATION.md
+  - id: source-docs-processi-migration-md
+    resource: docs/processi/MIGRATION.md
     title: "Migration Guide — Safe Changeset Review System"
     author: human:alby69
 ---

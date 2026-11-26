@@ -5,11 +5,11 @@ Automated documentation and Agent Skills consistency checker for wiki-forge.
 
 Checks:
 1. Parses `skills/*/SKILL.md` frontmatter `triggers.commands` lists to build canonical command set.
-2. Verifies that every trigger command is mentioned in `docs/SLASH_COMMANDS_REFERENCE.md`,
+2. Verifies that every trigger command is mentioned in `docs/riferimenti/SLASH_COMMANDS_REFERENCE.md`,
    the single human-readable catalog. `README.md` and `TUTORIAL.md` are pointers, not copies.
 3. Verifies semantic references: `docs/help/*.md` markers must carry the sha256 of the
    `DOC_BLOCK` they point to. Use `--fix` to refresh those markers after editing a master block.
-4. Verifies version parity between `package.json` ("version") and top-most version in `docs/CHANGELOG.md`.
+4. Verifies version parity between `package.json` ("version") and top-most version in `docs/riferimenti/CHANGELOG.md`.
 5. Validates `docs/help/*.md` in-app guide topics: mandatory frontmatter, `id == filename`,
    slugged id, numeric order, non-empty body, and coverage in `docs/README.md`.
 6. Verifies that the committed OKF bundle in `projects/wikiforge/wiki/` matches a fresh
@@ -80,13 +80,13 @@ def check_doc_mentions(commands: set[str], doc_path: Path, doc_name: str) -> lis
 def check_version_sync(repo_root: Path) -> list[str]:
     errors = []
     pkg_path = repo_root / "package.json"
-    changelog_path = repo_root / "docs" / "CHANGELOG.md"
+    changelog_path = repo_root / "docs" / "riferimenti" / "CHANGELOG.md"
 
     if not pkg_path.exists():
         errors.append("package.json missing")
         return errors
     if not changelog_path.exists():
-        errors.append("docs/CHANGELOG.md missing")
+        errors.append("docs/riferimenti/CHANGELOG.md missing")
         return errors
 
     try:
@@ -115,8 +115,8 @@ HELP_REQUIRED_KEYS = ("id", "title", "icon", "order", "group", "mode", "keywords
 # Master blocks mirrored by hash in docs/help/. Add a block here when another
 # help topic needs to stay semantically in sync with a canonical section.
 DOC_BLOCKS = {
-    "slash-commands": "docs/SLASH_COMMANDS_REFERENCE.md",
-    "script-automation": "docs/SCRIPT_AUTOMATION_REFERENCE.md",
+    "slash-commands": "docs/riferimenti/SLASH_COMMANDS_REFERENCE.md",
+    "script-automation": "docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md",
 }
 DOC_BLOCK_REF_RE = re.compile(
     r"<!--\s*DOC_BLOCK_REF:([a-z0-9-]+)\s+(\S+)\s+sha256:([0-9a-f]{64})\s*-->",
@@ -298,8 +298,8 @@ def main():
 
     # Check the single human-readable command catalog. README.md and TUTORIAL.md
     # intentionally link to it instead of duplicating the table.
-    catalog = repo_root / "docs" / "SLASH_COMMANDS_REFERENCE.md"
-    catalog_errors = check_doc_mentions(commands, catalog, "docs/SLASH_COMMANDS_REFERENCE.md")
+    catalog = repo_root / "docs" / "riferimenti" / "SLASH_COMMANDS_REFERENCE.md"
+    catalog_errors = check_doc_mentions(commands, catalog, "docs/riferimenti/SLASH_COMMANDS_REFERENCE.md")
     all_errors.extend(catalog_errors)
 
     # Check semantic references from docs/help/ to master blocks.
@@ -323,7 +323,7 @@ def main():
         print(json.dumps({
             "status": "error" if all_errors else "success",
             "commands_checked": len(commands),
-            "errors": all_errors
+            "errors": all_errors,
         }))
         sys.exit(1 if all_errors else 0)
 

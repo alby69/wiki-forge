@@ -1,99 +1,100 @@
-# Wiki-Forge Documentation Index
+# Indice della documentazione — Wiki-Forge v4.1
 
-Indice completo dei documenti in `docs/` (34 file, di cui il manifest dei comandi generato), dei contenuti della guida in-app (`docs/help/`, 19 argomenti) e dei mockup in `docs/mockups/`.
+`docs/` è la **single source of truth** della documentazione. È organizzata per
+argomento: si parte dalla guida operativa, si passa ai processi di Knowledge
+Engineering e si chiude con architettura e riferimenti generati. La guida in-app
+resta in `docs/help/` perché è servita da `GET /api/help`.
 
-## 📖 Per utenti ed operatori
+Per un unico file Markdown stampabile che segue il percorso qui sotto:
 
-| Documento | Contenuto |
+```bash
+make docs-book      # genera output/manuale-wiki-forge.md
+```
+
+## Percorso didattico
+
+Dalle basi all'implementazione. Ogni documento rimane leggibile in autonomia.
+
+| # | Documento | Obiettivo |
+|---:|---|---|
+| 1 | [Guida operativa](guida/GUIDA_OPERATIVA.md) | Attività, flusso tipico e buone pratiche, senza concetti tecnici. |
+| 2 | [Focus Mode](guida/USER_GUIDE.md) | I tre passi **Carica / Compila / Chiedi**, wizard e personalizzazione UI. |
+| 3 | [Tutorial completo](guida/TUTORIAL.md) | Interfaccia, workflow in 5 fasi, comandi chat e troubleshooting. |
+| 4 | [Avvio e nuovi progetti](guida/STARTUP.md) | Da una wiki esistente a un progetto da zero. |
+| 5 | [Tesi magistrale](guida/THESIS_GUIDE.md) | Dalle fonti al PDF, con il workflow ibrido NotebookLM + Wiki-Forge. |
+| 6 | [Pattern LLM Wiki](standard/KARPATHY_LLM_WIKI.md) | Origine filosofica del progetto e confronto con l'addestramento. |
+| 7 | [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) | Ruoli, maturità L1-L4, use case, ontologie e validazione. |
+| 8 | [Specifiche OKF](standard/OKF_SPEC.md) | Frontmatter, trust tier e indici del formato adottato. |
+| 9 | [Schema tipizzato](standard/SCHEMA.md) | Validazione e inferenza dello schema. |
+| 10 | [Procedure Engine](processi/PROCEDURES.md) | Schema TOML, DAG, pause umane e criteri di uscita. |
+| 11 | [Manuale dell'agente](processi/AGENT.md) | Operating manual v3.0 per agenti LLM. |
+| 12 | [Migrazione changeset](processi/MIGRATION.md) | Flusso Plan-Review-Apply e proposte `wiki-edit`. |
+| 13 | [Wiki di self-documentazione](standard/SELF_WIKI.md) | Come `docs/` diventa la wiki OKF del progetto. |
+| 14 | [Architettura](architettura/ARCHITECTURE.md) | Topologia, componenti, studio, frontend e vincoli di sviluppo. |
+| 15 | [OpenAPI e contratti](architettura/OPENAPI.md) | Route generate, Swagger self-hosted e manifest dei comandi. |
+| 16 | [GraphRAG](architettura/GRAPH_RAG.md) | Grafo semantico, export e pipeline stateful. |
+| 17 | [Editor note](architettura/EDITOR_MIGRATION.md) | Adapter CodeMirror/Milkdown, frontmatter e wikilink. |
+| 18 | [Comandi slash](riferimenti/SLASH_COMMANDS_REFERENCE.md) | Catalogo canonico usato da README, tutorial, help e agente. |
+| 19 | [Automazione script](riferimenti/SCRIPT_AUTOMATION_REFERENCE.md) | Classi di sicurezza e job dei 29 script. |
+| 20 | [Manifest comandi](riferimenti/COMMAND_MANIFEST.md) | Conteggi generati: non modificare a mano. |
+| 21 | [Gestione fonti](riferimenti/SOURCES.md) | Cartelle `sources/`, `backup/` e conversione. |
+| 22 | [Changelog](riferimenti/CHANGELOG.md) | Storico delle release. |
+| 23 | [Roadmap](../ROADMAP.md) | Stato completato e piano dei miglioramenti aperti. |
+
+## Struttura delle cartelle
+
+| Cartella | Contenuto |
 |---|---|
-| [`GUIDA_OPERATIVA.md`](GUIDA_OPERATIVA.md) | **Guida unica non tecnica**: attività, flusso di lavoro tipico e buone pratiche. Punto di partenza consigliato. |
-| [`USER_GUIDE.md`](USER_GUIDE.md) | Focus Mode: i 3 passi (Carica / Compila / Chiedi), wizard guidati, toolbar dell'editor e Review Studio. |
-| [`TUTORIAL.md`](TUTORIAL.md) | Guida operativa completa: UI, workflow in 5 fasi, use case, comandi chat, troubleshooting. |
-| [`THESIS_GUIDE.md`](THESIS_GUIDE.md) | Esempio applicato alla Tesi Magistrale: dai capitoli al PDF finale (`output/thesis_final.pdf`). |
-| [`WORKFLOW.md`](WORKFLOW.md) | Flusso integrato NotebookLM → Wiki-Forge in 5 fasi + checklist operativa settimanale. |
-| [`STARTUP.md`](STARTUP.md) | Da una wiki esistente a un nuovo progetto da zero. |
-| [`SOURCES.md`](SOURCES.md) | Gestione delle fonti (sources/, backup/, conversione). |
-| [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md) | Catalogo unico dei comandi slash: sorgente usata da README, tutorial, guida in-app e agente. |
+| [`guida/`](guida/) | Documenti operativi per utenti e operatori. |
+| [`processi/`](processi/) | Manuale agente, Knowledge Engineering, procedure, migrazione. |
+| [`standard/`](standard/) | OKF, schema, pattern LLM Wiki, self-wiki. |
+| [`architettura/`](architettura/) | Architettura di sistema, API, grafo, editor. |
+| [`riferimenti/`](riferimenti/) | Cataloghi generati, changelog, fonti, metriche e mockup. |
+| [`help/`](help/) | 19 topic della guida in-app, serviti da `GET /api/help`. |
 
-## 🎓 Studio e sintesi
+`riferimenti/METRICS.md` è rigenerato da `wiki_stats.py` tramite `npm test`; è
+escluso dalla proiezione wiki per evitare drift continuo.
 
-| Documento | Contenuto |
+## Mappa: topic guida in-app ↔ documenti
+
+| Topic (`docs/help/`) | Approfondimento |
 |---|---|
-| [`KNOWLEDGE_ENGINEERING.md`](KNOWLEDGE_ENGINEERING.md) | Manuale operativo di Knowledge Engineering (ruoli, processi). |
-| [`METRICS.md`](METRICS.md) | Metriche della wiki (calcolo e interpretazione). |
-| [`KARPATHY_LLM_WIKI.md`](KARPATHY_LLM_WIKI.md) | Il pattern "LLM Wiki" di Andrej Karpathy (origine filosofica del progetto). |
-| [`GRAPH_RAG.md`](GRAPH_RAG.md) | Knowledge Graph semantico e sistema GraphRAG stateful. |
+| `inizio` | [Focus Mode](guida/USER_GUIDE.md), [Tutorial](guida/TUTORIAL.md) §2 |
+| `barra-alto` | [Tutorial](guida/TUTORIAL.md) §2 |
+| `caricare-documenti` | [Tutorial](guida/TUTORIAL.md) FASE 2, [Fonti](riferimenti/SOURCES.md) |
+| `compilare` | [Tutorial](guida/TUTORIAL.md) FASE 3, [Tesi](guida/THESIS_GUIDE.md) |
+| `chat-comandi` | [Comandi slash](riferimenti/SLASH_COMMANDS_REFERENCE.md), [Manuale agente](processi/AGENT.md) |
+| `viste-grafo` | [Tutorial](guida/TUTORIAL.md) §2, [GraphRAG](architettura/GRAPH_RAG.md) |
+| `modifica-note` | [Focus Mode](guida/USER_GUIDE.md), [Editor](architettura/EDITOR_MIGRATION.md) |
+| `review-studio` | [Tutorial](guida/TUTORIAL.md) §2/§5, [Architettura](architettura/ARCHITECTURE.md) §3.4 |
+| `research-studio` | [Tutorial](guida/TUTORIAL.md) §2/§5, [Architettura](architettura/ARCHITECTURE.md) §3.4 |
+| `study-studio` | [Tutorial](guida/TUTORIAL.md) §4, [Architettura](architettura/ARCHITECTURE.md) §3.4 |
+| `stati-okf` | [Specifiche OKF](standard/OKF_SPEC.md) §3/§6 |
+| `studio-sintesi` | [Tutorial](guida/TUTORIAL.md) FASE 4 |
+| `esportare` | [Tutorial](guida/TUTORIAL.md) FASE 5, [Tesi](guida/THESIS_GUIDE.md) |
+| `problematic` | [Tutorial](guida/TUTORIAL.md) §7 |
+| `progetti-config` | [Tutorial](guida/TUTORIAL.md) FASE 1, [Avvio](guida/STARTUP.md) |
+| `modalita-dev` | [Automazione script](riferimenti/SCRIPT_AUTOMATION_REFERENCE.md), [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) |
+| `maturita-metriche` | [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) §9, [Metriche](riferimenti/METRICS.md) |
+| `wiki-di-wiki-forge` | [Self-wiki](standard/SELF_WIKI.md), `scripts/docs_to_wiki.py`, [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) UC7/UC8 |
+| `ui-personalizzazione` | [Focus Mode](guida/USER_GUIDE.md), [OpenAPI](architettura/OPENAPI.md) route `ui.*` |
 
-## ⚙️ Knowledge Engineer & architettura
+## Mockup
 
-| Documento | Contenuto |
-|---|---|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Architettura di sistema v4.1: frontend, gateway Node, kernel/modules/ports, health engine, procedure, vault, Review Studio e deployment. |
-| [`TECHNICAL_ARCHITECTURE.md`](TECHNICAL_ARCHITECTURE.md) | Analisi tecnica approfondita: moduli, versioning, Review Studio, MCP Node, export RDF, confronto con LLM locali. |
-| [`OPENAPI.md`](OPENAPI.md) | Contratto HTTP generato da TypeScript (105 route), browser Swagger self-hosted (`/api/docs`), bus backend (158 handler), client tipizzato e bus UI. |
-| [`COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md) | Manifest generato: 105 route, 158 handler bus, 51 comandi slash / 20 con case, 113 tool MCP, 32 gap noti; non modificare a mano. |
-| [`SCRIPT_AUTOMATION_REFERENCE.md`](SCRIPT_AUTOMATION_REFERENCE.md) | Catalogo generato delle classi di sicurezza, dei job schedulabili e degli orari suggeriti per i 29 script. |
-| [`KE_AGENT_SCHEDULER_PLAN.md`](KE_AGENT_SCHEDULER_PLAN.md) | Piano F0–F6 e S0–S6: agenti schedulati, Policy Agent, approvazioni e automazione degli script via API/UI. |
-| [`ROADMAP_Q1_Q2_2027_PLAN.md`](ROADMAP_Q1_Q2_2027_PLAN.md) | Piano A0–A5/B0–B7/C0–C8 per L4 autonomo, RBAC e Neo4j bidirezionale: baseline, dipendenze, criteri di accettazione, test e grado di implementazione aggiornato a ogni step. |
-| [`EDITOR_MIGRATION.md`](EDITOR_MIGRATION.md) | Architettura dell'editor note: adapter CodeMirror/Milkdown-Crepe, frontmatter OKF, wikilink e validazione. |
-| [`FRONTEND_UIUX_PLAN.md`](FRONTEND_UIUX_PLAN.md) | Studio UI/UX del frontend e piano KISS/DRY: azioni uniche, design system, disaccoppiamento e ciclo di vita progetti. |
-| [`USER_PERMISSIONS_UIUX_PLAN.md`](USER_PERMISSIONS_UIUX_PLAN.md) | Piano F0–F6 per permessi utente e UI modulare: audit, route `ui.*`, preferenze per utente, pannelli RBAC-aware e UX gestione utenti. |
-| [`KE_PLAYBOOK.md`](KE_PLAYBOOK.md) | Scala di maturità L1-L4, KE Workbench, scrittura di procedure TOML. |
-| [`PROCEDURES.md`](PROCEDURES.md) | Specifica del Procedure Engine: schema TOML, DAG, criteri di uscita. |
-| [`SCHEMA.md`](SCHEMA.md) | Guida allo schema tipizzato (`[schema]`), validazione e inferenza (`/schema-lint`, `/schema-infer`). |
-| [`ROADMAP.md`](ROADMAP.md) | Roadmap di sviluppo. |
-
-## 📐 Standard, sicurezza e processi
-
-| Documento | Contenuto |
-|---|---|
-| [`OKF_SPEC.md`](OKF_SPEC.md) | Specifica Open Knowledge Format (OKF) v0.2: frontmatter, trust tiers, indici. |
-| [`MIGRATION.md`](MIGRATION.md) | Flusso Plan-Review-Apply: proposte `wiki-edit` + **Applica modifica**, changeset backend, soft delete. |
-| [`mockups/`](mockups/README.md) | Review Studio: prototipo HTML interattivo e 5 anteprime (Verifica, Critica, Digest, Diff, menu contestuale). |
-| [`AUDIT_BASELINE.md`](AUDIT_BASELINE.md) | Baseline audit del repository (fase 0). |
-| [`SELF_WIKI_PLAN.md`](SELF_WIKI_PLAN.md) | Piano di self-documentazione: `docs/` proiettato nella wiki OKF di `wikiforge` (fasi 70-76). |
-| [`CHANGELOG.md`](CHANGELOG.md) | Storico delle release. |
-
-## 🤖 Operatività dell'agente
-
-| Documento | Contenuto |
-|---|---|
-| [`AGENT.md`](../AGENT.md) (radice) | Operating manual v3.0 per agenti LLM: ruolo, OKF checklist, skill router (10 skill), macro-command. |
-| [`help/*.md`](help/) (19 file) | Contenuti della **guida in-app** (pannello **?** / tasto **F1** e comando `/help`), serviti da `GET /api/help`. |
-
-## 🗺️ Mappa: argomenti guida in-app ↔ documenti
-
-| Topic guida (`docs/help/`) | Approfondisci in |
-|---|---|
-| `inizio` | `USER_GUIDE.md`, `TUTORIAL.md` §2 |
-| `barra-alto` | `TUTORIAL.md` §2 (viste e pulsanti) |
-| `caricare-documenti` | `TUTORIAL.md` FASE 2, `SOURCES.md` |
-| `compilare` | `TUTORIAL.md` FASE 3, `WORKFLOW.md` |
-| `chat-comandi` | `SLASH_COMMANDS_REFERENCE.md`, `TUTORIAL.md` §5, `AGENT.md` §5, README (radice) |
-| `viste-grafo` | `TUTORIAL.md` §2 (viste dell'area di lavoro) |
-| `modifica-note` | `USER_GUIDE.md` (toolbar), `TUTORIAL.md` FASE 3 |
-| `review-studio` | `TUTORIAL.md` §2/§5.1, `USER_GUIDE.md` (Review Studio), `TECHNICAL_ARCHITECTURE.md` §2.11 |
-| `research-studio` | `TUTORIAL.md` §2/§5, `USER_GUIDE.md` (Research Studio), `TECHNICAL_ARCHITECTURE.md` §2.12 |
-| `study-studio` | `TUTORIAL.md` §4, `USER_GUIDE.md` (Study Studio), `TECHNICAL_ARCHITECTURE.md` §2.13 |
-| `stati-okf` | `TUTORIAL.md` §5.1, `OKF_SPEC.md` §3/§6 |
-| `studio-sintesi` | `TUTORIAL.md` FASE 4 |
-| `esportare` | `TUTORIAL.md` FASE 5, `THESIS_GUIDE.md` |
-| `problematic` | `TUTORIAL.md` §7 (troubleshooting) |
-| `progetti-config` | `TUTORIAL.md` FASE 1, `STARTUP.md` |
-| `modalita-dev` | `SCRIPT_AUTOMATION_REFERENCE.md`, `KE_AGENT_SCHEDULER_PLAN.md`, `TUTORIAL.md` §3 (KE Workbench), `KE_PLAYBOOK.md` |
-| `maturita-metriche` | `TUTORIAL.md` FASE 4, `METRICS.md`, `KE_PLAYBOOK.md` |
-| `wiki-di-wiki-forge` | `SELF_WIKI_PLAN.md` (fasi 70-76), `docs_to_wiki.py`, `KNOWLEDGE_ENGINEERING.md` (UC8), `TUTORIAL.md` §5 |
-| `ui-personalizzazione` | `USER_GUIDE.md` (Personalizzazione UI, ruoli e permessi), `USER_PERMISSIONS_UIUX_PLAN.md` (F0–F6), `OPENAPI.md` (route `ui.*`) |
+I prototipi della Review Studio sono in [`riferimenti/mockups/`](riferimenti/mockups/README.md):
+HTML interattivo e cinque anteprime (Verifica, Critica, Digest, Confronto
+versioni e menu contestuale).
 
 ## Verifica di coerenza
 
 ```bash
-python scripts/check_docs_sync.py   # struttura docs/ e frontmatter di docs/help/*.md
-npm run typecheck                   # TypeScript
-npm run manifest:check              # coerenza del manifest generato (zero route-without-bus)
-npm run build                       # build della SPA
-npm test                            # test JS (593/593 con venv Python da requirements.txt)
-python -m pytest tests/python       # 6/6 test semantici
-docker compose config               # validazione dei servizi Compose
-git diff --check                    # whitespace
+python scripts/check_docs_sync.py   # struttura docs/, topic help e parità versionale
+python scripts/docs_to_wiki.py --check
+make docs-book-check               # dopo `make docs-book`: manuale stampabile aggiornato
+npm run manifest:check              # coerenza del manifest generato
+npm run typecheck
+npm run build
+npm test
+python -m pytest tests/python
+git diff --check
 ```

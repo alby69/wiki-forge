@@ -330,7 +330,7 @@ Quando la conoscenza accumulata nella wiki ha raggiunto un livello di maturità 
 
 Per mantenere la wiki pulita, priva di link rotti e conforme allo standard OKF v0.2, puoi richiamare i comandi direttamente dalla chat dell'interfaccia grafica.
 
-Il **catalogo completo e unico** — con alias, categoria, equivalente grafico e note sui comandi dichiarati solo negli skill — è [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md). Questa sezione non duplica la tabella: il pannello **⚡ Comandi** della chat, il comando `/help` e la guida in-app fanno riferimento allo stesso catalogo.
+Il **catalogo completo e unico** — con alias, categoria, equivalente grafico e note sui comandi dichiarati solo negli skill — è [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/SLASH_COMMANDS_REFERENCE.md). Questa sezione non duplica la tabella: il pannello **⚡ Comandi** della chat, il comando `/help` e la guida in-app fanno riferimento allo stesso catalogo.
 
 Per la manutenzione ricorrente usa soprattutto `/audit`, `/reindex`, `/stats`, `/maturity`, `/verify` e `/digest`; per lo studio e la ricerca usa le schede **📚 Studio** e **🔎 Research**, che condividono gli stessi endpoint dei comandi chat.
 
@@ -338,7 +338,7 @@ Per la manutenzione ricorrente usa soprattutto `/audit`, `/reindex`, `/stats`, `
 
 ### 5.1 🏷️ Stati OKF dei Documenti: Come Leggerli e Modificarli
 
-Ogni nota della wiki espone tre informazioni di stato definite dal formato **Open Knowledge Format (OKF v0.2)**, descritto in `docs/OKF_SPEC.md` (§3 Frontmatter, §6 Trust Tiers). Sono tre livelli distinti che spesso vengono confusi:
+Ogni nota della wiki espone tre informazioni di stato definite dal formato **Open Knowledge Format (OKF v0.2)**, descritto in [`docs/standard/OKF_SPEC.md`](../standard/OKF_SPEC.md) (§3 Frontmatter, §6 Trust Tiers). Sono tre livelli distinti che spesso vengono confusi:
 
 #### a) Trust Tier (livello di fiducia) — derivato automaticamente
 

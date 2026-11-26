@@ -247,7 +247,7 @@ describe('KE Workbench schedule panel helpers (F4)', () => {
           scriptArgs: { message: 'Approvazione S2 di prova', type: 'Update' },
           status: 'pending',
           rationale: 'Script mutante.',
-          sources: ['docs/SCRIPT_AUTOMATION_REFERENCE.md'],
+          sources: ['docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md'],
           createdAt: '2026-11-19T02:05:00.000Z',
         },
       ],

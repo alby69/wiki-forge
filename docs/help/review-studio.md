@@ -57,4 +57,4 @@ La Review Studio è il percorso grafico. Le schede **Verifica**, **Digest** e **
 - `/adversarial-review <nota>` — revisione critica (comando agente)
 - `/diff` — confronto versioni (comando agente)
 
-**Approfondisci:** `docs/TUTORIAL.md` §5.1 (trust tier), `docs/AGENT.md` §5 (comandi), `docs/TECHNICAL_ARCHITECTURE.md` §2.11 (API e snapshot).
+**Approfondisci:** `docs/guida/TUTORIAL.md` §5.1 (trust tier), `docs/processi/AGENT.md` §5 (comandi), `docs/architettura/ARCHITECTURE.md` §3.4 (API e snapshot).

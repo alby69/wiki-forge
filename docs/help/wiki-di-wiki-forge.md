@@ -15,7 +15,7 @@ La **Wiki Docs** è la documentazione di wiki-forge proiettata in formato OKF v0
 
 ## Come si apre
 
-In Developer Mode clicca **📚 Wiki Docs** nella barra in alto, oppure premi **Ctrl+Alt+D**. Si apre il Research Studio con il badge `Wiki Docs · wiki-forge` e la scheda **Consult** già pronta con una domanda di esempio.
+In Developer Mode clicca **📚 Wiki Docs** nella barra in alto, oppure premi **Ctrl+Alt+W**. Si apre il Research Studio con il badge `Wiki Docs · wiki-forge` e la scheda **Consult** già pronta con una domanda di esempio.
 
 Le interrogazioni usano il progetto `wikiforge` anche se il vault attivo è un altro: **non cambia la wiki su cui stai lavorando**. Puoi passare dalle risposte alla nota sorgente cliccando le citazioni: in quel caso il progetto viene attivato e la nota si apre nell'editor.
 

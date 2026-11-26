@@ -2,15 +2,15 @@
 type: Playbook
 title: "STARTUP — Da Wiki Esistente a Nuovo Progetto da Zero"
 description: "L'obiettivo è azzerare wiki/, raw/ ed output/ senza perdere nulla: lo stato corrente viene congelato in git e può essere ripristinato in qualsiasi momento."
-resource: docs/STARTUP.md
+resource: docs/guida/STARTUP.md
 tags: [scope/docs, layer/generated, area/guida, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-startup-md
-    resource: docs/STARTUP.md
+  - id: source-docs-guida-startup-md
+    resource: docs/guida/STARTUP.md
     title: "STARTUP — Da Wiki Esistente a Nuovo Progetto da Zero"
     author: human:alby69
 ---

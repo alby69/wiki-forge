@@ -2,15 +2,15 @@
 type: Concept
 title: "Note Editor Migration — CodeMirror → Milkdown/Crepe"
 description: "The note editor used a plain CodeMirror 6 source view. It was reliable but"
-resource: docs/EDITOR_MIGRATION.md
+resource: docs/architettura/EDITOR_MIGRATION.md
 tags: [scope/docs, layer/generated, area/architettura, lang/en]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-editor-migration-md
-    resource: docs/EDITOR_MIGRATION.md
+  - id: source-docs-architettura-editor-migration-md
+    resource: docs/architettura/EDITOR_MIGRATION.md
     title: "Note Editor Migration — CodeMirror → Milkdown/Crepe"
     author: human:alby69
 ---

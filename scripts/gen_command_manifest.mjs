@@ -21,7 +21,7 @@ import {
 
 const CHECK = process.argv.includes('--check');
 const TS_OUTPUT = path.join(REPO_ROOT, 'src', 'shared', 'api', 'generated', 'commandManifest.generated.ts');
-const MD_OUTPUT = path.join(REPO_ROOT, 'docs', 'COMMAND_MANIFEST.md');
+const MD_OUTPUT = path.join(REPO_ROOT, 'docs', 'riferimenti', 'COMMAND_MANIFEST.md');
 
 async function main() {
   const manifest = await deriveCommandManifest();

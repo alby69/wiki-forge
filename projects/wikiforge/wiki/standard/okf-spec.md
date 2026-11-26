@@ -2,15 +2,15 @@
 type: Reference
 title: "Open Knowledge Format (OKF) Specification v0.2"
 description: "Repository: https://github.com/GoogleCloudPlatform/open-knowledge-format"
-resource: docs/OKF_SPEC.md
+resource: docs/standard/OKF_SPEC.md
 tags: [scope/docs, layer/generated, area/standard, lang/en]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-okf-spec-md
-    resource: docs/OKF_SPEC.md
+  - id: source-docs-standard-okf-spec-md
+    resource: docs/standard/OKF_SPEC.md
     title: "Open Knowledge Format (OKF) Specification v0.2"
     author: human:alby69
 ---
@@ -115,7 +115,7 @@ Trust levels are derived automatically from the `verified` array:
 2. **machine-confirmed**: `verified` array contains entries, but none from a `human:*` actor.
 3. **human-reviewed**: `verified` array contains at least one entry from a `human:<id>` actor.
 
-> **In Wiki-Forge**: practical guide on how to view and change a document's state (trust tier, `status`, `stale_after`, `/verify` command): see `docs/TUTORIAL.md` §5.1. The same verification is available graphically from the **Review Studio → Verifica** tab (right-click a note, the **🧐 Revisione** button, or `Ctrl+Alt+R`), which writes the identical `verified` entry.
+> **In Wiki-Forge**: practical guide on how to view and change a document's state (trust tier, `status`, `stale_after`, `/verify` command): see `docs/guida/TUTORIAL.md` §5.1. The same verification is available graphically from the **Review Studio → Verifica** tab (right-click a note, the **🧐 Revisione** button, or `Ctrl+Alt+R`), which writes the identical `verified` entry.
 
 ---
 

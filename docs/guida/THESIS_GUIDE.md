@@ -218,7 +218,83 @@ In sede di laurea occorre elevare la discussione tecnica a riflessione strategic
 
 ---
 
-## 7. Risultato Finale: Doppia Fruibilità
+## 7. Workflow integrato NotebookLM → Wiki-Forge
+
+Il sistema ibrido descritto nella sezione 2.3 si traduce in cinque fasi operative.
+
+### Fase A — Normalizzazione nei notebook specialistici
+
+Ogni ambito (per esempio Cristianini, Karpathy, HR, AI & Lavoro) resta in un
+notebook separato. Invece di chiedere riassunti generici, si usa questo prompt
+strutturato per ottenere una sintesi direttamente importabile:
+
+```text
+Agisci come un Knowledge Engineer accademico. Analizza tutte le fonti di questo notebook in funzione della tesi sull'impatto dell'Intelligenza Artificiale sul lavoro e sulle Risorse Umane.
+
+Genera un unico documento Markdown strutturato con il seguente YAML frontmatter e sezioni:
+
+---
+title: "[Nome Autore/Tema] - Sintesi Strutturata"
+author: "[Nome Autore o 'Tesi']"
+type: "synthesis"
+topics: ["AI", "HR", "Lavoro", "LLM", "Specifico"]
+source_notebook: "[Nome del Notebook LM]"
+status: "draft"
+---
+
+# 1. Concezione dell'Intelligenza Artificiale
+# 2. Rapporto tra intelligenza umana e artificiale
+# 3. Automazione, autonomia e capacità emergenti
+# 4. Impatto sul lavoro: sostituzione vs trasformazione
+# 5. Fiducia, controllo e responsabilità
+# 6. Competenze umane: valore acquisito o perso
+# 7. Conseguenze per organizzazioni e HR
+# 8. Citazioni rilevanti (con riferimento alla fonte specifica)
+# 9. Concetti chiave (lista di tag #)
+# 10. Domande aperte per il confronto trasversale
+```
+
+### Fase B — Ingestione dalla Web UI
+
+Copia la sintesi o salvala come `.md`, trascinala con **📥 1. Carica** (oppure
+usa "Importa NotebookLM" dal menu **🛠️ Strumenti**) e clicca **⚡ 2. Compila**.
+
+### Fase C — Costruzione del grafo
+
+Compila con `/compile`, valida con `/ontology-check` o `/schema-lint`, poi
+aggiungi nell'editor i collegamenti mancanti emersi dal confronto tra autori.
+
+### Fase D — Interrogazione trasversale
+
+Dal pannello **💬 3. Chiedi** usa `/consult` per confronti sinottici,
+`/deep-research` per nuove sintesi e `/validate-cq` per verificare che la base
+risponda alle domande fondamentali. La **Study Studio** offre gli stessi
+contenuti in forma di guida, quiz, mindmap e copione audio.
+
+### Fase E — Scrittura e revisione
+
+Aggrega con `/thesis-chapter` o con la scheda **🎓 Tesi** della Study Studio,
+poi usa la **Review Studio** (`Ctrl+Alt+R/C/D/F`) per quality gate, critica
+avversariale e confronto con lo snapshot precedente. Solo le note verificate e
+mature entrano nel PDF finale.
+
+### Checklist operativa settimanale dell'operatore
+
+- [ ] **Estrazione**: ho generato la sintesi strutturata con frontmatter dai nuovi materiali?
+- [ ] **Ingestione**: ho caricato i file e cliccato **⚡ 2. Compila**?
+- [ ] **Collegamento**: ho controllato la vista **🕸️ Graph** per i nuovi concetti?
+- [ ] **Interrogazione**: ho lanciato almeno una domanda trasversale con `/consult` o `/deep-research`?
+- [ ] **Maturità**: ho usato `/maturity` per individuare gli stub da approfondire?
+- [ ] **Review Studio**: ho registrato le verifiche umane e confrontato gli snapshot?
+- [ ] **Study Studio**: ho generato guida, quiz o mindmap e promosso le note mature?
+
+Regole guiding: non fondere le fonti primarie (carica solo sintesi strutturate),
+trattare il frontmatter come legge, pensare per unità cognitive atomiche e
+mantenere la tracciabilità di ogni affermazione forte con `/trace`.
+
+---
+
+## 8. Risultato Finale: Doppia Fruibilità
 
 Grazie a questo approccio, il tesista ottiene simultaneamente:
 1. **Il Libro / PDF della Tesi**: Un elaborato strutturato, formalmente ineccepibile, formattato secondo i canoni accademici e pronto per la stampa.

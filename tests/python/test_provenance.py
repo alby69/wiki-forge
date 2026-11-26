@@ -51,7 +51,7 @@ def _proposal() -> dict:
     return {
         "title": "Provenance B5",
         "rationale": "Approvazione server-trusted.",
-        "sources": ["docs/SELF_WIKI_PLAN.md"],
+        "sources": ["docs/standard/SELF_WIKI.md"],
         "project": "wikiforge",
         "edits": [{"file": TARGET, "find": "Vecchio valore.", "replace": "Nuovo valore."}],
     }

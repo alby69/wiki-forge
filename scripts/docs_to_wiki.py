@@ -2,9 +2,10 @@
 """
 scripts/docs_to_wiki.py
 
-Generates an OKF v0.2 wiki bundle from the repository's ``docs/`` folder.
+Generates an OKF v0.2 wiki bundle from the repository's ``docs/`` folder plus
+the root ``ROADMAP.md`` (the canonical roadmap was moved to the repo root).
 
-``docs/`` stays the single source of truth: this script only writes into a
+The documentation stays the single source of truth: this script only writes into a
 project wiki directory (default: ``projects/wikiforge/wiki``). It is fully
 deterministic so the generated bundle can be committed and verified with
 ``--check`` in CI.
@@ -29,62 +30,56 @@ from okf_common import repo_root
 
 # Fixed build stamp: generated files are committed, so their bytes must not
 # change on every invocation. Bump this when the transformation rules change.
-BUILD_STAMP = "2026-11-19T00:00:00Z"
+BUILD_STAMP = "2026-11-26T00:00:00Z"
 CONVERTER_ID = "process:docs-to-wiki"
 
 DEFAULT_PROJECT = "wikiforge"
 
-# source path (relative to repo root, POSIX) -> note path in wiki (no .md)
+# source path (relative to repo root, POSIX) -> note path in wiki (no .md).
+# Note paths are kept stable across the docs/ folder reorganisation so links
+# already saved in the wiki keep working.
 DOC_MAP: dict[str, str] = {
     # guida
-    "docs/GUIDA_OPERATIVA.md": "guida/guida-operativa",
-    "docs/USER_GUIDE.md": "guida/user-guide",
-    "docs/TUTORIAL.md": "guida/tutorial",
-    "docs/THESIS_GUIDE.md": "guida/thesis-guide",
-    "docs/STARTUP.md": "guida/startup",
-    "docs/WORKFLOW.md": "guida/workflow",
+    "docs/guida/GUIDA_OPERATIVA.md": "guida/guida-operativa",
+    "docs/guida/USER_GUIDE.md": "guida/user-guide",
+    "docs/guida/TUTORIAL.md": "guida/tutorial",
+    "docs/guida/THESIS_GUIDE.md": "guida/thesis-guide",
+    "docs/guida/STARTUP.md": "guida/startup",
     # architettura
-    "docs/ARCHITECTURE.md": "architettura/architecture",
-    "docs/TECHNICAL_ARCHITECTURE.md": "architettura/technical-architecture",
-    "docs/OPENAPI.md": "architettura/openapi",
-    "docs/EDITOR_MIGRATION.md": "architettura/editor-migration",
-    "docs/FRONTEND_UIUX_PLAN.md": "architettura/frontend-uiux-plan",
-    "docs/USER_PERMISSIONS_UIUX_PLAN.md": "architettura/user-permissions-uiux-plan",
-    "docs/GRAPH_RAG.md": "architettura/graph-rag",
+    "docs/architettura/ARCHITECTURE.md": "architettura/architecture",
+    "docs/architettura/OPENAPI.md": "architettura/openapi",
+    "docs/architettura/GRAPH_RAG.md": "architettura/graph-rag",
+    "docs/architettura/EDITOR_MIGRATION.md": "architettura/editor-migration",
     # processi
-    "docs/AGENT.md": "processi/agent-manual",
-    "docs/KE_PLAYBOOK.md": "processi/ke-playbook",
-    "docs/KNOWLEDGE_ENGINEERING.md": "processi/knowledge-engineering",
-    "docs/MIGRATION.md": "processi/migration",
-    "docs/KE_AGENT_SCHEDULER_PLAN.md": "processi/ke-agent-scheduler-plan",
-    "docs/ROADMAP_Q1_Q2_2027_PLAN.md": "processi/roadmap-q1-q2-2027-plan",
-    "docs/SELF_WIKI_PLAN.md": "processi/self-wiki-plan",
+    "docs/processi/AGENT.md": "processi/agent-manual",
+    "docs/processi/KNOWLEDGE_ENGINEERING.md": "processi/knowledge-engineering",
+    "docs/processi/PROCEDURES.md": "standard/procedures",
+    "docs/processi/MIGRATION.md": "processi/migration",
     # standard
-    "docs/OKF_SPEC.md": "standard/okf-spec",
-    "docs/SCHEMA.md": "standard/schema",
-    "docs/PROCEDURES.md": "standard/procedures",
-    "docs/KARPATHY_LLM_WIKI.md": "standard/karpathy-llm-wiki",
+    "docs/standard/OKF_SPEC.md": "standard/okf-spec",
+    "docs/standard/SCHEMA.md": "standard/schema",
+    "docs/standard/KARPATHY_LLM_WIKI.md": "standard/karpathy-llm-wiki",
+    "docs/standard/SELF_WIKI.md": "standard/self-wiki",
     # riferimenti
     "docs/README.md": "riferimenti/docs-readme",
-    "docs/SOURCES.md": "riferimenti/sources",
-    "docs/ROADMAP.md": "riferimenti/roadmap",
-    "docs/CHANGELOG.md": "riferimenti/changelog",
-    "docs/SLASH_COMMANDS_REFERENCE.md": "riferimenti/slash-commands-reference",
-    "docs/SCRIPT_AUTOMATION_REFERENCE.md": "riferimenti/script-automation-reference",
-    "docs/AUDIT_BASELINE.md": "riferimenti/audit-baseline",
-    "docs/COMMAND_MANIFEST.md": "riferimenti/command-manifest",
-    "docs/mockups/README.md": "riferimenti/mockups",
+    "ROADMAP.md": "riferimenti/roadmap",
+    "docs/riferimenti/CHANGELOG.md": "riferimenti/changelog",
+    "docs/riferimenti/SLASH_COMMANDS_REFERENCE.md": "riferimenti/slash-commands-reference",
+    "docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md": "riferimenti/script-automation-reference",
+    "docs/riferimenti/COMMAND_MANIFEST.md": "riferimenti/command-manifest",
+    "docs/riferimenti/SOURCES.md": "riferimenti/sources",
+    "docs/riferimenti/mockups/README.md": "riferimenti/mockups",
 }
 
-# The root AGENT.md is only a pointer to docs/AGENT.md.
-LINK_ALIASES: dict[str, str] = {"AGENT.md": "docs/AGENT.md"}
+# The root AGENT.md is only a pointer to docs/processi/AGENT.md.
+LINK_ALIASES: dict[str, str] = {"AGENT.md": "docs/processi/AGENT.md"}
 
 # METRICS.md is regenerated by npm test (wiki_stats.py): importing it would
 # create permanent drift in the committed bundle.
-EXCLUDED_SOURCES = frozenset({"docs/METRICS.md"})
+EXCLUDED_SOURCES = frozenset({"docs/riferimenti/METRICS.md"})
 
 # Example/documentation links that intentionally point at non-existent files.
-LINK_WARN_IGNORE = frozenset({"docs/METRICS.md", "docs/path.md"})
+LINK_WARN_IGNORE = frozenset({"docs/riferimenti/METRICS.md", "docs/standard/path.md"})
 
 HELP_IDS = [
     "inizio", "barra-alto", "caricare-documenti", "compilare", "chat-comandi",
@@ -97,12 +92,10 @@ for _help_id in HELP_IDS:
     DOC_MAP[f"docs/help/{_help_id}.md"] = f"riferimenti/help-{_help_id}"
 
 ENGLISH_SOURCES = frozenset({
-    "docs/ARCHITECTURE.md",
-    "docs/EDITOR_MIGRATION.md",
-    "docs/CHANGELOG.md",
-    "docs/KARPATHY_LLM_WIKI.md",
-    "docs/OKF_SPEC.md",
-    "docs/README.md",
+    "docs/architettura/EDITOR_MIGRATION.md",
+    "docs/riferimenti/CHANGELOG.md",
+    "docs/standard/KARPATHY_LLM_WIKI.md",
+    "docs/standard/OKF_SPEC.md",
 })
 
 AREA_LABELS: dict[str, str] = {
@@ -126,14 +119,12 @@ TYPE_BY_AREA: dict[str, str] = {
 }
 
 PLAYBOOK_OVERRIDES = frozenset({
-    "docs/GUIDA_OPERATIVA.md",
-    "docs/USER_GUIDE.md",
-    "docs/TUTORIAL.md",
-    "docs/THESIS_GUIDE.md",
-    "docs/STARTUP.md",
-    "docs/WORKFLOW.md",
-    "docs/AGENT.md",
-    "docs/KE_PLAYBOOK.md",
+    "docs/guida/GUIDA_OPERATIVA.md",
+    "docs/guida/USER_GUIDE.md",
+    "docs/guida/TUTORIAL.md",
+    "docs/guida/THESIS_GUIDE.md",
+    "docs/guida/STARTUP.md",
+    "docs/processi/AGENT.md",
 })
 
 LINK_RE = re.compile(r"(!?)\[([^\]]*)\]\(([^)]+)\)")

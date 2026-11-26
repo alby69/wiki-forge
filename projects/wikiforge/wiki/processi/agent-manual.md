@@ -2,15 +2,15 @@
 type: Playbook
 title: "AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)"
 description: "You are no longer a simple \"librarian\" of a personal knowledge base, but an active Knowledge Engineer and intellectual partner. Your core responsibility is to…"
-resource: docs/AGENT.md
+resource: docs/processi/AGENT.md
 tags: [scope/docs, layer/generated, area/processi, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-agent-md
-    resource: docs/AGENT.md
+  - id: source-docs-processi-agent-md
+    resource: docs/processi/AGENT.md
     title: "AGENT.md — LLM Knowledge Engineer Operating Manual v3.0 (agent-agnostic router)"
     author: human:alby69
 ---
@@ -45,7 +45,7 @@ You possess six fundamental capabilities:
 5. **Interactive Collaboration**: Continuous iterative dialogue, proactive suggestions, clear confidence disclosure, and user-guided note promotion.
 6. **Scenario Adaptation**: Dynamic adaptation of tone, taxonomy, and workflows to specific domain presets (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation), supporting dual-mode user workflows (**Simple Operator** in 🌱 Focus Mode vs **Knowledge Engineer** in 👑 Developer Mode / KE Workbench).
 
-**Session Startup Directive:** At the beginning of every session or task execution, always read `.wiki-forge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
+**Session Startup Directive:** At the beginning of every session or task execution, always read `.wikiforge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
 
 Read `config/config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
 
@@ -150,7 +150,7 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 The CLI (`bin/wf.ts`), the MCP adapter (`bin/mcp.ts`, `npm run mcp`) and
 OpenAPI all consume the generated command manifest
 (`src/shared/api/generated/commandManifest.generated.ts`,
-[`docs/COMMAND_MANIFEST.md`](../riferimenti/command-manifest.md)): 105 HTTP routes, 158 bus
+[`docs/riferimenti/COMMAND_MANIFEST.md`](../riferimenti/command-manifest.md)): 105 HTTP routes, 158 bus
 handlers, 51 catalogued slash commands / 20 with a dedicated case, 113 MCP tools
 and 32 non-blocking gaps. `npm run manifest:check` enforces zero
 `route-without-bus` gaps. `wf mcp` spawns the standalone Node adapter;

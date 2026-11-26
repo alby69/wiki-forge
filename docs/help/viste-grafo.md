@@ -42,4 +42,4 @@ Cliccando due volte sullo stesso bottone si chiude la vista (compare la schermat
 
 In basso nella barra sinistra c'è la **tag cloud**: clicca un tag per filtrare sia la lista note sia il grafo (clicca di nuovo per annullare). Selezionando un namespace (es. `topic`) vengono incluse anche le sue sotto-categorie (`topic/ai`, `topic/llm`...).
 
-**Approfondisci:** `docs/TUTORIAL.md` §2 (viste), `docs/GRAPH_RAG.md` (come funziona il grafo), `docs/USER_GUIDE.md`.
+**Approfondisci:** `docs/guida/TUTORIAL.md` §2 (viste), `docs/architettura/GRAPH_RAG.md` (come funziona il grafo), `docs/guida/USER_GUIDE.md`.

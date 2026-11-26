@@ -2,15 +2,15 @@
 type: Process
 title: "Knowledge Engineering Operating Manual"
 description: "In wiki-forge, documents are not treated as passive text files, but as cognitive units (entities, relations, rules, situations) within a neuro-symbolic…"
-resource: docs/KNOWLEDGE_ENGINEERING.md
+resource: docs/processi/KNOWLEDGE_ENGINEERING.md
 tags: [scope/docs, layer/generated, area/processi, lang/it]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
-  - id: source-docs-knowledge-engineering-md
-    resource: docs/KNOWLEDGE_ENGINEERING.md
+  - id: source-docs-processi-knowledge-engineering-md
+    resource: docs/processi/KNOWLEDGE_ENGINEERING.md
     title: "Knowledge Engineering Operating Manual"
     author: human:alby69
 ---
@@ -76,10 +76,10 @@ La sezione **Policy & Approvazioni** (F5/F6) della stessa tab mostra le decision
 
 La **Console Output** può essere nascosta con il pulsante **▾ / ▴ Console** (come per la barra laterale dei file) e ridimensionata trascinando il separatore sopra di essa: altezza e stato di chiusura vengono conservati in `localStorage` tra un'apertura e l'altra.
 
-> **Manutenzione autonoma**: il piano per eseguire i 6 Use Case in automatico tramite agenti schedulati è descritto in `docs/KE_AGENT_SCHEDULER_PLAN.md`. Sono completate **F0** (runner condiviso), **F1** (configurazione `config/agent_schedule.toml` con sei job sicuri, tutti `auto_apply = false`), **F2** (motore `scheduler/scheduler.ts`: tick unico, lock PID, single-flight, retry con backoff 1m/5m, timeout con abort, stato atomico in `.wiki-forge/scheduler-state.json`, audit redatto in `output/scheduler/audit.jsonl`) e **F3**: lo scheduler è **attivo** nel processo API (`httpServer.ts`), collegato a `runUseCase()` tramite adapter e controllabile via `GET/PATCH /api/ke/schedule`, `POST /:id/run` (SSE con gli stessi eventi del Workbench), `POST /:id/cancel`, `GET /api/ke/schedule/runs` e `GET /api/ke/schedule/events`. I toggle runtime vengono salvati come override senza riscrivere il TOML. La tab **🤖 Agenti & Schedule** (F4) rende visibili job, esiti, log live e storico senza usare la riga di comando. Con **F5** il Policy Agent LLM è consultivo e fail-closed: ogni decisione finisce in `output/scheduler/decisions.jsonl` con rationale e fonti obbligatorie; gli script che scrivono (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. Con **F6** eventi `note.created`/`note.modified`/`note.deleted` (webhook `POST /api/ke/schedule/trigger` o creazione note nell'UI) avviano un job dopo il debounce configurato (`debounce_seconds`, default 300) e gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` fino ad approvazione umana via Workbench o `POST /api/ke/schedule/approvals/:id/approve`.
+> **Manutenzione autonoma**: il piano per eseguire i 6 Use Case in automatico tramite agenti schedulati è confluito in `ROADMAP.md` (fase A10) e nella sezione operatoria qui sotto. Sono completate **F0** (runner condiviso), **F1** (configurazione `config/agent_schedule.toml` con sei job sicuri, tutti `auto_apply = false`), **F2** (motore `scheduler/scheduler.ts`: tick unico, lock PID, single-flight, retry con backoff 1m/5m, timeout con abort, stato atomico in `.wiki-forge/scheduler-state.json`, audit redatto in `output/scheduler/audit.jsonl`) e **F3**: lo scheduler è **attivo** nel processo API (`httpServer.ts`), collegato a `runUseCase()` tramite adapter e controllabile via `GET/PATCH /api/ke/schedule`, `POST /:id/run` (SSE con gli stessi eventi del Workbench), `POST /:id/cancel`, `GET /api/ke/schedule/runs` e `GET /api/ke/schedule/events`. I toggle runtime vengono salvati come override senza riscrivere il TOML. La tab **🤖 Agenti & Schedule** (F4) rende visibili job, esiti, log live e storico senza usare la riga di comando. Con **F5** il Policy Agent LLM è consultivo e fail-closed: ogni decisione finisce in `output/scheduler/decisions.jsonl` con rationale e fonti obbligatorie; gli script che scrivono (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. Con **F6** eventi `note.created`/`note.modified`/`note.deleted` (webhook `POST /api/ke/schedule/trigger` o creazione note nell'UI) avviano un job dopo il debounce configurato (`debounce_seconds`, default 300) e gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` fino ad approvazione umana via Workbench o `POST /api/ke/schedule/approvals/:id/approve`.
 
 ### Wiki di self-documentazione (Fase 70-75)
-La documentazione `docs/` è proiettata in una wiki OKF v0.2 dedicata (`projects/wikiforge/wiki/`) e consultabile dal Research Studio con il pulsante **📚 Wiki Docs** (`Ctrl+Alt+D`), senza cambiare il vault attivo. Ogni risposta approvata può essere promossa a nota curata in `sintesi/` con `scripts/promote_doc_answer.py`, che richiede un `reviewer` umano (`verified: human:<id>`) ed è registrato come script mutante: il Policy Agent F5 non lo esegue mai in automatico. Il job `weekly-docs-wiki-drift` (UC7) rileva il drift tra `docs/` e la proiezione e la rigenera preservando le note curate; essendo mutante è bloccato dal Policy Agent F5 e richiede approvazione F6 per i run schedulati (`--check` dà solo un report consultivo con rationale e fonti). I percorsi relativi sono risolti rispetto alla radice del repository. Il piano completo è in `docs/SELF_WIKI_PLAN.md`.
+La documentazione `docs/` è proiettata in una wiki OKF v0.2 dedicata (`projects/wikiforge/wiki/`) e consultabile dal Research Studio con il pulsante **📚 Wiki Docs** (`Ctrl+Alt+W`), senza cambiare il vault attivo. Ogni risposta approvata può essere promossa a nota curata in `sintesi/` con `scripts/promote_doc_answer.py`, che richiede un `reviewer` umano (`verified: human:<id>`) ed è registrato come script mutante: il Policy Agent F5 non lo esegue mai in automatico. Il job `weekly-docs-wiki-drift` (UC7) rileva il drift tra `docs/` e la proiezione e la rigenera preservando le note curate; essendo mutante è bloccato dal Policy Agent F5 e richiede approvazione F6 per i run schedulati (`--check` dà solo un report consultivo con rationale e fonti). I percorsi relativi sono risolti rispetto alla radice del repository. Il funzionamento completo è descritto in [`SELF_WIKI.md`](../standard/self-wiki.md).
 
 ### Review Studio per la governance della conoscenza
 La **Review Studio** (`Ctrl+Alt+R/C/D/F`, tasto destro sulla nota o pulsante **🧐 Revisione**) offre al Knowledge Engineer un punto unico per:
@@ -212,3 +212,55 @@ Export knowledge base into W3C RDF graph standards (`output/wiki_export.jsonld`,
 ```bash
 make export-semantic
 ```
+
+---
+
+## 9. Maturity Ladder L1–L4 e procedure personalizzate
+
+La scala operativa del KE Workbench usa quattro livelli progressivi con gate
+verificabili:
+
+| Livello | Nome | Criterio di gate |
+|---|---|---|
+| **L1** | Seeded | `wiki_articles > 0` e frontmatter OKF valido |
+| **L2** | Structured | `shacl_violations == 0` e `broken_links == 0` |
+| **L3** | Connected | `orphan_ratio < 0.05` e `ke_maturity_score >= 60` |
+| **L4** | Trusted | `cq_gaps == 0` e tutte le note `stable` con `verified: human:*` |
+
+Per la valutazione usare `/ke-maturity` in chat, il comando
+`python3 scripts/ke_maturity.py --json` o l'endpoint Python
+`GET /api/v1/health` per lo Health Score 0-100 con azioni successive. I due
+percorsi usano radici di stato diverse (`.wiki-forge/` per Node,
+`.wikiforge/` per il motore Python storico): l'allineamento è in ROADMAP.
+
+### Procedure TOML personalizzate
+
+Le procedure risiedono in `config/procedures/<id>.toml` e sono eseguite dal
+Procedure Engine descritto in `PROCEDURES.md`. Uno schema minimo:
+
+```toml
+id = "ke.custom-check"
+title = "Custom Domain Check"
+role = "ke"
+description = "Runs custom domain checks"
+requires = ["ke.bootstrap"]
+
+[exit_criteria]
+metric = "shacl_violations"
+op = "=="
+value = 0
+
+[[steps]]
+id = "scan"
+kind = "auto"
+script = "shacl_validator.py"
+title = "Run SHACL Scan"
+
+[[steps]]
+id = "review"
+kind = "review"
+title = "Review Warnings"
+```
+
+Ogni step `review` è una pausa umana: nessuna procedura può promuovere una nota
+a `stable` senza registrazione di un revisore umano.

@@ -2,13 +2,13 @@
 
 > A minimal, agent-agnostic template for building a **personal dynamic knowledge base
 > that an LLM compiles, maintains, and transforms into print-ready documents for you** — based on Andrej Karpathy's
-> [LLM Wiki](docs/KARPATHY_LLM_WIKI.md) pattern.
+> [LLM Wiki](docs/standard/KARPATHY_LLM_WIKI.md) pattern.
 
 Instead of re-answering questions from raw documents every time (classic RAG),
 the LLM acts as an active **Knowledge Engineer** — an intellectual partner that
 **incrementally builds, evaluates, and maintains a persistent, interlinked wiki** of
 Markdown files conforming to the **Open Knowledge Format (OKF v0.2)** specification
-([github.com/GoogleCloudPlatform/open-knowledge-format](https://github.com/GoogleCloudPlatform/open-knowledge-format), detailed in [`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)).
+([github.com/GoogleCloudPlatform/open-knowledge-format](https://github.com/GoogleCloudPlatform/open-knowledge-format), detailed in [`docs/standard/OKF_SPEC.md`](docs/standard/OKF_SPEC.md)).
 
 This repository supports building **dynamic, incremental knowledge bases** (e.g. for a **Master's Thesis / Tesi Magistrale**, research projects, business wikis, or personal study) with a **dual output**:
 1. **Dynamic Interactive Wiki**: Searchable, interlinked, interrogable via chat, and continually evolving.
@@ -33,7 +33,7 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## ✨ System Architecture & Key Enhancements (v4.1)
 
-- **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wiki-forge/STATUS.md` and tracks metrics history in `.wiki-forge/metrics/history.jsonl`.
+- **🚀 Health & Maturity API**: Unified `/api/v1/health` endpoint computing a 0-100 Health Score, L1-L4 Maturity Level, and prioritized "Next Best Actions". Generates `.wikiforge/STATUS.md` and tracks metrics history in `.wikiforge/metrics/history.jsonl` (separate from the Node runtime state in `.wiki-forge/`).
 - **⚙️ Stateful Procedure Engine Core**: Executes TOML-based procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria validation, and state persistence in `.wiki-forge/state/<run_id>.json`.
 - **🔒 Safe Vault & Changeset Review Manager**: Atomic file writes, soft-delete recovery to `.wiki-forge/trash/`, and staged Changeset JSON proposals (`.wiki-forge/changesets/`) ensuring Plan-Review-Apply safety (applied from the chat via `wiki-edit` blocks + **Applica modifica**).
 - **🧐 Review Studio**: One modal with four horizontal tabs — **Verifica**, **Critica**, **Digest**, **Confronta versioni** — opened by right-clicking a note, with the **🧐 Revisione** editor button, or via `Ctrl+Alt+R/C/D/F`. Reuses the `/verify` path plus the deterministic quality-gate, digest and snapshot logic, keeps a local pre-write history in `.wiki-forge/snapshots/` (25 snapshots per note), and falls back deterministically when no LLM is configured for the critique tab.
@@ -42,8 +42,8 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wiki-forge/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
-- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for **105 HTTP routes**; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/OPENAPI.md`](docs/OPENAPI.md).
-- **🚌 Bus backend e API tipizzate**: il backend segue kernel/modules/ports: 20 moduli di dominio instradano **158 handler** su `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, [`docs/COMMAND_MANIFEST.md`](docs/COMMAND_MANIFEST.md)) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **51 comandi slash catalogati / 20 con case dedicato**, **113 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, verificati da `npm run manifest:check`. Il frontend usa la sola facciata `apiBus` e un client tipizzato generato da `ROUTES`; `ApiStorage` non ha più fallback a `FileStorage`, il grafo è mappato solo dal `WikiGraphDto` del backend e il fallback dei template canonici passa esplicitamente da `api:error`. Nessun componente chiama `fetch` o un altro componente per raggiungere le API, e nessun adapter importa un altro adapter. Vedi [`docs/OPENAPI.md`](docs/OPENAPI.md).
+- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for **105 HTTP routes**; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
+- **🚌 Bus backend e API tipizzate**: il backend segue kernel/modules/ports: 20 moduli di dominio instradano **158 handler** su `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, [`docs/riferimenti/COMMAND_MANIFEST.md`](docs/riferimenti/COMMAND_MANIFEST.md)) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **51 comandi slash catalogati / 20 con case dedicato**, **113 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, verificati da `npm run manifest:check`. Il frontend usa la sola facciata `apiBus` e un client tipizzato generato da `ROUTES`; `ApiStorage` non ha più fallback a `FileStorage`, il grafo è mappato solo dal `WikiGraphDto` del backend e il fallback dei template canonici passa esplicitamente da `api:error`. Nessun componente chiama `fetch` o un altro componente per raggiungere le API, e nessun adapter importa un altro adapter. Vedi [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
 - **🔐 Produzione**: RBAC e auth sempre forzati, token richiesto salvo IdP o user store configurati, CORS allowlist, body limit, correlation id ed endpoint `/api/healthz`, `/api/readyz`, `/api/metrics`. Le sessioni sono persistite via `StateStore`, lo scheduler usa un lock a lease sullo stato (non più un lock PID), il relay dell'outbox delle approvazioni è attivo, il subscriber di audit registra `command:handled`/`command:failed`, `CommandContext.principal` è sempre impostato dal dispatch del bus, i subprocess usano un allowlist di variabili d'ambiente e `@opentelemetry/api` è dichiarato con fallback locale.
 - **🚢 Deployment**: Render usa `Dockerfile.render` + `bin/render-start.sh`: un solo processo Node serve la SPA buildata e le API su `$PORT`, con health su `/api/healthz`, nessuna variabile `VITE_*` a runtime, nessun default `admin/admin`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state` e utente non-root. Docker Compose mantiene il servizio Vite `ui` solo per lo sviluppo, insieme ad API e worker (`WIKIFORGE_EMBED_SCHEDULER=false`).
 
@@ -51,34 +51,37 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 
 ## 🗺️ Mappa della Documentazione (Documentation Index)
 
-> Full index of all guides: **[`docs/README.md`](docs/README.md)**.
+> Percorso didattico completo: **[`docs/README.md`](docs/README.md)**.
+> Piano dei miglioramenti: **[`ROADMAP.md`](ROADMAP.md)**.
 
 ### 📖 Per Utenti ed Operatori
-- **[`docs/GUIDA_OPERATIVA.md`](docs/GUIDA_OPERATIVA.md)** — **Guida Operativa Unica (non tecnica)**: attività d'uso, flusso di lavoro tipico e buone pratiche. *Punto di partenza consigliato.*
-- **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — **Guida Operativa Focus Mode**: Guida passo-passo ai wizard guidati.
-- **[`docs/TUTORIAL.md`](docs/TUTORIAL.md)** — **Guida Operativa dell'Utente**: Guida all'interfaccia Web UI, comandi chat e troubleshooting.
-- **[`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** — **Guida alla Tesi Magistrale**: Esempio pratico per la tesi in Markdown.
-- **Screenshot UI/UX**: la cartella **[`img/`](img/)** contiene le schermate aggiornate (21 immagini, JPG 1920×1080) per le situazioni d'uso dello **studente** (01–13) e del **Knowledge Engineer** (14–21), catturate dall'implementazione corrente.
-- **Review Studio (mockup e anteprime)**: **[`docs/mockups/`](docs/mockups/README.md)** contiene il prototipo interattivo e le 5 anteprime delle schede Verifica, Critica, Digest, Confronta versioni e del menu contestuale.
-- **Research Studio**: le sei schede **Consult · Ricerca · Backlink · Correlate · Traccia · Deep Research** sono descritte in **[`docs/help/research-studio.md`](docs/help/research-studio.md)** (guida in-app) e in `docs/TECHNICAL_ARCHITECTURE.md` §2.12.
-- **Study Studio**: le sette schede **Guida · Quiz · Mindmap · Audio · Note · Promuovi · Tesi** sono descritte in **[`docs/help/study-studio.md`](docs/help/study-studio.md)** (guida in-app) e in `docs/TECHNICAL_ARCHITECTURE.md` §2.13.
+- **[`docs/guida/GUIDA_OPERATIVA.md`](docs/guida/GUIDA_OPERATIVA.md)** — guida unica non tecnica: attività, flusso tipico e buone pratiche. *Punto di partenza consigliato.*
+- **[`docs/guida/USER_GUIDE.md`](docs/guida/USER_GUIDE.md)** — Focus Mode: i tre passi **Carica / Compila / Chiedi** e personalizzazione UI.
+- **[`docs/guida/TUTORIAL.md`](docs/guida/TUTORIAL.md)** — interfaccia Web UI, workflow in 5 fasi, comandi chat e troubleshooting.
+- **[`docs/guida/THESIS_GUIDE.md`](docs/guida/THESIS_GUIDE.md)** — tesi magistrale come knowledge base dinamica e PDF finale.
+- **[`docs/guida/STARTUP.md`](docs/guida/STARTUP.md)** — da una wiki esistente a un nuovo progetto.
+- **Screenshot UI/UX**: la cartella **[`img/`](img/)** contiene le schermate aggiornate (21 immagini, JPG 1920×1080) per lo **studente** (01–13) e il **Knowledge Engineer** (14–21).
+- **Review Studio (mockup e anteprime)**: **[`docs/riferimenti/mockups/`](docs/riferimenti/mockups/README.md)** contiene il prototipo interattivo e le 5 anteprime.
+- **Research Studio**: le sei schede sono descritte in **[`docs/help/research-studio.md`](docs/help/research-studio.md)** e in [`docs/architettura/ARCHITECTURE.md`](docs/architettura/ARCHITECTURE.md) §3.4.
+- **Study Studio**: le sette schede sono descritte in **[`docs/help/study-studio.md`](docs/help/study-studio.md)** e in [`docs/architettura/ARCHITECTURE.md`](docs/architettura/ARCHITECTURE.md) §3.4.
 
 ### ⚙️ Per Sviluppatori & Knowledge Engineers
-- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — **Architettura di Sistema v4.1**: Diagramma unico del backend FastAPI, Procedure Engine, Vault Manager, Review Studio e Health Engine.
-- **[`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md)** — **Analisi tecnica approfondita**: moduli, versioning, API della Review Studio e snapshot store, MCP, export RDF.
-- **[`docs/OPENAPI.md`](docs/OPENAPI.md)** — **Contratto API e browser Swagger**: specifica generata da TypeScript, `/api/docs` self-hosted, security, bus e manifest dei comandi.
-- **[`docs/EDITOR_MIGRATION.md`](docs/EDITOR_MIGRATION.md)** — **Editor note**: architettura ad adapter (CodeMirror/Milkdown-Crepe), conservazione frontmatter OKF e wikilink.
-- **[`docs/KE_PLAYBOOK.md`](docs/KE_PLAYBOOK.md)** — **Playbook del Knowledge Engineer**: Guida alla Scala di Maturità L1-L4, uso del KE Workbench e procedure TOML.
-- **[`docs/PROCEDURES.md`](docs/PROCEDURES.md)** — **Specifica del Procedure Engine**: Definizione dello schema TOML, vincoli DAG e criteri di uscita.
-- **[`docs/MIGRATION.md`](docs/MIGRATION.md)** — **Guida alla Migrazione Changeset Review**: Sistema Plan-Review-Apply per modifiche AI.
-- **[`docs/OKF_SPEC.md`](docs/OKF_SPEC.md)** — **Open Knowledge Format Spec v0.2**: Specifica tecnica standard per le note OKF.
-- **[`docs/AGENT.md`](docs/AGENT.md)** — **Operating Manual dell'Agente**: Manuale operativo v3.0 per agenti LLM (`AGENT.md` in root).
+- **[`docs/architettura/ARCHITECTURE.md`](docs/architettura/ARCHITECTURE.md)** — architettura v4.1: gateway Node, servizio Python, bus, studio, frontend e deployment.
+- **[`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md)** — contratto API generato da TypeScript, Swagger self-hosted e manifest dei comandi.
+- **[`docs/architettura/GRAPH_RAG.md`](docs/architettura/GRAPH_RAG.md)** — grafo semantico, export RDF/Cypher e pipeline stateful.
+- **[`docs/architettura/EDITOR_MIGRATION.md`](docs/architettura/EDITOR_MIGRATION.md)** — editor ad adapter (CodeMirror/Milkdown-Crepe), frontmatter e wikilink.
+- **[`docs/processi/KNOWLEDGE_ENGINEERING.md`](docs/processi/KNOWLEDGE_ENGINEERING.md)** — maturità L1-L4, KE Workbench, ontologie e procedure TOML.
+- **[`docs/processi/PROCEDURES.md`](docs/processi/PROCEDURES.md)** — schema TOML, vincoli DAG e criteri di uscita.
+- **[`docs/processi/MIGRATION.md`](docs/processi/MIGRATION.md)** — flusso Plan-Review-Apply per modifiche AI.
+- **[`docs/standard/OKF_SPEC.md`](docs/standard/OKF_SPEC.md)** — specifica Open Knowledge Format v0.2.
+- **[`docs/standard/SELF_WIKI.md`](docs/standard/SELF_WIKI.md)** — `docs/` proiettato nella wiki OKF di `wikiforge`.
+- **[`docs/processi/AGENT.md`](docs/processi/AGENT.md)** — operating manual v3.0 per agenti LLM (`AGENT.md` in root è un symlink).
 
 ---
 
 ## 💬 Agent Slash Commands Reference
 
-The canonical catalog lives in [`docs/SLASH_COMMANDS_REFERENCE.md`](docs/SLASH_COMMANDS_REFERENCE.md). It is the single human-readable source used by the tutorial, the in-app help and the agent manual; the chat **⚡ Comandi** panel is generated from `skills/*/SKILL.md`.
+The canonical catalog lives in [`docs/riferimenti/SLASH_COMMANDS_REFERENCE.md`](docs/riferimenti/SLASH_COMMANDS_REFERENCE.md). It is the single human-readable source used by the tutorial, the in-app help and the agent manual; the chat **⚡ Comandi** panel is generated from `skills/*/SKILL.md`.
 
 > In the app, press **F1** (or the **?** button) for the context-sensitive in-app guide; `/help [topic]` in chat returns the same content.
 
@@ -102,7 +105,7 @@ A single review console for the active note, built from four horizontal tabs:
 
 The review history is local and independent of git: before each save/verify/restore the previous content is stored in `.wiki-forge/snapshots/<note-path>/<timestamp>.md` with a `.json` sidecar (reason and timestamp). The latest **25** snapshots per note are kept; the folder is gitignored. The chat `/verify` (alias `/human-review`) command shares the exact same code path; `/digest`, `/adversarial-review` and `/diff` remain available as agent commands, while their Review Studio tabs are deterministic.
 
-Design preview and screenshots: **[`docs/mockups/`](docs/mockups/README.md)**.
+Design preview and screenshots: **[`docs/riferimenti/mockups/`](docs/riferimenti/mockups/README.md)**.
 
 ---
 
@@ -137,12 +140,13 @@ A single study console for the knowledge base, built from seven horizontal tabs:
 │   ├── projects.json         # Registro dei progetti
 │   ├── scenarios.toml        # Preset di scenario
 │   └── procedures/           # Procedure TOML guidate (ke.*.toml e user.*.toml)
-├── .wiki-forge/              # Root dello stato attivo del sistema
-│   ├── STATUS.md             # Summary di salute generato automaticamente
+├── .wiki-forge/              # Root dello stato runtime Node
 │   ├── state/                # Stato procedure, sessioni, lock e cursori outbox
 │   ├── changesets/           # Proposte di modifica staged da revisionare
 │   ├── snapshots/            # Storico pre-scrittura delle note (Review Studio)
-│   ├── trash/                # Cestino soft-delete con timestamp
+│   └── trash/                # Cestino soft-delete con timestamp
+├── .wikiforge/               # Root degli artefatti health del servizio Python
+│   ├── STATUS.md             # Summary di salute generato automaticamente
 │   └── metrics/              # Storico metriche di salute (history.jsonl)
 ├── bin/
 │   ├── wf.ts                 # CLI HTTP-only (`npm run wf`); `wf mcp` avvia l'adapter

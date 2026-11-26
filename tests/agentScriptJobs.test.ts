@@ -64,7 +64,7 @@ async function createHarness(): Promise<Harness> {
       action: 'allow',
       steps: [0],
       rationale: 'Script in sola lettura: nessuna approvazione richiesta.',
-      sources: ['config/agent_schedule.toml', 'docs/SCRIPT_AUTOMATION_REFERENCE.md'],
+      sources: ['config/agent_schedule.toml', 'docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md'],
     }),
   };
 

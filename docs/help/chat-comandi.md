@@ -29,9 +29,9 @@ La risposta dell'agente arriva in **streaming** e può proporre modifiche: se in
 
 Digitando `/` si apre il pannello **⚡ Comandi**: il catalogo completo, diviso per categoria (Ingestione, Curatela, Audit, Ricerca, Studio, Knowledge Engineering, Slide, Utility). I più usati:
 
-Il catalogo completo e unico è [`SLASH_COMMANDS_REFERENCE.md`](../SLASH_COMMANDS_REFERENCE.md): contiene ogni comando, gli alias, l'equivalente grafico e i comandi dichiarati solo negli skill. Questa guida non duplica la tabella.
+Il catalogo completo e unico è [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/SLASH_COMMANDS_REFERENCE.md): contiene ogni comando, gli alias, l'equivalente grafico e i comandi dichiarati solo negli skill. Questa guida non duplica la tabella.
 
-<!-- DOC_BLOCK_REF:slash-commands docs/SLASH_COMMANDS_REFERENCE.md sha256:38c065da0ec0bd8d4210208f4f930f6a56faeaee8c5e988cdb2c5c1a77555dba -->
+<!-- DOC_BLOCK_REF:slash-commands docs/riferimenti/SLASH_COMMANDS_REFERENCE.md sha256:5dc06e5d1f2081c6e46c50e38474009609cb89a56228280edd7ac178ce660e8b -->
 
 L'elenco completo è anche nel pannello ⚡ Comandi dentro la chat.
 
@@ -47,4 +47,4 @@ L'elenco completo è anche nel pannello ⚡ Comandi dentro la chat.
 
 Non sai da dove partire? Apri la **guida col tasto F1**: gli argomenti sono già scelti in base a cosa stai facendo, e dal pannello puoi passare la domanda all'agente col pulsante **💬 Chiedi all'agente**.
 
-**Approfondisci:** [`SLASH_COMMANDS_REFERENCE.md`](../SLASH_COMMANDS_REFERENCE.md) (catalogo unico), `docs/AGENT.md` §5 (routing dei comandi), `docs/TUTORIAL.md` §5 (manutenzione periodica).
+**Approfondisci:** [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/SLASH_COMMANDS_REFERENCE.md) (catalogo unico), `docs/processi/AGENT.md` §5 (routing dei comandi), `docs/guida/TUTORIAL.md` §5 (manutenzione periodica).

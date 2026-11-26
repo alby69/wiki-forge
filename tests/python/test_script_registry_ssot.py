@@ -54,7 +54,7 @@ def test_arg_safety_overrides_are_in_the_ssot():
 
 
 def test_safety_catalog_doc_is_generated():
-    doc = REPO_ROOT / "docs" / "SCRIPT_AUTOMATION_REFERENCE.md"
+    doc = REPO_ROOT / "docs" / "riferimenti" / "SCRIPT_AUTOMATION_REFERENCE.md"
     assert doc.is_file()
     content = doc.read_text(encoding="utf-8")
     assert "<!-- DOC_BLOCK:script-automation -->" in content

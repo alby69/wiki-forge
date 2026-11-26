@@ -1,413 +1,100 @@
-# ROADMAP — Build & Maintain the LLM Wiki Template
-
-> A step-by-step implementation plan written for **non-technical users**.
-> Each phase states *what* to do, *why*, and *how* (with the simplest possible
-> commands). Progress is tracked in the status table below and updated as work
-> advances.
-
----
-
-## Progress dashboard
-
-| # | Phase | Status | Notes |
-|---|-------|--------|-------|
-| 0 | Understand the LLM Wiki concept | ✅ Done | `docs/KARPATHY_LLM_WIKI.md`, `docs/TUTORIAL.md` |
-| 1 | Scaffold project & single config knob | ✅ Done | `config.toml` |
-| 2 | Dependency setup (Docker + classic) | ✅ Done | `Dockerfile`, `docker-compose.yml`, `requirements.txt` |
-| 3 | Source ingestion & conversion | ✅ Done | `conv2md.py`, `run_convert.sh` |
-| 4 | Agent schema & COMPILE integration | ✅ Done | `docs/AGENT.md` v1.0 |
-| 5 | Compile the existing knowledge base | ✅ Done | Run `compile` on current `raw/` |
-| 6 | Sources registry | ✅ Done | `docs/SOURCES.md` |
-| 7 | Daily use: Consult & Audit | ✅ Done | Three workflows tested |
-| 8 | Documentation pass | ✅ Done | `README.md`, `docs/TUTORIAL.md`, `ROADMAP.md` |
-| 9 | Publish to GitHub | ✅ Done | Repo: `alby69/wiki-forge` |
-| 10 | Reuse template | ✅ Done | Configured `config.toml`, modular structure |
-| 11 | Command Reference system (v2.0) | ✅ Done | 15+ atomic commands in `AGENT.md` |
-| 12 | TUTORIAL command cheat sheet | ✅ Done | §8 in `docs/TUTORIAL.md` |
-| 13 | Article template system | ✅ Done | `templates/article.md` standard template |
-| 14 | Project hygiene files | ✅ Done | `.gitignore`, `docs/CHANGELOG.md` |
-| 15 | Enhanced Makefile | ✅ Done | Targets for `stats`, `audit`, `reindex`, `clean-output`, etc. |
-| 16 | Web clipping support | ✅ Done | `clip2md.py` script |
-| 17 | Multi-language wiki support | ✅ Done | `[i18n]` section in `config.toml` & `docs/AGENT.md` guidelines |
-| 18 | Metrics & analytics | ✅ Done | `wiki_stats.py` -> `docs/METRICS.md` |
-| 19 | Pre-commit hooks | ✅ Done | `.pre-commit-config.yaml` with frontmatter and link checks |
-| 20 | CI/CD for conv2md.py | ✅ Done | `.github/workflows/test.yml` GitHub Actions workflow |
-| 21 | Web UI & Obsidian Graph Viewer | ✅ Done | Vite app, 3-column viewer, reads real `wiki/` via `FileStorage` |
-| 22 | Interactive OpenCode Chat & Persistence Layer | ✅ Done | OpenCode chat drawer, agent command runner, response attachment, and server-persisted Markdown editor |
-| 23 | Real Multi-Provider LLM Integration | ✅ Done | Config-driven `[agent.llm]` supporting OpenCode CLI, Anthropic, OpenAI, and Ollama (`src/server/llmClient.ts`) |
-| 24 | Workflow Command Engine (`/compile`, `/audit`, `/reindex`, `/consult`, `/trace`) | ✅ Done | On-disk ingestion, file renaming (`_COMPILED.md`), broken link/orphan audit, and automatic index generation |
-| 25 | Security Hardening & Protection | ✅ Done | Path traversal protection on `save` & `attach` endpoints (400 Bad Request) and XSS HTML sanitization in `renderMarkdown` |
-| 26 | Professional UI & Vault File Management System | ✅ Done | Complete file manager UI with folder/file creation, rename, move, delete, upload, drag-and-drop, and API endpoint integration |
-| 27 | UI & Chat Enhancements (CodeMirror 6, Streaming, History, CSS Themes) | ✅ Done | CodeMirror 6 markdown editor with `[[wikilink]]` autocomplete, SSE streaming responses, localStorage chat history, and extracted CSS themes |
-| 28 | Scenario-Driven Interactive Wizard System | ✅ Done | Interactive CLI wizard (`scripts/wizard.py`), scenario presets (`config/scenarios.toml`), `/wizard` contract extension in `AGENT.md` |
-| 29 | NotebookLM-Inspired Study & Knowledge Synthesis Suite | ✅ Done | Passage-level grounding (`#L<start>-L<end>`), `/study-guide`, `/quiz`, `/deep-research`, `/mindmap`, `/note` & `/promote-note`, `/audio-overview` |
-| 30 | Documentation Reconciliation Pass | ✅ Done | Added `[2.5.0]` to `docs/CHANGELOG.md`, bumped `package.json`, aligned command reference in `README.md` & `docs/TUTORIAL.md` |
-| 31 | Modular Agent Skills Extraction & Router Conversion | ✅ Done | Extracted verbatim commands to `skills/*/SKILL.md` packages; converted `AGENT.md` to progressive disclosure router |
-| 32 | Claude Code / Claude Skills Native Compatibility | ✅ Done | Added `.claude/skills/` syncing (`make skills-link`) and updated setup/troubleshooting guides |
-| 33 | Automated Doc/Skill Consistency Verification | ✅ Done | Added `scripts/check_docs_sync.py`, `.pre-commit-config.yaml` hook, CI workflow job, and `make docs-sync` |
-| 34 | Final Documentation & Roadmap Synchronization | ✅ Done | Synchronized `ROADMAP.md`, `docs/CHANGELOG.md`, `README.md`, `package.json` for release `2.6.0` |
-| 35 | Open Knowledge Format (OKF v0.2) Integration & Tooling Suite | ✅ Done | Adoption of OKF v0.2 standard across `wiki/`, frontmatter taxonomy validation, migration script, reserved files, Makefile targets, and CI |
-| 36 | Web UI OKF Trust Badges & Lifecycle Filters | ✅ Done | Render trust tier badges (unverified/machine-confirmed/human-reviewed) e filtri UI per stato OKF e note "stale". |
-| 37 | OKF MCP Server Integration for External Agents | ✅ Done | Esposizione di `search_wiki`, `get_concept_metadata`, e `get_line_anchored_citation` via Model Context Protocol (MCP) server (`make mcp-serve`). |
-| 38 | Core/API Separation, Caching & Auto-Tests | ✅ Done | `src/api/core.py`, `src/cache.py`, optimized Vite build, `tests/auto/` |
-| 39 | DRY/KISS Skills Symlink Refactoring | ✅ Done | Replaced `cp -r` with `ln -sf` in `Makefile` for single source of truth |
-| 40 | Multi-Project Management & GUI Config Manager | ✅ Done | `projects/` directory support, `projects.json` registry, `smol-toml` config API, Project Switcher & GUI Config Manager modal |
-| 41 | Web UI Python Script Control Panel | ✅ Done | Unified Control Panel (`ToolsModal.ts`, `LogConsole.ts`) for executing all 16 Python CLI scripts with real-time SSE log streaming |
-| 42 | Knowledge Engineer Role Evolution & Operating Manual v3.0 | ✅ Done | Redefined agent contract in `docs/AGENT.md` from librarian to Knowledge Engineer with 6 core capabilities |
-| 42b | Incremental KB Versioning & Rollback Engine | ✅ Done | Added `scripts/versioning.py`, `wiki/versions/` snapshot backups and the UI-only rollback workflow (`VersionTimeline.ts`, Review Studio); chat commands remain planned |
-| 43 | Documentation Overhaul & 5-Phase Operator Workflow | ✅ Done | Streamlined `docs/`, eliminated redundant files, updated architecture and tutorial docs |
-| 44 | Voice & Multimedia Ingestion (No-Code Entry) | ✅ Done | Integrazione di trascrizione/dettatura vocale (`scripts/voice_ingest.py`) per trasformare registrazioni in note OKF strutturate. |
-| 45 | Automated "Thesis Defense" Slide Generation | ✅ Done | Integrazione della skill `slides` e modelli reveal.js (`templates/reveal/`) per generare deck di presentazione offline-ready. |
-| 46 | Enterprise Readiness: RBAC & Cloud Sync Hooks | ✅ Done | Aggiunta configurazione `[enterprise]` in `config.toml` con flag RBAC e hook di backup cloud WebDAV. |
-| 47 | Semantic Export (RDF/JSON-LD/Turtle) | ✅ Done | Script `export_semantic.py` per l'esportazione W3C semantica (`output/wiki_export.jsonld`, `output/wiki_export.ttl`). |
-| 48 | Lightweight Ontology Rule Engine | ✅ Done | Motore di regole `ontology_rules.py` per la validazione logica (unlinked concepts, circular links, stable human review). |
-| 49 | Typed Schema System & Linting Engine (T1) | ✅ Done | Schema validation (`scripts/schema_lint.py`), inference (`scripts/schema_infer.py`), and `docs/SCHEMA.md`. |
-| 50 | Enterprise Semantic Knowledge Graph & Stateful GraphRAG System | ✅ Done | W3C SHACL shape schema (`src/wikiforge/config/shapes.ttl`), Zettelkasten-to-RDF converter (`markdown_to_rdf.py`), Neo4j Cypher exporter (`markdown_to_cypher.py`), stateful LangGraph GraphRAG pipeline (`graph_rag_pipeline.py`), GitHub Actions CI/CD (`shacl_validation.yml`), unit tests, and `docs/GRAPH_RAG.md`. |
-| 51 | Knowledge Engineer Use Case Management & Guided Workbench | ✅ Done | Dedicated KE Workbench (`src/components/ke/KEWorkbenchModal.ts`), 6 guided Use Cases, REST APIs (`GET /api/ke/use-cases`, `POST /api/ke/use-cases/execute`), role separation (Simple Operator vs Knowledge Engineer), and documentation updates in `docs/KNOWLEDGE_ENGINEERING.md` and `docs/TUTORIAL.md`. |
-| 52 | Native Desktop Shell & Local Token API Auth (Modulo A) | ✅ Done | Tauri v2 scaffolding (`src-tauri/`), cross-platform launcher, and token-authenticated local REST API (`X-WikiForge-Token`). |
-| 53 | Two-Step CoT Ingestion & Disk Queue with Vision (Modulo B) | ✅ Done | Persistent SQLite/JSON ingestion queue (`scripts/ingest_queue.py`), Two-Step CoT pipeline in `conv2md.py`, SHA256 caching (<10ms skip), and Vision PDF image captioning. |
-| 54 | Web Clipper Chrome Extension (Modulo C) | ✅ Done | Manifest V3 browser extension (`extension/`), `@mozilla/readability` / `turndown` HTML-to-Markdown conversion, and direct API upload. |
-| 55 | Deep Research Web Engine & Auto-Synthesis (Modulo D) | ✅ Done | Web search provider integration (Tavily/SearXNG/mock), query confirmation flow, auto-synthesis into `wiki/synthesis/`, and `<think>` reasoning streaming. |
-| 56 | Topological Graph Insights & Louvain Communities (Modulo E) | ✅ Done | Louvain community detection in `graph_analytics.py`, surprising connection & knowledge gap detection, REST API endpoints, and community color legends in `ForceGraphViewer.ts`. |
-| 57 | Asynchronous Human-in-the-Loop Review Queue (Modulo F) | ✅ Done | Persistent review queue (`.llm-wiki/reviews.json`), LLM note flagging (`Create Page`, `Deep Research`, `Skip`), and dedicated `ReviewQueueModal.ts` UI panel. |
-| 58 | Agent Skills Security & Interactive Skill Scanner (Modulo G) | ✅ Done | Dynamic skill scanner (`skills/*/SKILL.md`), `/skill` slash command, and explicit user safety approval modal for shell execution & filesystem access. |
-| 59 | Strict KISS Decoupling: Conversion vs LLM Enrichment | ✅ Done | Rimozione logica CoT da `conv2md.py`, spostamento in `enrich_cot.py`. |
-| 60 | DRY Graph Semantics: Base Parser Abstraction | ✅ Done | Creazione di `BaseGraphExporter` per unificare il parsing Markdown tra RDF e Cypher. |
-| 61 | Standardized Error Handling Hierarchy | ✅ Done | Introduzione di `WikiForgeError` e sottoclassi specifiche in `core/exceptions.py`. |
-| 62 | Frontend-Backend DRY Contract for Script UI | ✅ Done | Endpoint `/api/scripts/registry` e generazione dinamica dei form UI da schema condiviso. |
-| 63 | Robustness, KE Cockpit & Guided Procedures (Master Brief) | ✅ Done | Unified Health Engine (`health.py`), Procedure Engine (`procedures.py`), Safe Vault (`vault.py`), Resumable Wizards, Live SSE Sync, and KE Cockpit UI (`KECockpitModal.ts`). |
-| 64 | Review Studio (Unified Review UI) | ✅ Done | Four-tab review modal (`ReviewStudio.ts`), `/api/notes/review/*` endpoints, local snapshot store (`.wiki-forge/snapshots/`, 25 per note), context menu + `Ctrl+Alt+R/C/D/F`, and design previews in `docs/mockups/`. |
-| 65 | Research Studio (Query & Research UI) | ✅ Done | Six-tab query modal (`ResearchStudio.ts`), `/api/notes/research/*` endpoints, deterministic query helpers (`researchHelpers.ts`), LLM consult/deep research with fallback, `Ctrl+Alt+Q/S/B/L/T/H`, chat-command hand-off, and help topic `research-studio`. |
-| 66 | Study Studio (Study & Synthesis UI) | ✅ Done | Seven-tab study modal (`StudyStudio.ts`), `/api/notes/study/*` endpoints, deterministic study helpers (`studyHelpers.ts`), `Ctrl+Alt+G/K/M/A`, chat-command parity, canonical thesis draft refresh, and help topic `study-studio`. |
-| 67 | KE Workbench: Console Output nascondibile e ridimensionabile | ✅ Done | Toggle `▾/▴ Console`, drag handle con clamp, preferenze in `localStorage` |
-| 68 | Agenti schedulati per i 6 Use Case KE (F0–F4) | ✅ Done | **F0** runner condiviso, **F1** validazione cron/config, **F2** motore di scheduling (loop 30s, lock PID storico — oggi lock a lease su `StateStore` —, single-flight, retry/backoff 1m+5m, timeout con abort, stato persistente, audit log), **F3** (API REST/SSE, adapter a `runUseCase()`, avvio in `httpServer.ts` con `SIGINT`/`SIGTERM`, override runtime e annullamento) e **F4** (tab 🤖 Agenti & Schedule nel Workbench: card job, toggle, cambio orario, Esegui ora con log SSE, annulla, stream live e storico). Piano e avanzamento in `docs/KE_AGENT_SCHEDULER_PLAN.md` |
-| 69 | Policy Agent LLM e trigger da eventi con approvazione umana (F5–F6) | ✅ Done | **F5** Policy Agent consultivo e fail-closed: ogni decisione ha rationale e fonti in `output/scheduler/decisions.jsonl`; risposte LLM invalide o LLM assente ricadono sulla regola deterministica “sola lettura + approvazione”, gli step mutanti (`suggest_tags`, `okf_reindex`, `maturity_calculator`) non vengono mai eseguiti automaticamente. **F6** trigger `note.created`/`note.modified`/`note.deleted` via webhook (`POST /api/ke/schedule/trigger`) o hook alla creazione note API, con debounce a 5 minuti; gli step mutanti restano in attesa in `.wiki-forge/scheduler-approvals.json` e partono solo dopo `POST /approvals/:id/approve` con snapshot e audit `actor: human`. Nuove API decisioni/approvazioni/trigger e sezione Policy & Approvazioni nel Workbench con pulsanti ✅/❌ |
-| 70-75 | Wiki di self-documentazione da `docs/` | ✅ Done | **F70** piano e mapping completo (`docs/SELF_WIKI_PLAN.md`); **F71** generatore OKF deterministico (`scripts/docs_to_wiki.py`, 43 sorgenti → 51 file, `--check`); **F72** progetto dedicato `wikiforge` con bundle commitato; **F73** drift check in `check_docs_sync.py` + `okf_lint.py`; **F74** bottone **📚 Wiki Docs**, `Ctrl+Alt+D`, Research Studio con `projectId=wikiforge` (query + header), scope badge e help topic `wiki-di-wiki-forge`; **F75** note `sintesi/` con `verified: human:<id>` via `promote_doc_answer.py` e job consultivo `weekly-docs-wiki-drift` con rationale/fonti. Nessuna mutazione automatica. |
-| 76 | Ponte wiki → modifiche al programma (approvazione F6) | ✅ Done | Use Case 8 `ke_wiki_program_change`: `wiki_program_change_propose.py` (sola lettura) valida e accoda la proposta; `wiki_program_change_apply.py` (mutante, hard-blocked in `MUTATING_SCRIPT_IDS`) applica con snapshot e audit solo dopo `POST /approvals/:id/approve` con `--reviewer human:<id>` e `--confirm` iniettati dal server. Job `wiki-program-change` con `auto_apply = false`, disabilitato di default. Nessuna mutazione automatica. |
-| 77 | Automazione script — S0: SSOT di sicurezza e catalogo generato | ✅ Done | `SCRIPT_SCHEMAS`/`SCRIPT_AUTOMATION` classificano i 29 script in `read-only`, `report`, `workspace`, `wiki-write` e `blocked`; `gen_script_registry.py` genera registry TS e `docs/SCRIPT_AUTOMATION_REFERENCE.md`; `scheduler/scriptSafety.ts` deriva `MUTATING_SCRIPT_IDS` dal registry con fallback legacy e fail-closed. `ScriptAutomation` aggiunto ai contratti OpenAPI. Nessun endpoint o job esistente modificato. |
-| 78 | Frontend UI/UX, KISS/DRY e ciclo di vita progetti | ✅ Done | Attuato in 7 fasi: token/primitive CSS, catalogo azioni unico (Research/Studio solo globali), eventBus + appStore + resizer condiviso, scorciatoie globali e UI bilingue IT/EN, dialoghi accessibili, `projectService` backend con clone/rinomina/archivio/export/import e delete→cestino, `ProjectManagerModal` frontend. Studio in `docs/FRONTEND_UIUX_PLAN.md`. |
-| 79 | Automazione script — S1: job script e F5 arg-aware | ✅ Done | `jobStore.ts` valida `use_case XOR script`, unisce `config/script_schedules.toml` e genera use case sintetici `__script__:<scriptId>` a 1 step. I job mutanti nascono disabilitati; F5 classifica gli argomenti risolti (`docs_wiki_drift --check` → read-only, `check_docs_sync --fix` → workspace) con `argSafety` generato da `SCRIPT_SCHEMAS`. Scheduler, F5/F6 e i 9 job esistenti invariati. |
-| 80 | Automazione script — S2: approvazione e audit dei job script | ✅ Done | `decideApproval()` risolve la registry combinata, quindi le approvazioni F6 dei job script (__script__:<id>) possono essere approvate. La coda espone `jobKind` e `scriptArgs` redatti; eventi SSE e audit includono `scriptId`/`jobKind`; la card Workbench mostra il badge "job script" e gli args risolti. Regressioni end-to-end, UI e redazione. Nessuna nuova route API. |
-| 81 | Automazione script — S3: API di scheduling e hot-reload | ✅ Done | Nuove route `POST /api/scripts/schedule` e `DELETE /api/scripts/schedule/:jobId` nei contratti TS (89 id), con `scriptJobStore.ts` che scrive atomicamente `config/script_schedules.toml` preservando l'header. Validazione riutilizzata dal parser S1: duplicati 409, blocked/non schedulabili 400, mutanti creati disabilitati con warnings. `Scheduler.replaceJobs()`, use case sintetici e event bus si aggiornano in memoria subito; evento SSE `jobs_changed`. I job persistono al restart. 6 test end-to-end. |
-| 82 | Automazione script — S4: UI di scheduling e gestione job | ✅ Done | Badge di sicurezza generato e pulsante **🕒 Schedula** nel Control Panel (ID automatico, argomenti del form, avvisi F6 via `apiBus`), badge "job script" e pulsante **🗑 Rimuovi** nella tab Agenti & Schedule solo per job script. Refresh via `jobs_changed`/`schedule:changed`, nessun `fetch` diretto e nessuna nuova route; test DOM/bus dedicati. |
-| 83 | Automazione script — S5: indici, guida e mapping | ✅ Done | `docs/README.md` indicizza il piano KE (28 file), la guida in-app descrive badge/Schedula/Rimuovi senza copiare il catalogo generato, `docs/OPENAPI.md` allinea i conteggi (89 endpoint, 84 comandi, `SchedulerModule` 12) e la proiezione wiki è rigenerata. |
-| 84 | Automazione script — S6: collaudo finale | ✅ Done | Verdi `npm test` (339: 338 pass, 1 skip pre-esistente), typecheck, build, pytest (65), registry sync, doc/wiki drift, `okf_lint` e `git diff --check`; piano S0–S6 chiuso con commit e push per fase. |
-| 85 | Studio e piano incrementale Q1–Q2 2027 | ✅ Done | Studio dei tre blocchi della roadmap (L4 autonomo, RBAC multi-utente, Neo4j bidirezionale) e piano in 23 step A0–A5/B0–B7/C0–C8 in `docs/ROADMAP_Q1_Q2_2027_PLAN.md`. Chiusi 23/23 step: L4 ~4.5/5 (A0–A5), RBAC 5/5 (B0–B7), Neo4j ~5/5 (C0–C8). C6 aggiunge metadata `wf:*`, ledger di dedupe ed echo suppression con riconciliazione stage-only; C7 propaga `graph:changed` via SSE `graph.events` e `apiBus.stream()`; C8 allinea documentazione, OpenAPI (95 endpoint/90 comandi, conteggi storici; oggi 105 route/158 handler), proiezione wiki e gate completo. A4 introduce autonomia `bounded` con allowlist, doppia rivalidazione, rollback e audit `process:wiki-forge-autonomy`; A5 chiude l'auto-repair deterministico con conflitti a 0 scritture. `auto_apply=true` resta vietato. |
-| 86 | Accesso obbligatorio e bootstrap Admin | ✅ Done | Gateway di login bloccante all'avvio, credenziali predefinite `admin`/`admin` **storiche** (rimosse: in produzione servono credenziali configurate o un IdP/user store), sessioni locali bearer persistite via `StateStore`, gesture **👥 Utenti** in Modalità Sviluppo per creare utenti e assegnare ruoli Reader/Contributor/KnowledgeEngineer/Admin. |
-| 87 | Esportazione Wiki ZIP per progetto | ✅ Done | Azione **📦 Esporta Wiki ZIP** solo in Modalità Sviluppo; route additiva `GET /api/projects/:id/export/markdown.zip` con auth locale; ZIP `stored` generato senza dipendenze da tutti i `.md` della wiki path configurata, con nomi UTF-8 e path relativi. |
-| 88 | Matrice capabilities RBAC progressiva | ✅ Done | Source of truth condivisa in `src/shared/auth/capabilities.ts` per comandi e azioni; ruoli progressivi Reader → Contributor → KnowledgeEngineer → Admin applicati a backend e UI; operazioni KE (changeset apply/reject, sync/reconcile grafo, trigger scheduler) e approvazioni F6/admin separate; UI filtra header, command palette, scorciatoie, editor, studio, modali e chat. |
-| 89 | Accesso UI per utente e personalizzazione RBAC-aware | ✅ Done | Route additive `ui.access`, `ui.preferences.get`/`put` e azione `global:customize`; preferenze per utente sul server con fallback locale e filtro RBAC dopo il merge. Modale **Personalizza UI** per pannelli, pin, densità e scorciatoie effettive; **Gestione utenti** con descrizione ruoli, anteprima capacità e blocco del proprio account. Piano F0–F6 in `docs/USER_PERMISSIONS_UIUX_PLAN.md`; zero `fetch` diretti e envelope invariati. |
-
-Legend: ✅ Done · 🔄 Ongoing · ⬜ Todo
-
-### Verified implementation baseline (current)
-
-The published command manifest is generated from route contracts and shared MCP
-definitions into `src/shared/api/generated/commandManifest.generated.ts` and
-`docs/COMMAND_MANIFEST.md`, and is consumed by the CLI (`bin/wf.ts`), the MCP
-tool descriptors (`bin/mcp.ts`) and OpenAPI: **105 HTTP routes**, **158 bus
-handlers**, **51 catalogued slash commands / 20 with a dedicated case**, **113
-MCP tools**, **32 known non-blocking gaps** and **zero `route-without-bus`
-gaps**. `npm run manifest:check` enforces the last item. The backend follows
-kernel/modules/ports; no adapter imports another adapter, and
-`src/backend/server/mcp_server.py` is only a compatibility shim for the real
-Node MCP adapter.
-
-Production runs as one Node process that serves the built SPA and the API
-(`Dockerfile.render` + `bin/render-start.sh`) on `$PORT`: RBAC/auth forced,
-token required unless an IdP or user store is configured, CORS allowlist, body
-limit, correlation ids and `/api/healthz`, `/api/readyz`, `/api/metrics`.
-Sessions are persisted via `StateStore`, the scheduler uses a state lease lock
-(not PID), the approval outbox relay exists, command audit logs
-`command:handled`/`command:failed`, `CommandContext.principal` is always set by
-bus dispatch, subprocesses use an env allowlist and `@opentelemetry/api` has a
-local fallback. Docker Compose keeps the Vite `ui` service for development
-only, alongside API and worker (`WIKIFORGE_EMBED_SCHEDULER=false`). The active
-state root is `.wiki-forge/`; `.wikiforge/` paths in earlier phases are
-historical. Verification: typecheck, `manifest:check`, build, `docker compose
-config`, `git diff --check`, 593/593 JS tests with the Python venv from
-`requirements.txt` and 6/6 pytest semantic-engine tests.
-
----
-
-## Phase 42b — Incremental KB Versioning & Rollback Engine ✅ Done
-
-**Goal:** Provide full auditability, historical snapshots, and rollback capability for wiki synthesis notes without modifying original source files in `sources/`.
-
-**Deliverables:**
-- Implemented `scripts/versioning.py` for creating version snapshots in `wiki/versions/`.
-- Updated `docs/AGENT.md` with the UI-only version history and rollback workflow; chat command support is tracked in `docs/ROADMAP.md`.
-- Integrated logging of version changes into `wiki/log.md` conforming to OKF §9.
-
----
-
-## Phase 43 — Documentation Overhaul & 5-Phase Operator Workflow ✅ Done
-
-**Goal:** Clean up and streamline all documentation, clearly separating user/operator guides from technical developer specifications, and defining the 5-phase chronological workflow for building a dynamic Knowledge Base (Master's Thesis / Tesi Magistrale example with printable PDF export).
-
-**Deliverables:**
-- Eliminated redundant/outdated docs (`docs/versioning_proposal.md`, `docs/wikimap.md`).
-- Renamed and expanded `docs/TECHNICAL_ARCHITECTURE.md` as the central developer architecture reference.
-- Updated `docs/TUTORIAL.md` and `docs/THESIS_GUIDE.md` with the 5-phase chronological operator pipeline (Initialization -> Ingestion -> Dynamic Construction -> Study & Maturity -> Print PDF Export).
-- Reorganized `README.md` with audience-based document index and 5-phase workflow.
-- Verified doc/skill synchronization with `scripts/check_docs_sync.py`.
-
----
-
-## Phase 47 & 48 — Semantic Export & Lightweight Ontology Rule Engine ✅ Done
-
-**Goal:** Elevate `wiki-forge` to a complete Knowledge Engineering platform by implementing W3C semantic exports and formal logical ontology validation rules.
-
-**Deliverables:**
-- Implemented `scripts/export_semantic.py` exporting OKF v0.2 notes into JSON-LD and Turtle TTL semantic graph files.
-- Implemented `scripts/ontology_rules.py` for logical rule verification (unlinked `Concept` notes, circular dependencies A -> B -> A, and human verification requirements for `stable` status notes).
-- Registered tools in AgentServer `SCRIPT_REGISTRY` and Web UI Control Panel.
-- Created `docs/KNOWLEDGE_ENGINEERING.md` operating manual for Knowledge Engineers.
-
----
-
-## Phase 51 — Knowledge Engineer Use Case Management & Guided Workbench ✅ Done
-
-**Goal:** Provide structured Use Case management for Knowledge Engineers with a dedicated KE Workbench UI, 6 guided professional workflows, clear separation from Simple Operator tasks, and full REST API backend integration.
-
-**Deliverables:**
-- Implemented `KE_USE_CASES` registry and REST API endpoints (`GET /api/ke/use-cases`, `POST /api/ke/use-cases/execute`) in `src/server/agentServer.ts`.
-- Implemented `src/components/ke/KEWorkbenchModal.ts` providing an interactive guided workbench modal for Knowledge Engineers with real-time SSE log streaming.
-- Added `🧠 KE Workbench` quick launcher button in `Header.ts` visible in Developer Mode.
-- Structured clear user role separation between Simple Operators (Focus Mode 🌱: Carica -> Compila -> Chiedi) and Knowledge Engineers (Developer Mode 👑: Schema Modeling, Ontological Validation, CQ Assessment, Neuro-Symbolic Reasoning, Semantic RDF Export, Platform Maturity Evaluation).
-- Updated documentation across `docs/KNOWLEDGE_ENGINEERING.md`, `docs/TUTORIAL.md`, `docs/AGENT.md`, `README.md`, and `ROADMAP.md`.
-
----
-
-## Phase 50 — Enterprise Semantic Knowledge Graph & Stateful GraphRAG System ✅ Done
-
-**Goal:** Transform `wiki-forge` into an Enterprise Semantic Knowledge Graph system featuring automated W3C SHACL shape validation, dual W3C RDF / Neo4j Property Graph exports, and a stateful LangGraph GraphRAG pipeline with Text-to-Cypher translation and self-correction error recovery.
-
-**Deliverables:**
-- Implemented W3C SHACL validation shapes in `src/wikiforge/config/shapes.ttl`.
-- Implemented Zettelkasten-to-RDF converter in `src/wikiforge/semantics/markdown_to_rdf.py`.
-- Implemented Neo4j Cypher property graph exporter in `src/wikiforge/semantics/markdown_to_cypher.py`.
-- Implemented stateful LangGraph GraphRAG pipeline in `src/wikiforge/semantics/graph_rag_pipeline.py`.
-- Added GitHub Actions workflow in `.github/workflows/shacl_validation.yml`.
-- Added test suites (`tests/test_shacl.py`, `tests/test_converters.py`, `tests/test_graph_rag.py`).
-- Added user and architecture documentation in `docs/GRAPH_RAG.md`.
-
----
-
-## Phase 52 — Native Desktop Shell & Local Token API Auth (Modulo A) ✅ Done
-
-**Goal:** Provide native cross-platform desktop application packaging via Tauri v2 and secure local communication between desktop components, browser extensions, and agent sidecars using token authentication.
-
-**Deliverables:**
-- Added Tauri v2 desktop scaffolding in `src-tauri/` (`tauri.conf.json`, `Cargo.toml`, build configuration).
-- Implemented `X-WikiForge-Token` header validation in `AgentServer` (`src/server/agentServer.ts`).
-
----
-
-## Phase 53 — Two-Step CoT Ingestion & Disk Queue with Vision (Modulo B) ✅ Done
-
-**Goal:** Elevate ingestion quality through a 2-step Chain-of-Thought process (Analysis -> Generation), disk-backed persistent queue with crash recovery and progress streaming, and multimodal Vision captioning for embedded PDF figures.
-
-**Deliverables:**
-- Persistent SQLite/disk ingestion queue engine (`scripts/ingest_queue.py`).
-- Two-Step Chain-of-Thought ingestion logic and SHA256 fast-path hash caching (<10ms skip for unchanged files) in `scripts/conv2md.py`.
-- REST and SSE progress endpoints in `AgentServer`.
-
----
-
-## Phase 54 — Web Clipper Chrome Extension (Modulo C) ✅ Done
-
-**Goal:** Enable one-click webpage acquisition directly from web browsers into Wiki-Forge raw sources and wiki note storage.
-
-**Deliverables:**
-- Developed Manifest V3 Chrome Extension in `extension/` (`manifest.json`, `popup.html`, `popup.js`, `content.js`, `background.js`).
-- Clean article extraction using `@mozilla/readability` and `turndown` conversion.
-- Direct secure API transmission to `AgentServer` via token authentication.
-
----
-
-## Phase 55 — Deep Research Web Engine & Auto-Synthesis (Modulo D) ✅ Done
-
-**Goal:** Allow Wiki-Forge to actively search the web, generate multi-query research strategies, and synthesize results into connected wiki articles.
-
-**Deliverables:**
-- Web search query generator and provider client supporting Tavily, SearXNG, and fallback engines.
-- User confirmation modal and preview flow before search execution.
-- Automatic synthesis note creation under `wiki/synthesis/` with `<think>` reasoning trace streaming.
-
----
-
-## Phase 56 — Topological Graph Insights & Louvain Communities (Modulo E) ✅ Done
-
-**Goal:** Provide topological insights on the Knowledge Graph by detecting communities using the Louvain algorithm, surfacing surprising cross-community links, and locating knowledge gaps.
-
-**Deliverables:**
-- Louvain community detection and insight extraction in `scripts/graph_analytics.py`.
-- REST API graph insights endpoint in `AgentServer`.
-- Graph UI enhancements in `src/components/graph/ForceGraphViewer.ts` with community palette coloring and gap deep research triggers.
-
----
-
-## Phase 57 — Asynchronous Human-in-the-Loop Review Queue (Modulo F) ✅ Done
-
-**Goal:** Provide an asynchronous review queue allowing users to review, edit, approve, or reject LLM recommendations without blocking background ingestion.
-
-**Deliverables:**
-- Persistent review queue storage (`.llm-wiki/reviews.json`).
-- LLM item flagging during ingestion (`Create Page`, `Deep Research`, `Skip`).
-- Interactive UI panel `src/components/tools/ReviewQueueModal.ts`.
-
----
-
-## Phase 58 — Agent Skills Security & Interactive Skill Scanner (Modulo G) ✅ Done
-
-**Goal:** Dynamically discover skill packages in `skills/` and enforce strict security guardrails before executing shell commands or writing files outside the agent workspace.
-
-**Deliverables:**
-- Dynamic `SkillScanner` service in `AgentServer` scanning `skills/*/SKILL.md`.
-- Chat slash command `/skill`.
-- Explicit user approval modal prompt for shell command execution and workspace boundaries.
-
----
-
-## Phase 63 — Robustness, KE Cockpit & Guided Procedures (Master Brief) ✅ Done
-
-> Historical: the `.wikiforge/` paths below describe the v4.1.0 layout; the active state root is `.wiki-forge/`.
-
-**Goal:** Deliver complete robustness, stateful procedure execution, safe vault changeset management, and a unified Knowledge Engineer Cockpit UI in alignment with the Jules Master Implementation Brief v2.0.
-
-**Deliverables:**
-- **Unified Health & Metrics Engine (`src/backend/wikiforge/api/health.py`)**: Aggregates SHACL violations, CQ gaps, KE maturity score (L1-L4), orphan ratio, broken links, and raw pending items into a single 0-100 Health Score. Generates `.wikiforge/STATUS.md`, logs history to `.wikiforge/metrics/history.jsonl`, and exposes `/api/v1/health`.
-- **Safe Vault & Changeset Manager (`src/backend/wikiforge/vault.py`)**: Implements atomic file writes (`os.replace`), soft-delete backups in `.wikiforge/trash/`, and staged JSON changesets in `.wikiforge/changesets/` for Plan-Review-Apply safety.
-- **Stateful Procedure Engine (`src/backend/wikiforge/procedures.py`)**: Executes TOML-defined procedures (`config/procedures/*.toml`) with DAG dependency resolution, automated script execution, human review pauses, exit criteria evaluation, and persistent state in `.wikiforge/state/<run_id>.json`.
-- **Knowledge Engineer Cockpit & UI Upgrades**: Built `KECockpitModal.ts` dashboard, `CommandPalette.ts` (`Ctrl+K`), `ChangesetReviewModal.ts`, and `SimpleModeDashboard.ts` resumable user wizard launcher (`.wikiforge/wizard_state.json`).
-- **Live Sync & ETag Collision Prevention**: Server-Sent Events stream (`/api/v1/sync/events`) and HTTP 412 (Precondition Failed) ETag checks on note save.
-
----
-
-## Phase 64 — Review Studio (Unified Review UI) ✅ Done
-
-**Goal:** Give every note a single review console for quality, adversarial critique, activity digest and version comparison, without leaving the Web UI.
-
-**Deliverables:**
-- **Four-tab modal (`src/frontend/components/review/ReviewStudio.ts`)**: horizontal tabs **Verifica**, **Critica**, **Digest**, **Confronta versioni**; dark theme with emerald accent; unified line-by-line diff and one-click restore.
-- **Entry points**: note context menu (`ReviewContextMenu.ts`), **🧐 Revisione** button in the editor header, and `Ctrl+Alt+R/C/D/F`.
-- **Review API (`src/backend/server/agentServer.ts`)**: `GET /api/notes/review/meta`, `POST /api/notes/review/verify`, `GET /api/notes/review/digest`, `POST /api/notes/review/critique`, `GET /api/notes/review/snapshots`, `GET /api/notes/review/diff`, `POST /api/notes/review/restore`.
-- **Shared verification path** with chat `/verify`; deterministic quality gate (links, OKF frontmatter, tags, sources, `stale_after`), digest from `wiki/log.md`, and critique with deterministic fallback.
-- **Local snapshot store**: `.wiki-forge/snapshots/<note-path>/<timestamp>.md` + `.json` sidecar, best-effort, gitignored, retention 25 per note.
-- **Design & docs**: interactive mockup + 5 screenshots in `docs/mockups/`, in-app help topic `review-studio`, and updates across README and `docs/`.
-
-## Phase 65 — Research Studio (Query & Research UI) ✅ Done
-
-**Goal:** Bring the six "🔍 Interrogazione e Ricerca" agent commands into one graphical console, with deterministic results for search/backlinks/related/trace and an LLM-assisted consult/deep research.
-
-**Deliverables:**
-- **Six-tab modal (`src/frontend/components/research/ResearchStudio.ts`)**: horizontal tabs **Consult**, **Ricerca**, **Backlink**, **Correlate**, **Traccia**, **Deep Research**; reuses the Review Studio shell (`.wf-rs-*`) with a cyan accent and dedicated `.wf-rq-*` result styles.
-- **Entry points**: **🔎 Research** top-bar button, **🔎 Ricerca** editor button, note context menu (Backlink / Correlate), `Ctrl+Alt+Q/S/B/L/T/H`, and chat-command hand-off from `ChatDrawer.ts`.
-- **Research API (`src/backend/server/agentServer.ts`)**: `GET /api/notes/research/search`, `GET /api/notes/research/backlinks`, `GET /api/notes/research/related`, `GET /api/notes/research/trace`, `POST /api/notes/research/consult`, `POST /api/notes/research/deep-research`.
-- **Deterministic helpers (`src/backend/server/researchHelpers.ts`)**: tokenisation, key terms, ranked full-text search, wikilink backlinks, related-note suggestions and trace-source resolution, with unit tests in `tests/researchStudio.test.ts`.
-- **LLM paths with fallback**: `consultWiki` answers with the configured model and falls back to the ranked note list; `generateDeepResearch` writes `output/research-*.md` and `wiki/synthesis/*.md` with a source-attribution matrix and knowledge gaps.
-- **Docs**: in-app help topic `research-studio`, plus updates to README, docs index, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.12), AGENT and CHANGELOG.
-
-## Phase 66 — Study Studio (Study & Synthesis UI) ✅ Done
-
-**Goal:** Bring the seven "📚 Studio e Sintesi" agent commands into one graphical console that stays deterministic and offline-friendly.
-
-**Deliverables:**
-- **Seven-tab modal (`src/frontend/components/study/StudyStudio.ts`)**: horizontal tabs **Guida**, **Quiz**, **Mindmap**, **Audio**, **Note**, **Promuovi**, **Tesi**; reuses the Review Studio shell (`.wf-rs-*`) with an amber accent and dedicated `.wf-st-*` styles.
-- **Entry points**: **📚 Studio** top-bar button, **📚 Studio** editor button, note context menu (Guida / Quiz / Mindmap / Copione audio), and `Ctrl+Alt+G/K/M/A`.
-- **Study API (`src/backend/server/agentServer.ts`)**: `POST /api/notes/study/{guide,quiz,mindmap,audio-overview,note,promote-note,thesis-chapter}`.
-- **Deterministic helpers (`src/backend/server/studyHelpers.ts`)**: pure builders for study guides, exact-count quizzes (1–25), heading/wikilink mind maps, Host A / Host B audio scripts, and maturity-filtered thesis chapters, with unit tests in `tests/studyHelpers.test.ts`.
-- **Command parity**: the chat workflows call the same builders, including the new TypeScript `executeThesisChapterWorkflow`; `/thesis-chapter` writes both `output/thesis-<slug>.md` and the canonical `output/thesis_compiled.md`.
-- **Docs**: in-app help topic `study-studio`, plus updates to README, docs index, GUIDA_OPERATIVA, USER_GUIDE, TUTORIAL, TECHNICAL_ARCHITECTURE (§2.13), AGENT, WORKFLOW and CHANGELOG.
-
-## Phase 70-75 — Self-Documentation Wiki ✅ Done
-
-**Goal:** Make `docs/` queryable from the LLM/Research Studio as an OKF v0.2 wiki about wiki-forge itself, accumulating approved answers without ever letting scheduled jobs modify the wiki or the program.
-
-**Deliverables:**
-- **Plan (`docs/SELF_WIKI_PLAN.md`)**: source + projection architecture, full document→note mapping, taxonomy and safeguards; `docs/` stays canonical, `docs/help/*.md` keeps its `/api/help` frontmatter, `docs/METRICS.md` is excluded.
-- **Generator (`scripts/docs_to_wiki.py`)**: deterministic projection into `projects/wikiforge/wiki/` (6 areas + curated `sintesi/`), fixed `BUILD_STAMP`, `--check`/`--json`/`--dry-run`, provenance and source-language tags; committed bundle verified by `scripts/check_docs_sync.py` and `scripts/okf_lint.py`.
-- **Dedicated project (`config/projects.json`, `projects/wikiforge/config.toml`)**: separate `wikiforge` vault registered alongside `default` and `tesi`.
-- **Research UX (Fase 74)**: **📚 Wiki Docs** button and `Ctrl+Alt+D` open the Research Studio scoped to `wikiforge` (both `projectId=` and `X-Project-Id`) without switching the active vault; scope badge, source-note activation and help topic `wiki-di-wiki-forge`.
-- **Curated synthesis (Fase 75)**: human-only `scripts/promote_doc_answer.py` writes `sintesi/*.md` with `verified: human:<id>` and is a blocked mutating script; read-only `scripts/docs_wiki_drift.py` runs as advisory Use Case 7 (`weekly-docs-wiki-drift`, `auto_apply = false`).
-- **Tests**: `tests/python/test_docs_to_wiki.py` (9) and `tests/docsWikiScope.test.ts` (3).
-
-## Phase 76 — Wiki-to-Program Change Bridge ✅ Done
-
-**Goal:** let a wiki-grounded answer become a concrete program change, but only through F6 human approval — no scheduled job ever mutates `docs/`, the wiki or the code.
-
-**Deliverables:**
-- **Read-only staging (`scripts/wiki_program_change_propose.py`)**: validates a JSON proposal or an assistant answer with `wiki-edit` blocks, enforces a strict path allowlist and unique `find` matches, requires rationale and sources, and stages the record under `output/program-changes/` without touching program files.
-- **Human-only apply (`scripts/wiki_program_change_apply.py`)**: refuses to run without `--reviewer human:<id>` and `--confirm`, snapshots every target file before an exact find/replace and appends a JSONL audit entry. Hard-blocked from automatic execution via `MUTATING_SCRIPT_IDS`.
-- **Use Case 8 / F6 (`ke_wiki_program_change`)**: the F5 Policy Agent withholds the mutating apply step into the approval queue; only `POST /api/ke/schedule/approvals/:id/approve` injects the human reviewer and confirmation and executes the step with an `actor: human` audit trail. The `wiki-program-change` job has `auto_apply = false` and is disabled by default.
-- **Tests**: `tests/python/test_program_change.py` (7) and `tests/programChangeBridge.test.ts` (3).
-
-## Phase 86 — Accesso obbligatorio e bootstrap Admin ✅ Done
-
-> Historical: the `admin`/`admin` bootstrap described below was removed; production now requires configured credentials or a configured IdP/user store.
-
-**Goal:** make authentication the entry point of the UI and guarantee an Admin owner for a fresh workspace, while keeping user/role management in Developer Mode.
-
-**Deliverables:**
-- **Startup gate (`src/frontend/components/auth/LoginModal.ts`)**: `refreshIdentity()` runs before any vault work; anonymous or stale sessions show a blocking dialog, and a successful local login starts graph events, vault loading and first-launch onboarding.
-- **Default owner (`src/backend/server/auth/userStore.ts`)**: `admin`/`admin` is bootstrapped when `WIKIFORGE_ADMIN_USERNAME` / `WIKIFORGE_ADMIN_PASSWORD` are absent; explicitly configured credentials keep precedence. Render blueprint uses the documented defaults.
-- **Role management**: existing **👥 Utenti** action and Admin-only API remain available in Developer Mode; sign-out re-opens the login gate.
-
-## Phase 87 — Esportazione Wiki ZIP per progetto ✅ Done
-
-**Goal:** let a developer download the whole project wiki as a portable set of Markdown files in one archive.
-
-**Deliverables:**
-- **Binary contract (additive)**: `projects.exportMarkdownZip` maps `GET /api/projects/:id/export/markdown.zip` to a `application/zip` stream with `Content-Disposition: attachment`.
-- **Store-only writer (`src/backend/server/zipFile.ts`)**: deterministic stored ZIP with CRC32, UTF-8 names, DOS timestamps and path validation; no new runtime dependency.
-- **Project service (`src/backend/server/projectService.ts`)**: collects every `.md` under the configured `[paths].wiki` directory (including nested folders), skips other files and returns a sorted archive; empty wikis return 404.
-- **Developer UX**: `global:exportWikiZip` is pinned in Developer Mode and absent from Focus Mode; the handler uses the typed API bus and saves `<project>-wiki.zip`. The route rejects unauthenticated callers.
-
-## Phase 88 — Matrice capabilities RBAC progressiva ✅ Done
-
-**Goal:** make Reader, Contributor, KnowledgeEngineer and Admin behave consistently across bus authorization and UI visibility, with capabilities inherited from the lower roles.
-
-**Deliverables:**
-- **Shared SSOT (`src/shared/auth/capabilities.ts`)**: `OPERATION_MIN_ROLE` and `ACTION_MIN_ROLE` drive both backend `OPERATION_ROLES` and frontend `canRenderAction()` / `canUseOperation()`. Unknown operations fail closed as Admin; unknown actions remain renderable.
-- **Backend boundaries**: notes, upload, scratchpad and changeset staging are Contributor; verify/critique/restore, deep research, script execution/scheduling, scheduler control and changeset apply/reject are KnowledgeEngineer; users, projects, configuration writes and F6 approvals are Admin.
-- **Progressive UI**: filtered header and command palette, action shortcuts, read-only editor and sidebar, Review/Research/Study tabs, project/config/tools/changeset/KE modals, chat commands and onboarding writes. Managed identities only see their allowed capabilities; legacy/anonymous sessions keep the historical full surface.
-- **Tests**: `tests/capabilityMatrix.test.ts`, `tests/authUi.test.ts`, `tests/userUi.test.ts`, `tests/rbacMiddleware.test.ts` and `tests/graphRoutes.test.ts` cover the role ladder and the new KE boundaries.
-
-## Phase 89 — Accesso UI per utente e personalizzazione RBAC-aware ✅ Done
-
-**Goal:** make the frontend surface user-specific without turning UI preferences into a permission bypass, and make role management understandable and safe.
-
-**Deliverables:**
-- **Additive API**: `GET /api/ui/access`, `GET /api/ui/preferences` and `PUT /api/ui/preferences` are declared in the TS catalogue and served by `UiModule` with Reader as the minimum role. The preferences store uses a SHA-256 key derived from `source:actor`, atomic writes, defensive normalisation and local fallback.
-- **Single UI state**: the managed-identity startup loads access and preferences through `apiBus`; a 403 falls back to the roles already present in `auth.me`. Legacy mode keeps the historical surface and never calls the new routes. RBAC filtering always runs after preferences are merged.
-- **Customize UI modal**: the only panel catalogue (`UI_PANELS`) drives visibility, pinnable actions, density and the shortcuts that are actually registered. The `editor` panel is essential; `chat` requires `chat.send`.
-- **User management UX**: the modal explains all four roles and previews capabilities from `ACTION_MIN_ROLE`; local accounts matching `human:<username>` cannot edit, deactivate or delete themselves. Italian and English messages stay aligned and no native dialog was added.
-- **Docs and gates**: `docs/USER_PERMISSIONS_UIUX_PLAN.md`, `docs/USER_GUIDE.md`, `docs/help/ui-personalizzazione.md`, `docs/CHANGELOG.md`, `docs/OPENAPI.md`, `docs/TECHNICAL_ARCHITECTURE.md` and the regenerated docs wiki projection.
-
-## Q1–Q2 2027 — Piano incrementale 🔄 Ongoing
-
-**Goal:** coprire i tre blocchi di medio/lungo termine — L4 Fully-Autonomous
-Agentic Workflows, RBAC multi-utente e sincronizzazione bidirezionale con
-Neo4j — con step verificati da test e un grado di implementazione sempre
-aggiornato.
-
-**Deliverables:**
-- **Piano vivo (`docs/ROADMAP_Q1_Q2_2027_PLAN.md`)**: 23 step (A0–A5 autonomia,
-  B0–B7 RBAC, C0–C8 Neo4j), dipendenze, criteri di accettazione, test di
-  verifica, tabelle di avanzamento e registro dei gradi; baseline L4 ~2.5/5,
-  RBAC ~1/5, Neo4j ~0.5/5, ora L4 ~3.6/5 dopo A0/A1/A2/A3 (finding unificati read-only, eventi F6 persistenti e proposte via changeset), RBAC 5/5 dopo
-  B1/B2/B3/B4/B5/B6/B7 (autenticazione, ruoli, provenance e UI identità 5/5) e
-  Neo4j ~5/5 dopo C0–C8 (config inerte, client con dependency injection, sync
-  vault → Neo4j idempotente, query Cypher read-only, route dichiarative protette
-  dal gate B4, reverse sync DB → vault come changeset, dedupe/echo suppression e
-  propagazione SSE `graph:changed` al browser).
-  I §12–§13 del piano vivo sono i checkpoint di sessione
-  (23/23 step, gate verdi, track C e track A completati).
-- **Sicurezza prima dell'autonomia**: il gate `cq_gaps` di `health.py` è stato
-  corretto in A0 (8 test dedicati), prima di qualunque claim L4; la modalità
-  `bounded` (A4) è governata da allowlist, doppia rivalidazione, rollback e
-  audit, senza mai attivare `auto_apply=true`.
-- **Contratti invariati**: nessun endpoint, envelope o metodo pubblico
-  modificato; nuove route solo additive e generate da `contracts.ts`; nessun
-  `fetch` diretto nell'UI.
+# ROADMAP — Wiki-Forge v4.1
+
+Questo è l'unico piano di miglioramento del repository. La cronologia delle
+fasi 0–89 è chiusa e consultabile nel
+[changelog](docs/riferimenti/CHANGELOG.md); i vecchi piani di implementazione
+sono stati accorpati in [architettura](docs/architettura/ARCHITECTURE.md),
+[Knowledge Engineering](docs/processi/KNOWLEDGE_ENGINEERING.md) e
+[self-wiki](docs/standard/SELF_WIKI.md).
+
+## Stato completato
+
+| Area | Stato | riferimento |
+|---|---|---|
+| Fondamenta, ingestione, OKF v0.2, multi-progetto | ✅ | [Guida operativa](docs/guida/GUIDA_OPERATIVA.md) |
+| Web UI, Focus Mode, wizard, Study/Review/Research Studio | ✅ | [Tutorial](docs/guida/TUTORIAL.md) |
+| Tesi dinamica e PDF stampabile | ✅ | [Tesi magistrale](docs/guida/THESIS_GUIDE.md) |
+| Knowledge Engineering L1-L4, ontologie, CQ, GraphRAG | ✅ | [KE](docs/processi/KNOWLEDGE_ENGINEERING.md) |
+| Disaccoppiamento contratto/bus/adapter, RBAC, produzione | ✅ | [Architettura](docs/architettura/ARCHITECTURE.md) |
+| Agenti schedulati, Policy Agent F5/F6, automazione script | ✅ | [Automazione](docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md) |
+| `docs/` come wiki OKF del progetto `wikiforge` | ✅ | [Self-wiki](docs/standard/SELF_WIKI.md) |
+| Documentazione tematica e manuale stampabile | ✅ | [Indice didattico](docs/README.md) |
+
+Baseline verificata: **105 route HTTP**, **158 handler bus** in 20 moduli,
+**51 comandi slash / 20 con caso dedicato**, **113 tool MCP**, **32 gap noti**,
+zero gap `route-without-bus`. `npm run manifest:check` applica l'invariante.
+Verifica storica: `npm test` 593/593 con venv Python da `requirements.txt`,
+pytest semantico 6/6, typecheck, build, compose e `git diff --check` verdi.
+
+La documentazione è stata riorganizzata in cinque cartelle tematiche e il
+percorso didattico ha una scorciatoia coerente: `Ctrl+Alt+W` apre **Wiki Docs**,
+mentre `Ctrl+Alt+D` resta **Digest** nella Review Studio.
+
+## Piano di miglioramento
+
+### P0 — Qualità e gate
+
+1. **Chiudere A10: E2E e soglie di copertura in CI**
+   - Aggiungere un percorso Playwright sul flusso Carica → Compila → Chiedi e
+     soglie minime di copertura per `scripts/` e `src/backend/wikiforge/semantics`.
+   - *Accettazione*: `.github/workflows/test.yml` esegue E2E e fallisce sotto
+     soglia; il report è allegato come artifact.
+
+2. **Bloccare il confine tra le due radici di stato**
+   - Il motore Python (`src/backend/wikiforge/api/health.py`) scrive health in
+     `.wikiforge/`, mentre il runtime Node usa `.wiki-forge/` per stato, lock,
+     snapshot e changeset. La documentazione ora dichiara esplicitamente il
+     confine; resta da impedire che un futuro refactor lo confonda di nuovo.
+   - *Accettazione*: test di regressione che verifichino `.wikiforge/STATUS.md`,
+     `.wikiforge/metrics/history.jsonl` e `.wiki-forge/state/` come percorsi
+     distinti, più un controllo docs che fallisca se i documenti tornano a
+     descrivere una radice unica.
+
+### P1 — Funzionalità e coerenza
+
+3. **Parità chat/UI per cronologia e rollback**
+   - La UI espone già `VersionTimeline` e il ripristino dagli snapshot; i
+     comandi `/history` e `/rollback` restano da allineare.
+   - *Accettazione*: i comandi usano lo stesso snapshot store e producono lo
+     stesso audit di **Confronta versioni**; help topic aggiornato.
+
+4. **Drift advisory `docs/` ↔ wiki più esplicito**
+   - `docs_to_wiki.py --check` già rileva il drift; rendere il report consultivo
+     più leggibile nei log del job `weekly-docs-wiki-drift`.
+   - *Accettazione*: il report elenca sorgente, nota generata e motivazione,
+     senza mutare nulla senza F6.
+
+5. **Rivedere i claim “local/cloud” nella documentazione**
+   - Verificare gli hook di backup configurati rispetto a quanto descritto
+     nella sezione enterprise della documentazione.
+   - *Accettazione*: testo e configurazione concordano; nessuna funzionalità
+     presentata come disponibile se è solo un hook inerte.
+
+### P2 — Manutenzione e standard
+
+6. **Unificare `.wikiforge/` e `.wiki-forge/`**
+   - `.wiki-forge/` è la radice attiva; `.wikiforge/` è storica ma ancora usata
+     dal motore Python. Valutare migrazione con snapshot e rollback.
+   - *Accettazione*: una sola radice di stato per Node e Python, con test di
+     migrazione e istruzioni per i vault esistenti.
+
+7. **Valutare OKF upstream v0.3**
+   - La specifica locale è v0.2 e il repository upstream ha pubblicato v0.3.
+   - *Accettazione*: tabella di compatibilità e decisione documentata
+     (adozione, adattamento o mantenimento di v0.2).
+
+8. **Rinfrescare numeri e claim dei test**
+   - I conteggi 593/593 e 6/6 sono la baseline verificata dopo il
+     disaccoppiamento; qualsiasi nuova suite deve aggiornare README e roadmap.
+   - *Accettazione*: un solo comando (documentato) produce i numeri citati.
+
+9. **Scorciatoie dell'editor: documentazione e registro**
+    - Verificare che l'header mostri solo Info, Revisione e Cronologia e che le
+      studio siano globali.
+    - *Accettazione*: guida in-app, `actions.ts` e test DOM allineati.
+
+## Legenda
+
+✅ completato · 🔄 in corso · ⬜ da fare. Le voci completate confluiscono nella
+tabella "Stato completato"; i gate restano documentati in "Verifica di coerenza"
+di [`docs/README.md`](docs/README.md).

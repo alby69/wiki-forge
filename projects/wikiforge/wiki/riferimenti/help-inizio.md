@@ -7,7 +7,7 @@ tags: [scope/docs, layer/generated, area/riferimenti, lang/it, help]
 status: stable
 generated:
   by: process:docs-to-wiki
-  at: "2026-11-19T00:00:00Z"
+  at: "2026-11-26T00:00:00Z"
 sources:
   - id: source-docs-help-inizio-md
     resource: docs/help/inizio.md
@@ -61,4 +61,4 @@ Clicca il badge (o premi **Ctrl+Shift+D**) per cambiare modalità in qualsiasi m
 | **Research Studio** | Finestra di ricerca con sei schede: Consult, Ricerca, Backlink, Correlate, Traccia, Deep Research |
 | **Study Studio** | Finestra di studio con sette schede: Guida, Quiz, Mindmap, Audio, Note, Promuovi, Tesi |
 
-**Approfondisci:** `docs/TUTORIAL.md` (guida passo-passo completa), `docs/USER_GUIDE.md` (funzionalità dell'interfaccia), `docs/WORKFLOW.md` (flusso di lavoro consigliato).
+**Approfondisci:** `docs/guida/TUTORIAL.md` (guida passo-passo completa), `docs/guida/USER_GUIDE.md` (funzionalità dell'interfaccia), `docs/guida/THESIS_GUIDE.md` (flusso di lavoro consigliato).

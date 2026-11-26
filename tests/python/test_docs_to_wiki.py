@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import check_docs_sync
+import docs_book
 import docs_to_wiki
 import docs_wiki_drift
 import promote_doc_answer
@@ -21,6 +22,17 @@ def _temp_bundle(tmp_path: Path):
     assert warnings == [], warnings
     docs_to_wiki.write_bundle(bundle, wiki_dir)
     return wiki_dir, bundle
+
+
+def test_docs_book_follows_didactic_path(tmp_path: Path):
+    output = tmp_path / "manuale.md"
+    content = docs_book.write_book(REPO_ROOT, DOCS_DIR, output)
+    assert content.startswith("# Manuale Wiki-Forge v4.1.")
+    assert "## 1. Guida operativa" in content
+    assert "## 13. Wiki di self-documentazione" in content
+    assert "## 23. Roadmap" in content
+    assert "**Fonte**: `docs/standard/SELF_WIKI.md`" in content
+    assert docs_book.check_book(REPO_ROOT, DOCS_DIR, output) == []
 
 
 def test_build_bundle_is_deterministic(tmp_path: Path):
@@ -44,12 +56,12 @@ def test_generated_bundle_lints_clean(tmp_path: Path):
 def test_generated_notes_keep_source_language_and_provenance(tmp_path: Path):
     _wiki_dir, bundle = _temp_bundle(tmp_path)
     it_note = bundle["guida/tutorial.md"]
-    en_note = bundle["architettura/architecture.md"]
+    en_note = bundle["architettura/editor-migration.md"]
     assert "lang/it" in it_note
     assert "layer/generated" in it_note
     assert "  by: process:docs-to-wiki" in it_note
     assert f'at: "{docs_to_wiki.BUILD_STAMP}"' in it_note
-    assert "resource: docs/TUTORIAL.md" in it_note
+    assert "resource: docs/guida/TUTORIAL.md" in it_note
     assert "lang/en" in en_note
 
 
@@ -226,7 +238,7 @@ def test_promoted_answer_is_human_verified_and_okf_valid(tmp_path: Path):
         "Come funziona la wiki?",
         "Che cos'è la Wiki Docs?",
         "Risposta approvata di esempio.",
-        ["docs/README.md", "docs/SELF_WIKI_PLAN.md"],
+        ["docs/README.md", "docs/standard/SELF_WIKI.md"],
         "human:alby69",
         "2026-11-19T00:00:00Z",
     )

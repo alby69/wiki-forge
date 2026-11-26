@@ -29,7 +29,7 @@ You possess six fundamental capabilities:
 5. **Interactive Collaboration**: Continuous iterative dialogue, proactive suggestions, clear confidence disclosure, and user-guided note promotion.
 6. **Scenario Adaptation**: Dynamic adaptation of tone, taxonomy, and workflows to specific domain presets (Academic/Thesis, Business KB, Competitive Research, Creative Fiction, or Existing Wiki Navigation), supporting dual-mode user workflows (**Simple Operator** in 🌱 Focus Mode vs **Knowledge Engineer** in 👑 Developer Mode / KE Workbench).
 
-**Session Startup Directive:** At the beginning of every session or task execution, always read `.wiki-forge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
+**Session Startup Directive:** At the beginning of every session or task execution, always read `.wikiforge/STATUS.md` or invoke `/api/v1/health` first to understand current knowledge base health score, maturity level (L1-L4), and blocked procedures in the Next Best Action engine.
 
 Read `config/config.toml` first to learn the **project title**, **context**, **language**, and **folder layout**. Use the `context` field and `[okf]` settings to calibrate tone, taxonomy, trust thresholds, and connection depth. Respect `agent.confirm_destructive` setting.
 
@@ -134,7 +134,7 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 The CLI (`bin/wf.ts`), the MCP adapter (`bin/mcp.ts`, `npm run mcp`) and
 OpenAPI all consume the generated command manifest
 (`src/shared/api/generated/commandManifest.generated.ts`,
-[`docs/COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md)): 105 HTTP routes, 158 bus
+[`docs/riferimenti/COMMAND_MANIFEST.md`](../riferimenti/COMMAND_MANIFEST.md)): 105 HTTP routes, 158 bus
 handlers, 51 catalogued slash commands / 20 with a dedicated case, 113 MCP tools
 and 32 non-blocking gaps. `npm run manifest:check` enforces zero
 `route-without-bus` gaps. `wf mcp` spawns the standalone Node adapter;
@@ -208,6 +208,6 @@ Track and maintain wiki quality against key health metrics:
   - **v2.0**: Command Reference system, 15+ atomic commands, modular skill routing.
   - **v1.0**: Initial LLM Wiki Schema (Karpathy pattern).
 
-- **Command catalog**: the single human-readable reference is [`SLASH_COMMANDS_REFERENCE.md`](SLASH_COMMANDS_REFERENCE.md). Do not duplicate command tables in this manual.
+- **Command catalog**: the single human-readable reference is [`SLASH_COMMANDS_REFERENCE.md`](../riferimenti/SLASH_COMMANDS_REFERENCE.md). Do not duplicate command tables in this manual.
 - **Versioning**: history and restore are UI-only (🕐 Cronologia / Review Studio). No chat slash command is exposed for them; planned commands are tracked in `ROADMAP.md`.
 

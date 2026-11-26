@@ -148,7 +148,7 @@ pubblici dispatchati con middleware saltato (`handleDocsRequest()` resta come
 fallback), mentre i tre `graph.sync|validate|rag` passano dal gate B4 come ogni
 ingresso non pubblico e preservano byte-per-byte il proxy FastAPI.
 Il manifest generato (`src/shared/api/generated/commandManifest.generated.ts`,
-[`COMMAND_MANIFEST.md`](COMMAND_MANIFEST.md)) riporta **51 comandi slash
+[`COMMAND_MANIFEST.md`](../riferimenti/COMMAND_MANIFEST.md)) riporta **51 comandi slash
 catalogati / 20 con case dedicato**, **113 tool MCP** e **32 gap noti non
 bloccanti**, tutti di tipo `slash-without-implementation`: `npm run
 manifest:check` vieta ogni `route-without-bus`.

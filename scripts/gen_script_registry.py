@@ -11,7 +11,7 @@ used to keep a second, hand-written copy in `agentServer.ts`, which drifted
 probe on every first registry request.
 
 This generator emits `src/backend/server/generated/scriptRegistry.generated.ts`
-and `docs/SCRIPT_AUTOMATION_REFERENCE.md` so code and docs share ONE definition:
+and `docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md` so code and docs share ONE definition:
 
     Python SSOT  ->  generated TS  ->  AgentServer API / UI forms / CLI builder
                   ->  generated MD ->  safety catalog / scheduler / approvals
@@ -36,7 +36,7 @@ from src.backend.wikiforge.core.script_schema import SCRIPT_SCHEMAS  # noqa: E40
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = REPO_ROOT / "src" / "backend" / "server" / "generated" / "scriptRegistry.generated.ts"
-DOCS_OUTPUT = REPO_ROOT / "docs" / "SCRIPT_AUTOMATION_REFERENCE.md"
+DOCS_OUTPUT = REPO_ROOT / "docs" / "riferimenti" / "SCRIPT_AUTOMATION_REFERENCE.md"
 
 # Ordered tuple: the generated catalog must be byte-identical across Python
 # processes (a set would randomise the category order under hash seeding).

@@ -38,7 +38,7 @@ Questo è il catalogo unico usato dal Policy Agent F5, dalla coda F6, dal pannel
 | `check_docs_sync` | 🟢 read-only — nessuna scrittura rilevante | sì | sì | `0 6 * * 1` | fix=true → workspace | — | Con --fix riscrive docs/help/: in quel caso diventa workspace. |
 | `graph_analytics` | 🟢 read-only — nessuna scrittura rilevante | sì | sì | `0 2 * * 0` | — | — | Analisi Louvain in sola lettura. |
 | `maturity_calculator` | 🟠 wiki-write — scrive nella wiki | sì | no (F6) | `30 6 * * 1` | write=true → wiki-write | — | Con --write modifica il frontmatter: richiede F6. Args: `{"path": "wiki"}` |
-| `wiki_stats` | 🟡 workspace — scrive in `raw/`, `sources/` o `docs/` | sì | no (F6) | `20 6 * * 1` | — | — | Aggiorna docs/METRICS.md: richiede F6. |
+| `wiki_stats` | 🟡 workspace — scrive in `raw/`, `sources/` o `docs/` | sì | no (F6) | `20 6 * * 1` | — | — | Aggiorna docs/riferimenti/METRICS.md: richiede F6. |
 
 ### Taxonomy
 
