@@ -112,6 +112,24 @@ per `/api/chat` e per il bus senza nuove route pubbliche. I provider cloud
 restano invariati: il provider locale è selezionabile con
 `[agent.llm].provider = "local"` o come fallback quando il provider è vuoto.
 
+### 3.3.2 Registro e upload GGUF
+
+L'upload di un modello GGUF è una sequenza di cinque operazioni Admin sul bus:
+`projects.gguf.uploadStart`, `projects.gguf.uploadChunk`,
+`projects.gguf.uploadFinalize`, `projects.gguf.list` e
+`projects.gguf.activate`. Il gateway Node accetta solo JSON, quindi i chunk sono
+base64 (4 MiB per chunk lato UI, 8 MiB limite server) invece di multipart.
+`LocalModelService` valida basename, estensione, dimensione dichiarata e magic
+`GGUF`, assembla i chunk in `models/<nome>.gguf` e registra nome, percorso
+relativo, dimensione e SHA256 in `.wiki-forge/llm/models.json`. Le sessioni
+temporanee vivono in `.wiki-forge/llm/uploads/` e vengono ripulite dopo il
+finalize (o dopo 24 ore). L'attivazione scrive `[llm.local].enabled = true`,
+`[llm.local].model_path = models/<nome>.gguf` e
+`[agent.llm].provider = "local"` nella config root, poi invalida il client LLM
+cacheato: la chat successiva usa subito il nuovo modello senza riavvio.
+Il percorso è relativo alla repo root, coerentemente con la risoluzione fatta da
+`local_engine.py` nel container.
+
 ### 3.4 Studio di revisione, ricerca e studio
 
 | Console | Schede | Natura |

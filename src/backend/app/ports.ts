@@ -2,7 +2,7 @@ import type { DomainServices } from '../server/modules/services';
 
 export type ProjectPathPort = Pick<DomainServices, 'resolveRoot'>;
 export type FilesPort = ProjectPathPort & Pick<DomainServices, 'downloadFile'>;
-export type ProjectsPort = Pick<DomainServices, 'projects'>;
+export type ProjectsPort = Pick<DomainServices, 'projects' | 'rootDir' | 'invalidateLlmClient'>;
 export type ChangesetPort = Pick<DomainServices, 'changesets'>;
 export type ExecutionPort = ProjectPathPort & Pick<DomainServices,
   'registry' | 'useCases' | 'rootDir' | 'pythonTool' | 'buildCliArgs' | 'withoutApprovalFlags'>;

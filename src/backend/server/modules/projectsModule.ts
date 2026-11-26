@@ -9,6 +9,7 @@
 import { binary, error, json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
 import type { CloneInclude, ProjectBundle, ProjectDeleteMode } from '../projectService';
+import { LocalModelService } from '../services/localModelService';
 import type { ProjectsPort } from '../../app/ports';
 
 type Payload = Record<string, unknown>;
@@ -54,7 +55,15 @@ function bodyExcept(payload: Payload, ...keys: string[]): Payload {
 export class ProjectsModule implements DomainModule {
   readonly name = 'projects';
 
-  constructor(private readonly services: ProjectsPort) {}
+  private readonly localModels: LocalModelService;
+
+  constructor(private readonly services: ProjectsPort) {
+    this.localModels = new LocalModelService({
+      rootDir: services.rootDir,
+      projects: services.projects,
+      invalidateLlmClient: () => services.invalidateLlmClient(),
+    });
+  }
 
   register(bus: MessageBus): void {
     bus.register<Payload>('projects.list', (payload, context) => this.list(payload, context));
@@ -68,6 +77,11 @@ export class ProjectsModule implements DomainModule {
     bus.register<Payload>('projects.stats', (payload) => this.stats(payload));
     bus.register<Payload>('projects.config.get', (payload) => this.configGet(payload));
     bus.register<Payload>('projects.config.put', (payload) => this.configPut(payload));
+    bus.register<Payload>('projects.gguf.list', (payload) => this.ggufList(payload));
+    bus.register<Payload>('projects.gguf.uploadStart', (payload) => this.ggufUploadStart(payload));
+    bus.register<Payload>('projects.gguf.uploadChunk', (payload) => this.ggufUploadChunk(payload));
+    bus.register<Payload>('projects.gguf.uploadFinalize', (payload) => this.ggufUploadFinalize(payload));
+    bus.register<Payload>('projects.gguf.activate', (payload) => this.ggufActivate(payload));
     bus.register<Payload>('projects.rename', (payload) => this.rename(payload));
     bus.register<Payload>('projects.delete', (payload) => this.remove(payload));
   }
@@ -188,6 +202,55 @@ export class ProjectsModule implements DomainModule {
       const patch = bodyExcept(payload, 'id', 'params', 'pathParams', 'projectId', 'X-Project-Id', 'x-project-id');
       const config = await this.services.projects.mergeProjectConfig(pathId(payload), patch);
       return json({ success: true, config });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufList(payload: Payload): Promise<ApiResult> {
+    try {
+      const result = await this.localModels.list();
+      return json({ success: true, ...result });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufUploadStart(payload: Payload): Promise<ApiResult> {
+    try {
+      const body = asRecord(payload.body) ?? payload;
+      const result = await this.localModels.startUpload(body.fileName, body.size, body.chunkCount);
+      return json({ success: true, ...result });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufUploadChunk(payload: Payload): Promise<ApiResult> {
+    try {
+      const body = asRecord(payload.body) ?? payload;
+      const result = await this.localModels.writeChunk(body.uploadId, body.chunkIndex, body.contentBase64);
+      return json({ success: true, ...result });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufUploadFinalize(payload: Payload): Promise<ApiResult> {
+    try {
+      const body = asRecord(payload.body) ?? payload;
+      const result = await this.localModels.finalizeUpload(body.uploadId);
+      return json({ success: true, ...result });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufActivate(payload: Payload): Promise<ApiResult> {
+    try {
+      const body = asRecord(payload.body) ?? payload;
+      const result = await this.localModels.activate(body.modelId);
+      return json({ success: true, ...result });
     } catch (err) {
       return failure(err);
     }

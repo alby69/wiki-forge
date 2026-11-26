@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upload GGUF e attivazione locale dalla Config UI — 2026-11-26
+
+- Nuove operazioni Admin `projects.gguf.list`, `uploadStart`, `uploadChunk`, `uploadFinalize` e `activate`: upload chunked base64 (4 MiB lato UI, 8 MiB limite server, 16 GiB totali), validazione basename/magic/dimensione e registro SHA256 in `.wiki-forge/llm/models.json`.
+- File finali in `models/`; l'attivazione aggiorna `[llm.local].enabled`, `[llm.local].model_path` e `[agent.llm].provider = "local"` nella config root e invalida il client LLM cacheato, senza riavvio.
+- Config Manager: sezione **Local GGUF (CPU-only)** nella scheda LLM con elenco modelli, path attivo, caricamento e pulsante **Use**; tutti i call passano da `ApiStorage` e dal bus tipizzato.
+- Baseline aggiornata: 110 route HTTP, 163 handler bus, 118 tool MCP, 32 gap noti invariati; test Node 601/601.
+
 ### Local CPU-only reasoning SLM — 2026-11-26
 
 - Nuovo provider additivo `[llm.local]` con `llama-cpp-python` lazy, GGUF Q4_K_M, `n_gpu_layers = 0` e streaming token per token.

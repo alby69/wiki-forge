@@ -73,7 +73,7 @@ escluso dalla proiezione wiki per evitare drift continuo.
 | `studio-sintesi` | [Tutorial](guida/TUTORIAL.md) FASE 4 |
 | `esportare` | [Tutorial](guida/TUTORIAL.md) FASE 5, [Tesi](guida/THESIS_GUIDE.md) |
 | `problematic` | [Tutorial](guida/TUTORIAL.md) §7 |
-| `progetti-config` | [Tutorial](guida/TUTORIAL.md) FASE 1, [Avvio](guida/STARTUP.md) |
+| `progetti-config` | [Tutorial](guida/TUTORIAL.md) FASE 1, [Avvio](guida/STARTUP.md), [Guida utente](guida/USER_GUIDE.md) §Local GGUF upload |
 | `modalita-dev` | [Automazione script](riferimenti/SCRIPT_AUTOMATION_REFERENCE.md), [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) |
 | `maturita-metriche` | [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) §9, [Metriche](riferimenti/METRICS.md) |
 | `wiki-di-wiki-forge` | [Self-wiki](standard/SELF_WIKI.md), `scripts/docs_to_wiki.py`, [Knowledge Engineering](processi/KNOWLEDGE_ENGINEERING.md) UC7/UC8 |

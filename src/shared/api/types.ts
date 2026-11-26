@@ -511,3 +511,14 @@ export interface UiPreferencesDto {
   language: 'it' | 'en';
   hiddenPanels: string[];
 }
+
+export interface LocalModelDto {
+  id: string;
+  name: string;
+  path: string;
+  relativePath: string;
+  size: number;
+  checksumSha256: string;
+  registeredAt: string;
+  active: boolean;
+}

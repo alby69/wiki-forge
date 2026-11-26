@@ -5,11 +5,11 @@
 > `src/frontend/components/chat/commandCatalog.ts`, `src/backend/server/agentServer.ts`
 > e `src/shared/mcp/definitions.ts`.
 
-- Route HTTP: **105**
-- Handler bus: **158**
+- Route HTTP: **110**
+- Handler bus: **163**
 - Comandi slash catalogati: **51**
 - Comandi slash con case dedicato: **20**
-- Tool MCP: **113**
+- Tool MCP: **118**
 - Gap noti: **32**
 
 ## Route HTTP
@@ -64,6 +64,11 @@
 | `projects.stats` | GET | `/api/projects/:id/stats` | sì |
 | `projects.config.get` | GET | `/api/projects/:id/config` | sì |
 | `projects.config.put` | PUT | `/api/projects/:id/config` | sì |
+| `projects.gguf.list` | GET | `/api/projects/:id/models/gguf` | sì |
+| `projects.gguf.uploadStart` | POST | `/api/projects/:id/models/gguf/start` | sì |
+| `projects.gguf.uploadChunk` | POST | `/api/projects/:id/models/gguf/chunk` | sì |
+| `projects.gguf.uploadFinalize` | POST | `/api/projects/:id/models/gguf/finalize` | sì |
+| `projects.gguf.activate` | POST | `/api/projects/:id/models/gguf/activate` | sì |
 | `projects.rename` | PATCH | `/api/projects/:id` | sì |
 | `projects.delete` | DELETE | `/api/projects/:id` | sì |
 | `changesets.list` | GET | `/api/v1/changesets` | sì |
@@ -230,6 +235,11 @@
 | `wf_projects_stats` | `projects.stats` | no | no |
 | `wf_projects_config_get` | `projects.config.get` | no | no |
 | `wf_projects_config_put` | `projects.config.put` | sì | no |
+| `wf_projects_gguf_list` | `projects.gguf.list` | no | no |
+| `wf_projects_gguf_uploadStart` | `projects.gguf.uploadStart` | sì | no |
+| `wf_projects_gguf_uploadChunk` | `projects.gguf.uploadChunk` | sì | no |
+| `wf_projects_gguf_uploadFinalize` | `projects.gguf.uploadFinalize` | sì | no |
+| `wf_projects_gguf_activate` | `projects.gguf.activate` | sì | no |
 | `wf_projects_rename` | `projects.rename` | sì | no |
 | `wf_projects_delete` | `projects.delete` | sì | no |
 | `wf_changesets_list` | `changesets.list` | no | no |

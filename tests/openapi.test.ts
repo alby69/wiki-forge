@@ -35,6 +35,12 @@ test('OpenAPI catalogue is the single source of truth', () => {
   assert.ok((doc.components as { schemas: Record<string, unknown> }).schemas.AuthIdentity);
   assert.ok(doc.paths['/api/wiki/save']?.post);
   assert.ok(doc.paths['/api/projects/{id}/config']?.put);
+  assert.ok(doc.paths['/api/projects/{id}/models/gguf']?.get);
+  assert.ok(doc.paths['/api/projects/{id}/models/gguf/start']?.post);
+  assert.ok(doc.paths['/api/projects/{id}/models/gguf/chunk']?.post);
+  assert.ok(doc.paths['/api/projects/{id}/models/gguf/finalize']?.post);
+  assert.ok(doc.paths['/api/projects/{id}/models/gguf/activate']?.post);
+  assert.ok((doc.components as { schemas: Record<string, unknown> }).schemas.LocalModel);
   assert.ok(doc.paths['/api/ke/schedule/{jobId}/run']?.post);
   assert.ok(doc.paths['/api/scripts/schedule']?.post);
   assert.ok(doc.paths['/api/scripts/schedule/{jobId}']?.delete);

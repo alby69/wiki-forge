@@ -5,7 +5,7 @@ icon: ⚙️
 order: 15
 group: ⚙️ Progetti e Dev Mode
 mode: both
-keywords: [progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, cartelle, clone, archivia, cestino, esporta, importa]
+keywords: [progetto, project, config, configurazione, impostazioni, wizard, onboarding, modello, llm, gguf, locale, cpu, cartelle, clone, archivia, cestino, esporta, importa]
 context: [config, wizard]
 ---
 
@@ -47,6 +47,12 @@ Apre le impostazioni del progetto attivo, divise in schede:
 | **Schema** | Schema tipizzato della wiki |
 
 Le modifiche vengono scritte direttamente su `config.toml` (fonte unica di verità) tramite le API del backend. La creazione e la cancellazione di progetti **non** sono più qui: usa il Project Manager.
+
+## Modelli GGUF locali (solo Admin)
+
+Nella scheda **LLM & Agent** puoi caricare un file `.gguf` scaricato da Hugging Face. L'upload è chunked in base64 (4 MiB per chunk, max 16 GiB / 4096 chunk): il backend verifica il magic `GGUF`, salva il file in `models/`, registra dimensione e SHA256 in `.wiki-forge/llm/models.json` e attiva subito `[llm.local]` con `[agent.llm].provider = "local"`. Nessun riavvio è necessario. Il pulsante **Use** su un modello già registrato cambia il modello attivo; ricaricare lo stesso nome sovrascrive il file mantenendone l'attivazione.
+
+Le operazioni Admin sono `projects.gguf.list`, `projects.gguf.uploadStart`, `projects.gguf.uploadChunk`, `projects.gguf.uploadFinalize` e `projects.gguf.activate`; passano tutte da `ApiStorage`, mai da `fetch` diretto nel frontend.
 
 ## Lingua e scorciatoie
 

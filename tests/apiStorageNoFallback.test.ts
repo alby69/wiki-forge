@@ -45,6 +45,45 @@ describe('ApiStorage: single facade and explicit failures', () => {
     assert.deepEqual(calls[0].options, { scopeQuery: true, baseUrl: 'http://example.test' });
   });
 
+  test('GGUF helpers dispatch typed operations through the shared bus', async () => {
+    const calls: Array<{ id: string; req: any }> = [];
+    const originalDispatch = apiBus.dispatch;
+    const model = {
+      id: 'model-1', name: 'tiny.gguf', path: '/models/tiny.gguf', relativePath: 'models/tiny.gguf',
+      size: 32, checksumSha256: 'a'.repeat(64), registeredAt: '2026-01-01T00:00:00.000Z', active: true,
+    };
+    (apiBus as any).dispatch = async (id: string, req: any) => {
+      calls.push({ id, req });
+      if (id === 'projects.gguf.list') return { success: true, models: [model], activeModelPath: model.relativePath };
+      if (id === 'projects.gguf.uploadStart') return { success: true, uploadId: 'upload-1' };
+      if (id === 'projects.gguf.uploadChunk') return { success: true, received: true, receivedChunks: 1 };
+      if (id === 'projects.gguf.uploadFinalize') return { success: true, model };
+      if (id === 'projects.gguf.activate') return { success: true, model, config: { llm: {}, agent: {} } };
+      throw new Error(`unexpected operation ${id}`);
+    };
+
+    try {
+      const storage = new ApiStorage('http://example.test');
+      assert.equal((await storage.listLocalModels('proj')).models.length, 1);
+      assert.equal(await storage.startGgufUpload('tiny.gguf', 32, 1, 'proj'), 'upload-1');
+      assert.equal(await storage.uploadGgufChunk('upload-1', 0, 'R0dVRg==', 'proj'), 1);
+      assert.equal((await storage.finalizeGgufUpload('upload-1', 'proj')).id, 'model-1');
+      assert.equal((await storage.activateLocalModel('model-1', 'proj')).model.id, 'model-1');
+    } finally {
+      (apiBus as any).dispatch = originalDispatch;
+    }
+
+    assert.deepEqual(calls.map((call) => call.id), [
+      'projects.gguf.list',
+      'projects.gguf.uploadStart',
+      'projects.gguf.uploadChunk',
+      'projects.gguf.uploadFinalize',
+      'projects.gguf.activate',
+    ]);
+    assert.deepEqual(calls[1].req.body, { fileName: 'tiny.gguf', size: 32, chunkCount: 1 });
+    assert.deepEqual(calls[4].req.body, { modelId: 'model-1' });
+  });
+
   test('failed API calls reject without a local filesystem fallback', async () => {
     const storage = new ApiStorage('http://storage.test');
     const seen: string[] = [];

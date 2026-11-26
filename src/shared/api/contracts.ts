@@ -219,6 +219,10 @@ export const SCHEMAS: Record<string, JsonSchema> = {
     id: str(), name: str(), path: str(), archived: bool(), docsManaged: bool(),
   }, ['id', 'name', 'path']),
   ProjectStats: obj({ notes: int(), sources: int(), assets: int(), bytes: int() }, ['notes', 'sources', 'assets', 'bytes']),
+  LocalModel: obj({
+    id: str(), name: str(), path: str(), relativePath: str(), size: int(),
+    checksumSha256: str(), registeredAt: str(), active: bool(),
+  }, ['id', 'name', 'path', 'relativePath', 'size', 'checksumSha256', 'registeredAt', 'active']),
   ProjectBundle: obj({ manifest: free(), files: free('Map of relative path to file contents') }, ['manifest', 'files']),
   HelpTopic: obj({
     id: str(), title: str(), icon: str(), order: int(), group: str(),
@@ -763,6 +767,53 @@ export const ROUTES = [
     command: 'projects.config.put',
     request: { params: [pathParam('id')], body: free('Partial config object') },
     response: { schema: ok({ config: free() }) },
+  }),
+  defineRoute({
+    id: 'projects.gguf.list', method: 'GET', path: '/api/projects/:id/models/gguf', tags: ['Projects', 'LLM'],
+    summary: 'List GGUF models registered for the local CPU-only provider',
+    command: 'projects.gguf.list',
+    request: { params: [pathParam('id')] },
+    response: { schema: ok({ models: arr(ref('LocalModel')), activeModelPath: str('Currently configured local model path') }) },
+  }),
+  defineRoute({
+    id: 'projects.gguf.uploadStart', method: 'POST', path: '/api/projects/:id/models/gguf/start', tags: ['Projects', 'LLM'],
+    summary: 'Start a chunked GGUF upload into the installation-wide models directory',
+    command: 'projects.gguf.uploadStart',
+    request: {
+      params: [pathParam('id')],
+      body: obj({
+        fileName: str('Basename ending in .gguf'),
+        size: int('Total file size in bytes'),
+        chunkCount: int('Number of chunks that will be uploaded'),
+      }, ['fileName', 'size', 'chunkCount']),
+    },
+    response: { schema: ok({ uploadId: str('Opaque upload session id') }) },
+  }),
+  defineRoute({
+    id: 'projects.gguf.uploadChunk', method: 'POST', path: '/api/projects/:id/models/gguf/chunk', tags: ['Projects', 'LLM'],
+    summary: 'Append one base64-encoded GGUF chunk to an upload session',
+    command: 'projects.gguf.uploadChunk',
+    request: {
+      params: [pathParam('id')],
+      body: obj({
+        uploadId: str(), chunkIndex: int('Zero-based chunk index'), contentBase64: str('Base64 chunk bytes'),
+      }, ['uploadId', 'chunkIndex', 'contentBase64']),
+    },
+    response: { schema: ok({ received: bool(), receivedChunks: int() }) },
+  }),
+  defineRoute({
+    id: 'projects.gguf.uploadFinalize', method: 'POST', path: '/api/projects/:id/models/gguf/finalize', tags: ['Projects', 'LLM'],
+    summary: 'Validate, register and activate-ready a completed GGUF upload',
+    command: 'projects.gguf.uploadFinalize',
+    request: { params: [pathParam('id')], body: obj({ uploadId: str() }, ['uploadId']) },
+    response: { schema: ok({ model: ref('LocalModel') }) },
+  }),
+  defineRoute({
+    id: 'projects.gguf.activate', method: 'POST', path: '/api/projects/:id/models/gguf/activate', tags: ['Projects', 'LLM'],
+    summary: 'Activate a registered GGUF for the local reasoning provider',
+    command: 'projects.gguf.activate',
+    request: { params: [pathParam('id')], body: obj({ modelId: str('Registered model id') }, ['modelId']) },
+    response: { schema: ok({ model: ref('LocalModel'), config: free('Effective root llm/agent config sections') }) },
   }),
   defineRoute({
     id: 'projects.rename', method: 'PATCH', path: '/api/projects/:id', tags: ['Projects'],

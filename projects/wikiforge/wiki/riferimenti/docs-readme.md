@@ -89,7 +89,7 @@ escluso dalla proiezione wiki per evitare drift continuo.
 | `studio-sintesi` | [Tutorial](../guida/tutorial.md) FASE 4 |
 | `esportare` | [Tutorial](../guida/tutorial.md) FASE 5, [Tesi](../guida/thesis-guide.md) |
 | `problematic` | [Tutorial](../guida/tutorial.md) §7 |
-| `progetti-config` | [Tutorial](../guida/tutorial.md) FASE 1, [Avvio](../guida/startup.md) |
+| `progetti-config` | [Tutorial](../guida/tutorial.md) FASE 1, [Avvio](../guida/startup.md), [Guida utente](../guida/user-guide.md) §Local GGUF upload |
 | `modalita-dev` | [Automazione script](script-automation-reference.md), [Knowledge Engineering](../processi/knowledge-engineering.md) |
 | `maturita-metriche` | [Knowledge Engineering](../processi/knowledge-engineering.md) §9, [Metriche](riferimenti/METRICS.md) |
 | `wiki-di-wiki-forge` | [Self-wiki](../standard/self-wiki.md), `scripts/docs_to_wiki.py`, [Knowledge Engineering](../processi/knowledge-engineering.md) UC7/UC8 |

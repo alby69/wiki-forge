@@ -119,6 +119,7 @@ export interface DomainServices
   projects: ProjectService;
   changesets: (projectId: ProjectId) => ChangesetStore | Promise<ChangesetStore>;
   bus: MessageBus;
+  invalidateLlmClient(): void;
   /** B5 — strict provenance is active only when enterprise.enable_rbac=true. */
   isStrictProvenance(): boolean;
   /** B5 — canonical, server-trusted actor. Ignores the body in strict mode. */

@@ -1,6 +1,24 @@
 import { ApiStorage } from '@frontend/storage/ApiStorage';
 import { setHelpContext, clearHelpContext } from '@frontend/core/helpContext';
 import { canUseOperation } from '@frontend/core/auth';
+import type { LocalModelDto } from '@shared/api/types';
+
+const GGUF_CHUNK_BYTES = 4 * 1024 * 1024;
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char] ?? char);
+}
+
+function bytesToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let index = 0; index < bytes.byteLength; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+  return btoa(binary);
+}
 
 /**
  * ConfigManager
@@ -14,6 +32,9 @@ export class ConfigManager {
   private onProjectChanged: () => void;
   private activeTab: 'general' | 'paths' | 'llm' | 'okf' | 'schema' = 'general';
   private currentConfig: Record<string, any> = {};
+  private localModels: LocalModelDto[] = [];
+  private activeModelPath = '';
+  private localModelStatus = '';
 
   constructor(storage: ApiStorage, onProjectChanged: () => void) {
     this.storage = storage;
@@ -34,6 +55,7 @@ export class ConfigManager {
     setHelpContext('config');
     const config = await this.storage.getProjectConfig();
     this.currentConfig = config || this.getDefaultConfig();
+    await this.refreshLocalModels();
     this.render();
   }
 
@@ -130,6 +152,55 @@ export class ConfigManager {
     this.attachEventListeners();
   }
 
+  private renderLocalModelsSection(): string {
+    if (!canUseOperation('projects.gguf.list')) {
+      return '<div style="font-size: 12px; color: #a0aec0;">Local GGUF management requires the Admin role.</div>';
+    }
+
+    const rows = this.localModels.length
+      ? this.localModels.map((model) => `
+          <div style="background: #23252b; border: 1px solid #2d3748; border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <div style="min-width: 0;">
+                <div style="font-size: 13px; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${escapeHtml(model.name)} ${model.active ? '<span style="color: #48bb78; font-size: 11px;">ACTIVE</span>' : ''}
+                </div>
+                <div style="font-size: 11px; color: #a0aec0; margin-top: 4px;">
+                  ${escapeHtml(model.relativePath)} · ${(model.size / 1024 / 1024).toFixed(1)} MiB · ${escapeHtml(model.checksumSha256.slice(0, 12))}
+                </div>
+              </div>
+              ${canUseOperation('projects.gguf.activate') && !model.active
+                ? `<button class="cfg-gguf-use" data-model-id="${escapeHtml(model.id)}" style="background: #2d3748; color: #e2e8f0; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; white-space: nowrap;">Use</button>`
+                : ''}
+            </div>
+          </div>
+        `).join('')
+      : '<div style="font-size: 12px; color: #a0aec0;">No GGUF models registered yet.</div>';
+
+    const upload = canUseOperation('projects.gguf.uploadStart')
+      ? `
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 10px;">
+            <input type="file" id="cfg-gguf-file" accept=".gguf" style="flex: 1; font-size: 12px; color: #a0aec0;" />
+            <button id="cfg-gguf-upload-btn" style="background: #3182ce; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;">Upload &amp; activate</button>
+          </div>
+        `
+      : '';
+
+    return `
+      <div style="border-top: 1px solid #2d3748; padding-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <div style="font-size: 13px; color: #64b5f6; font-weight: 600;">Local GGUF (CPU-only)</div>
+          <div style="font-size: 11px; color: #a0aec0; margin-top: 4px;">
+            Active path: <code>${escapeHtml(this.activeModelPath || '(none)')}</code>
+          </div>
+        </div>
+        <div>${rows}</div>
+        ${upload}
+        <div id="cfg-gguf-status" style="font-size: 12px; color: #a0aec0; min-height: 16px;">${escapeHtml(this.localModelStatus)}</div>
+      </div>
+    `;
+  }
+
   private renderTabContent(project: any, paths: any, llm: any, okf: any, typeVocab: string, schema: any): string {
     if (this.activeTab === 'general') {
       return `
@@ -191,6 +262,7 @@ export class ConfigManager {
               <option value="anthropic" ${llm.provider === 'anthropic' ? 'selected' : ''}>anthropic (Anthropic API)</option>
               <option value="openai_compatible" ${llm.provider === 'openai_compatible' ? 'selected' : ''}>openai_compatible (OpenAI / vLLM)</option>
               <option value="ollama" ${llm.provider === 'ollama' ? 'selected' : ''}>ollama (Local Ollama)</option>
+              <option value="local" ${llm.provider === 'local' ? 'selected' : ''}>local (GGUF CPU)</option>
             </select>
           </div>
           <div>
@@ -205,6 +277,7 @@ export class ConfigManager {
             <label style="display: block; font-size: 12px; color: #a0aec0; margin-bottom: 4px; font-weight: 600;">Timeout Seconds (timeout_seconds):</label>
             <input type="number" id="cfg-llm-timeout" value="${llm.timeout_seconds || 60}" style="width: 100%; background: #2d3748; border: 1px solid #4a5568; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 13px; box-sizing: border-box;" />
           </div>
+          ${this.renderLocalModelsSection()}
         </div>
       `;
     }
@@ -285,10 +358,26 @@ export class ConfigManager {
         const tab = target.getAttribute('data-tab') as any;
         if (tab) {
           this.activeTab = tab;
-          this.render();
+          if (tab === 'llm') {
+            void this.refreshLocalModels().then(() => this.render());
+          } else {
+            this.render();
+          }
         }
       });
     });
+
+    this.container.querySelectorAll<HTMLButtonElement>('.cfg-gguf-use').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const modelId = btn.getAttribute('data-model-id');
+        if (modelId) void this.activateModel(modelId);
+      });
+    });
+
+    const uploadBtn = this.container.querySelector<HTMLButtonElement>('#cfg-gguf-upload-btn');
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', () => void this.uploadGgufModel(uploadBtn));
+    }
 
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
@@ -306,6 +395,75 @@ export class ConfigManager {
           }
         }
       });
+    }
+  }
+
+  private setLocalModelStatus(message: string, isError: boolean = false): void {
+    this.localModelStatus = message;
+    const el = this.container.querySelector('#cfg-gguf-status') as HTMLElement | null;
+    if (el) {
+      el.textContent = message;
+      el.style.color = isError ? '#e53e3e' : '#a0aec0';
+    }
+  }
+
+  private async refreshLocalModels(): Promise<void> {
+    if (!canUseOperation('projects.gguf.list')) return;
+    try {
+      const result = await this.storage.listLocalModels();
+      this.localModels = result.models;
+      this.activeModelPath = result.activeModelPath;
+    } catch (err) {
+      this.localModelStatus = `Unable to load local models: ${String(err)}`;
+    }
+  }
+
+  private async activateModel(modelId: string): Promise<void> {
+    try {
+      this.setLocalModelStatus('Activating local GGUF model...');
+      const result = await this.storage.activateLocalModel(modelId);
+      if (!this.currentConfig.agent) this.currentConfig.agent = {};
+      if (!this.currentConfig.agent.llm) this.currentConfig.agent.llm = {};
+      this.currentConfig.agent.llm.provider = 'local';
+      this.localModelStatus = `Active model: ${result.model.name}`;
+      await this.refreshLocalModels();
+      this.render();
+    } catch (err) {
+      this.setLocalModelStatus(`Activation failed: ${String(err)}`, true);
+    }
+  }
+
+  private async uploadGgufModel(button: HTMLButtonElement): Promise<void> {
+    const input = this.container.querySelector('#cfg-gguf-file') as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) {
+      this.setLocalModelStatus('Select a .gguf file first.', true);
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.gguf')) {
+      this.setLocalModelStatus('Only .gguf files are supported.', true);
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      const chunkCount = Math.max(1, Math.ceil(file.size / GGUF_CHUNK_BYTES));
+      this.setLocalModelStatus(`Uploading ${file.name} (${chunkCount} chunks)...`);
+      const uploadId = await this.storage.startGgufUpload(file.name, file.size, chunkCount);
+      for (let index = 0; index < chunkCount; index += 1) {
+        const start = index * GGUF_CHUNK_BYTES;
+        const end = Math.min(start + GGUF_CHUNK_BYTES, file.size);
+        const buffer = await file.slice(start, end).arrayBuffer();
+        const received = await this.storage.uploadGgufChunk(uploadId, index, bytesToBase64(buffer));
+        this.setLocalModelStatus(`Uploading ${file.name} (${received}/${chunkCount} chunks)...`);
+      }
+      this.setLocalModelStatus('Validating GGUF model...');
+      const model = await this.storage.finalizeGgufUpload(uploadId);
+      this.localModelStatus = `Registered ${model.name}; activating...`;
+      await this.activateModel(model.id);
+    } catch (err) {
+      this.setLocalModelStatus(`Upload failed: ${String(err)}`, true);
+      button.disabled = false;
     }
   }
 

@@ -359,6 +359,7 @@ export class AgentServer {
     const services: DomainServices = {
       bus: this.bus,
       projects: this.projects,
+      invalidateLlmClient: () => this.invalidateLlmClient(),
       isStrictProvenance: () => this.strictProvenance,
       provenanceActor: (principal, rawActor) => this.provenanceActorFor(principal, rawActor),
       changesets: async (projectId) => new ChangesetStore(await this.resolveProjectRoot(projectId), {
@@ -550,6 +551,10 @@ export class AgentServer {
 
   public setLlmClient(client: LlmClient): void {
     this.llmClient = client;
+  }
+
+  public invalidateLlmClient(): void {
+    this.llmClient = undefined;
   }
 
   private async getOrInitLlmClient(): Promise<LlmClient> {

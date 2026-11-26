@@ -33,6 +33,16 @@ describe('progressive capability matrix', () => {
     assert.equal(canUseOperation(['Admin'], 'schedule.approvalDecision'), true);
     assert.equal(canUseOperation(['Contributor'], 'graph.reconcile'), false);
     assert.equal(canUseOperation(['KnowledgeEngineer'], 'graph.reconcile'), true);
+    for (const id of [
+      'projects.gguf.list',
+      'projects.gguf.uploadStart',
+      'projects.gguf.uploadChunk',
+      'projects.gguf.uploadFinalize',
+      'projects.gguf.activate',
+    ]) {
+      assert.equal(canUseOperation(['KnowledgeEngineer'], id), false, `${id} must be Admin-only`);
+      assert.equal(canUseOperation(['Admin'], id), true, `${id} must be available to Admin`);
+    }
   });
 
   it('maps UI actions to the intended tier', () => {

@@ -29,6 +29,75 @@ configured. The model is never loaded on startup; the first request reports a
 clear error if the GGUF file is missing. Streamed `<think>...</think>` blocks
 appear as collapsible traces in chat and critique output.
 
+### Upload a GGUF from the UI (Admin)
+
+1. Download a quantized model from Hugging Face, for example
+   `huggingface-cli download <repo> <file>.Q4_K_M.gguf --local-dir /tmp/wf-models`.
+   Prefer `Q4_K_M` for CPU-only inference; the file must keep a `.gguf` basename.
+2. Open **⚙️ Config → LLM & Agent** in Developer Mode. The **Local GGUF (CPU-only)**
+   section lists registered models and the active path from `config/config.toml`.
+3. Choose the downloaded `.gguf` in the file picker and press **Upload & activate**.
+   The browser sends 4 MiB base64 chunks; the maximum accepted size is 16 GiB
+   and 4096 chunks.
+4. Wait for `Registered <name>; activating...`: the backend verifies the `GGUF`
+   magic, computes SHA256, writes `models/<name>.gguf`, and sets
+   `[agent.llm].provider = "local"` plus `[llm.local].model_path`.
+5. Close the dialog and use the chat normally. The first request loads the model;
+   `<think>` traces are collapsible. No restart is required.
+6. To switch model, press **Use** on another registered row. Re-uploading the
+   same basename replaces the file and keeps it active if it was active.
+
+### Upload through the API (Admin)
+
+All calls use `X-WikiForge-Token` when a gateway token is configured. The route
+`:id` selects the API project scope; the model registry itself is installation-wide.
+
+```bash
+curl -fsS http://localhost:3001/api/projects/default/models/gguf \
+  -H "X-WikiForge-Token: $WIKIFORGE_API_TOKEN" | jq .
+```
+
+Use this Python snippet for the full four-call upload/activation flow:
+
+```python
+import base64
+import json
+import os
+import urllib.request
+
+base = "http://localhost:3001/api/projects/default/models/gguf"
+token = os.environ.get("WIKIFORGE_API_TOKEN", "")
+headers = {"Content-Type": "application/json"}
+if token:
+    headers["X-WikiForge-Token"] = token
+path = "/tmp/wf-models/model.Q4_K_M.gguf"
+name = os.path.basename(path)
+size = os.path.getsize(path)
+chunk_bytes = 4 * 1024 * 1024
+chunks = (size + chunk_bytes - 1) // chunk_bytes
+
+def call(action, payload=None):
+    method = "GET" if payload is None else "POST"
+    body = None if payload is None else json.dumps(payload).encode()
+    request = urllib.request.Request(base + action, data=body, headers=headers, method=method)
+    with urllib.request.urlopen(request) as response:
+        return json.load(response)
+
+started = call("/start", {"fileName": name, "size": size, "chunkCount": chunks})
+upload_id = started["uploadId"]
+with open(path, "rb") as model:
+    for index in range(chunks):
+        content = model.read(chunk_bytes)
+        call("/chunk", {
+            "uploadId": upload_id,
+            "chunkIndex": index,
+            "contentBase64": base64.b64encode(content).decode("ascii"),
+        })
+model = call("/finalize", {"uploadId": upload_id})["model"]
+call("/activate", {"modelId": model["id"]})
+print(json.dumps(model, indent=2))
+```
+
 ## Markdown Editor & Toolbar
 When editing notes, the editor view includes a built-in formatting toolbar:
 - **Undo / Redo**: **↩️ Undo** and **↪️ Redo** buttons with dynamic state enabling/disabling, plus standard keyboard shortcuts (`Ctrl+Z` / `Ctrl+Y`).

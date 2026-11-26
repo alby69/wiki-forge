@@ -39,7 +39,7 @@ import {
 } from '@frontend/core/apiFacade';
 import { ApiClientError } from '@frontend/api/client';
 import type { EndpointId, EndpointRequest, EndpointResponse } from '@shared/api/contracts';
-import type { WikiGraphDto } from '@shared/api/types';
+import type { LocalModelDto, WikiGraphDto } from '@shared/api/types';
 
 export { ACTIVE_PROJECT_KEY, getActiveProjectId, resolveApiBaseUrl };
 
@@ -179,6 +179,66 @@ export class ApiStorage implements IStorage {
       // Fallback
     }
     return false;
+  }
+
+  public async listLocalModels(projectId?: string): Promise<{ models: LocalModelDto[]; activeModelPath: string }> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.list', { params: { id } });
+    this.requireOk(json, 'projects.gguf.list failed');
+    return { models: json.models, activeModelPath: json.activeModelPath };
+  }
+
+  public async startGgufUpload(
+    fileName: string,
+    size: number,
+    chunkCount: number,
+    projectId?: string,
+  ): Promise<string> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.uploadStart', {
+      params: { id },
+      body: { fileName, size, chunkCount },
+    });
+    this.requireOk(json, 'projects.gguf.uploadStart failed');
+    return json.uploadId;
+  }
+
+  public async uploadGgufChunk(
+    uploadId: string,
+    chunkIndex: number,
+    contentBase64: string,
+    projectId?: string,
+  ): Promise<number> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.uploadChunk', {
+      params: { id },
+      body: { uploadId, chunkIndex, contentBase64 },
+    });
+    this.requireOk(json, 'projects.gguf.uploadChunk failed');
+    return json.receivedChunks;
+  }
+
+  public async finalizeGgufUpload(uploadId: string, projectId?: string): Promise<LocalModelDto> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.uploadFinalize', {
+      params: { id },
+      body: { uploadId },
+    });
+    this.requireOk(json, 'projects.gguf.uploadFinalize failed');
+    return json.model;
+  }
+
+  public async activateLocalModel(
+    modelId: string,
+    projectId?: string,
+  ): Promise<{ model: LocalModelDto; config: Record<string, unknown> }> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.activate', {
+      params: { id },
+      body: { modelId },
+    });
+    this.requireOk(json, 'projects.gguf.activate failed');
+    return { model: json.model, config: json.config as Record<string, unknown> };
   }
 
   public async deleteProject(projectId: string, deleteFolder: boolean = false): Promise<boolean> {

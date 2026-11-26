@@ -624,6 +624,71 @@ export const COMMAND_MANIFEST: CommandManifest = {
       "hasBusHandler": true
     },
     {
+      "id": "projects.gguf.list",
+      "method": "GET",
+      "path": "/api/projects/:id/models/gguf",
+      "command": "projects.gguf.list",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
+      "id": "projects.gguf.uploadStart",
+      "method": "POST",
+      "path": "/api/projects/:id/models/gguf/start",
+      "command": "projects.gguf.uploadStart",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
+      "id": "projects.gguf.uploadChunk",
+      "method": "POST",
+      "path": "/api/projects/:id/models/gguf/chunk",
+      "command": "projects.gguf.uploadChunk",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
+      "id": "projects.gguf.uploadFinalize",
+      "method": "POST",
+      "path": "/api/projects/:id/models/gguf/finalize",
+      "command": "projects.gguf.uploadFinalize",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
+      "id": "projects.gguf.activate",
+      "method": "POST",
+      "path": "/api/projects/:id/models/gguf/activate",
+      "command": "projects.gguf.activate",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
       "id": "projects.rename",
       "method": "PATCH",
       "path": "/api/projects/:id",
@@ -1398,6 +1463,11 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "projects.delete",
     "projects.export",
     "projects.exportMarkdownZip",
+    "projects.gguf.activate",
+    "projects.gguf.list",
+    "projects.gguf.uploadChunk",
+    "projects.gguf.uploadFinalize",
+    "projects.gguf.uploadStart",
     "projects.import",
     "projects.list",
     "projects.rename",
@@ -3688,6 +3758,251 @@ export const COMMAND_MANIFEST: CommandManifest = {
             "type": "object",
             "additionalProperties": true,
             "description": "Partial config object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_list",
+      "operationId": "projects.gguf.list",
+      "description": "List GGUF models registered for the local CPU-only provider · GET /api/projects/:id/models/gguf",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": false,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_uploadStart",
+      "operationId": "projects.gguf.uploadStart",
+      "description": "Start a chunked GGUF upload into the installation-wide models directory · POST /api/projects/:id/models/gguf/start",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "fileName": {
+                "type": "string",
+                "description": "Basename ending in .gguf"
+              },
+              "size": {
+                "type": "integer",
+                "description": "Total file size in bytes"
+              },
+              "chunkCount": {
+                "type": "integer",
+                "description": "Number of chunks that will be uploaded"
+              }
+            },
+            "required": [
+              "fileName",
+              "size",
+              "chunkCount"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_uploadChunk",
+      "operationId": "projects.gguf.uploadChunk",
+      "description": "Append one base64-encoded GGUF chunk to an upload session · POST /api/projects/:id/models/gguf/chunk",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "uploadId": {
+                "type": "string"
+              },
+              "chunkIndex": {
+                "type": "integer",
+                "description": "Zero-based chunk index"
+              },
+              "contentBase64": {
+                "type": "string",
+                "description": "Base64 chunk bytes"
+              }
+            },
+            "required": [
+              "uploadId",
+              "chunkIndex",
+              "contentBase64"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_uploadFinalize",
+      "operationId": "projects.gguf.uploadFinalize",
+      "description": "Validate, register and activate-ready a completed GGUF upload · POST /api/projects/:id/models/gguf/finalize",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "uploadId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "uploadId"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_activate",
+      "operationId": "projects.gguf.activate",
+      "description": "Activate a registered GGUF for the local reasoning provider · POST /api/projects/:id/models/gguf/activate",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "modelId": {
+                "type": "string",
+                "description": "Registered model id"
+              }
+            },
+            "required": [
+              "modelId"
+            ]
           }
         },
         "additionalProperties": false
