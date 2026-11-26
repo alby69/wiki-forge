@@ -108,6 +108,16 @@ timeout_seconds = 30
     assert.deepEqual(parsed.agentLlmConfig.opencode_args, ['run', '--format', 'json']);
   });
 
+  await t.test('parseConfigToml honours WIKIFORGE_LLM_PROVIDER override', () => {
+    process.env.WIKIFORGE_LLM_PROVIDER = 'opencode';
+    try {
+      const parsed = parseConfigToml('[agent.llm]\nprovider = "local"\n');
+      assert.equal(parsed.agentLlmConfig.provider, 'opencode');
+    } finally {
+      delete process.env.WIKIFORGE_LLM_PROVIDER;
+    }
+  });
+
   await t.test('parseConfigToml reads llm.local CPU settings', () => {
     const parsed = parseConfigToml(`
 [llm.local]

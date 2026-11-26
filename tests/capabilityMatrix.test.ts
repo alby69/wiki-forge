@@ -39,6 +39,7 @@ describe('progressive capability matrix', () => {
       'projects.gguf.uploadChunk',
       'projects.gguf.uploadFinalize',
       'projects.gguf.activate',
+      'projects.gguf.deactivate',
     ]) {
       assert.equal(canUseOperation(['KnowledgeEngineer'], id), false, `${id} must be Admin-only`);
       assert.equal(canUseOperation(['Admin'], id), true, `${id} must be available to Admin`);

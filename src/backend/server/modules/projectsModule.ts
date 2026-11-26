@@ -82,6 +82,7 @@ export class ProjectsModule implements DomainModule {
     bus.register<Payload>('projects.gguf.uploadChunk', (payload) => this.ggufUploadChunk(payload));
     bus.register<Payload>('projects.gguf.uploadFinalize', (payload) => this.ggufUploadFinalize(payload));
     bus.register<Payload>('projects.gguf.activate', (payload) => this.ggufActivate(payload));
+    bus.register<Payload>('projects.gguf.deactivate', () => this.ggufDeactivate());
     bus.register<Payload>('projects.rename', (payload) => this.rename(payload));
     bus.register<Payload>('projects.delete', (payload) => this.remove(payload));
   }
@@ -201,6 +202,7 @@ export class ProjectsModule implements DomainModule {
     try {
       const patch = bodyExcept(payload, 'id', 'params', 'pathParams', 'projectId', 'X-Project-Id', 'x-project-id');
       const config = await this.services.projects.mergeProjectConfig(pathId(payload), patch);
+      this.services.invalidateLlmClient();
       return json({ success: true, config });
     } catch (err) {
       return failure(err);
@@ -250,6 +252,15 @@ export class ProjectsModule implements DomainModule {
     try {
       const body = asRecord(payload.body) ?? payload;
       const result = await this.localModels.activate(body.modelId);
+      return json({ success: true, ...result });
+    } catch (err) {
+      return failure(err);
+    }
+  }
+
+  private async ggufDeactivate(): Promise<ApiResult> {
+    try {
+      const result = await this.localModels.deactivate();
       return json({ success: true, ...result });
     } catch (err) {
       return failure(err);

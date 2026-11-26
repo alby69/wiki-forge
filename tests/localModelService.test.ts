@@ -103,4 +103,32 @@ describe('Local GGUF model registry', () => {
     assert.equal(listed.activeModelPath, 'models/activated.gguf');
     assert.equal(listed.models[0].active, true);
   });
+
+  it('deactivates the local GGUF, restores the previous provider and invalidates the cached LLM client', async () => {
+    await projects.mergeProjectConfig('default', {
+      agent: { llm: { provider: 'opencode', model: 'claude-sonnet-4-6' } },
+    });
+    const { model } = await upload(Buffer.concat([Buffer.from('GGUF'), Buffer.alloc(12, 3)]), 'restorable.gguf');
+    await models.activate(model.id);
+    assert.equal(invalidations, 1);
+
+    const result = await models.deactivate();
+    assert.equal(result.activeModelPath, '');
+    assert.equal(result.provider, 'opencode');
+    assert.equal(invalidations, 2);
+
+    const config = await projects.readProjectConfig('default');
+    assert.deepEqual((config.agent as Record<string, unknown>).llm, {
+      provider: 'opencode',
+      model: 'claude-sonnet-4-6',
+    });
+    assert.deepEqual((config.llm as Record<string, unknown>).local, {
+      enabled: false,
+      model_path: '',
+    });
+
+    const listed = await models.list();
+    assert.equal(listed.activeModelPath, '');
+    assert.equal(listed.models[0].active, false);
+  });
 });

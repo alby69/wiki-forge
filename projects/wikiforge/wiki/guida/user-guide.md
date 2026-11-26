@@ -64,6 +64,11 @@ appear as collapsible traces in chat and critique output.
    `<think>` traces are collapsible. No restart is required.
 6. To switch model, press **Use** on another registered row. Re-uploading the
    same basename replaces the file and keeps it active if it was active.
+7. To return to a cloud/CLI provider, press **Deactivate** next to the active
+   path. It clears `[llm.local].model_path`, disables `[llm.local]`, and restores
+   the provider that was active before activation (`opencode` by default). No
+   Docker restart is needed; changing **LLM Provider** and saving also takes
+   effect immediately.
 
 ### Upload through the API (Admin)
 

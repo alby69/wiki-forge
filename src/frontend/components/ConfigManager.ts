@@ -187,11 +187,16 @@ export class ConfigManager {
 
     return `
       <div style="border-top: 1px solid #2d3748; padding-top: 14px; display: flex; flex-direction: column; gap: 10px;">
-        <div>
-          <div style="font-size: 13px; color: #64b5f6; font-weight: 600;">Local GGUF (CPU-only)</div>
-          <div style="font-size: 11px; color: #a0aec0; margin-top: 4px;">
-            Active path: <code>${escapeHtml(this.activeModelPath || '(none)')}</code>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div>
+            <div style="font-size: 13px; color: #64b5f6; font-weight: 600;">Local GGUF (CPU-only)</div>
+            <div style="font-size: 11px; color: #a0aec0; margin-top: 4px;">
+              Active path: <code>${escapeHtml(this.activeModelPath || '(none)')}</code>
+            </div>
           </div>
+          ${this.activeModelPath && canUseOperation('projects.gguf.deactivate')
+            ? `<button id="cfg-gguf-deactivate-btn" style="background: #2d3748; color: #e2e8f0; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; white-space: nowrap;">Deactivate</button>`
+            : ''}
         </div>
         <div>${rows}</div>
         ${upload}
@@ -378,6 +383,11 @@ export class ConfigManager {
       uploadBtn.addEventListener('click', () => void this.uploadGgufModel(uploadBtn));
     }
 
+    const deactivateBtn = this.container.querySelector<HTMLButtonElement>('#cfg-gguf-deactivate-btn');
+    if (deactivateBtn) {
+      deactivateBtn.addEventListener('click', () => void this.deactivateModel());
+    }
+
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
         this.updateCurrentConfigFromDOM();
@@ -429,6 +439,22 @@ export class ConfigManager {
       this.render();
     } catch (err) {
       this.setLocalModelStatus(`Activation failed: ${String(err)}`, true);
+    }
+  }
+
+  private async deactivateModel(): Promise<void> {
+    try {
+      this.setLocalModelStatus('Disabling local GGUF model...');
+      const result = await this.storage.deactivateLocalModel();
+      if (!this.currentConfig.agent) this.currentConfig.agent = {};
+      if (!this.currentConfig.agent.llm) this.currentConfig.agent.llm = {};
+      this.currentConfig.agent.llm.provider = result.provider;
+      this.activeModelPath = result.activeModelPath;
+      this.setLocalModelStatus(`Local GGUF disabled; provider restored to ${result.provider}.`);
+      await this.refreshLocalModels();
+      this.render();
+    } catch (err) {
+      this.setLocalModelStatus(`Deactivation failed: ${String(err)}`, true);
     }
   }
 

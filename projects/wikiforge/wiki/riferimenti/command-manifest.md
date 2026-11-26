@@ -21,11 +21,11 @@ sources:
 > `src/frontend/components/chat/commandCatalog.ts`, `src/backend/server/agentServer.ts`
 > e `src/shared/mcp/definitions.ts`.
 
-- Route HTTP: **110**
-- Handler bus: **163**
+- Route HTTP: **111**
+- Handler bus: **164**
 - Comandi slash catalogati: **51**
 - Comandi slash con case dedicato: **20**
-- Tool MCP: **118**
+- Tool MCP: **119**
 - Gap noti: **32**
 
 ## Route HTTP
@@ -85,6 +85,7 @@ sources:
 | `projects.gguf.uploadChunk` | POST | `/api/projects/:id/models/gguf/chunk` | sì |
 | `projects.gguf.uploadFinalize` | POST | `/api/projects/:id/models/gguf/finalize` | sì |
 | `projects.gguf.activate` | POST | `/api/projects/:id/models/gguf/activate` | sì |
+| `projects.gguf.deactivate` | POST | `/api/projects/:id/models/gguf/deactivate` | sì |
 | `projects.rename` | PATCH | `/api/projects/:id` | sì |
 | `projects.delete` | DELETE | `/api/projects/:id` | sì |
 | `changesets.list` | GET | `/api/v1/changesets` | sì |
@@ -256,6 +257,7 @@ sources:
 | `wf_projects_gguf_uploadChunk` | `projects.gguf.uploadChunk` | sì | no |
 | `wf_projects_gguf_uploadFinalize` | `projects.gguf.uploadFinalize` | sì | no |
 | `wf_projects_gguf_activate` | `projects.gguf.activate` | sì | no |
+| `wf_projects_gguf_deactivate` | `projects.gguf.deactivate` | sì | no |
 | `wf_projects_rename` | `projects.rename` | sì | no |
 | `wf_projects_delete` | `projects.delete` | sì | no |
 | `wf_changesets_list` | `changesets.list` | no | no |

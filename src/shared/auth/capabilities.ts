@@ -130,6 +130,7 @@ export const OPERATION_MIN_ROLE: Record<string, CapabilityRole> = {
   'cmd.wizard': 'Admin',
   'projects.config.put': 'Admin',
   'projects.gguf.activate': 'Admin',
+  'projects.gguf.deactivate': 'Admin',
   'projects.gguf.list': 'Admin',
   'projects.gguf.uploadChunk': 'Admin',
   'projects.gguf.uploadFinalize': 'Admin',

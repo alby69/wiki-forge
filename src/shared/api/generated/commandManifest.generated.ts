@@ -689,6 +689,19 @@ export const COMMAND_MANIFEST: CommandManifest = {
       "hasBusHandler": true
     },
     {
+      "id": "projects.gguf.deactivate",
+      "method": "POST",
+      "path": "/api/projects/:id/models/gguf/deactivate",
+      "command": "projects.gguf.deactivate",
+      "tags": [
+        "Projects",
+        "LLM"
+      ],
+      "projectScoped": false,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
       "id": "projects.rename",
       "method": "PATCH",
       "path": "/api/projects/:id",
@@ -1464,6 +1477,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "projects.export",
     "projects.exportMarkdownZip",
     "projects.gguf.activate",
+    "projects.gguf.deactivate",
     "projects.gguf.list",
     "projects.gguf.uploadChunk",
     "projects.gguf.uploadFinalize",
@@ -4003,6 +4017,45 @@ export const COMMAND_MANIFEST: CommandManifest = {
             "required": [
               "modelId"
             ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_projects_gguf_deactivate",
+      "operationId": "projects.gguf.deactivate",
+      "description": "Disable the active GGUF and restore the previous LLM provider · POST /api/projects/:id/models/gguf/deactivate",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "additionalProperties": true
           }
         },
         "additionalProperties": false

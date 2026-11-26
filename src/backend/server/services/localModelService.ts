@@ -30,6 +30,7 @@ interface ModelRegistry {
   version: 1;
   models: LocalModelDto[];
   activeId?: string;
+  activeProviderBefore?: string;
 }
 
 export interface LocalModelDependencies {
@@ -222,6 +223,12 @@ export class LocalModelService {
     assertInside(this.modelsDir, absolute);
     await fs.access(absolute);
 
+    const current = await this.deps.projects.readProjectConfig('default');
+    const agentConfig = current.agent as Record<string, unknown> | undefined;
+    const currentLlm = agentConfig?.llm as Record<string, unknown> | undefined;
+    const previousProvider = typeof currentLlm?.provider === 'string' ? currentLlm.provider : '';
+    if (previousProvider && previousProvider !== 'local') registry.activeProviderBefore = previousProvider;
+
     const config = await this.deps.projects.mergeProjectConfig('default', {
       llm: { local: { enabled: true, model_path: model.relativePath } },
       agent: { llm: { provider: 'local' } },
@@ -233,6 +240,32 @@ export class LocalModelService {
 
     return {
       model: { ...model, active: true },
+      config: {
+        llm: (config.llm ?? {}) as Record<string, unknown>,
+        agent: (config.agent ?? {}) as Record<string, unknown>,
+      },
+    };
+  }
+
+  public async deactivate(): Promise<{ activeModelPath: string; provider: string; config: Record<string, unknown> }> {
+    const registry = await this.readRegistry();
+    const provider = registry.activeProviderBefore && registry.activeProviderBefore !== 'local'
+      ? registry.activeProviderBefore
+      : 'opencode';
+
+    const config = await this.deps.projects.mergeProjectConfig('default', {
+      llm: { local: { enabled: false, model_path: '' } },
+      agent: { llm: { provider } },
+    });
+    registry.activeId = undefined;
+    registry.activeProviderBefore = undefined;
+    registry.models = registry.models.map((entry) => ({ ...entry, active: false }));
+    await this.writeRegistry(registry);
+    this.deps.invalidateLlmClient();
+
+    return {
+      activeModelPath: '',
+      provider,
       config: {
         llm: (config.llm ?? {}) as Record<string, unknown>,
         agent: (config.agent ?? {}) as Record<string, unknown>,

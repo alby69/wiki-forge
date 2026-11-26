@@ -59,6 +59,9 @@ describe('ApiStorage: single facade and explicit failures', () => {
       if (id === 'projects.gguf.uploadChunk') return { success: true, received: true, receivedChunks: 1 };
       if (id === 'projects.gguf.uploadFinalize') return { success: true, model };
       if (id === 'projects.gguf.activate') return { success: true, model, config: { llm: {}, agent: {} } };
+      if (id === 'projects.gguf.deactivate') {
+        return { success: true, activeModelPath: '', provider: 'opencode', config: { llm: {}, agent: {} } };
+      }
       throw new Error(`unexpected operation ${id}`);
     };
 
@@ -69,6 +72,7 @@ describe('ApiStorage: single facade and explicit failures', () => {
       assert.equal(await storage.uploadGgufChunk('upload-1', 0, 'R0dVRg==', 'proj'), 1);
       assert.equal((await storage.finalizeGgufUpload('upload-1', 'proj')).id, 'model-1');
       assert.equal((await storage.activateLocalModel('model-1', 'proj')).model.id, 'model-1');
+      assert.equal((await storage.deactivateLocalModel('proj')).provider, 'opencode');
     } finally {
       (apiBus as any).dispatch = originalDispatch;
     }
@@ -79,6 +83,7 @@ describe('ApiStorage: single facade and explicit failures', () => {
       'projects.gguf.uploadChunk',
       'projects.gguf.uploadFinalize',
       'projects.gguf.activate',
+      'projects.gguf.deactivate',
     ]);
     assert.deepEqual(calls[1].req.body, { fileName: 'tiny.gguf', size: 32, chunkCount: 1 });
     assert.deepEqual(calls[4].req.body, { modelId: 'model-1' });

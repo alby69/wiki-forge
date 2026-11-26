@@ -262,6 +262,10 @@ export type EndpointTypes = {
     req: WithParamsBody<{ id: string | number }, { modelId: string }>;
     res: Ok<{ model: LocalModelDto; config: Json }>;
   };
+  'projects.gguf.deactivate': {
+    req: WithParams<{ id: string | number }>;
+    res: Ok<{ activeModelPath: string; provider: string; config: Json }>;
+  };
   'projects.rename': {
     req: WithParamsBody<{ id: string | number }, { name: string }>;
     res: Ok<{ project: ProjectEntryDto }>;

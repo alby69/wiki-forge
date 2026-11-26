@@ -28,13 +28,13 @@ sono stati accorpati in [architettura](docs/architettura/ARCHITECTURE.md),
 | Valutazione OKF upstream v0.3 | ✅ | [OKF spec](docs/standard/OKF_SPEC.md) |
 | A10: E2E Playwright e soglie di copertura CI | ✅ | `.github/workflows/test.yml` |
 | Motore di reasoning SLM locale CPU-only con SSE `<think>` | ✅ | [Architettura](docs/architettura/ARCHITECTURE.md) |
-| Upload GGUF chunked e attivazione locale dalla Config UI | ✅ | [Guida utente](docs/guida/USER_GUIDE.md) |
+| Upload GGUF chunked, attivazione e disattivazione locale dalla Config UI | ✅ | [Guida utente](docs/guida/USER_GUIDE.md) |
 
-Baseline verificata: **110 route HTTP**, **163 handler bus** in 20 moduli,
+Baseline verificata: **111 route HTTP**, **164 handler bus** in 20 moduli,
 **51 comandi slash / 20 con caso dedicato**, **118 tool MCP**, **32 gap noti**,
 zero gap `route-without-bus`. `npm run manifest:check` applica l'invariante.
 Verifica corrente: `npm run verify` con venv Python da `requirements.txt`
-esegue docs/wiki/registry/manifest, typecheck, build, `npm test` 602/602, pytest
+esegue docs/wiki/registry/manifest, typecheck, build, `npm test` 604/604, pytest
 168/168, E2E Playwright 1/1 e gate copertura `scripts/` 26% (soglia 24%) e
 `semantics/` 64% (soglia 64%).
 `git diff --check` resta verde.

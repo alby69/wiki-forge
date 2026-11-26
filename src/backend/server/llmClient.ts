@@ -687,9 +687,11 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
     }
   }
 
+  const providerOverride = process.env.WIKIFORGE_LLM_PROVIDER?.trim();
+
   return {
     agentLlmConfig: {
-      provider,
+      provider: providerOverride || provider,
       opencode_command: opencodeCommand,
       opencode_args: opencodeArgs,
       api_base_url: apiBaseUrl,

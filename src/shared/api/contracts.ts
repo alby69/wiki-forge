@@ -816,6 +816,13 @@ export const ROUTES = [
     response: { schema: ok({ model: ref('LocalModel'), config: free('Effective root llm/agent config sections') }) },
   }),
   defineRoute({
+    id: 'projects.gguf.deactivate', method: 'POST', path: '/api/projects/:id/models/gguf/deactivate', tags: ['Projects', 'LLM'],
+    summary: 'Disable the active GGUF and restore the previous LLM provider',
+    command: 'projects.gguf.deactivate',
+    request: { params: [pathParam('id')] },
+    response: { schema: ok({ activeModelPath: str('Empty once the local GGUF is disabled'), provider: str('Restored LLM provider'), config: free('Effective root llm/agent config sections') }) },
+  }),
+  defineRoute({
     id: 'projects.rename', method: 'PATCH', path: '/api/projects/:id', tags: ['Projects'],
     summary: 'Rename a project display name',
     command: 'projects.rename',

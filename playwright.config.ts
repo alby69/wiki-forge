@@ -35,6 +35,7 @@ export default defineConfig({
       PORT: '3101',
       WIKIFORGE_EMBED_SCHEDULER: 'false',
       OPENCODE_BIN: mockOpencode,
+      WIKIFORGE_LLM_PROVIDER: 'opencode',
       WIKIFORGE_LOCAL_ACTOR: 'e2e',
       WIKIFORGE_USER_STORE_FILE: userStore,
       WIKIFORGE_STATE_DIR: stateDir,

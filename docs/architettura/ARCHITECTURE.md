@@ -114,19 +114,23 @@ restano invariati: il provider locale è selezionabile con
 
 ### 3.3.2 Registro e upload GGUF
 
-L'upload di un modello GGUF è una sequenza di cinque operazioni Admin sul bus:
+L'upload di un modello GGUF è una sequenza di sei operazioni Admin sul bus:
 `projects.gguf.uploadStart`, `projects.gguf.uploadChunk`,
-`projects.gguf.uploadFinalize`, `projects.gguf.list` e
-`projects.gguf.activate`. Il gateway Node accetta solo JSON, quindi i chunk sono
+`projects.gguf.uploadFinalize`, `projects.gguf.list`,
+`projects.gguf.activate` e `projects.gguf.deactivate`. Il gateway Node accetta solo JSON, quindi i chunk sono
 base64 (512 KiB per chunk lato UI, 8 MiB limite server) invece di multipart: 512 KiB restano sotto il limite JSON predefinito del gateway di 1 MiB dopo la codifica base64.
 `LocalModelService` valida basename, estensione, dimensione dichiarata e magic
 `GGUF`, assembla i chunk in `models/<nome>.gguf` e registra nome, percorso
 relativo, dimensione e SHA256 in `.wiki-forge/llm/models.json`. Le sessioni
 temporanee vivono in `.wiki-forge/llm/uploads/` e vengono ripulite dopo il
-finalize (o dopo 24 ore). L'attivazione scrive `[llm.local].enabled = true`,
-`[llm.local].model_path = models/<nome>.gguf` e
+finalize (o dopo 24 ore). L'attivazione memorizza il provider precedente, scrive
+`[llm.local].enabled = true`, `[llm.local].model_path = models/<nome>.gguf` e
 `[agent.llm].provider = "local"` nella config root, poi invalida il client LLM
-cacheato: la chat successiva usa subito il nuovo modello senza riavvio.
+cacheato: la chat successiva usa subito il nuovo modello senza riavvio. La
+deattivazione ripristina il provider memorizzato (o `opencode`), azzera
+`model_path`, disabilita `[llm.local]` e invalida di nuovo il client. Anche
+`projects.config.put` invalida il client, quindi il cambio manuale di provider
+non richiede riavvio.
 Il percorso è relativo alla repo root, coerentemente con la risoluzione fatta da
 `local_engine.py` nel container.
 

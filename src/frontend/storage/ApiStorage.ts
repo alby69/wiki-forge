@@ -241,6 +241,19 @@ export class ApiStorage implements IStorage {
     return { model: json.model, config: json.config as Record<string, unknown> };
   }
 
+  public async deactivateLocalModel(
+    projectId?: string,
+  ): Promise<{ activeModelPath: string; provider: string; config: Record<string, unknown> }> {
+    const id = projectId || this.getActiveProjectId();
+    const json = await this.request('projects.gguf.deactivate', { params: { id } });
+    this.requireOk(json, 'projects.gguf.deactivate failed');
+    return {
+      activeModelPath: json.activeModelPath,
+      provider: json.provider,
+      config: json.config as Record<string, unknown>,
+    };
+  }
+
   public async deleteProject(projectId: string, deleteFolder: boolean = false): Promise<boolean> {
     try {
       const json = await this.request('projects.delete', {

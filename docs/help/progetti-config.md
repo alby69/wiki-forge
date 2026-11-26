@@ -50,9 +50,9 @@ Le modifiche vengono scritte direttamente su `config.toml` (fonte unica di verit
 
 ## Modelli GGUF locali (solo Admin)
 
-Nella scheda **LLM & Agent** puoi caricare un file `.gguf` scaricato da Hugging Face. L'upload è chunked in base64 (512 KiB per chunk, sotto il limite JSON di 1 MiB del gateway; max 2 GiB via UI, 16 GiB via API con `WIKIFORGE_MAX_BODY_BYTES` più alto): il backend verifica il magic `GGUF`, salva il file in `models/`, registra dimensione e SHA256 in `.wiki-forge/llm/models.json` e attiva subito `[llm.local]` con `[agent.llm].provider = "local"`. Nessun riavvio è necessario. Il pulsante **Use** su un modello già registrato cambia il modello attivo; ricaricare lo stesso nome sovrascrive il file mantenendone l'attivazione.
+Nella scheda **LLM & Agent** puoi caricare un file `.gguf` scaricato da Hugging Face. L'upload è chunked in base64 (512 KiB per chunk, sotto il limite JSON di 1 MiB del gateway; max 2 GiB via UI, 16 GiB via API con `WIKIFORGE_MAX_BODY_BYTES` più alto): il backend verifica il magic `GGUF`, salva il file in `models/`, registra dimensione e SHA256 in `.wiki-forge/llm/models.json` e attiva subito `[llm.local]` con `[agent.llm].provider = "local"`. Nessun riavvio è necessario. Il pulsante **Use** su un modello già registrato cambia il modello attivo; ricaricare lo stesso nome sovrascrive il file mantenendone l'attivazione. Il pulsante **Deactivate**, mostrato accanto al path attivo, disabilita `[llm.local]`, azzera `model_path` e ripristina il provider usato prima dell'attivazione (`opencode` di default), senza riavviare Docker. Anche salvare un diverso **LLM Provider** nella scheda ha effetto immediato.
 
-Le operazioni Admin sono `projects.gguf.list`, `projects.gguf.uploadStart`, `projects.gguf.uploadChunk`, `projects.gguf.uploadFinalize` e `projects.gguf.activate`; passano tutte da `ApiStorage`, mai da `fetch` diretto nel frontend.
+Le operazioni Admin sono `projects.gguf.list`, `projects.gguf.uploadStart`, `projects.gguf.uploadChunk`, `projects.gguf.uploadFinalize`, `projects.gguf.activate` e `projects.gguf.deactivate`; passano tutte da `ApiStorage`, mai da `fetch` diretto nel frontend.
 
 ## Lingua e scorciatoie
 
