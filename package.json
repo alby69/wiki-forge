@@ -13,6 +13,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "manifest": "node --import tsx scripts/gen_command_manifest.mjs",
     "manifest:check": "node --import tsx scripts/gen_command_manifest.mjs --check",
+    "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run typecheck && npm run build && npm test && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/",
     "wf": "node --import tsx bin/wf.ts",
     "mcp": "node --import tsx bin/mcp.ts",
     "worker": "node --import tsx bin/worker.ts"

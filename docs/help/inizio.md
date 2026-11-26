@@ -11,12 +11,12 @@ context: [inizio]
 
 ## Cos'è Wiki-Forge
 
-Wiki-Forge è la tua **wiki personale potenziata da un agente IA**, al 100% locale.
+Wiki-Forge è la tua **wiki personale potenziata da un agente IA**, local-first.
 
 - **Carichi documenti** (PDF, DOCX, MD, pagine web...) nella tua busta dati (*vault*).
 - **L'agente li compila** trasformandoli in note strutturate collegate tra loro.
 - **Navighi** le note nell'editor, nella scratchpad e nel Knowledge Graph.
-- Tutto resta sul tuo computer: nessun dato inviato in cloud.
+- Nell'installazione locale vault, note e sessioni restano sul tuo computer; con un'installazione ospitata o un LLM remoto i dati risiedono o transitano presso il servizio configurato.
 
 ## I 4 passi (Focus Mode)
 

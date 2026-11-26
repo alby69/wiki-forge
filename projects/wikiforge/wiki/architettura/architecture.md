@@ -109,8 +109,9 @@ route grafo. Il motore di salute aggregato (`api/health.py`) calcola uno score
 `.wikiforge/STATUS.md` e `.wikiforge/metrics/history.jsonl`: questa è una
 radice legacy separata da `.wiki-forge/` e la cosa è tracciata in ROADMAP.
 Il Procedure Engine (`procedures.py`) esegue procedure TOML con DAG, pause
-umane e criteri di uscita, persistendo in `.wikiforge/state/<run_id>.json`.
-Il lock a lease appartiene allo scheduler Node, non al Procedure Engine.
+umane e criteri di uscita, persistendo in `.wikiforge/state/<run_id>.json`,
+mentre lo StateStore Node usa `.wiki-forge/state/`. Il lock a lease appartiene
+allo scheduler Node, non al Procedure Engine.
 
 ### 3.4 Studio di revisione, ricerca e studio
 

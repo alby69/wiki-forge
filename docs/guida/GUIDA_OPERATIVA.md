@@ -7,17 +7,19 @@
 
 ## 1. In due parole
 
-Wiki-Forge è una **wiki personale** che vive sul tuo computer e che viene **costruita e mantenuta da un agente IA**.
+Wiki-Forge è una **wiki personale local-first** che vive sul tuo computer e che viene **costruita e mantenuta da un agente IA**.
 
 Tu porti il materiale (PDF, documenti, pagine web, appunti), l'agente lo trasforma in **note brevi e collegate tra loro**, e tu le leggi, le correggi, le interroghi e le esporti.
 
-Niente va in cloud: la tua conoscenza resta in una cartella locale (*vault*).
+Nell'installazione locale la tua conoscenza resta in una cartella locale (*vault*); in un deployment ospitato resta nel vault del server, con accesso e permessi sempre attivi.
 
 Quando usi l'installazione pubblica (non quella locale), devi prima accedere:
 l'accesso e i permessi sono sempre attivi e non esistono credenziali predefinite
 `admin`/`admin`; servono un account configurato, un IdP oppure uno user store.
 La sessione resta salvata sul server, quindi non devi rifare il login a ogni
-ricarica.
+ricarica. L'hook `cloud_backup_webdav` in `config.toml` è una configurazione non
+collegata a un backup cloud attivo: non va considerato una funzionalità
+disponibile.
 
 ### Le parole da conoscere
 

@@ -178,7 +178,7 @@ Macro-commands combine multiple atomic operations into unified workflows:
 - **`compile`**: Chained execution of source conversion → raw file ingestion → OKF frontmatter generation → index reindexing → light audit.
 - **`audit`**: Comprehensive check executing link verification → orphan detection → duplicate scanning → frontmatter linting (`okf_lint.py`) → metrics calculation.
 - **`consult`**: Multi-source context retrieval → passage-level claim tracing → interactive synthesis with confidence levels and `[[wikilinks]]`.
-- **`procedure run <id>`**: Executes a stateful, resumable procedure defined in `config/procedures/` (e.g. `ke.ontological-integrity`, `user.onboarding`, `user.add-sources`). Tracks step execution in `.wiki-forge/state/<run_id>.json`.
+- **`procedure run <id>`**: Executes a stateful, resumable procedure defined in `config/procedures/` (e.g. `ke.ontological-integrity`, `user.onboarding`, `user.add-sources`). Tracks step execution in `.wikiforge/state/<run_id>.json`.
 - **`changeset review` / `changeset apply <id>`**: Inspects and applies staged changeset proposals (`.wiki-forge/changesets/`) ensuring Plan-Review-Apply safety.
 - **`ke-usecase` / `ke-wizard`**: Guided execution of the 6 Knowledge Engineer Use Cases (Schema & Taxonomy Modeling, Ontological Integrity, CQ Validation, Neuro-Symbolic & ODP, Semantic RDF Export, KE Maturity Evaluation).
 - **`deep-research`**: Executes multi-source research synthesis, constructs claim attribution matrices, and highlights knowledge gaps in `output/research-*.md`.

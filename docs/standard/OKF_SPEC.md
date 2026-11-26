@@ -123,3 +123,22 @@ Trust levels are derived automatically from the `verified` array:
 ## 9. Interoperability & Link Tolerance
 
 OKF consumers MUST tolerate broken links (stubs) gracefully (§11). Both standard relative Markdown links (`[Title](path.md)`) and Obsidian-style wikilinks (`[[wikilink]]`) are supported within wiki-forge, with standard Markdown relative links preferred in structural index sections.
+
+---
+
+## 10. Compatibility with OKF v0.3
+
+**Decision:** keep v0.2 as the active profile for `projects/wikiforge/wiki/`. Adopt v0.3 additive metadata (`superseded_by`, bundle-root `index.md` metadata, `x-` extension keys) without changing required fields. Do not declare `okf_version: "0.3"` until the two breaking reader rules below are implemented with their v0.2 fallbacks.
+
+Reference: https://github.com/open-knowledge-format/open-knowledge-format/blob/main/SPEC.md
+
+| Area | OKF v0.3 rule | Wiki-forge status | Action |
+| :--- | :--- | :--- | :--- |
+| Version marker | Bundle-root `index.md` MAY carry `title`, `description`, `license`, `okf_version`; regenerators MUST preserve them | Generated indexes declare `0.2`; no bundle metadata yet | Keep `0.2`; preserve unknown frontmatter when generator is extended |
+| Path resolution | Bare paths resolve from the containing file's directory; v0.2 bundles keep a bundle-root fallback | Generated links are relative/root-relative; no explicit fallback implemented | Implement dual resolution before switching to `0.3` |
+| Trust tiers | Only `verified` events at or after `generated.at` count as current | `okf_stats.py` currently counts any `verified` event | Align statistics to current-only events before switching to `0.3` |
+| `superseded_by` | Deprecated concepts may point to their replacement | Additive; not emitted today | Use for future retire/move operations |
+| Extension keys | `x-` keys are allowed at all levels and MUST be preserved | Unknown frontmatter is preserved by ingest/regeneration paths where applicable | Keep `x-` keys untouched |
+| Conformance | `.md` files without `type` are skipped; optional/malformed values must not break consumers | Concept docs always carry `type`; broken links are tolerated | No bundle rewrite needed |
+
+Existing v0.2 bundles remain valid under v0.3 with the documented fallbacks; this compatibility profile is therefore an additive upgrade, not a migration.

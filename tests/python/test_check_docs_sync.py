@@ -73,3 +73,57 @@ def test_stale_semantic_hash_is_reported_and_fixed(tmp_path: Path) -> None:
 
     assert check_docs_sync.check_semantic_refs(root, fix=True) == []
     assert stale in topic.read_text(encoding="utf-8")
+
+
+def _state_root_fixture(tmp_path: Path) -> Path:
+    for rel, content in {
+        "README.md": ".wikiforge/STATUS.md .wikiforge/metrics/history.jsonl .wiki-forge/state/",
+        "docs/architettura/ARCHITECTURE.md": ".wikiforge/STATUS.md .wiki-forge/state/",
+        "docs/processi/KNOWLEDGE_ENGINEERING.md": ".wikiforge/ .wiki-forge/",
+    }.items():
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    return tmp_path
+
+
+def test_state_root_boundary_is_accepted(tmp_path: Path) -> None:
+    root = _state_root_fixture(tmp_path)
+    assert check_docs_sync.check_state_roots(root) == []
+
+
+def test_single_root_claim_is_rejected(tmp_path: Path) -> None:
+    root = _state_root_fixture(tmp_path)
+    ke = root / "docs" / "processi" / "KNOWLEDGE_ENGINEERING.md"
+    ke.write_text(ke.read_text(encoding="utf-8") + " `.wikiforge/` is historical only.", encoding="utf-8")
+
+    errors = check_docs_sync.check_state_roots(root)
+    assert any("historical only" in error for error in errors)
+
+
+def _local_cloud_fixture(tmp_path: Path) -> Path:
+    for rel, content in {
+        "docs/help/inizio.md": "Wiki-Forge è local-first.",
+        "docs/guida/GUIDA_OPERATIVA.md": (
+            "Installazione locale: il vault resta sul computer. "
+            "L'hook `cloud_backup_webdav` non è collegato a un backup attivo."
+        ),
+    }.items():
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    return tmp_path
+
+
+def test_local_cloud_claims_are_accepted(tmp_path: Path) -> None:
+    root = _local_cloud_fixture(tmp_path)
+    assert check_docs_sync.check_local_cloud_claims(root) == []
+
+
+def test_absolute_cloud_claim_is_rejected(tmp_path: Path) -> None:
+    root = _local_cloud_fixture(tmp_path)
+    intro = root / "docs" / "help" / "inizio.md"
+    intro.write_text("Niente va in cloud.", encoding="utf-8")
+
+    errors = check_docs_sync.check_local_cloud_claims(root)
+    assert any("must not promise" in error for error in errors)

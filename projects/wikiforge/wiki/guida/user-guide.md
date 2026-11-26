@@ -30,7 +30,7 @@ requires a token unless an IdP or user store is configured, and has no default
 ## Guided Wizards
 Focus Mode includes a guided **Onboarding Wizard** (also available in chat as `/wizard [scenario]`) that walks you through setting up a new project step by step, and scenario presets can be selected in the wizard itself.
 
-Backend progress for guided procedures is recorded in `.wiki-forge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
+Backend progress for guided procedures is recorded in `.wikiforge/wizard_state.json`, but the web UI has no resume button yet: after a page reload the wizard starts again from its first step.
 
 ## Markdown Editor & Toolbar
 When editing notes, the editor view includes a built-in formatting toolbar:

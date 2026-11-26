@@ -378,4 +378,30 @@ test('Editor Formatting & Toolbar Actions Test Suite', async (t) => {
 
     (editor as any).destroyEditor();
   });
+
+  await t.test('Editor note header exposes only Info, Revisione and Cronologia', () => {
+    const container = document.createElement('div');
+    const sampleNote: WikiNote = {
+      id: 'note-actions',
+      title: 'Note Actions',
+      content: 'Content',
+      folder: 'wiki',
+      path: 'wiki/note-actions.md',
+      tags: [],
+      frontmatter: {},
+      outboundLinks: [],
+      backlinks: [],
+    };
+    const editor = new MarkdownEditor(container);
+    editor.setNote(sampleNote);
+
+    const html = container.innerHTML;
+    for (const id of ['editor-context-toggle', 'editor-review-btn', 'editor-history-btn']) {
+      assert.ok(html.includes(`id="${id}"`), `${id} is rendered in the editor header`);
+    }
+    assert.ok(!html.includes('id="editor-research-btn"'), 'Research is not an editor action');
+    assert.ok(!html.includes('id="editor-study-btn"'), 'Study is not an editor action');
+
+    (editor as any).destroyEditor();
+  });
 });

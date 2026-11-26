@@ -14,6 +14,7 @@
 #   make docs-sync        Check docs/help, changelog and wiki projection sync
 #   make docs-book        Build output/manuale-wiki-forge.md from the didactic path
 #   make docs-book-check  Verify the printable manual is up to date
+#   make verify           Run the full docs/Node/Python verification suite
 #   make help             Display available target commands
 
 convert:
@@ -189,6 +190,9 @@ ui-test:
 ui-typecheck:
 	npm run typecheck
 
+verify:
+	npm run verify
+
 tags:
 	python3 scripts/suggest_tags.py --all
 
@@ -206,4 +210,4 @@ skills-link:
 	done
 	@echo "✅ Symlinked skills into .claude/skills/ (Single Source of Truth - DRY/KISS compliant)"
 
-.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync docs-book docs-book-check mcp-serve api worker worker-docker worker-deploy kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck tags tags-write skills-link
+.PHONY: convert convert-docker wizard build shell audit stats reindex schema-lint schema-infer okf-validate okf-lint okf-reindex okf-log okf-stats ontology-check export-semantic validate-cq suggest-odp neuro-check ke-maturity maturity thesis-compile thesis-pdf clean-output export-json lint docs-sync docs-book docs-book-check mcp-serve api worker worker-docker worker-deploy kg-api dev-all help ui ui-docker ui-build ui-preview ui-test ui-typecheck verify tags tags-write skills-link

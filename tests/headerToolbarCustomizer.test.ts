@@ -83,6 +83,11 @@ describe('Header toolbar customizer', () => {
     assert.ok(markup.includes('header-docs-wiki-btn'), 'docs wiki pinned in Developer Mode');
     assert.ok(markup.includes('chat-toggle-header-btn'), 'chat pinned by default');
     assert.ok(!markup.includes('header-review-btn'), 'review not pinned by default');
+    assert.deepEqual(
+      getActions({ group: 'note' }).map(action => action.id),
+      ['note:info', 'note:review', 'note:history'],
+      'the note-scoped catalogue has only Info, Revisione and Cronologia'
+    );
 
     // A single row per action: the old second, duplicated button list is gone.
     for (const action of getActions({ group: 'global', menu: true })) {

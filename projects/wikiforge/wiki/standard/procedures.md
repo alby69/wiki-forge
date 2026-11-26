@@ -39,7 +39,7 @@ Procedures are TOML files located in `config/procedures/`.
 - `description` (string): Step explanation.
 
 ## Persistent Run State
-Procedure execution states are stored in `.wiki-forge/state/<run_id>.json`:
+Procedure execution states are stored in `.wikiforge/state/<run_id>.json` by the Python engine, separately from the Node runtime state in `.wiki-forge/state/`:
 
 ```json
 {

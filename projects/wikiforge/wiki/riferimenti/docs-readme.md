@@ -103,14 +103,11 @@ versioni e menu contestuale).
 
 ## Verifica di coerenza
 
+Con l'ambiente Python di `requirements.txt` attivo, un solo comando esegue
+tutti i gate (docs/help, proiezione wiki, manuale, registry, manifest, typecheck,
+build, test Node e test Python) e stampa i conteggi aggiornati:
+
 ```bash
-python scripts/check_docs_sync.py   # struttura docs/, topic help e parità versionale
-python scripts/docs_to_wiki.py --check
-make docs-book-check               # dopo `make docs-book`: manuale stampabile aggiornato
-npm run manifest:check              # coerenza del manifest generato
-npm run typecheck
-npm run build
-npm test
-python -m pytest tests/python
+npm run verify
 git diff --check
 ```
