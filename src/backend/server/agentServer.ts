@@ -100,6 +100,7 @@ import { runWithRequestContext } from './observability/context';
 import { httpLogger } from './observability/logger';
 import { installCommandAudit } from './observability/commandAudit';
 import { recordHttpRequest, renderPrometheus } from './observability/metrics';
+import { renderLlmPrometheus } from './observability/llmObservability';
 import { getTelemetry } from './observability/telemetry';
 import { createValidationMiddleware } from './api/validation';
 import { createMessageBus, type MessageBus, type Principal } from './bus/messageBus';
@@ -840,7 +841,7 @@ export class AgentServer {
 
     if (req.method === 'GET' && pathname === '/api/metrics') {
       res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4; charset=utf-8' });
-      res.end(renderPrometheus());
+      res.end(renderPrometheus() + renderLlmPrometheus());
       return true;
     }
 

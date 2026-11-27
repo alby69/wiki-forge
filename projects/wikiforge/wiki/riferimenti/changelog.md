@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Osservabilità LLM, costi e quote (Phase 97) — 2026-11-27
+
+- Nuovo `src/backend/server/observability/llmObservability.ts`: stato d'uso giornaliero in `.wiki-forge/llm-usage.json`, stima token, `LlmBudgetExceededError` e metriche LLM.
+- Nuovo `src/backend/server/observability/llmClientWrapper.ts`: `InstrumentedLlmClient` con controllo soft/hard limit, registrazione metriche e log solo metadati (nessun prompt/nota).
+- `LlmClientFactory` avvolge il client quando `daily_tokens > 0`; `parseConfigToml` legge `[llm.budget]`; schema e config aggiornati.
+- `/api/metrics` include le metriche LLM; `LlmCompletionParams` esteso con `command` e `correlationId`.
+- Verifica: `npm run verify` verde; `git diff --check` verde.
+
 ### Sicurezza dei contenuti non fidati e prompt injection (Phase 96) — 2026-11-27
 
 - Nuovi moduli `src/shared/domain/contentSecurity.ts` e `src/backend/wikiforge/security/content_security.py`: detector deterministico di istruzioni nascoste, zero-width, markup nascosto e URL di esfiltrazione; redazione di segreti; `wrapUntrusted`.

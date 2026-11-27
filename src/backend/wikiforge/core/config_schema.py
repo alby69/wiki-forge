@@ -66,6 +66,11 @@ CONFIG_SCHEMA: dict[str, Any] = {
             "n_gpu_layers": int,
             "temperature": frozenset({int, float}),
         },
+        "budget": {
+            "daily_tokens": int,
+            "soft_limit": int,
+            "hard_limit": int,
+        },
     },
     "naming": {
         "article_case": str,

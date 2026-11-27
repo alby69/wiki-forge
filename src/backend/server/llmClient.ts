@@ -6,6 +6,7 @@ import type { WikiNote } from '@shared/domain/wiki';
 import { parseLlamaFrames } from '@shared/api/pythonStream';
 import { redactSecrets, wrapUntrusted } from '@shared/domain/contentSecurity';
 import { buildAllowedEnv } from './process/scriptRunner';
+import { InstrumentedLlmClient } from './observability/llmClientWrapper';
 
 export interface LlmConfig {
   provider: 'opencode' | 'anthropic' | 'openai_compatible' | 'ollama' | string;
@@ -22,12 +23,19 @@ export interface LlmConfig {
   local_n_threads?: number;
   local_n_batch?: number;
   local_temperature?: number;
+  /** Phase 97 — daily token budget (0 disables). */
+  dailyTokenLimit?: number;
+  softTokenLimit?: number;
+  hardTokenLimit?: number;
 }
 
 export interface LlmCompletionParams {
   systemPrompt: string;
   userMessage: string;
   contextNotes?: WikiNote[];
+  /** Phase 97 — optional observability context (no prompt content is logged). */
+  command?: string;
+  correlationId?: string;
 }
 
 export interface LlmClient {
@@ -624,6 +632,9 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
   let model = 'claude-sonnet-4-6';
   let maxTokens = 4096;
   let timeoutSeconds = 60;
+  let dailyTokenLimit = 0;
+  let softTokenLimit = 0;
+  let hardTokenLimit = 0;
   let localEnabled = false;
   let localModelPath = './models/deepseek-r1-distill-qwen-1.5b-q4_k_m.gguf';
   let localNCtx = 8192;
@@ -672,6 +683,10 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
     if (currentSection === 'project') {
       if (key === 'context') projectContext = parseStringVal(rawVal);
       if (key === 'title') projectTitle = parseStringVal(rawVal);
+    } else if (currentSection === 'llm.budget' || currentSection === 'agent.llm.budget') {
+      if (key === 'daily_tokens') dailyTokenLimit = parseInt(rawVal, 10) || 0;
+      if (key === 'soft_limit') softTokenLimit = parseInt(rawVal, 10) || 0;
+      if (key === 'hard_limit') hardTokenLimit = parseInt(rawVal, 10) || 0;
     } else if (currentSection === 'llm.local') {
       if (key === 'enabled') localEnabled = rawVal.toLowerCase() === 'true';
       if (key === 'model_path') localModelPath = parseStringVal(rawVal);
@@ -715,6 +730,9 @@ export function parseConfigToml(tomlContent: string): { agentLlmConfig: LlmConfi
       local_n_threads: localNThreads,
       local_n_batch: localNBatch,
       local_temperature: localTemperature,
+      dailyTokenLimit,
+      softTokenLimit,
+      hardTokenLimit,
     },
     projectContext,
     projectTitle,
@@ -768,8 +786,17 @@ export class LlmClientFactory {
         agentLlmConfig.opencode_command = resolvedCommand;
       }
 
+      const baseClient = LlmClientFactory.createClient(agentLlmConfig);
+      const stateDir = path.resolve(path.dirname(configPath), '..', '.wiki-forge');
+      const client = agentLlmConfig.dailyTokenLimit && agentLlmConfig.dailyTokenLimit > 0
+        ? new InstrumentedLlmClient(baseClient, agentLlmConfig.provider || 'unknown', agentLlmConfig.model || 'unknown', {
+            dailyTokenLimit: agentLlmConfig.dailyTokenLimit || 0,
+            softTokenLimit: agentLlmConfig.softTokenLimit || 0,
+            hardTokenLimit: agentLlmConfig.hardTokenLimit || 0,
+          }, stateDir)
+        : baseClient;
       return {
-        client: LlmClientFactory.createClient(agentLlmConfig),
+        client,
         projectContext,
         projectTitle,
       };

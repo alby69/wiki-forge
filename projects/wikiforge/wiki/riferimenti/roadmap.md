@@ -218,7 +218,7 @@ accettazione verificati e `npm run verify` verde.
 - `ChangesetStore` calcola `riskScore`, `riskReasons`, `requiresConfirmation`; `changesets.apply` richiede `confirm` esplicito per changeset a rischio; `autonomy` conferma i propri apply.
 - Suite `tests/security/injection/` con 20 payload IT/EN; test top-level `tests/injection.test.ts` non necessario (nested registrato in `npm test`).
 
-## Phase 97 — Osservabilità LLM, costi e quote ⬜ Todo
+## Phase 97 — Osservabilità LLM, costi e quote ✅ Done
 
 **Goal:** Sapere quanto costa e perché ha sbagliato ogni chiamata all'IA.
 
@@ -230,6 +230,13 @@ accettazione verificati e `npm run verify` verde.
 **Criteri di accettazione:**
 - All'hard limit nessuna chiamata parte verso il provider.
 - Nessun testo di note o prompt compare nei log salvo `debug` esplicito.
+
+**Done:**
+- Nuovo `src/backend/server/observability/llmObservability.ts`: stato d'uso giornaliero in `.wiki-forge/llm-usage.json`, stima token, `LlmBudgetExceededError`, metriche LLM (chiamate, token, latenza, errori).
+- Nuovo `src/backend/server/observability/llmClientWrapper.ts`: `InstrumentedLlmClient` con controllo soft/hard limit, registrazione metriche e log solo metadati (provider, modello, token, latenza, esito, correlation id, comando) senza contenuti di prompt.
+- `LlmClientFactory` avvolge il client quando `daily_tokens > 0`; `parseConfigToml` legge `[llm.budget]`; `config_schema.py` e `config.toml` aggiornati.
+- `/api/metrics` include le metriche LLM accanto a quelle HTTP.
+- `LlmCompletionParams` esteso con `command` e `correlationId`.
 
 ## Phase 98 — Collaborazione multi-utente ⬜ Todo
 
