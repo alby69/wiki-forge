@@ -34,7 +34,7 @@ jobs:
       # Image 1: Wiki Toolchain (Python + Pandoc)
       - name: Extract metadata for wiki image
         id: meta-wiki
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/wiki-forge
           tags: |
@@ -55,7 +55,7 @@ jobs:
       # Image 2: Wiki UI/API Image (Node.js)
       - name: Extract metadata for ui image
         id: meta-ui
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/wiki-forge-ui
           tags: |
