@@ -18,6 +18,7 @@ export const IMPLEMENTED_SLASH_COMMANDS = [
   'thesis-chapter',
   'trace',
   'verify',
+  'verify-citations',
   'wizard',
 ] as const;
 

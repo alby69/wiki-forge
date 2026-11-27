@@ -8,6 +8,10 @@
  */
 
 import { ROUTES, SCHEMAS } from '../../../shared/api/contracts';
+import {
+  createPythonApiClient,
+  PYTHON_OPENAPI_SNAPSHOT,
+} from '../../../shared/api/generated/pythonApi.generated';
 import { MCP_TOOL_DESCRIPTORS } from '../../../shared/mcp/tools';
 import { matchRoute } from '../../../shared/api/router';
 import type { ApiRoute, JsonSchema } from '../../../shared/api/contracts';
@@ -30,165 +34,9 @@ export function fastApiBaseUrl(): string {
   return (process.env.FASTAPI_SERVER_URL || FASTAPI_BASE_URL).replace(/\/+$/, '');
 }
 
-/** Snapshot of `GET http://localhost:8000/openapi.json` (FastAPI 0.x, Pydantic v2). */
-export const FASTAPI_SNAPSHOT: Record<string, unknown> = {
-  openapi: '3.1.0',
-  info: {
-    title: 'Wiki-Forge Knowledge Graph & GraphRAG API',
-    description: 'REST API interface for Enterprise Knowledge Graph operations, SHACL validation, and GraphRAG querying.',
-    version: '1.0.0',
-  },
-  paths: {
-    '/api/v1/llm/reasoning/stream': {
-      post: {
-        tags: ['FastAPI', 'LLM'], summary: 'Stream Local Reasoning', operationId: 'reasoning_stream_api_v1_llm_reasoning_stream_post',
-        requestBody: {
-          required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/ReasoningRequest' } } },
-        },
-        responses: {
-          '200': {
-            description: 'SSE token stream',
-            content: { 'text/event-stream': { schema: { type: 'string' } } },
-          },
-        },
-      },
-    },
-    '/api/v1/health': {
-      get: {
-        tags: ['FastAPI'], summary: 'Health Check', operationId: 'health_check_api_v1_health_get',
-        responses: {
-          '200': {
-            description: 'Successful Response',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/HealthResponse' } } },
-          },
-        },
-      },
-    },
-    '/api/v1/graph/sync': {
-      post: {
-        tags: ['FastAPI'], summary: 'Sync Graph', operationId: 'sync_graph_api_v1_graph_sync_post',
-        requestBody: {
-          required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/SyncRequest' } } },
-        },
-        responses: {
-          '200': {
-            description: 'Successful Response',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/SyncResponse' } } },
-          },
-          '422': { description: 'Validation Error', content: { 'application/json': { schema: { $ref: '#/components/schemas/HTTPValidationError' } } } },
-        },
-      },
-    },
-    '/api/v1/graph/validate': {
-      post: {
-        tags: ['FastAPI'], summary: 'Validate Shacl Endpoint', operationId: 'validate_shacl_endpoint_api_v1_graph_validate_post',
-        requestBody: {
-          required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/ValidationRequest' } } },
-        },
-        responses: { '200': { description: 'Successful Response', content: { 'application/json': { schema: {} } } } },
-      },
-    },
-    '/api/v1/graph/rag': {
-      post: {
-        tags: ['FastAPI'], summary: 'Query Rag', operationId: 'query_rag_api_v1_graph_rag_post',
-        requestBody: {
-          required: true,
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/RAGQueryRequest' } } },
-        },
-        responses: {
-          '200': {
-            description: 'Successful Response',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/RAGQueryResponse' } } },
-          },
-        },
-      },
-    },
-  },
-  components: {
-    schemas: {
-      ReasoningRequest: {
-        type: 'object', required: ['prompt'],
-        properties: {
-          prompt: { type: 'string', title: 'Prompt' },
-          context: { anyOf: [{ type: 'string' }, { type: 'null' }], title: 'Context' },
-          max_tokens: { type: 'integer', title: 'Max Tokens', default: 512 },
-        },
-        title: 'ReasoningRequest',
-      },
-      HealthResponse: {
-        type: 'object', required: ['status', 'service'],
-        properties: {
-          status: { type: 'string', title: 'Status', default: 'ok' },
-          service: { type: 'string', title: 'Service', default: 'wiki-forge-kg-api' },
-        },
-        title: 'HealthResponse',
-      },
-      SyncRequest: {
-        type: 'object',
-        properties: {
-          wiki_dir: { type: 'string', title: 'Wiki Dir', default: 'wiki', description: 'Target folder containing Markdown notes' },
-          output_ttl: { type: 'string', title: 'Output Ttl', default: 'knowledge_graph.ttl', description: 'Output Turtle file path' },
-        },
-        title: 'SyncRequest',
-      },
-      SyncResponse: {
-        type: 'object', required: ['status', 'message', 'processed_notes', 'output_path'],
-        properties: {
-          status: { type: 'string', title: 'Status' },
-          message: { type: 'string', title: 'Message' },
-          processed_notes: { type: 'integer', title: 'Processed Notes' },
-          output_path: { type: 'string', title: 'Output Path' },
-        },
-        title: 'SyncResponse',
-      },
-      ValidationRequest: {
-        type: 'object',
-        properties: {
-          graph_path: { type: 'string', title: 'Graph Path', default: 'knowledge_graph.ttl', description: 'Turtle file path' },
-          shapes_path: {
-            type: 'string', title: 'Shapes Path', default: 'src/backend/wikiforge/config/shapes.ttl',
-            description: 'SHACL shapes path',
-          },
-        },
-        title: 'ValidationRequest',
-      },
-      RAGQueryRequest: {
-        type: 'object', required: ['question'],
-        properties: { question: { type: 'string', title: 'Question', description: 'User query natural language string' } },
-        title: 'RAGQueryRequest',
-      },
-      RAGQueryResponse: {
-        type: 'object', required: ['question', 'entities', 'cypher_query', 'final_answer'],
-        properties: {
-          question: { type: 'string', title: 'Question' },
-          entities: { type: 'array', items: { type: 'string' }, title: 'Entities' },
-          cypher_query: { type: 'string', title: 'Cypher Query' },
-          final_answer: { type: 'string', title: 'Final Answer' },
-        },
-        title: 'RAGQueryResponse',
-      },
-      HTTPValidationError: {
-        type: 'object',
-        properties: {
-          detail: { type: 'array', items: { $ref: '#/components/schemas/ValidationError' }, title: 'Detail' },
-        },
-        title: 'HTTPValidationError',
-      },
-      ValidationError: {
-        type: 'object', required: ['loc', 'msg', 'type'],
-        properties: {
-          loc: { type: 'array', items: { anyOf: [{ type: 'string' }, { type: 'integer' }] }, title: 'Location' },
-          msg: { type: 'string', title: 'Message' },
-          type: { type: 'string', title: 'Error Type' },
-        },
-        title: 'ValidationError',
-      },
-    },
-  },
-};
+/** Snapshot exported from the FastAPI app by scripts/export_python_openapi.py. */
+export const FASTAPI_SNAPSHOT: Record<string, unknown> =
+  PYTHON_OPENAPI_SNAPSHOT as unknown as Record<string, unknown>;
 
 function openApiPath(path: string): string {
   return path.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, '{$1}');
@@ -379,14 +227,10 @@ export async function loadOpenApiDocument(fetchFn: typeof fetch = fetch): Promis
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 1500);
   try {
-    const response = await fetchFn(`${fastApiBaseUrl()}/openapi.json`, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    });
-    if (response.ok) {
-      mergeUpstreamSpec(document, await response.json(), 'fastapi:live');
-      merged = true;
-    }
+    const client = createPythonApiClient({ baseUrl: fastApiBaseUrl(), fetchImpl: fetchFn });
+    const upstream = await client.getOpenApiSpec({ headers: { Accept: 'application/json' }, signal: controller.signal });
+    mergeUpstreamSpec(document, upstream, 'fastapi:live');
+    merged = true;
   } catch {
     // FastAPI is optional for the docs browser; the snapshot is enough.
   } finally {

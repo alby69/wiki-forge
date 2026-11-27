@@ -14,6 +14,7 @@
 * [Iniziare con Wiki-Forge](help-inizio.md) — Argomenti: inizio, benvenuto, primo passo, come funziona, cosa è, quickstart, aiuto, guida, intro, research, ricerca, study, studio
 * [La barra in alto](help-barra-alto.md) — Argomenti: barra, header, alta, pulsanti, menu, badge, progetto, vista, chat, aiuto, F1, sidebar, research, studio, study, file, template
 * [La chat e i comandi](help-chat-comandi.md) — Argomenti: chat, comandi, slash, comando, agente, assistente, help, consult, domande, comandi chat, review, revisione, digest, diff, search, backlinks…
+* [Metadati GitHub proposti](repo-metadata.md) — Questo file è una proposta: i metadati del repository vanno applicati da un maintainer con accesso alle impostazioni di GitHub.
 * [Metriche e maturità](help-maturita-metriche.md) — Argomenti: metriche, metrics, maturità, maturity, stats, statistiche, audit, punteggio, score, ke-maturity, indicatore
 * [Mockup — Review Studio](mockups.md) — Prototipo statico e interattivo della console di revisione descritta nella proposta.
 * [Modificare le note](help-modifica-note.md) — Argomenti: modifica, edit, editor, salva, save, toolbar, wikilink, versioni, rollback, indietro, backlinks, metadata, review, revisione, diff, snapshot…

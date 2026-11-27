@@ -29,6 +29,8 @@ USER node
 
 # Copy the converter and helpers (the rest is mounted from the host).
 COPY scripts/conv2md.py entrypoint.sh ./
+COPY scripts/migrate_state_roots.py scripts/
+COPY src/backend/wikiforge/__init__.py src/backend/wikiforge/state_root.py src/backend/wikiforge/
 COPY config/ config/
 
 # Run via `sh` so we don't depend on the exec bit (which Windows may strip).

@@ -60,6 +60,7 @@ DOC_MAP: dict[str, str] = {
     "docs/standard/SCHEMA.md": "standard/schema",
     "docs/standard/KARPATHY_LLM_WIKI.md": "standard/karpathy-llm-wiki",
     "docs/standard/SELF_WIKI.md": "standard/self-wiki",
+    "docs/standard/OKF_EXTENSIONS.md": "standard/okf-extensions",
     # riferimenti
     "docs/README.md": "riferimenti/docs-readme",
     "ROADMAP.md": "riferimenti/roadmap",
@@ -68,6 +69,7 @@ DOC_MAP: dict[str, str] = {
     "docs/riferimenti/SCRIPT_AUTOMATION_REFERENCE.md": "riferimenti/script-automation-reference",
     "docs/riferimenti/COMMAND_MANIFEST.md": "riferimenti/command-manifest",
     "docs/riferimenti/SOURCES.md": "riferimenti/sources",
+    "docs/riferimenti/REPO_METADATA.md": "riferimenti/repo-metadata",
     "docs/riferimenti/mockups/README.md": "riferimenti/mockups",
 }
 
@@ -96,6 +98,7 @@ ENGLISH_SOURCES = frozenset({
     "docs/riferimenti/CHANGELOG.md",
     "docs/standard/KARPATHY_LLM_WIKI.md",
     "docs/standard/OKF_SPEC.md",
+    "docs/standard/OKF_EXTENSIONS.md",
 })
 
 AREA_LABELS: dict[str, str] = {

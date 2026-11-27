@@ -15,6 +15,7 @@ import { createSlashModule } from '../server/modules/slashModule';
 import { createStudyModule } from '../server/modules/studyModule';
 import { createTemplateModule } from '../server/modules/templateModule';
 import { createVaultModule } from '../server/modules/vaultModule';
+import type { Retriever } from '../server/retrieval/retrieverPort';
 import type { KernelPorts } from './ports';
 
 export interface KernelOptions {
@@ -24,6 +25,7 @@ export interface KernelOptions {
   graphEvents: GraphEventHub;
   fastApiUrl?: FastApiUrlResolver;
   coreModules?: readonly DomainModule[];
+  retriever?: Retriever;
 }
 
 export interface Kernel {
@@ -44,7 +46,7 @@ export function createKernel(options: KernelOptions): Kernel {
     createExecutionModule(ports.execution),
     createVaultModule(ports.vault),
     createReviewStudioModule(ports.reviewStudio),
-    createResearchModule(ports.research),
+    createResearchModule(ports.research, options.retriever),
     createStudyModule(ports.study),
     createChatModule(ports.chat),
     createSlashModule(ports.slash),

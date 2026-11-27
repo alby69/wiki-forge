@@ -44,6 +44,8 @@ src/shared/api/endpoints.ts   EndpointTypes: tipi TS request/response per ogni i
 src/shared/api/router.ts      matching :param e interpolazione dei path
 src/backend/server/api/openapi.ts   generatore OpenAPI 3.1 + merge FastAPI
 src/backend/server/api/docsBrowser.ts  /api/openapi.json, /api/docs, asset statici
+src/shared/api/generated/python.openapi.json  schema FastAPI esportato (python-contract:check)
+src/shared/api/generated/pythonApi.generated.ts  client Node→Python tipizzato generato
 src/frontend/api/client.ts    client tipizzato generato da ROUTES
 src/frontend/core/apiBus.ts   bus comandi frontend (eventi + client tipizzato)
 ```
@@ -70,7 +72,7 @@ rimasto senza tipi.
 
 ## 3. Cosa contiene la specifica
 
-- **105 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
+- **112 operazioni** Node: Vault, Chat, Projects, Changesets, Review Studio,
   Research Studio, Study Studio, Scheduler F3/F5/F6, KE Workbench, Ingestion,
   Files, Catalogues, Knowledge Graph/Neo4j, Identity, UI access/preferences,
   Templates e Documentazione.
@@ -157,15 +159,15 @@ AgentServer.handleRequest()
        └─ UiModule               3    ui.access, ui.preferences.get/put
 ```
 
-Degli **105 endpoint** del catalogo, tutti sono instradati su **158 handler** del
-bus. I contatori storici (95/98/99/101/104 endpoint, 90/99 comandi) appartengono
+Degli **112 endpoint** del catalogo, tutti sono instradati su **166 handler** del
+bus. I contatori storici (95/98/99/101/104/105 endpoint, 90/99 comandi) appartengono
 ai checkpoint precedenti: `docs.openapi` e `docs.swagger` ora sono comandi
 pubblici dispatchati con middleware saltato (`handleDocsRequest()` resta come
 fallback), mentre i tre `graph.sync|validate|rag` passano dal gate B4 come ogni
 ingresso non pubblico e preservano byte-per-byte il proxy FastAPI.
 Il manifest generato (`src/shared/api/generated/commandManifest.generated.ts`,
-[`COMMAND_MANIFEST.md`](../riferimenti/command-manifest.md)) riporta **51 comandi slash
-catalogati / 20 con case dedicato**, **113 tool MCP** e **32 gap noti non
+[`COMMAND_MANIFEST.md`](../riferimenti/command-manifest.md)) riporta **52 comandi slash
+catalogati / 21 con case dedicato**, **120 tool MCP** e **32 gap noti non
 bloccanti**, tutti di tipo `slash-without-implementation`: `npm run
 manifest:check` vieta ogni `route-without-bus`.
 
@@ -221,7 +223,7 @@ manifest:check` vieta ogni `route-without-bus`.
 Il frontend non costruisce più URL API a mano:
 
 ```text
-ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (105 id, assertion compile-time)
+ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (112 id, assertion compile-time)
        ──► src/frontend/api/client.ts    createApiClient(): un metodo per EndpointId
                                           + call() + stream() (SSE incrementale)
        ──► src/frontend/core/apiBus.ts   apiBus.dispatch()/stream() + eventi UI
@@ -259,8 +261,8 @@ ROUTES ──► src/shared/api/endpoints.ts   EndpointTypes (105 id, assertion 
 | Fase | Stato | Contenuto |
 |---|---|---|
 | 1 — Contratti e browser API | ✅ completata | `ROUTES`, OpenAPI 3.1, Swagger self-hosted, merge FastAPI/MCP |
-| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, kernel/modules/ports con 20 moduli di dominio, 158 handler su bus e zero `route-without-bus` |
-| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (105 id), client generato, `apiBus`, facciate senza `fetch` diretto e senza fallback `FileStorage` |
+| 2 — Bus backend e moduli di dominio | ✅ completata | `MessageBus`, risultati HTTP-neutrali, validazione Ajv, kernel/modules/ports con 20 moduli di dominio, 166 handler su bus e zero `route-without-bus` |
+| 3 — Client unico e bus UI | ✅ completata | `EndpointTypes` (112 id), client generato, `apiBus`, facciate senza `fetch` diretto e senza fallback `FileStorage` |
 | 4 — Documentazione e collaudo | ✅ completata | wiki rigenerata da `docs/`, drift check, `npm run manifest:check` e verifica completa |
 
 I client esistenti continuano a funzionare: endpoint, envelope e metodi pubblici

@@ -942,6 +942,18 @@ export const COMMAND_MANIFEST: CommandManifest = {
       "hasBusHandler": true
     },
     {
+      "id": "review.citations",
+      "method": "POST",
+      "path": "/api/notes/review/citations",
+      "command": "review.citations",
+      "tags": [
+        "Review Studio"
+      ],
+      "projectScoped": true,
+      "stream": null,
+      "hasBusHandler": true
+    },
+    {
       "id": "review.digest",
       "method": "GET",
       "path": "/api/notes/review/digest",
@@ -1447,6 +1459,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "cmd.trace",
     "cmd.validate-cq",
     "cmd.verify",
+    "cmd.verify-citations",
     "cmd.wizard",
     "docs.openapi",
     "docs.swagger",
@@ -1494,6 +1507,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "research.related",
     "research.search",
     "research.trace",
+    "review.citations",
     "review.critique",
     "review.diff",
     "review.digest",
@@ -1671,6 +1685,12 @@ export const COMMAND_MANIFEST: CommandManifest = {
       "id": "verify",
       "category": "review",
       "verb": "verify",
+      "hasImplementation": true
+    },
+    {
+      "id": "verify-citations",
+      "category": "review",
+      "verb": "verify-citations",
       "hasImplementation": true
     },
     {
@@ -1880,6 +1900,7 @@ export const COMMAND_MANIFEST: CommandManifest = {
     "thesis-chapter",
     "trace",
     "verify",
+    "verify-citations",
     "wizard"
   ],
   "mcpTools": [
@@ -4936,6 +4957,49 @@ export const COMMAND_MANIFEST: CommandManifest = {
               "note"
             ],
             "description": "Verification request"
+          }
+        },
+        "additionalProperties": false
+      },
+      "mutating": true,
+      "legacy": false
+    },
+    {
+      "name": "wf_review_citations",
+      "operationId": "review.citations",
+      "description": "Check OKF line anchors: source existence, line ranges, sha256 baselines and claim coverage · POST /api/notes/review/citations",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "params": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "query": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "headers": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "note": {
+                "type": "string"
+              },
+              "semantic": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "note"
+            ],
+            "description": "Citation check request"
           }
         },
         "additionalProperties": false

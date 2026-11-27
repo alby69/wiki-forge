@@ -10,7 +10,7 @@ import { bindResizer } from '@frontend/core/ui/resizer';
 import { canRenderAction, canUseOperation } from '@frontend/core/auth';
 
 const KE_CHAT_COMMANDS = new Set([
-  'adversarial-review', 'verify', 'human-review', 'consult', 'trace', 'deep-research',
+  'adversarial-review', 'verify', 'verify-citations', 'human-review', 'consult', 'trace', 'deep-research',
   'schema-lint', 'schema-infer', 'validate-cq', 'suggest-odp', 'neuro-check', 'ke-maturity',
 ]);
 

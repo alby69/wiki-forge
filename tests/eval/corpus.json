@@ -1,0 +1,319 @@
+[
+  {
+    "id": "governance-clinica",
+    "title": "Governance clinica",
+    "path": "wiki/salute/governance-clinica.md",
+    "tags": [
+      "governance",
+      "salute"
+    ],
+    "content": "La governance clinica coordina i percorsi di cura e definisce le responsabilità. Vedi [[comitato-etico]] e [[protocolli-clinici]].",
+    "links": [
+      "comitato-etico",
+      "protocolli-clinici"
+    ]
+  },
+  {
+    "id": "comitato-etico",
+    "title": "Comitato etico",
+    "path": "wiki/salute/comitato-etico.md",
+    "tags": [
+      "governance",
+      "etica"
+    ],
+    "content": "Il comitato etico valuta i protocolli clinici e le decisioni di governance. Riferimento a [[governance-clinica]].",
+    "links": [
+      "governance-clinica"
+    ]
+  },
+  {
+    "id": "protocolli-clinici",
+    "title": "Protocolli clinici",
+    "path": "wiki/salute/protocolli-clinici.md",
+    "tags": [
+      "salute",
+      "processi"
+    ],
+    "content": "Linee guida per i percorsi clinici, la sicurezza dei pazienti e la documentazione. Vedi [[governance-clinica]].",
+    "links": [
+      "governance-clinica"
+    ]
+  },
+  {
+    "id": "ai-act-europeo",
+    "title": "AI Act europeo",
+    "path": "wiki/normativa/ai-act-europeo.md",
+    "tags": [
+      "governance",
+      "normativa"
+    ],
+    "content": "Il quadro normativo europeo classifica i sistemi di intelligenza artificiale per livello di rischio. Vedi [[quadro-normativo]].",
+    "links": [
+      "quadro-normativo"
+    ]
+  },
+  {
+    "id": "quadro-normativo",
+    "title": "Quadro normativo europeo",
+    "path": "wiki/normativa/quadro-normativo.md",
+    "tags": [
+      "normativa",
+      "ai"
+    ],
+    "content": "Il regolamento europeo definisce obblighi di trasparenza e gestione del rischio per l'AI. Vedi [[ai-act-europeo]].",
+    "links": [
+      "ai-act-europeo"
+    ]
+  },
+  {
+    "id": "bias-algoritmico",
+    "title": "Bias algoritmico",
+    "path": "wiki/etica/bias-algoritmico.md",
+    "tags": [
+      "etica",
+      "ai"
+    ],
+    "content": "Il bias algoritmico nei processi HR richiede audit e mitigazione dei dati di addestramento. Vedi [[assunzioni-hr]].",
+    "links": [
+      "assunzioni-hr"
+    ]
+  },
+  {
+    "id": "assunzioni-hr",
+    "title": "Assunzioni HR",
+    "path": "wiki/lavoro/assunzioni-hr.md",
+    "tags": [
+      "hr",
+      "lavoro"
+    ],
+    "content": "Le assunzioni HR usano modelli predittivi; il bias algoritmico può influenzare la selezione. Vedi [[bias-algoritmico]].",
+    "links": [
+      "bias-algoritmico"
+    ]
+  },
+  {
+    "id": "competenze-digitale",
+    "title": "Competenze digitali",
+    "path": "wiki/lavoro/competenze-digitale.md",
+    "tags": [
+      "hr",
+      "formazione"
+    ],
+    "content": "La formazione sulle competenze digitali accompagna l'automazione dei processi. Digital skills and automation require training. Vedi [[automazione-lavoro]].",
+    "links": [
+      "automazione-lavoro"
+    ]
+  },
+  {
+    "id": "automazione-lavoro",
+    "title": "Automazione del lavoro",
+    "path": "wiki/lavoro/automazione-lavoro.md",
+    "tags": [
+      "lavoro",
+      "ai"
+    ],
+    "content": "L'automazione dei processi riduce le attività ripetitive e cambia le competenze richieste. Automation changes work and digital skills. Vedi [[competenze-digitale]].",
+    "links": [
+      "competenze-digitale"
+    ]
+  },
+  {
+    "id": "salario-minimo",
+    "title": "Salario minimo",
+    "path": "wiki/economia/salario-minimo.md",
+    "tags": [
+      "lavoro",
+      "economia"
+    ],
+    "content": "Il salario minimo tutela i lavoratori e influenza la contrattazione collettiva."
+  },
+  {
+    "id": "disuguaglianze-reddito",
+    "title": "Disuguaglianze di reddito",
+    "path": "wiki/economia/disuguaglianze-reddito.md",
+    "tags": [
+      "economia",
+      "lavoro"
+    ],
+    "content": "Le disuguaglianze di reddito sono misurate con l'indice di Gini. Income inequality is measured with the Gini index."
+  },
+  {
+    "id": "graeber-bullshit-jobs",
+    "title": "Bullshit jobs",
+    "path": "wiki/antropologia/graeber-bullshit-jobs.md",
+    "tags": [
+      "antropologia",
+      "lavoro"
+    ],
+    "content": "David Graeber descrive i bullshit jobs, lavori privi di senso diffusi nelle economie moderne. Vedi [[lavoro-significato]].",
+    "links": [
+      "lavoro-significato"
+    ]
+  },
+  {
+    "id": "lavoro-significato",
+    "title": "Lavoro e significato",
+    "path": "wiki/antropologia/lavoro-significato.md",
+    "tags": [
+      "antropologia",
+      "filosofia"
+    ],
+    "content": "Il significato del lavoro è legato alla dignità e alla utilità percepita."
+  },
+  {
+    "id": "hybrid-retrieval",
+    "title": "Hybrid retrieval",
+    "path": "wiki/retrieval/hybrid-retrieval.md",
+    "tags": [
+      "retrieval",
+      "ir"
+    ],
+    "content": "Hybrid retrieval combines BM25 lexical ranking with reciprocal rank fusion and optional dense vectors. See [[bm25-index]], [[evaluation-metrics]] and [[reciprocal-rank-fusion]].",
+    "links": [
+      "bm25-index",
+      "evaluation-metrics",
+      "reciprocal-rank-fusion"
+    ]
+  },
+  {
+    "id": "evaluation-metrics",
+    "title": "Evaluation metrics",
+    "path": "wiki/retrieval/evaluation-metrics.md",
+    "tags": [
+      "retrieval",
+      "eval"
+    ],
+    "content": "Recall at five, mean reciprocal rank and citation precision measure retrieval quality. See [[abstention-policy]] and [[citation-grounding]]. Le citazioni e la qualita delle metriche sono importanti.",
+    "links": [
+      "abstention-policy",
+      "citation-grounding"
+    ]
+  },
+  {
+    "id": "reciprocal-rank-fusion",
+    "title": "Reciprocal rank fusion",
+    "path": "wiki/retrieval/reciprocal-rank-fusion.md",
+    "tags": [
+      "retrieval",
+      "ir"
+    ],
+    "content": "RRF merges ranked lists using the reciprocal of the rank plus a constant. See [[hybrid-retrieval]].",
+    "links": [
+      "hybrid-retrieval"
+    ]
+  },
+  {
+    "id": "bm25-index",
+    "title": "BM25 index",
+    "path": "wiki/retrieval/bm25-index.md",
+    "tags": [
+      "retrieval",
+      "ir"
+    ],
+    "content": "An incremental BM25 index stores term frequencies and document lengths on disk."
+  },
+  {
+    "id": "graph-expansion",
+    "title": "Graph expansion",
+    "path": "wiki/retrieval/graph-expansion.md",
+    "tags": [
+      "retrieval",
+      "graph"
+    ],
+    "content": "One hop graph expansion adds notes linked from the top retrieved seeds. Come funziona l'espansione a un hop?"
+  },
+  {
+    "id": "abstention-policy",
+    "title": "Abstention policy",
+    "path": "wiki/retrieval/abstention-policy.md",
+    "tags": [
+      "retrieval",
+      "eval"
+    ],
+    "content": "A retriever should answer non so when no indexed note contains the query concepts."
+  },
+  {
+    "id": "vector-adapter",
+    "title": "Vector adapter",
+    "path": "wiki/retrieval/vector-adapter.md",
+    "tags": [
+      "retrieval",
+      "embeddings"
+    ],
+    "content": "Optional embeddings are disabled by default; precomputed vectors live on disk. I vettori sono memorizzati su disco."
+  },
+  {
+    "id": "citation-grounding",
+    "title": "Citation grounding",
+    "path": "wiki/retrieval/citation-grounding.md",
+    "tags": [
+      "retrieval",
+      "eval"
+    ],
+    "content": "Citations must point to the exact notes that support an answer. Come si cita una fonte nella risposta? Le citazioni devono essere fondate."
+  },
+  {
+    "id": "dense-vectors",
+    "title": "Dense vectors",
+    "path": "wiki/retrieval/dense-vectors.md",
+    "tags": [
+      "retrieval",
+      "embeddings"
+    ],
+    "content": "Dense vectors capture semantic similarity when an embedding provider is configured. I vettori densi sono memorizzati su disco."
+  },
+  {
+    "id": "panoramica-generale",
+    "title": "Panoramica generale",
+    "path": "wiki/overview/panoramica-generale.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "In questa panoramica generale si descrive come si misura la qualita della governance clinica.\nLa qualita della governance clinica e importante per tutti.\nCome si misura la qualita? La qualita e importante.\nLa governance e la clinica sono importanti in questa panoramica.\nSi misura la qualita della governance clinica ogni giorno.\nLa qualita della governance clinica e un tema generale.\nCome si misura la qualita della governance clinica?\nLa governance clinicа e descritta in modo generale.\nPer la qualita si misura la governance e la clinica.\nQuesta panoramica parla di qualita, governance e clinica."
+  },
+  {
+    "id": "overview-summary",
+    "title": "Overview summary",
+    "path": "wiki/overview/overview-summary.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "This overview summarizes how to measure the quality of hybrid retrieval and evaluation metrics.\nThe quality of retrieval is important for the overview.\nHow do we measure the quality? The quality is important.\nHybrid retrieval and evaluation metrics are important in this overview.\nWe measure the quality of hybrid retrieval every day.\nThe quality of retrieval and metrics is a general topic.\nHow do we measure the quality of hybrid retrieval?\nThis overview describes retrieval, metrics and quality.\nFor quality we measure retrieval and metrics.\nThis summary talks about quality, retrieval and metrics."
+  },
+  {
+    "id": "note-generica-ai",
+    "title": "Appunti generali",
+    "path": "wiki/overview/note-generica-ai.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "Il sistema di intelligenza artificiale e il quadro normativo europeo sono importanti.\nLa governance e il rischio sono importanti per il sistema.\nIl quadro europeo e la governance del rischio sono importanti.\nL'AI e il sistema sono descritti in modo generale.\nIl rischio del sistema di intelligenza artificiale e importante.\nLa governance del quadro normativo europeo e importante.\nQuesto appunto parla di sistema, rischio, governance e quadro.\nPer il quadro europeo si considera il rischio.\nLa normativa e il sistema sono importanti.\nGli appunti generali parlano di AI, rischio e governance."
+  },
+  {
+    "id": "generic-notes-en",
+    "title": "General notes",
+    "path": "wiki/overview/generic-notes-en.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "The system and the approach are important in this overview.\nThis overview explains how retrieval and evaluation work.\nThe quality of the approach is important.\nHow does the system work? The system is important.\nRetrieval and evaluation are important in this overview.\nWe combine rankings and metrics in the system.\nThe approach and the system are described in general.\nThis overview talks about retrieval, evaluation and system.\nFor the approach we combine rankings.\nGeneral notes mention retrieval, evaluation and quality."
+  },
+  {
+    "id": "cronache-varie",
+    "title": "Cronache varie",
+    "path": "wiki/overview/cronache-varie.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "La gente parla di lavoro, salario, competenze e formazione.\nIl lavoro e le competenze sono importanti.\nLa formazione e il salario sono importanti per il lavoro.\nLe competenze digitali e l'automazione sono importanti.\nIl salario minimo e le disuguaglianze sono importanti.\nLa gente e il lavoro sono descritti in modo generale.\nQueste cronache parlano di lavoro, salario e competenze.\nPer le competenze si considera la formazione.\nLavoro e salario sono importanti.\nLe cronache parlano di lavoro, formazione e salario."
+  },
+  {
+    "id": "misc-facts",
+    "title": "Misc facts",
+    "path": "wiki/overview/misc-facts.md",
+    "tags": [
+      "overview"
+    ],
+    "content": "The facts about risk, governance, people and work are collected here.\nThe work and the people are important.\nThe governance of risk is important for the facts.\nThese facts describe work, people and governance in general.\nRisk and governance are important in the overview.\nThe facts about work are collected in this note.\nFor the people we collect general facts.\nThis note talks about risk, governance and work.\nThe overview of facts is important.\nMisc facts mention people, work and risk."
+  }
+]

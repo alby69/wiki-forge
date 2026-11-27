@@ -1,9 +1,21 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as http from 'node:http';
+import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { MarkdownParser } from '@shared/domain/markdownParser';
 import { ensureOkfFrontmatter } from '@shared/domain/okfFrontmatter';
+import {
+  claimForAnchor,
+  evaluateCitations,
+  parseCitationAnchors,
+  parseCitationSources,
+  splitFrontmatter,
+  type CitationIssue,
+  type CitationReport,
+  type CitationResolvedSource,
+  type CitationSourceRef,
+} from '@shared/domain/citations';
 import type { WikiNote } from '@shared/domain/wiki';
 import type { ScriptDef } from '@shared/domain/scripts';
 import { LlmClient, LlmClientFactory } from '../llmClient';
@@ -198,6 +210,20 @@ export const reviewMethods = {
           .join(', ');
         return `### ✅ Human Verification\n\nNo wiki note matched \`${noteRef}\`.\n\nTry one of: ${sample || 'none'}.`;
       }
+      if (result.error === 'citation-gate-failed'
+        || result.error === 'citation-coverage-low'
+        || result.error === 'citation-source-changed') {
+        const details = (result.citation?.issues ?? [])
+          .map((issue: CitationIssue) => `- ❌ [${issue.kind}] ${issue.anchor ?? issue.sourceId} — ${issue.detail}`)
+          .join('\n');
+        const hint = result.error === 'citation-coverage-low'
+          ? `\n- 📉 copertura ${Math.round((result.citation?.coverage ?? 0) * 100)}% sotto il minimo richiesto (\`WIKIFORGE_CITATION_MIN_COVERAGE\`)`
+          : result.error === 'citation-source-changed'
+            ? '\n- ⚠️ una fonte è cambiata dopo l\'ultima verifica: rilascia prima una verifica senza `stable` per aggiornare la baseline sha256'
+            : '';
+        return `### 🧾 Verifica bloccata dalla citation gate\n\n${details}${hint}\n\n`
+          + `*Correggi le ancore \`[^src:ID#Lx-Ly]\` e riprova. Dettagli con \`/verify-citations ${noteRef}\`.*`;
+      }
       return `### ✅ Human Verification\n\nCould not read \`${result.path ?? noteRef}\`: ${result.error ?? 'unknown error'}`;
     }
 
@@ -241,7 +267,8 @@ export const reviewMethods = {
     principal?: Principal;
   }): Promise<{
     success: boolean;
-    error?: 'not-found' | 'read-failed' | 'invalid-path' | string;
+    error?: 'not-found' | 'read-failed' | 'invalid-path'
+      | 'citation-gate-failed' | 'citation-coverage-low' | 'citation-source-changed' | string;
     target?: WikiNote;
     note?: WikiNote;
     actor?: string;
@@ -253,6 +280,7 @@ export const reviewMethods = {
     path?: string;
     previousContent?: string;
     content?: string;
+    citation?: CitationReport;
   }> {
     const projectId = options.projectId ?? 'default';
     const noteRef = (options.noteRef || '').trim().replace(/^\[\[|\]\]$/g, '');
@@ -298,7 +326,25 @@ export const reviewMethods = {
       return { success: false, error: `read-failed: ${String(err)}`, target, path: target.path };
     }
 
-    const { content, alreadyVerified, changedStable, changed } = this.applyVerification(raw, actor, timestamp, setStable);
+    // Citation gate (OKF extensions): anchors must resolve to existing source
+    // lines before a verification event is written.
+    const frontmatter = splitFrontmatter(raw);
+    const citation = await this.computeCitationReport(projRoot, frontmatter.block, frontmatter.body);
+    if (!citation.ok) {
+      return { success: false, error: 'citation-gate-failed', target, path: target.path, citation };
+    }
+    if (setStable) {
+      const minCoverage = this.minCitationCoverage();
+      if (citation.coverage + 1e-9 < minCoverage) {
+        return { success: false, error: 'citation-coverage-low', target, path: target.path, citation };
+      }
+      if (citation.issues.some((issue: CitationIssue) => issue.kind === 'hash')) {
+        return { success: false, error: 'citation-source-changed', target, path: target.path, citation };
+      }
+    }
+
+    const sourceHashes = await this.collectSourceHashes(projRoot, frontmatter.block);
+    const { content, alreadyVerified, changedStable, changed } = this.applyVerification(raw, actor, timestamp, setStable, sourceHashes);
     if (changed) {
       await this.writeReviewSnapshot(projectId, target.path, raw, 'verifica');
     }
@@ -354,7 +400,8 @@ export const reviewMethods = {
     rawContent: string,
     actor: string,
     timestamp: string,
-    setStable: boolean
+    setStable: boolean,
+    sourceHashes?: Record<string, string>
   ): { content: string; alreadyVerified: boolean; changedStable: boolean; changed: boolean } {
     const newline = rawContent.includes('\r\n') ? '\r\n' : '\n';
     const fmMatch = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/.exec(rawContent);
@@ -439,8 +486,280 @@ export const reviewMethods = {
       }
     }
 
+    if (sourceHashes && Object.keys(sourceHashes).length > 0) {
+      changed = this.applySourceHashes(fmLines, sourceHashes) || changed;
+    }
+
     const content = `---${newline}${fmLines.join(newline)}${newline}---${newline}${body}`;
     return { content, alreadyVerified, changedStable, changed };
+  },
+
+  /**
+   * Records `sha256:` baselines inside the `sources:` block so a later check
+   * can detect that a source file changed after the last verification.
+   */
+  applySourceHashes(this: Host, fmLines: string[], hashes: Record<string, string>): boolean {
+    const sourcesIndex = fmLines.findIndex(line => /^sources\s*:\s*$/.test(line));
+    if (sourcesIndex === -1) return false;
+
+    let changed = false;
+    let currentId = '';
+    for (let i = sourcesIndex + 1; i < fmLines.length; i++) {
+      const line = fmLines[i];
+      if (line.trim() === '') continue;
+      if (!/^\s/.test(line)) break; // next top-level key ends the sources block
+      if (/^\s*-\s+/.test(line)) currentId = ''; // new entry; id may follow
+      const idMatch = /^\s*-\s+id\s*:\s*(.+)$/.exec(line);
+      if (idMatch) currentId = idMatch[1].trim().replace(/^['"]|['"]$/g, '');
+      if (!currentId) continue;
+      const hash = hashes[currentId];
+      if (!hash) continue;
+      if (/^\s+sha256\s*:/.test(line)) {
+        const indent = /^\s*/.exec(line)?.[0] ?? '    ';
+        fmLines[i] = `${indent}sha256: ${hash}`;
+        changed = true;
+        continue;
+      }
+      if (idMatch) {
+        const indent = /^\s*/.exec(line)?.[0] ?? '  ';
+        fmLines.splice(i + 1, 0, `${indent}  sha256: ${hash}`);
+        changed = true;
+        i += 1;
+      }
+    }
+    return changed;
+  },
+
+  /** Minimum citation coverage required to promote to `stable` (env, default 0). */
+  minCitationCoverage(this: Host): number {
+    const raw = process.env.WIKIFORGE_CITATION_MIN_COVERAGE?.trim();
+    if (!raw) return 0;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) return 0;
+    return value > 1 ? 1 : value;
+  },
+
+  /** Resolve every declared source file under the project root into a report input. */
+  async resolveCitationSources(this: Host, projRoot: string, refs: CitationSourceRef[]): Promise<Map<string, CitationResolvedSource>> {
+    const resolved = new Map<string, CitationResolvedSource>();
+    await Promise.all(
+      refs
+        .filter(ref => ref.resource)
+        .map(async ref => {
+          const abs = path.resolve(projRoot, ref.resource as string);
+          const rel = path.relative(path.resolve(projRoot), abs);
+          if (rel.startsWith('..') || path.isAbsolute(rel)) {
+            resolved.set(ref.id, { exists: false });
+            return;
+          }
+          try {
+            const buffer = await fs.readFile(abs);
+            const text = buffer.toString('utf-8');
+            const lines = text.split(/\r?\n/);
+            if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+            resolved.set(ref.id, {
+              exists: true,
+              lineCount: lines.length,
+              sha256: createHash('sha256').update(buffer).digest('hex'),
+            });
+          } catch {
+            resolved.set(ref.id, { exists: false });
+          }
+        }),
+    );
+    return resolved;
+  },
+
+  async computeCitationReport(this: Host, projRoot: string, block: string, body: string): Promise<CitationReport> {
+    const refs = parseCitationSources(block);
+    const resolved = await this.resolveCitationSources(projRoot, refs);
+    return evaluateCitations(body, refs, sourceId => resolved.get(sourceId) ?? { exists: false });
+  },
+
+  /** sha256 baselines for every declared, currently readable source file. */
+  async collectSourceHashes(this: Host, projRoot: string, block: string): Promise<Record<string, string>> {
+    const refs = parseCitationSources(block);
+    const resolved = await this.resolveCitationSources(projRoot, refs);
+    const hashes: Record<string, string> = {};
+    for (const ref of refs) {
+      const entry = resolved.get(ref.id);
+      if (entry?.exists && entry.sha256) hashes[ref.id] = entry.sha256;
+    }
+    return hashes;
+  },
+
+  /**
+   * OKF extensions — deterministic citation check for one note (or the report
+   * backing `/verify-citations` and the Review Studio Verifica tab).
+   */
+  async checkNoteCitations(this: Host, noteRef: string, projectId: string = 'default', semantic = false): Promise<{
+    success: boolean;
+    error?: string;
+    note?: { id: string; title: string; path: string };
+    report?: CitationReport;
+    semantic?: { verdicts: Array<{ claim: string; sourceId: string; verdict: string }> };
+  }> {
+    const notes = await this.readAllWikiNotes(projectId);
+    const target = this.resolveReviewTarget(noteRef, notes);
+    if (!target) return { success: false, error: 'not-found' };
+
+    const projRoot = await this.resolveProjectRoot(projectId);
+    const absPath = path.resolve(projRoot, target.path);
+    let raw = '';
+    try {
+      await this.validateSafePath(absPath, projectId);
+      raw = await fs.readFile(absPath, 'utf-8');
+    } catch (err) {
+      return { success: false, error: `read-failed: ${String(err)}` };
+    }
+
+    const { block, body } = splitFrontmatter(raw);
+    const report = await this.computeCitationReport(projRoot, block, body);
+    const result: {
+      success: boolean;
+      error?: string;
+      note?: { id: string; title: string; path: string };
+      report?: CitationReport;
+      semantic?: { verdicts: Array<{ claim: string; sourceId: string; verdict: string }> };
+    } = {
+      success: true,
+      note: { id: target.id, title: target.title, path: target.path },
+      report,
+    };
+    if (semantic && report.anchors > 0) {
+      result.semantic = await this.semanticCitationVerdicts(projRoot, body, block, report);
+    }
+    return result;
+  },
+
+  /**
+   * Optional, advisory semantic verdicts (`supported / partial / unsupported`).
+   * Never writes anything and never affects the deterministic gate.
+   */
+  async semanticCitationVerdicts(this: Host, projRoot: string, body: string, block: string, report: CitationReport): Promise<{
+    verdicts: Array<{ claim: string; sourceId: string; verdict: string }>;
+  }> {
+    const verdicts: Array<{ claim: string; sourceId: string; verdict: string }> = [];
+    const refs = new Map(parseCitationSources(block).map(ref => [ref.id, ref]));
+    const anchors = parseCitationAnchors(body).slice(0, 8);
+
+    let client: LlmClient | null = null;
+    try {
+      client = await this.getOrInitLlmClient();
+    } catch {
+      client = null;
+    }
+    if (!client?.complete) return { verdicts: anchors.map(anchor => ({
+      claim: claimForAnchor(body, anchor.raw),
+      sourceId: anchor.sourceId,
+      verdict: 'unknown',
+    })) };
+
+    for (const anchor of anchors) {
+      const ref = refs.get(anchor.sourceId);
+      let excerpt = '';
+      if (ref?.resource) {
+        try {
+          const abs = path.resolve(projRoot, ref.resource);
+          const rel = path.relative(path.resolve(projRoot), abs);
+          if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+            const lines = (await fs.readFile(abs, 'utf-8')).split(/\r?\n/);
+            excerpt = lines.slice(anchor.startLine - 1, anchor.endLine).join('\n');
+          }
+        } catch {
+          excerpt = '';
+        }
+      }
+      const claim = claimForAnchor(body, anchor.raw);
+      let verdict: string = 'unknown';
+      try {
+        const answer = await client.complete({
+          systemPrompt:
+            'You are a strict citation checker. Decide whether the source excerpt supports the claim. '
+            + 'Answer with exactly one word: supported, partial or unsupported.',
+          userMessage: `Claim:\n${claim}\n\nSource excerpt (lines L${anchor.startLine}-L${anchor.endLine}):\n${excerpt}`,
+          contextNotes: [],
+        });
+        const word = /\b(supported|partial|unsupported)\b/i.exec(String(answer ?? ''));
+        verdict = word ? word[1].toLowerCase() : 'unknown';
+      } catch {
+        verdict = 'unknown';
+      }
+      verdicts.push({ claim, sourceId: anchor.sourceId, verdict });
+    }
+    return { verdicts };
+  },
+
+  /**
+   * `/verify-citations [nota|cartella] [semantic]` — deterministic report for
+   * one note or every note of a folder.
+   */
+  async executeVerifyCitationsWorkflow(this: Host, argsText: string, notes: WikiNote[], projectId: string = 'default'): Promise<string> {
+    const tokens = (argsText || '').trim().split(/\s+/).filter(Boolean);
+    const semantic = tokens.length > 0 && tokens[tokens.length - 1].toLowerCase() === 'semantic';
+    const ref = tokens.filter((_, index) => !semantic || index !== tokens.length - 1)
+      .join(' ')
+      .trim()
+      .replace(/^\[\[|\]\]$/g, '');
+
+    const usage = '### 🧾 Verifica citazioni\n\nUsage: `/verify-citations <nota|cartella> [semantic]`\n\n'
+      + '- `<nota|cartella>`: note id/path or folder name (e.g. `architettura`).\n'
+      + '- `semantic`: optional advisory LLM verdicts (`supported / partial / unsupported`), off by default.\n\n'
+      + 'Checks `[^src:ID#Lx-Ly]` anchors: source existence, line ranges, sha256 baselines and claim coverage.';
+    if (!ref) return usage;
+
+    const target = this.resolveReviewTarget(ref, notes);
+    let targets: WikiNote[] = [];
+    if (target) {
+      targets = [target];
+    } else {
+      const folder = ref.replace(/^\.?\//, '').replace(/\/+$/, '');
+      targets = notes.filter(note =>
+        (note.folder || '') === folder
+        || note.path.replace(/^wiki\//, '').startsWith(`${folder}/`),
+      );
+    }
+    if (targets.length === 0) {
+      return `### 🧾 Verifica citazioni\n\nNessuna nota o cartella corrispondente a \`${ref}\`.\n\n${usage}`;
+    }
+
+    const sections: string[] = [];
+    let problems = 0;
+    for (const note of targets.slice(0, 50)) {
+      const result = await this.checkNoteCitations(note.path, projectId, semantic && targets.length === 1);
+      const report = result.report;
+      if (!result.success || !report) {
+        sections.push(`#### ${note.title}\n\n- ❌ controllo non eseguito: ${result.error}`);
+        problems += 1;
+        continue;
+      }
+      const percent = Math.round(report.coverage * 100);
+      const lines: string[] = [
+        `#### ${note.title} (\`${note.path}\`)`,
+        '',
+        `- Ancore: ${report.anchors} · Fonti: ${report.sources} · Copertura: ${percent}% (${report.claimsAnchored}/${report.claimsTotal} affermazioni)`,
+      ];
+      if (report.issues.length === 0) {
+        lines.push('- ✅ nessun problema rilevato');
+      } else {
+        problems += report.issues.filter((issue: CitationIssue) => issue.kind !== 'hash').length;
+        for (const issue of report.issues) {
+          const icon = issue.kind === 'hash' ? '⚠️' : '❌';
+          lines.push(`- ${icon} [${issue.kind}] ${issue.anchor ?? issue.sourceId} — ${issue.detail}`);
+        }
+      }
+      if (result.semantic) {
+        for (const verdict of result.semantic.verdicts) {
+          lines.push(`- 🤖 [${verdict.verdict}] ${verdict.claim.slice(0, 90)} (fonte \`${verdict.sourceId}\`)`);
+        }
+      }
+      sections.push(lines.join('\n'));
+    }
+
+    const header = problems === 0
+      ? '### 🧾 Verifica citazioni — tutto ok'
+      : `### 🧾 Verifica citazioni — ${problems} problema/i`;
+    return `${header}\n\n${sections.join('\n\n')}`;
   },
 
   /**

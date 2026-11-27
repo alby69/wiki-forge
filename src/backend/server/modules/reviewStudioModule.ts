@@ -9,6 +9,7 @@
 
 import { json, type ApiResult } from '../api/http';
 import type { CommandContext, DomainModule, MessageBus } from '../bus/messageBus';
+import type { CitationReport } from '@shared/domain/citations';
 import type { JsonObject, ProjectId } from './services';
 import type { ReviewPort } from '../../app/ports';
 
@@ -28,6 +29,7 @@ interface VerificationResult {
   alreadyVerified?: boolean;
   changedStable?: boolean;
   logUpdated?: boolean;
+  citation?: CitationReport;
 }
 
 function asString(value: unknown): string | undefined {
@@ -55,6 +57,7 @@ export class ReviewStudioModule implements DomainModule {
   register(bus: MessageBus): void {
     bus.register<Payload>('review.meta', (payload, context) => this.meta(payload, context.projectId));
     bus.register<Payload>('review.verify', (payload, context) => this.verify(payload, context));
+    bus.register<Payload>('review.citations', (payload, context) => this.citations(payload, context));
     bus.register<Payload>('review.digest', (payload, context) => this.digest(payload, context.projectId));
     bus.register<Payload>('review.critique', (payload, context) => this.critique(payload, context.projectId));
     bus.register<Payload>('review.snapshots', (payload, context) => this.snapshots(payload, context.projectId));
@@ -110,8 +113,27 @@ export class ReviewStudioModule implements DomainModule {
         alreadyVerified: result.alreadyVerified,
         changedStable: result.changedStable,
         logUpdated: result.logUpdated,
+        citation: result.citation,
         meta,
       }, status);
+    } catch (err) {
+      return json({ success: false, error: String(err) }, 500);
+    }
+  }
+
+  private async citations(payload: Payload, context: CommandContext): Promise<ApiResult> {
+    const noteRef = asString(payload.note);
+    if (!noteRef) {
+      return json({ success: false, error: 'Campo "note" mancante' }, 400);
+    }
+    try {
+      const result = await this.services.checkNoteCitations(
+        noteRef,
+        context.projectId,
+        asBool(payload.semantic),
+      );
+      const status = result.success === true ? 200 : result.error === 'not-found' ? 404 : 400;
+      return json(result, status);
     } catch (err) {
       return json({ success: false, error: String(err) }, 500);
     }

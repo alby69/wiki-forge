@@ -29,6 +29,17 @@ app = FastAPI(
 app.include_router(reasoning_router)
 
 # Request / Response Schemas
+class HealthResponse(BaseModel):
+    status: str = "ok"
+    service: str = "wiki-forge-kg-api"
+
+class ValidationResponse(BaseModel):
+    conforms: bool
+    graph_path: str
+    shapes_path: str
+    report: str
+    violations: List[Dict[str, str]]
+
 class SyncRequest(BaseModel):
     wiki_dir: str = Field(default="wiki", description="Target folder containing Markdown notes")
     output_ttl: str = Field(default="knowledge_graph.ttl", description="Output Turtle file path")
@@ -53,9 +64,9 @@ class RAGQueryResponse(BaseModel):
     final_answer: str
 
 
-@app.get("/api/v1/health")
-def health_check():
-    return {"status": "ok", "service": "wiki-forge-kg-api"}
+@app.get("/api/v1/health", response_model=HealthResponse)
+def health_check() -> HealthResponse:
+    return HealthResponse()
 
 
 @app.post("/api/v1/graph/sync", response_model=SyncResponse)
@@ -89,8 +100,8 @@ def sync_graph(req: SyncRequest):
         raise HTTPException(status_code=500, detail=f"Sync error: {str(e)}")
 
 
-@app.post("/api/v1/graph/validate")
-def validate_shacl_endpoint(req: ValidationRequest):
+@app.post("/api/v1/graph/validate", response_model=ValidationResponse)
+def validate_shacl_endpoint(req: ValidationRequest) -> ValidationResponse:
     graph_p = Path(req.graph_path)
     shapes_p = Path(req.shapes_path)
 
@@ -103,13 +114,13 @@ def validate_shacl_endpoint(req: ValidationRequest):
         data_g = Graph()
         data_g.parse(str(graph_p), format="turtle")
         res = validate_shacl(data_g, str(shapes_p))
-        return {
-            "conforms": res["conforms"],
-            "graph_path": str(graph_p),
-            "shapes_path": str(shapes_p),
-            "report": res["results_text"],
-            "violations": res["violations"]
-        }
+        return ValidationResponse(
+            conforms=res["conforms"],
+            graph_path=str(graph_p),
+            shapes_path=str(shapes_p),
+            report=res["results_text"],
+            violations=res["violations"],
+        )
     except (OSError, ValueError, RuntimeError, WikiForgeError) as e:
         raise HTTPException(status_code=500, detail=f"SHACL validation error: {str(e)}")
 

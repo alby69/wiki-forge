@@ -1,5 +1,7 @@
 # Wiki-Forge: Dynamic Knowledge Base Engine & Print Compiler
 
+[![CI — Full verify](https://github.com/alby69/wiki-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/alby69/wiki-forge/actions/workflows/ci.yml)
+
 > A minimal, agent-agnostic template for building a **personal dynamic knowledge base
 > that an LLM compiles, maintains, and transforms into print-ready documents for you** — based on Andrej Karpathy's
 > [LLM Wiki](docs/standard/KARPATHY_LLM_WIKI.md) pattern.
@@ -43,10 +45,24 @@ L'applicazione si avvierà e il tuo browser si aprirà automaticamente su **http
 - **🔄 Guided Wizards**: Guided onboarding, add-sources, and weekly-check scenarios (`/wizard`) with backend state in `.wiki-forge/procedures/wizard_state.json` (UI resume not yet available — the wizard restarts after a reload).
 - **⚡ Live Sync & ETag Conflict Prevention**: Live Server-Sent Events (`/api/v1/sync/events`) for real-time file updates, plus SHA256 ETag `If-Match` validation on save to prevent write collisions.
 - **📖 Context-Sensitive In-App Guide**: Press **F1** (or the **?** button in the toolbar) for the help panel; `/help [topic]` in chat shows the same content, served from `docs/help/*.md` (works offline).
-- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for **110 HTTP routes**; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
-- **🚌 Bus backend e API tipizzate**: il backend segue kernel/modules/ports: 20 moduli di dominio instradano **164 handler** su `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, [`docs/riferimenti/COMMAND_MANIFEST.md`](docs/riferimenti/COMMAND_MANIFEST.md)) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **51 comandi slash catalogati / 20 con case dedicato**, **118 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, verificati da `npm run manifest:check`. Il frontend usa la sola facciata `apiBus` e un client tipizzato generato da `ROUTES`; `ApiStorage` non ha più fallback a `FileStorage`, il grafo è mappato solo dal `WikiGraphDto` del backend e il fallback dei template canonici passa esplicitamente da `api:error`. Nessun componente chiama `fetch` o un altro componente per raggiungere le API, e nessun adapter importa un altro adapter. Vedi [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
+- **🧩 API Contract Layer & Swagger Browser**: `ROUTES` in `src/shared/api/contracts.ts` generates the OpenAPI 3.1 spec for **112 HTTP routes**; browse it at **http://localhost:3001/api/docs** (or `:5173/api/docs`) with self-hosted Swagger UI, no CDN required. See [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
+- **🚌 Bus backend e API tipizzate**: il backend segue kernel/modules/ports: 20 moduli di dominio instradano **166 handler** su `MessageBus`, con risultati HTTP-neutrali e facciata `AgentServer` invariata. Il manifest pubblicato (`src/shared/api/generated/commandManifest.generated.ts`, [`docs/riferimenti/COMMAND_MANIFEST.md`](docs/riferimenti/COMMAND_MANIFEST.md)) è generato dai contratti di route e dalle definizioni MCP condivise ed è consumato da CLI, descrittori dei tool MCP e OpenAPI: **52 comandi slash catalogati / 21 con case dedicato**, **120 tool MCP**, **32 gap noti non bloccanti** e **zero gap `route-without-bus`**, verificati da `npm run manifest:check`. Il frontend usa la sola facciata `apiBus` e un client tipizzato generato da `ROUTES`; `ApiStorage` non ha più fallback a `FileStorage`, il grafo è mappato solo dal `WikiGraphDto` del backend e il fallback dei template canonici passa esplicitamente da `api:error`. Nessun componente chiama `fetch` o un altro componente per raggiungere le API, e nessun adapter importa un altro adapter. Vedi [`docs/architettura/OPENAPI.md`](docs/architettura/OPENAPI.md).
 - **🔐 Produzione**: RBAC e auth sempre forzati, token richiesto salvo IdP o user store configurati, CORS allowlist, body limit, correlation id ed endpoint `/api/healthz`, `/api/readyz`, `/api/metrics`. Le sessioni sono persistite via `StateStore`, lo scheduler usa un lock a lease sullo stato (non più un lock PID), il relay dell'outbox delle approvazioni è attivo, il subscriber di audit registra `command:handled`/`command:failed`, `CommandContext.principal` è sempre impostato dal dispatch del bus, i subprocess usano un allowlist di variabili d'ambiente e `@opentelemetry/api` è dichiarato con fallback locale.
 - **🚢 Deployment**: Render usa `Dockerfile.render` + `bin/render-start.sh`: un solo processo Node serve la SPA buildata e le API su `$PORT`, con health su `/api/healthz`, nessuna variabile `VITE_*` a runtime, nessun default `admin/admin`, `WIKIFORGE_STATE_DIR=/app/.wiki-forge/state` e utente non-root. Docker Compose mantiene il servizio Vite `ui` solo per lo sviluppo, insieme ad API e worker (`WIKIFORGE_EMBED_SCHEDULER=false`).
+
+<!-- metrics:start -->
+> Metriche generate da `scripts/gen_doc_metrics.py` a partire dal manifest generato; non modificare a mano.
+
+| Metrica | Valore |
+|---|---:|
+| Route HTTP | 112 |
+| Handler bus | 166 |
+| Comandi slash catalogati | 52 |
+| Comandi slash con case dedicato | 21 |
+| Tool MCP | 120 |
+| Gap noti | 32 |
+
+<!-- metrics:end -->
 
 ---
 
@@ -176,6 +192,16 @@ le scritture vanno solo in `.wiki-forge/`, con lo stato Node in
 `.wiki-forge/state/`. Per migrare:
 `python3 scripts/migrate_state_roots.py --status`, poi `--apply`; `--rollback`
 ripristina i file dal backup creato durante la migrazione.
+
+### Stato dei componenti
+
+| Componente | Stato | Note |
+|---|---|---|
+| Web UI, gateway Node, servizio Python, CLI e MCP | **Stabile** | Percorso supportato e coperto da `npm run verify`. |
+| `src-tauri/` | **Sperimentale** | Scaffold Tauri v2 non collegato a build o release; versione e icone da allineare. |
+| `extension/` | **Sperimentale** | Prototipo MV3 di web clipper, non pubblicato né verificato in CI; l'ingestione supportata è `clip2md.py`. |
+
+La decisione finale su questi due componenti è tracciata nella fase corrispondente della [ROADMAP](ROADMAP.md).
 
 ---
 

@@ -1,7 +1,7 @@
 id = "ke.bootstrap"
 title = "Bootstrap Knowledge Base Infrastructure"
 role = "ke"
-description = "Initializes .wikiforge directory, checks configuration, and verifies directory structure."
+description = "Initializes .wiki-forge directory, checks configuration, and verifies directory structure."
 requires = []
 
 [[steps]]

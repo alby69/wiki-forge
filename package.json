@@ -14,9 +14,14 @@
     "test:e2e": "playwright test",
     "test:coverage": "PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ --cov=scripts --cov-report=term-missing --cov-fail-under=24",
     "test:coverage:semantics": "PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ --cov=src/backend/wikiforge/semantics --cov-report=term-missing --cov-fail-under=64",
+    "test:coverage:ts": "node --import tsx --experimental-test-coverage --test tests/*.test.ts",
+    "test:coverage:ts:check": "node scripts/check_ts_coverage.mjs",
     "manifest": "node --import tsx scripts/gen_command_manifest.mjs",
     "manifest:check": "node --import tsx scripts/gen_command_manifest.mjs --check",
-    "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run typecheck && npm run build && npm test && npm run test:coverage && npm run test:coverage:semantics && npm run test:e2e && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/",
+    "python-contract": "python3 scripts/export_python_openapi.py && node scripts/gen_python_api_client.mjs",
+    "python-contract:check": "python3 scripts/export_python_openapi.py --check && node scripts/gen_python_api_client.mjs --check",
+    "eval:check": "python3 tests/eval/run_eval.py",
+    "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run python-contract:check && npm run typecheck && npm run build && npm test && npm run test:coverage && npm run test:coverage:semantics && npm run test:e2e && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ && npm run eval:check && npm run test:coverage:ts:check",
     "wf": "node --import tsx bin/wf.ts",
     "mcp": "node --import tsx bin/mcp.ts",
     "worker": "node --import tsx bin/worker.ts"
@@ -37,7 +42,7 @@
     "cron-parser": "^5.10.6",
     "force-graph": "^1.51.4",
     "marked": "^12.0.0",
-    "smol-toml": "^1.8.0",
+    "smol-toml": "1.9.1",
     "swagger-ui-dist": "^5.35.1",
     "unist-util-visit": "^5.2.0",
     "zod": "^4.6.7"
@@ -47,6 +52,6 @@
     "@types/node": "^20.19.43",
     "tsx": "^4.19.0",
     "typescript": "^5.3.3",
-    "vite": "^8.3.1"
+    "vite": "8.4.0"
   }
 }

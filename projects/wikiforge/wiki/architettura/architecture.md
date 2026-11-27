@@ -70,11 +70,25 @@ UI TypeScript/Vite ──HTTP/SSE──> Node API Gateway (:3001, kernel/modules
 metodo, percorso, schemi, `operationId`, comando bus e ambito progetto. Da esso
 derivano OpenAPI 3.1, il client tipizzato e il manifest generato
 (`src/shared/api/generated/commandManifest.generated.ts`), consumato da CLI,
-MCP e Swagger. Stato verificato: **105 route HTTP**, **158 handler bus** in
-20 moduli, **51 comandi slash catalogati / 20 con case dedicato**, **113 tool
+MCP e Swagger. Stato verificato: **112 route HTTP**, **166 handler bus** in
+20 moduli, **52 comandi slash catalogati / 21 con case dedicato**, **119 tool
 MCP**, **32 gap noti non bloccanti**, zero gap `route-without-bus`.
 `npm run manifest:check` applica quest'ultima invariante. Dettagli in
 [`OPENAPI.md`](openapi.md) e nel manifest generato.
+
+<!-- metrics:start -->
+> Metriche generate da `scripts/gen_doc_metrics.py` a partire dal manifest generato; non modificare a mano.
+
+| Metrica | Valore |
+|---|---:|
+| Route HTTP | 112 |
+| Handler bus | 166 |
+| Comandi slash catalogati | 52 |
+| Comandi slash con case dedicato | 21 |
+| Tool MCP | 120 |
+| Gap noti | 32 |
+
+<!-- metrics:end -->
 
 `AgentServer.handleRequest()` risolve la route e Dispatcha sul `MessageBus`;
 gli handler ricevono un `CommandContext` con `principal` sempre impostato e
@@ -110,9 +124,10 @@ route grafo. Il motore di salute aggregato (`api/health.py`) calcola uno score
 Il Procedure Engine (`procedures.py`) esegue procedure TOML con DAG, pause
 umane e criteri di uscita, persistendo in
 `.wiki-forge/procedures/state/<run_id>.json`, mentre lo StateStore Node usa
-`.wiki-forge/state/`. La radice è unica: i vecchi file `.wikiforge/` restano
-leggibili in fallback e `scripts/migrate_state_roots.py` li copia con backup e
-rollback. Il lock a lease appartiene allo scheduler Node, non al Procedure Engine.
+`.wiki-forge/state/`. La radice è unica: il fallback di lettura da `.wikiforge/`
+è stato rimosso; `scripts/migrate_state_roots.py --status` avvisa se la vecchia
+radice è ancora presente e il comando senza flag la migra con backup e rollback.
+Il lock a lease appartiene allo scheduler Node, non al Procedure Engine.
 
 ### 3.3.1 Provider LLM locale CPU-only
 

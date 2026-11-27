@@ -12,7 +12,7 @@ export type VaultPort = Pick<DomainServices,
   | 'createFileHandler' | 'renameHandler' | 'moveHandler' | 'deleteHandler'
   | 'uploadHandler' | 'ingestMarkdownHandler' | 'listTrash' | 'restoreTrash'>;
 export type ReviewPort = Pick<DomainServices,
-  'getReviewMeta' | 'recordHumanVerification' | 'getReviewDigest' | 'critiqueNote'
+  'getReviewMeta' | 'recordHumanVerification' | 'checkNoteCitations' | 'getReviewDigest' | 'critiqueNote'
   | 'listReviewSnapshots' | 'getReviewDiff' | 'restoreReviewSnapshot'>;
 export type ResearchPort = Pick<DomainServices,
   'resolveReviewTarget' | 'traceClaim' | 'consultWiki' | 'promoteConsultAnswer' | 'generateDeepResearch'>

@@ -1,5 +1,6 @@
 import { RenameResult, WikiNote } from '@frontend/core/types/wiki';
 import {
+  ReviewCitationsResponse,
   ReviewCritiqueResponse,
   ReviewDepth,
   ReviewDiffResponse,
@@ -40,6 +41,8 @@ import {
 import { ApiClientError } from '@frontend/api/client';
 import type { EndpointId, EndpointRequest, EndpointResponse } from '@shared/api/contracts';
 import type { LocalModelDto, WikiGraphDto } from '@shared/api/types';
+import { createPythonApiClient } from '@shared/api/generated/pythonApi.generated';
+import { streamSseFrames } from '@shared/api/pythonStream';
 
 export { ACTIVE_PROJECT_KEY, getActiveProjectId, resolveApiBaseUrl };
 
@@ -579,36 +582,16 @@ export class ApiStorage implements IStorage {
     maxTokens = 512
   ): Promise<void> {
     const configured = import.meta.env?.VITE_FASTAPI_BASE_URL as string | undefined;
-    const baseUrl = (configured || 'http://localhost:8000').replace(/\/+$/, '');
-    const response = await fetch(`${baseUrl}/api/v1/llm/reasoning/stream`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify({ prompt, context, max_tokens: maxTokens }),
+    const client = createPythonApiClient({ baseUrl: configured });
+    const response = await client.reasoningStream(
+      { prompt, context, max_tokens: maxTokens },
+      { headers: { Accept: 'text/event-stream' } },
+    );
+    await streamSseFrames(response, (frame) => {
+      if ('error' in frame) throw new Error(frame.error);
+      if ('token' in frame) onToken(frame.token, frame.is_thinking);
+      if ('done' in frame) return false;
     });
-    if (!response.ok || !response.body) {
-      throw new Error(`Reasoning stream failed: HTTP ${response.status}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const frames = buffer.split(/\r?\n\r?\n/);
-      buffer = frames.pop() || '';
-      for (const frame of frames) {
-        const line = frame.split(/\r?\n/).find(part => part.startsWith('data:'));
-        if (!line) continue;
-        const data = line.slice(5).trim();
-        if (!data || data === '[DONE]') continue;
-        const parsed = JSON.parse(data) as { token?: string; is_thinking?: boolean; error?: string; done?: boolean };
-        if (parsed.error) throw new Error(parsed.error);
-        if (parsed.token !== undefined) onToken(parsed.token, Boolean(parsed.is_thinking));
-        if (parsed.done) return;
-      }
-    }
   }
 
   public async getHelpTopics(): Promise<HelpTopicMeta[]> {
@@ -642,6 +625,15 @@ export class ApiStorage implements IStorage {
   public async getReviewMeta(noteRef: string): Promise<ReviewMetaResponse> {
     try {
       return await this.request('review.meta', { query: { note: noteRef } });
+    } catch (err) {
+      return this.failedEnvelope(err, { success: false, error: String(err) });
+    }
+  }
+
+  /** OKF line-anchor citation check (deterministic, optional advisory verdicts). */
+  public async checkCitations(note: string, semantic = false): Promise<ReviewCitationsResponse> {
+    try {
+      return await this.request('review.citations', { body: { note, semantic } });
     } catch (err) {
       return this.failedEnvelope(err, { success: false, error: String(err) });
     }

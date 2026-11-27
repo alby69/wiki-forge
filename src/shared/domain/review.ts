@@ -5,6 +5,8 @@
  * types in one module keeps the modal and `ApiStorage` in sync.
  */
 
+import type { CitationReport } from './citations';
+
 export type ReviewTab = 'verify' | 'critique' | 'digest' | 'diff' | 'proposte';
 
 export type ReviewDepth = 'fast' | 'standard' | 'deep';
@@ -74,6 +76,23 @@ export interface ReviewVerifyResponse {
   changedStable?: boolean;
   logUpdated?: boolean;
   meta?: ReviewMetaResponse | null;
+  /** Populated when the citation gate blocked the verification. */
+  citation?: CitationReport;
+}
+
+/** Optional, advisory verdicts from the semantic citation check. */
+export interface ReviewSemanticVerdict {
+  claim: string;
+  sourceId: string;
+  verdict: 'supported' | 'partial' | 'unsupported' | 'unknown';
+}
+
+export interface ReviewCitationsResponse {
+  success: boolean;
+  error?: string;
+  note?: { id: string; title: string; path: string };
+  report?: CitationReport;
+  semantic?: { verdicts: ReviewSemanticVerdict[] };
 }
 
 export interface ReviewDigestItem {

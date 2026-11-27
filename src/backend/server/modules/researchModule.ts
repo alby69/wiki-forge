@@ -9,7 +9,16 @@
 
 import { error, json, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
-import { findBacklinks, searchNotes, suggestRelated } from '../researchHelpers';
+import {
+  findBacklinks,
+  keyTerms,
+  noteSearchLines,
+  suggestRelated,
+  toNoteRef,
+  tokenize,
+  type ResearchSearchResult,
+} from '../researchHelpers';
+import { defaultRetriever, type Retriever } from '../retrieval/retrieverPort';
 import type { ProjectId } from './services';
 import type { ResearchPort } from '../../app/ports';
 
@@ -35,7 +44,10 @@ function asBool(value: unknown): boolean | undefined {
 export class ResearchModule implements DomainModule {
   readonly name = 'research';
 
-  constructor(private readonly services: ResearchPort) {}
+  constructor(
+    private readonly services: ResearchPort,
+    private readonly retriever: Retriever = defaultRetriever,
+  ) {}
 
   register(bus: MessageBus): void {
     bus.register<Payload>('research.search', (payload, context) => this.search(payload, context.projectId));
@@ -54,8 +66,34 @@ export class ResearchModule implements DomainModule {
       const parsedLimit = asNumber(payload.limit);
       const limit = parsedLimit === undefined ? 30 : Math.max(1, Math.min(100, parsedLimit));
       const notes = await this.services.readAllWikiNotes(projectId);
-      const result = searchNotes(notes, query, limit);
-      return json({ success: true, ...result });
+      const q = query.trim();
+      const started = Date.now();
+      const hits = await this.retriever.retrieve(q, notes, { limit, projectId });
+      const byId = new Map(notes.map(note => [note.id, note]));
+      const tokens = tokenize(q);
+      const phrase = q.toLowerCase();
+      const results: ResearchSearchResult[] = [];
+      let totalMatches = 0;
+
+      for (const hit of hits) {
+        const note = byId.get(hit.id);
+        if (!note) continue;
+        const { matches, matchCount } = noteSearchLines(note, tokens);
+        const title = note.title.toLowerCase();
+        const enrichedScore = hit.score + (title.includes(phrase) ? 1 : 0);
+        totalMatches += matchCount;
+        results.push({ note: toNoteRef(note), score: enrichedScore, matchCount, matches });
+      }
+
+      return json({
+        success: true,
+        query: q,
+        total: results.length,
+        totalMatches,
+        scanned: notes.length,
+        tookMs: Date.now() - started,
+        results,
+      });
     } catch (err) {
       return error(String(err), 500);
     }
@@ -84,8 +122,19 @@ export class ResearchModule implements DomainModule {
       const notes = await this.services.readAllWikiNotes(projectId);
       const target = this.services.resolveReviewTarget(noteRef, notes);
       if (!target) return error(`Nota non trovata: ${noteRef}`, 404);
-      const result = suggestRelated(notes, target, (ref, list) => this.services.resolveReviewTarget(ref, list), limit);
-      return json({ success: true, ...result });
+      const result = suggestRelated(notes, target, (ref, list) => this.services.resolveReviewTarget(ref, list), limit * 2);
+      const query = [target.title, ...target.tags, ...keyTerms(`${target.title}\n${target.content}`).slice(0, 8)].join(' ');
+      const hits = await this.retriever.retrieve(query, notes, { limit: limit * 2, projectId });
+      const rank = new Map(hits.map((hit, index) => [hit.id, index]));
+      const suggestions = result.suggestions
+        .slice()
+        .sort((a, b) => {
+          const left = rank.get(a.note.id) ?? Number.MAX_SAFE_INTEGER;
+          const right = rank.get(b.note.id) ?? Number.MAX_SAFE_INTEGER;
+          return left - right || b.score - a.score || a.note.title.localeCompare(b.note.title);
+        })
+        .slice(0, limit);
+      return json({ success: true, ...result, suggestions });
     } catch (err) {
       return error(String(err), 500);
     }
@@ -145,6 +194,6 @@ export class ResearchModule implements DomainModule {
   }
 }
 
-export function createResearchModule(services: ResearchPort): ResearchModule {
-  return new ResearchModule(services);
+export function createResearchModule(services: ResearchPort, retriever?: Retriever): ResearchModule {
+  return new ResearchModule(services, retriever ?? defaultRetriever);
 }

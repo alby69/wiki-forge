@@ -25,9 +25,9 @@ from src.backend.wikiforge.state_root import (  # noqa: E402
     PROCEDURE_WIZARD,
     PROGRAM_CHANGE_SNAPSHOTS,
     canonical_root,
-    legacy_root,
 )
 
+LEGACY_ROOT_NAME = ".wikiforge"
 MANIFEST_REL = "state-root-migration.json"
 LOCK_REL = "state-root-migration.lock"
 BACKUPS_REL = "backups/state-root-migration"
@@ -40,6 +40,10 @@ MAPPINGS: tuple[tuple[str, str], ...] = (
     ("wizard_state.json", PROCEDURE_WIZARD),
     ("program-change-snapshots", PROGRAM_CHANGE_SNAPSHOTS),
 )
+
+
+def legacy_root(root: Path) -> Path:
+    return root.resolve() / LEGACY_ROOT_NAME
 
 
 def _timestamp() -> str:
@@ -187,10 +191,18 @@ def rollback(root: Path) -> dict[str, Any] | None:
 
 
 def status(root: Path) -> dict[str, Any]:
-    manifest_path = canonical_root(root) / MANIFEST_REL
-    if not manifest_path.exists():
-        return {"status": "not_migrated", "planned_entries": len(_plan(root))}
-    return json.loads(manifest_path.read_text(encoding="utf-8"))
+    canonical = canonical_root(root)
+    manifest_path = canonical / MANIFEST_REL
+    result: dict[str, Any] = {
+        "canonical_exists": canonical.is_dir(),
+        "legacy_exists": legacy_root(root).is_dir(),
+    }
+    if not manifest_path.is_file():
+        result["status"] = "not_migrated"
+        result["planned_entries"] = len(_plan(root))
+        return result
+    result.update(json.loads(manifest_path.read_text(encoding="utf-8")))
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:

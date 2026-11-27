@@ -1,0 +1,27 @@
+{
+  "reasoning_frames": [
+    { "token": "<think>", "is_thinking": true },
+    { "token": "analisi", "is_thinking": true },
+    { "token": "</think>", "is_thinking": true },
+    { "token": "finale", "is_thinking": false },
+    { "done": true }
+  ],
+  "reasoning_sse": [
+    "data: {\"token\":\"<think>\",\"is_thinking\":true}\n\n",
+    "data: {\"token\":\"analisi\",\"is_thinking\":true}\n\n",
+    "data: {\"token\":\"</think>\",\"is_thinking\":true}\n\n",
+    "data: {\"token\":\"finale\",\"is_thinking\":false}\n\n",
+    "data: {\"done\":true}\n\n"
+  ],
+  "reasoning_error": { "error": "modello non disponibile" },
+  "llama_frames": [
+    { "delta": "ciao" },
+    { "delta": " mondo" },
+    { "error": "stop" }
+  ],
+  "llama_jsonl": [
+    "{\"delta\":\"ciao\"}\n",
+    "{\"delta\":\" mondo\"}\n",
+    "{\"error\":\"stop\"}\n"
+  ]
+}

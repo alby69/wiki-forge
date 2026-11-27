@@ -58,6 +58,11 @@ voice_host_a = "alloy"
 voice_host_b = "echo"
 output_folder = "output/audio"
 
+[retrieval.embeddings]
+enabled = false
+dimensions = 0
+vectors_path = ".wiki-forge/index/vectors.json"
+
 [i18n]
 default_language = "en"
 supported_languages = [ "en", "it", "es", "fr", "de" ]

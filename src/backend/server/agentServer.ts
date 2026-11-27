@@ -404,6 +404,8 @@ export class AgentServer {
       getReviewMeta: (noteRef, projectId) => this.getReviewMeta(noteRef, projectId).then(jsonRecord),
       recordHumanVerification: (options, principal) =>
         this.recordHumanVerification({ ...options, principal } as any).then(jsonRecord),
+      checkNoteCitations: (noteRef, projectId, semantic) =>
+        this.checkNoteCitations(noteRef, projectId, semantic).then(jsonRecord),
       getReviewDigest: (projectId, days, scope, noteRef) =>
         this.getReviewDigest(projectId, days, scope as any, noteRef).then(jsonRecord),
       critiqueNote: (options) => this.critiqueNote(options as any).then(jsonRecord),

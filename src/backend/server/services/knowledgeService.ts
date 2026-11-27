@@ -18,13 +18,15 @@ import {
 import {
   findBacklinks,
   NoteRef,
+  noteSearchLines,
   ResearchTraceNote,
   ResearchTraceResponse,
   ResearchTraceSource,
-  searchNotes,
   suggestRelated,
   toNoteRef,
+  tokenize,
 } from '../researchHelpers';
+import { defaultRetriever } from '../retrieval/retrieverPort';
 import {
   buildAudioOverview,
   buildMindmap,
@@ -132,6 +134,21 @@ import { resolvePythonCommand, PYTHON_CMD, buildCliArgsFromSchema, buildCliArgs,
 type Host = Record<string, any>;
 
 export const knowledgeMethods = {
+  /** Shared retrieval path for chat, /consult and Deep Research context. */
+  async retrieveContextNotes(this: Host,
+    query: string,
+    notes: WikiNote[],
+    limit: number = 5
+  ): Promise<WikiNote[]> {
+    if (!query.trim() || notes.length === 0) return [];
+    const hits = await defaultRetriever.retrieve(query, notes, { limit });
+    const byId = new Map(notes.map(note => [note.id, note]));
+    const selected = hits
+      .map(hit => byId.get(hit.id))
+      .filter((note): note is WikiNote => Boolean(note));
+    return selected.length > 0 ? selected : notes.slice(0, 3);
+  },
+
   async processChatCommandStream(this: Host,
     req: ChatRequest,
     onChunk: (chunk: string) => void,
@@ -154,7 +171,7 @@ export const knowledgeMethods = {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
-    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'thesis-chapter' || command === 'verify' || command === 'human-review' || command === 'apply' || command === 'applica' || command === 'help') {
+    if (command === 'compile' || command === 'audit' || command === 'trace' || command === 'reindex' || command === 'study-guide' || command === 'quiz' || command === 'deep-research' || command === 'mindmap' || command === 'note' || command === 'promote-note' || command === 'audio-overview' || command === 'thesis-chapter' || command === 'verify' || command === 'verify-citations' || command === 'human-review' || command === 'apply' || command === 'applica' || command === 'help') {
       const result = await this.processChatCommand(req, projectId, principal);
       onChunk(result);
       return result;
@@ -167,29 +184,7 @@ export const knowledgeMethods = {
     }
 
     const notes = await this.readAllWikiNotes(projectId);
-    let contextNotes: WikiNote[] = [];
-    if (args) {
-      const queryWords = args.toLowerCase().split(/\s+/).filter(Boolean);
-      contextNotes = notes
-        .map((n: any) => {
-          let score = 0;
-          const lowerTitle = n.title.toLowerCase();
-          const lowerContent = n.content.toLowerCase();
-          for (const word of queryWords) {
-            if (lowerTitle.includes(word)) score += 5;
-            if (lowerContent.includes(word)) score += 1;
-          }
-          return { note: n, score };
-        })
-        .filter((item: any) => item.score > 0)
-        .sort((a: any, b: any) => b.score - a.score)
-        .slice(0, 5)
-        .map((item: any) => item.note);
-    }
-
-    if (contextNotes.length === 0 && notes.length > 0) {
-      contextNotes = notes.slice(0, 3);
-    }
+    const contextNotes = await this.retrieveContextNotes(args, notes);
 
     const systemPrompt = await this.getSystemPrompt();
     const client = await this.getOrInitLlmClient();
@@ -250,31 +245,8 @@ export const knowledgeMethods = {
       command = req.command.toLowerCase().replace(/^\//, '');
     }
 
-    // Select context notes based on input
-    let contextNotes: WikiNote[] = [];
-    if (args) {
-      const queryWords = args.toLowerCase().split(/\s+/).filter(Boolean);
-      contextNotes = notes
-        .map((n: any) => {
-          let score = 0;
-          const lowerTitle = n.title.toLowerCase();
-          const lowerContent = n.content.toLowerCase();
-
-          for (const word of queryWords) {
-            if (lowerTitle.includes(word)) score += 5;
-            if (lowerContent.includes(word)) score += 1;
-          }
-          return { note: n, score };
-        })
-        .filter((item: any) => item.score > 0)
-        .sort((a: any, b: any) => b.score - a.score)
-        .slice(0, 5)
-        .map((item: any) => item.note);
-    }
-
-    if (contextNotes.length === 0 && notes.length > 0) {
-      contextNotes = notes.slice(0, 3);
-    }
+    // Select context notes through the shared Retriever port.
+    const contextNotes = await this.retrieveContextNotes(args, notes);
 
     // Handle commands or general freeform query
     switch (command) {
@@ -289,7 +261,7 @@ export const knowledgeMethods = {
           });
         } catch (err) {
           return `### 🔍 Consult Synthesis for "${args}" (Fallback)\n\nFound **${contextNotes.length}** matching article(s):\n\n` +
-            contextNotes.map(n => `- [[${n.id}]] (${n.folder}): ${n.title}`).join('\n') +
+            contextNotes.map((n: WikiNote) => `- [[${n.id}]] (${n.folder}): ${n.title}`).join('\n') +
             `\n\n*Note: LLM provider unavailable (${String(err)}).*`;
         }
       }
@@ -345,6 +317,10 @@ export const knowledgeMethods = {
       case 'verify':
       case 'human-review': {
         return await this.executeVerifyWorkflow(args, notes, projectId, principal);
+      }
+
+      case 'verify-citations': {
+        return await this.executeVerifyCitationsWorkflow(args, notes, projectId);
       }
 
       case 'skill': {
@@ -406,7 +382,7 @@ export const knowledgeMethods = {
           // Fallback response if LLM provider fails
           const match = contextNotes[0];
           if (match) {
-            return `### 💡 Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${match.id}]] (${match.title}):\n\n${match.content.slice(0, 400)}...\n\nRelated articles: ${contextNotes.slice(0, 4).map(n => `[[${n.id}]]`).join(', ')}\n\n*(LLM completion error: ${String(err)})*`;
+            return `### 💡 Answer for "${rawInput}"\n\nBased on your wiki knowledge base, see [[${match.id}]] (${match.title}):\n\n${match.content.slice(0, 400)}...\n\nRelated articles: ${contextNotes.slice(0, 4).map((n: WikiNote) => `[[${n.id}]]`).join(', ')}\n\n*(LLM completion error: ${String(err)})*`;
           }
           return `### 💡 Answer for "${rawInput}"\n\nProcessed query using agent guidelines. You can compile new findings into your wiki notes using the **Attach to Wiki** button below.\n\n*(LLM completion error: ${String(err)})*`;
         }
@@ -788,13 +764,10 @@ ${bodyText.slice(0, 500)}
     await fs.mkdir(synthesisDir, { recursive: true });
 
     const q = (question || '').trim();
-    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-
-    const relevantNotes = words.length > 0
-      ? notes.filter(n => {
-          const text = `${n.id} ${n.title} ${n.content} ${n.folder} ${n.tags?.join(' ')}`.toLowerCase();
-          return words.some(w => text.includes(w));
-        })
+    const noteById = new Map(notes.map(note => [note.id, note]));
+    const hits = q ? await defaultRetriever.retrieve(q, notes, { limit: 12, projectId }) : [];
+    const relevantNotes = q
+      ? hits.map(hit => noteById.get(hit.id)).filter((note): note is WikiNote => Boolean(note))
       : notes.slice(0, 10);
 
     const slug = q ? q.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) : 'general';
@@ -930,11 +903,11 @@ ${body}
 
   async consultWiki(this: Host, question: string, projectId: string = 'default'): Promise<ResearchConsultResponse> {
     const q = (question || '').trim();
-    const notes = await this.readAllWikiNotes(projectId);
-    const search = searchNotes(notes, q, 8);
-    const noteById = new Map(notes.map((note: any) => [note.id, note]));
-    const sources = search.results
-      .map(result => noteById.get(result.note.id))
+    const notes: WikiNote[] = await this.readAllWikiNotes(projectId);
+    const noteById = new Map(notes.map((note: WikiNote) => [note.id, note]));
+    const hits = await defaultRetriever.retrieve(q, notes, { limit: 8, projectId });
+    const sources = hits
+      .map(hit => noteById.get(hit.id))
       .filter((note): note is WikiNote => Boolean(note));
     const citations: ResearchConsultCitation[] = sources.map(note => ({
       id: note.id,
@@ -966,13 +939,16 @@ ${body}
         '',
         '## Passaggi chiave',
       ];
-      if (search.results.length === 0) {
+      if (hits.length === 0) {
         lines.push('- Nessuna nota contiene i termini della domanda.');
       } else {
-        for (const result of search.results.slice(0, 5)) {
-          const firstMatch = result.matches[0];
+        const tokens = tokenize(q);
+        for (const hit of hits.slice(0, 5)) {
+          const note = noteById.get(hit.id);
+          if (!note) continue;
+          const details = noteSearchLines(note, tokens);
           lines.push(
-            `- [[${result.note.id}]] (${result.note.title}) — ${result.matchCount} righe corrispondenti${firstMatch ? `, a partire dalla riga ${firstMatch.line}` : ''}.`
+            `- [[${note.id}]] (${note.title}) — ${details.matchCount} righe corrispondenti${details.matches[0] ? `, a partire dalla riga ${details.matches[0].line}` : ''}.`
           );
         }
       }

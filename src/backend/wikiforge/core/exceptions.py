@@ -36,3 +36,8 @@ class GraphValidationError(WikiForgeError):
 class QueryExecutionError(WikiForgeError):
     """Raised when CQ or graph query execution fails."""
     pass
+
+
+class RetrievalError(WikiForgeError):
+    """Raised when the hybrid retrieval index or vector store is invalid."""
+    pass

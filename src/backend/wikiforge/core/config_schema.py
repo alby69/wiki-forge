@@ -78,6 +78,13 @@ CONFIG_SCHEMA: dict[str, Any] = {
         "include_sources": bool,
     },
     "webclip": {"enabled": bool, "folder": str, "format": str},
+    "retrieval": {
+        "embeddings": {
+            "enabled": bool,
+            "dimensions": int,
+            "vectors_path": str,
+        },
+    },
     "i18n": {
         "default_language": str,
         "supported_languages": (list, str),

@@ -50,6 +50,9 @@ from .provenance import (
     attach_provenance_triples,
     extract_provenance_records,
 )
+from .prov_exporter import (
+    ProvGraphExporter,
+)
 from .graph_rag import (
     GraphRAGPipeline,
     RetrievedSubgraph,
@@ -87,6 +90,7 @@ __all__ = [
     "ProvenanceRecord",
     "attach_provenance_triples",
     "extract_provenance_records",
+    "ProvGraphExporter",
     "GraphRAGPipeline",
     "RetrievedSubgraph",
     "SubgraphNode",

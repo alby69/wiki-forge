@@ -2,6 +2,7 @@ import { escapeHtml } from '@frontend/core/utils/html';
 import { renderMarkdown } from '@frontend/core/utils/markdown';
 import { WikiNote } from '@frontend/core/types/wiki';
 import {
+  ReviewCitationsResponse,
   ReviewCritiqueResponse,
   ReviewDepth,
   ReviewDiffResponse,
@@ -55,6 +56,9 @@ export class ReviewStudio {
   private meta: ReviewMetaResponse | null = null;
   private metaLoading = false;
   private reviewer = 'local';
+
+  private citations: ReviewCitationsResponse | null = null;
+  private citationsLoading = false;
 
   private critique: ReviewCritiqueResponse | null = null;
   private critiqueLoading = false;
@@ -119,6 +123,7 @@ export class ReviewStudio {
       this.snapshots = [];
       this.selectedSnapshotId = null;
       this.diff = null;
+      this.citations = null;
     }
     if (tab === 'critique' && changedNote) this.critique = null;
 
@@ -281,6 +286,54 @@ export class ReviewStudio {
         host.innerHTML = `<div class="wf-rs-error">${escapeHtml(result.error || 'Verifica non riuscita')}</div>`;
       }
     }
+  }
+
+  private async runCitationCheck(semantic: boolean): Promise<void> {
+    const button = this.overlay.querySelector<HTMLButtonElement>(
+      semantic ? '#wf-rs-citations-semantic' : '#wf-rs-citations-btn',
+    );
+    if (button?.disabled) return;
+
+    this.citationsLoading = true;
+    this.citations = null;
+    this.renderBody();
+
+    this.citations = await this.storage.checkCitations(
+      this.noteRef() || this.noteId || '',
+      semantic,
+    );
+    this.citationsLoading = false;
+    this.renderBody();
+  }
+
+  private renderCitationsResult(): string {
+    if (this.citationsLoading) {
+      return '<div class="wf-rs-loading">Controllo delle ancore in corso…</div>';
+    }
+    if (!this.citations) {
+      return '<div class="wf-rs-empty">Controlla gli ancore <code>[^src:ID#Lx-Ly]</code>: esistenza fonte, righe, sha256 e copertura.</div>';
+    }
+    if (!this.citations.success || !this.citations.report) {
+      return `<div class="wf-rs-error">${escapeHtml(this.citations.error || 'Controllo non riuscito')}</div>`;
+    }
+    const report = this.citations.report;
+    const percent = Math.round(report.coverage * 100);
+    const issues = report.issues.length > 0
+      ? `<ul style="margin: 6px 0 0; padding-left: 16px;">${report.issues.map(issue => `
+          <li><code>${escapeHtml(issue.kind)}</code> ${escapeHtml(issue.anchor ?? issue.sourceId)} — ${escapeHtml(issue.detail)}</li>`).join('')}</ul>`
+      : '<div class="wf-rs-empty">✅ nessun problema rilevato</div>';
+    const semantic = this.citations.semantic
+      ? `<div class="wf-rs-note" style="margin-top: 8px;">${this.citations.semantic.verdicts.map(verdict =>
+          `<div>🤖 <strong>${escapeHtml(verdict.verdict)}</strong> — ${escapeHtml(verdict.claim.slice(0, 120))}</div>`).join('')}</div>`
+      : '';
+    return `
+      <div class="wf-rs-badges" style="margin-bottom: 6px;">
+        <span class="wf-rs-badge ${report.ok ? 'green' : 'red'}">ancore ${report.anchors}</span>
+        <span class="wf-rs-badge">fonti ${report.sources}</span>
+        <span class="wf-rs-badge ${percent >= 50 ? 'green' : 'amber'}">copertura ${percent}% (${report.claimsAnchored}/${report.claimsTotal})</span>
+      </div>
+      ${issues}
+      ${semantic}`;
   }
 
   private async submitCritique(): Promise<void> {
@@ -530,6 +583,18 @@ export class ReviewStudio {
           </div>
 
           <div class="wf-rs-panel">
+            <div class="wf-rs-panel-title">
+              <span>Citazioni OKF</span>
+              <span style="font-size: 10.5px; color: #64748b;">[^src:ID#Lx-Ly]</span>
+            </div>
+            <div class="wf-rs-actions" style="margin-bottom: 6px;">
+              <button class="wf-rs-btn" id="wf-rs-citations-btn">Verifica citazioni</button>
+              <button class="wf-rs-btn ghost" id="wf-rs-citations-semantic" title="aggiunge verdict LLM opzionale (supported/partial/unsupported)">+ LLM</button>
+            </div>
+            <div id="wf-rs-citations-result">${this.renderCitationsResult()}</div>
+          </div>
+
+          <div class="wf-rs-panel">
             <div class="wf-rs-panel-title">Registra verifica umana</div>
             <div class="wf-rs-row">
               <div class="wf-rs-field">
@@ -776,6 +841,14 @@ export class ReviewStudio {
 
     this.overlay.querySelector('#wf-rs-verify-btn')?.addEventListener('click', () => {
       void this.submitVerification();
+    });
+
+    this.overlay.querySelector('#wf-rs-citations-btn')?.addEventListener('click', () => {
+      void this.runCitationCheck(false);
+    });
+
+    this.overlay.querySelector('#wf-rs-citations-semantic')?.addEventListener('click', () => {
+      void this.runCitationCheck(true);
     });
 
     this.overlay.querySelector('#wf-rs-critique-btn')?.addEventListener('click', () => {

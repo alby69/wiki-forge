@@ -43,6 +43,7 @@ import type {
   ResearchTraceResponse,
 } from '../domain/research';
 import type {
+  ReviewCitationsResponse,
   ReviewCritiqueResponse,
   ReviewDiffResponse,
   ReviewDigest,
@@ -344,6 +345,10 @@ export type EndpointTypes = {
   'review.verify': {
     req: WithBody<{ note: string; reviewer?: string; comment?: string; setStable?: boolean }>;
     res: ReviewVerifyResponse;
+  };
+  'review.citations': {
+    req: WithBody<{ note: string; semantic?: boolean }>;
+    res: ReviewCitationsResponse;
   };
   'review.digest': {
     req: WithQuery<{ days?: number; scope?: 'all' | 'folder' | 'note'; note?: string }>;

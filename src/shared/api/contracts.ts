@@ -1013,6 +1013,17 @@ export const ROUTES = [
     response: { schema: ok({ note: free(), actor: str(), timestamp: str(), changed: bool(), meta: ref('ReviewMeta') }) },
   }),
   defineRoute({
+    id: 'review.citations', method: 'POST', path: '/api/notes/review/citations', tags: ['Review Studio'],
+    summary: 'Check OKF line anchors: source existence, line ranges, sha256 baselines and claim coverage',
+    command: 'review.citations', projectScoped: true,
+    request: {
+      body: obj({
+        note: str(), semantic: bool(),
+      }, ['note'], 'Citation check request'),
+    },
+    response: { schema: ok({ note: free(), report: free(), semantic: free() }) },
+  }),
+  defineRoute({
     id: 'review.digest', method: 'GET', path: '/api/notes/review/digest', tags: ['Review Studio'],
     summary: 'Deterministic activity digest from wiki/log.md',
     command: 'review.digest', projectScoped: true,

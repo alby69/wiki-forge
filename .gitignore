@@ -33,6 +33,9 @@ Thumbs.db
 .wiki-forge/archive/
 **/.wiki-forge/archive/
 **/.wiki-forge/trash/
+# Phase 94 retrieval artifacts (regenerable): persisted BM25/vector indexes and eval reports.
+.wiki-forge/index/
+.wiki-forge/health/eval/
 # Scheduler runtime state, PID lock and approval queue (F2/F6): machine-local, never versioned.
 .wiki-forge/state/
 .wiki-forge/ui-preferences.json

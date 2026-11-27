@@ -1,0 +1,50 @@
+{"id":"IT-01","language":"it","question":"Come si misura la qualità della governance clinica?","relevant":["governance-clinica","protocolli-clinici"],"abstain":false}
+{"id":"IT-02","language":"it","question":"Quali decisioni sono documentate sulla governance clinica?","relevant":["governance-clinica","comitato-etico"],"abstain":false}
+{"id":"IT-03","language":"it","question":"Chi valuta i protocolli clinici?","relevant":["comitato-etico","protocolli-clinici"],"abstain":false}
+{"id":"IT-04","language":"it","question":"Qual è il ruolo del comitato etico?","relevant":["comitato-etico","governance-clinica"],"abstain":false}
+{"id":"IT-05","language":"it","question":"Cosa prevede l'AI Act europeo?","relevant":["ai-act-europeo","quadro-normativo"],"abstain":false}
+{"id":"IT-06","language":"it","question":"Quali obblighi impone il quadro normativo europeo?","relevant":["quadro-normativo","ai-act-europeo"],"abstain":false}
+{"id":"IT-07","language":"it","question":"Come si classifica il rischio dei sistemi di intelligenza artificiale?","relevant":["ai-act-europeo"],"abstain":false}
+{"id":"IT-08","language":"it","question":"Come si mitiga il bias algoritmico nelle assunzioni?","relevant":["bias-algoritmico","assunzioni-hr"],"abstain":false}
+{"id":"IT-09","language":"it","question":"Dove appare il bias nei processi HR?","relevant":["assunzioni-hr","bias-algoritmico"],"abstain":false}
+{"id":"IT-10","language":"it","question":"Quali competenze servono con l'automazione del lavoro?","relevant":["competenze-digitale","automazione-lavoro"],"abstain":false}
+{"id":"IT-11","language":"it","question":"Come cambia il lavoro con l'automazione dei processi?","relevant":["automazione-lavoro"],"abstain":false}
+{"id":"IT-12","language":"it","question":"Che cos'è il salario minimo?","relevant":["salario-minimo"],"abstain":false}
+{"id":"IT-13","language":"it","question":"Come si misurano le disuguaglianze di reddito?","relevant":["disuguaglianze-reddito"],"abstain":false}
+{"id":"IT-14","language":"it","question":"Cosa descrive Graeber nei bullshit jobs?","relevant":["graeber-bullshit-jobs","lavoro-significato"],"abstain":false}
+{"id":"IT-15","language":"it","question":"Perché il lavoro perde significato?","relevant":["lavoro-significato"],"abstain":false}
+{"id":"IT-16","language":"it","question":"Come funziona il retrieval ibrido?","relevant":["hybrid-retrieval","bm25-index"],"abstain":false}
+{"id":"IT-17","language":"it","question":"Quali metriche valutano il retrieval?","relevant":["evaluation-metrics","citation-grounding"],"abstain":false}
+{"id":"IT-18","language":"it","question":"Che cos'è la fusione RRF?","relevant":["reciprocal-rank-fusion","hybrid-retrieval"],"abstain":false}
+{"id":"IT-19","language":"it","question":"Dove viene salvato l'indice BM25?","relevant":["bm25-index"],"abstain":false}
+{"id":"IT-20","language":"it","question":"Come funziona l'espansione a un hop?","relevant":["graph-expansion"],"abstain":false}
+{"id":"IT-21","language":"it","question":"Quando il retriever deve rispondere non so?","relevant":["abstention-policy"],"abstain":false}
+{"id":"IT-22","language":"it","question":"Gli embedding sono attivi di default?","relevant":["vector-adapter"],"abstain":false}
+{"id":"IT-23","language":"it","question":"Dove sono memorizzati i vettori?","relevant":["vector-adapter","dense-vectors"],"abstain":false}
+{"id":"IT-24","language":"it","question":"Come si cita una fonte nella risposta?","relevant":["citation-grounding"],"abstain":false}
+{"id":"IT-25","language":"it","question":"Quali note spiegano la qualità delle citazioni?","relevant":["citation-grounding","evaluation-metrics"],"abstain":false}
+{"id":"EN-01","language":"en","question":"How does hybrid retrieval combine rankings?","relevant":["hybrid-retrieval","reciprocal-rank-fusion"],"abstain":false}
+{"id":"EN-02","language":"en","question":"Which metrics measure retrieval quality?","relevant":["evaluation-metrics","citation-grounding"],"abstain":false}
+{"id":"EN-03","language":"en","question":"What is reciprocal rank fusion?","relevant":["reciprocal-rank-fusion"],"abstain":false}
+{"id":"EN-04","language":"en","question":"Where is the BM25 index persisted?","relevant":["bm25-index"],"abstain":false}
+{"id":"EN-05","language":"en","question":"How does one-hop graph expansion work?","relevant":["graph-expansion"],"abstain":false}
+{"id":"EN-06","language":"en","question":"When should the retriever abstain?","relevant":["abstention-policy"],"abstain":false}
+{"id":"EN-07","language":"en","question":"Are embeddings enabled by default?","relevant":["vector-adapter"],"abstain":false}
+{"id":"EN-08","language":"en","question":"Where are precomputed vectors stored?","relevant":["vector-adapter","dense-vectors"],"abstain":false}
+{"id":"EN-09","language":"en","question":"How are citations grounded in notes?","relevant":["citation-grounding"],"abstain":false}
+{"id":"EN-10","language":"en","question":"How does the incremental index handle note saves?","relevant":["bm25-index"],"abstain":false}
+{"id":"EN-11","language":"en","question":"Which notes describe AI risk regulation?","relevant":["ai-act-europeo","quadro-normativo"],"abstain":false}
+{"id":"EN-12","language":"en","question":"How do predictive models affect HR hiring?","relevant":["assunzioni-hr","bias-algoritmico"],"abstain":false}
+{"id":"EN-13","language":"en","question":"What does Graeber say about meaningless jobs?","relevant":["graeber-bullshit-jobs","lavoro-significato"],"abstain":false}
+{"id":"EN-14","language":"en","question":"How is income inequality measured?","relevant":["disuguaglianze-reddito"],"abstain":false}
+{"id":"EN-15","language":"en","question":"Which notes cover digital skills and automation?","relevant":["competenze-digitale","automazione-lavoro"],"abstain":false}
+{"id":"AB-01","language":"it","question":"Quanto costa petrolio?","relevant":[],"abstain":true}
+{"id":"AB-02","language":"it","question":"Come si cucina la pasta al pesto?","relevant":[],"abstain":true}
+{"id":"AB-03","language":"en","question":"What is the capital of Australia?","relevant":[],"abstain":true}
+{"id":"AB-04","language":"en","question":"Which recipe makes sourdough bread?","relevant":[],"abstain":true}
+{"id":"AB-05","language":"it","question":"Quanti abitanti ha Reykjavik?","relevant":[],"abstain":true}
+{"id":"AB-06","language":"it","question":"Dove si trova il lago Titicaca?","relevant":[],"abstain":true}
+{"id":"AB-07","language":"en","question":"Who won the 1932 World Cup?","relevant":[],"abstain":true}
+{"id":"AB-08","language":"en","question":"How to repair a bicycle chain?","relevant":[],"abstain":true}
+{"id":"AB-09","language":"it","question":"Quanto tempo serve per decollare?","relevant":[],"abstain":true}
+{"id":"AB-10","language":"en","question":"What is the boiling temperature of quicksilver?","relevant":[],"abstain":true}

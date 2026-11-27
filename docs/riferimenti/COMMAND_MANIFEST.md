@@ -5,11 +5,11 @@
 > `src/frontend/components/chat/commandCatalog.ts`, `src/backend/server/agentServer.ts`
 > e `src/shared/mcp/definitions.ts`.
 
-- Route HTTP: **111**
-- Handler bus: **164**
-- Comandi slash catalogati: **51**
-- Comandi slash con case dedicato: **20**
-- Tool MCP: **119**
+- Route HTTP: **112**
+- Handler bus: **166**
+- Comandi slash catalogati: **52**
+- Comandi slash con case dedicato: **21**
+- Tool MCP: **120**
 - Gap noti: **32**
 
 ## Route HTTP
@@ -90,6 +90,7 @@
 | `files.download` | GET | `/api/files/download` | sì |
 | `review.meta` | GET | `/api/notes/review/meta` | sì |
 | `review.verify` | POST | `/api/notes/review/verify` | sì |
+| `review.citations` | POST | `/api/notes/review/citations` | sì |
 | `review.digest` | GET | `/api/notes/review/digest` | sì |
 | `review.critique` | POST | `/api/notes/review/critique` | sì |
 | `review.snapshots` | GET | `/api/notes/review/snapshots` | sì |
@@ -152,6 +153,7 @@
 | `maturity` | audit | **no** |
 | `adversarial-review` | review | **no** |
 | `verify` | review | sì |
+| `verify-citations` | review | sì |
 | `human-review` | review | sì |
 | `digest` | review | **no** |
 | `diff` | review | **no** |
@@ -262,6 +264,7 @@
 | `wf_files_download` | `files.download` | no | no |
 | `wf_review_meta` | `review.meta` | no | no |
 | `wf_review_verify` | `review.verify` | sì | no |
+| `wf_review_citations` | `review.citations` | sì | no |
 | `wf_review_digest` | `review.digest` | no | no |
 | `wf_review_critique` | `review.critique` | sì | no |
 | `wf_review_snapshots` | `review.snapshots` | no | no |

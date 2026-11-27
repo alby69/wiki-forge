@@ -15,7 +15,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.backend.wikiforge.state_root import HEALTH_HISTORY, HEALTH_STATUS, canonical_path
+from src.backend.wikiforge.state_root import (
+    HEALTH_EVAL_REPORT,
+    HEALTH_HISTORY,
+    HEALTH_STATUS,
+    canonical_path,
+)
 from src.backend.wikiforge.semantics.shacl_validator import validate_shacl
 from src.backend.wikiforge.semantics.markdown_parser import parse_markdown_file
 from rdflib import Graph
@@ -63,6 +68,40 @@ def count_cq_gaps(report_text: str) -> int:
         if any(marker in lowered for marker in _CQ_GAP_MARKERS):
             count += 1
     return count
+
+
+def read_retrieval_eval(repo_root: Path) -> Dict[str, Any]:
+    """Summarize the latest retrieval evaluation for the Health Score.
+
+    A missing report is normal (the runner has not been executed yet); a
+    malformed one is surfaced as unavailable rather than crashing health.
+    """
+    path = canonical_path(repo_root, HEALTH_EVAL_REPORT)
+    if not path.is_file():
+        return {"available": False, "passed": False, "path": HEALTH_EVAL_REPORT}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"available": False, "passed": False, "path": HEALTH_EVAL_REPORT}
+    if not isinstance(data, dict):
+        return {"available": False, "passed": False, "path": HEALTH_EVAL_REPORT}
+
+    metrics = data.get("metrics", {})
+    metrics = metrics if isinstance(metrics, dict) else {}
+    summary: Dict[str, Any] = {
+        "available": True,
+        "passed": bool(data.get("passed", False)),
+        "margin_ok": bool(data.get("margin_ok", False)),
+        "question_count": int(data.get("question_count", 0)),
+        "generated_at": str(data.get("generated_at", "")),
+        "path": HEALTH_EVAL_REPORT,
+    }
+    for key in ("recall@5", "mrr", "citation_precision", "correct_abstention_rate"):
+        try:
+            summary[key] = round(float(metrics.get(key, 0.0)), 4)
+        except (TypeError, ValueError):
+            summary[key] = 0.0
+    return summary
 
 
 def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> Dict[str, Any]:
@@ -176,7 +215,10 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
         except Exception:
             cq_gaps = 0
 
-    # 5. KE Maturity Score (0-100)
+    # 5. Retrieval evaluation (Phase 94)
+    retrieval_eval = read_retrieval_eval(repo_root)
+
+    # 6. KE Maturity Score (0-100)
     ke_maturity_score = 0.0
     overall_stage = "L1 - Seeded"
     if assess_ke_maturity:
@@ -220,6 +262,8 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
         health_score -= min(15, cq_gaps * 5)
     if raw_pending > 0:
         health_score -= min(10, raw_pending * 2)
+    if retrieval_eval["available"] and not retrieval_eval["passed"]:
+        health_score -= 5
 
     health_score = max(0.0, round(health_score, 1))
 
@@ -270,6 +314,20 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
             "priority": 6.5,
         })
 
+    if retrieval_eval["available"] and not retrieval_eval["passed"]:
+        next_best_actions.append({
+            "id": "retrieval.eval-regression",
+            "title": "Fix Hybrid Retrieval Regression",
+            "description": (
+                f"Recall@5={retrieval_eval.get('recall@5')}, MRR={retrieval_eval.get('mrr')}; "
+                "rerun `npm run eval:check`."
+            ),
+            "severity": "high",
+            "impact": "high",
+            "effort": "medium",
+            "priority": 8.5,
+        })
+
     if ke_maturity_score < 80.0:
         next_best_actions.append({
             "id": "ke.export-semantic",
@@ -291,6 +349,7 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
         "maturity_level": maturity_level,
         "maturity_label": maturity_label,
         "ke_maturity_score": ke_maturity_score,
+        "retrieval_eval": retrieval_eval,
         "metrics": {
             "shacl_violations": shacl_violations,
             "cq_gaps": cq_gaps,
@@ -301,6 +360,8 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
             "broken_links": broken_links,
             "stable_notes": stable_count,
             "verified_stable_notes": verified_stable_count,
+            "retrieval_eval_available": retrieval_eval["available"],
+            "retrieval_eval_passed": retrieval_eval["passed"],
         },
         "next_best_actions": next_best_actions,
     }
@@ -319,6 +380,16 @@ def compute_health_metrics(repo_root: Path, wiki_dir: Optional[Path] = None) -> 
 def generate_status_markdown(data: Dict[str, Any]) -> str:
     m = data["metrics"]
     actions = data["next_best_actions"]
+    retrieval_eval = data.get("retrieval_eval") or {"available": False}
+    if retrieval_eval.get("available"):
+        eval_label = "PASS" if retrieval_eval.get("passed") else "FAIL"
+        eval_row = (
+            f"`{eval_label}` · recall@5 `{retrieval_eval.get('recall@5')}` · "
+            f"MRR `{retrieval_eval.get('mrr')}` · citations `{retrieval_eval.get('citation_precision')}` · "
+            f"non-so `{retrieval_eval.get('correct_abstention_rate')}`"
+        )
+    else:
+        eval_row = "`not run` (`npm run eval:check`)"
     action_items = "\n".join([f"- **[{a['id']}]** {a['title']} — *{a['description']}*" for a in actions]) or "- None (Knowledge base fully healthy!)"
 
     return f"""# Wiki-Forge Knowledge Base Status & Health Summary
@@ -339,6 +410,7 @@ def generate_status_markdown(data: Dict[str, Any]) -> str:
 | **Orphan Ratio** | `{round(m['orphan_ratio']*100, 1)}%` ({m['orphans']} notes) | Target: `< 5%` |
 | **Broken Links** | `{m['broken_links']}` | Target: `0` |
 | **Verified Stable Notes** | `{m['verified_stable_notes']} / {m['stable_notes']}` | Target: 100% human-verified |
+| **Retrieval Eval** | {eval_row} | Target: hybrid > lexical baseline + fixed margin |
 
 ---
 

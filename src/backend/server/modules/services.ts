@@ -46,6 +46,7 @@ export interface VaultServices {
 export interface ReviewStudioServices {
   getReviewMeta(noteRef: string, projectId?: ProjectId): Promise<JsonObject>;
   recordHumanVerification(options: JsonObject, principal?: Principal): Promise<JsonObject>;
+  checkNoteCitations(noteRef: string, projectId?: ProjectId, semantic?: boolean): Promise<JsonObject>;
   getReviewDigest(projectId: ProjectId, days: number, scope: string, noteRef?: string): Promise<JsonObject>;
   critiqueNote(options: JsonObject): Promise<JsonObject>;
   listReviewSnapshots(noteRef: string, projectId?: ProjectId): Promise<JsonObject[]>;

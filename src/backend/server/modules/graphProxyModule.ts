@@ -1,12 +1,20 @@
-import { binary, error, json, type ApiResult } from '../api/http';
+import { binary, error, type ApiResult } from '../api/http';
 import type { DomainModule, MessageBus } from '../bus/messageBus';
+import {
+  createPythonApiClient,
+  PYTHON_API_PATHS,
+  type PythonApiClient,
+  type PythonApiGraphPath,
+  type PythonApiRequestOptions,
+} from '../../../shared/api/generated/pythonApi.generated';
 
 export const GRAPH_PROXY_COMMANDS = ['graph.sync', 'graph.validate', 'graph.rag'] as const;
 
-export const GRAPH_PROXY_PATHS: Readonly<Record<string, (typeof GRAPH_PROXY_COMMANDS)[number]>> = {
-  '/api/v1/graph/sync': 'graph.sync',
-  '/api/v1/graph/validate': 'graph.validate',
-  '/api/v1/graph/rag': 'graph.rag',
+export const GRAPH_PROXY_PATHS: Readonly<Record<string, (typeof GRAPH_PROXY_COMMANDS)[number]>> &
+  Readonly<Record<PythonApiGraphPath, (typeof GRAPH_PROXY_COMMANDS)[number]>> = {
+  [PYTHON_API_PATHS.graphSync]: 'graph.sync',
+  [PYTHON_API_PATHS.graphValidate]: 'graph.validate',
+  [PYTHON_API_PATHS.graphRag]: 'graph.rag',
 };
 
 export type FastApiUrlResolver = string | (() => string);
@@ -16,12 +24,9 @@ export interface GraphProxyOptions {
   fetchImpl?: typeof fetch;
 }
 
-interface FastApiProxyPayload {
+interface FastApiProxyPayload extends Omit<PythonApiRequestOptions, 'headers' | 'method'> {
   method?: string;
-  search?: string;
   headers?: Record<string, unknown>;
-  bodyText?: string;
-  body?: unknown;
 }
 
 const DEFAULT_BASE_URL: FastApiUrlResolver = () =>
@@ -76,16 +81,22 @@ export class GraphProxyModule implements DomainModule {
   }
 
   register(bus: MessageBus): void {
-    for (const [path, command] of Object.entries(GRAPH_PROXY_PATHS)) {
-      bus.register<FastApiProxyPayload>(command, (payload) => this.proxy(path, payload));
+    for (const path of Object.keys(GRAPH_PROXY_PATHS) as PythonApiGraphPath[]) {
+      bus.register<FastApiProxyPayload>(GRAPH_PROXY_PATHS[path], (payload) => this.proxy(path, payload));
     }
   }
 
+  private client(): PythonApiClient {
+    return createPythonApiClient({
+      baseUrl: resolveBaseUrl(this.baseUrl),
+      fetchImpl: this.fetchImpl,
+    });
+  }
+
   private async proxy(
-    path: string,
+    path: PythonApiGraphPath,
     payload: FastApiProxyPayload,
   ): Promise<ApiResult> {
-    const url = `${resolveBaseUrl(this.baseUrl)}${path}${payload.search ?? ''}`;
     const headers = normalizeRequestHeaders(payload.headers);
     const body = typeof payload.bodyText === 'string'
       ? payload.bodyText
@@ -94,10 +105,12 @@ export class GraphProxyModule implements DomainModule {
         : JSON.stringify(payload.body);
 
     try {
-      const response = await this.fetchImpl(url, {
+      const response = await this.client().request(path, {
         method: payload.method === 'GET' ? 'GET' : 'POST',
+        search: payload.search,
+        signal: payload.signal,
         headers,
-        body,
+        bodyText: body,
       });
       const bytes = Buffer.from(await response.arrayBuffer());
       const contentType = response.headers.get('content-type') || 'application/json';

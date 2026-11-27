@@ -88,6 +88,7 @@ import { GraphEventHub } from '../graphEvents';
 import { handleDocsRequest } from '../api/docsBrowser';
 import { json, readJsonBody, readJsonBodyWithRaw, sendApiResult } from '../api/http';
 import { createValidationMiddleware } from '../api/validation';
+import { defaultRetriever } from '../retrieval/retrieverPort';
 import { createMessageBus, type MessageBus, type Principal } from '../bus/messageBus';
 import { authenticateRequest, deriveRequestPrincipal, legacyPrincipal } from '../auth/principal';
 import { bearerTokenFromRequest, UNAUTHORIZED_MESSAGE, apiTokenFromRequest } from '../auth/apiToken';
@@ -286,14 +287,17 @@ export const vaultMethods = {
     const stem = path.basename(targetPath, '.md');
     const titleFromName = stem.replace(/[-_]/g, ' ');
 
-    return this.parser.parseNote(
+        const note = this.parser.parseNote(
       stem,
       data.title || titleFromName,
       contentToWrite,
       folderName === '.' ? 'wiki' : folderName,
       relativePath
     );
-  },
+    await defaultRetriever.update(note, { projectId });
+    return note;
+  }
+,
 
   /**
    * Applies a single, deterministic find/replace edit proposed by the agent.
@@ -410,13 +414,15 @@ export const vaultMethods = {
     const stem = path.basename(targetPath, '.md');
     const relativePath = path.relative(projRoot, targetPath).replace(/\\/g, '/');
 
-    return this.parser.parseNote(
+    const note = this.parser.parseNote(
       stem,
       stem.replace(/[-_]/g, ' '),
       updated,
       folderName === '.' ? 'wiki' : folderName,
       relativePath
     );
+    await defaultRetriever.update(note, { projectId });
+    return note;
   },
 
   async validateSafePath(this: Host, targetPath: string, projectId: string = 'default'): Promise<void> {
@@ -1204,6 +1210,9 @@ export const vaultMethods = {
   /** Writes a study artefact under `<project>/output` and returns its relative path. */
 
   async executeReindexWorkflow(this: Host, projectId: string = 'default'): Promise<string> {
+    const notes = await this.readAllWikiNotes(projectId);
+    await defaultRetriever.update(notes, { projectId });
+
     // A docs-managed wiki owns its indexes: they are generated from docs/ by
     // scripts/docs_to_wiki.py. Running okf_reindex.py here would rewrite them
     // in a different format and create a false docs-sync drift after any note
@@ -1215,7 +1224,6 @@ export const vaultMethods = {
 
     const projRoot = await this.resolveProjectRoot(projectId);
     const wikiDir = await this.getWikiDir(projectId);
-    const notes = await this.readAllWikiNotes(projectId);
 
     const scriptPath = resolveToolScript(this.rootDir, 'scripts/okf_reindex.py');
     const relWiki = path.relative(projRoot, wikiDir).replace(/\\/g, '/') || 'wiki';

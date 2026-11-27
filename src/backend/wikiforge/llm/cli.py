@@ -6,8 +6,13 @@ import json
 import sys
 from typing import Any
 
+from src.backend.wikiforge.api.stream_protocol import (
+    format_llama_frame,
+    llama_delta_frame,
+    llama_error_frame,
+)
 from src.backend.wikiforge.core.config import get_project_config, get_repo_root
-from src.backend.wikiforge.llm.local_engine import LocalReasoningEngine
+from src.backend.wikiforge.llm.local_engine import LocalReasoningEngine, LocalReasoningError
 
 
 def _context_text(notes: list[dict[str, Any]]) -> str:
@@ -38,11 +43,13 @@ def main() -> int:
         context = _context_text(list(payload.get("contextNotes") or []))
 
         for token in engine.generate_stream(prompt, max_tokens=max_tokens, context=context):
-            sys.stdout.write(json.dumps({"delta": token}, ensure_ascii=False) + "\n")
+            frame = llama_delta_frame(token)
+            sys.stdout.write(format_llama_frame(frame))
             sys.stdout.flush()
         return 0
-    except Exception as exc:
-        sys.stdout.write(json.dumps({"error": str(exc)}, ensure_ascii=False) + "\n")
+    except (OSError, ValueError, LocalReasoningError) as exc:
+        frame = llama_error_frame(str(exc))
+        sys.stdout.write(format_llama_frame(frame))
         sys.stdout.flush()
         return 1
 

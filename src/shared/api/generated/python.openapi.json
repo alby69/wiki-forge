@@ -1,0 +1,481 @@
+{
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "service": {
+            "default": "wiki-forge-kg-api",
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "RAGQueryRequest": {
+        "properties": {
+          "question": {
+            "description": "User query natural language string",
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "RAGQueryRequest",
+        "type": "object"
+      },
+      "RAGQueryResponse": {
+        "properties": {
+          "cypher_query": {
+            "title": "Cypher Query",
+            "type": "string"
+          },
+          "entities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "final_answer": {
+            "title": "Final Answer",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "entities",
+          "cypher_query",
+          "final_answer"
+        ],
+        "title": "RAGQueryResponse",
+        "type": "object"
+      },
+      "ReasoningRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "max_tokens": {
+            "default": 512,
+            "maximum": 8192.0,
+            "minimum": 1.0,
+            "title": "Max Tokens",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "ReasoningRequest",
+        "type": "object"
+      },
+      "SyncRequest": {
+        "properties": {
+          "output_ttl": {
+            "default": "knowledge_graph.ttl",
+            "description": "Output Turtle file path",
+            "title": "Output Ttl",
+            "type": "string"
+          },
+          "wiki_dir": {
+            "default": "wiki",
+            "description": "Target folder containing Markdown notes",
+            "title": "Wiki Dir",
+            "type": "string"
+          }
+        },
+        "title": "SyncRequest",
+        "type": "object"
+      },
+      "SyncResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "output_path": {
+            "title": "Output Path",
+            "type": "string"
+          },
+          "processed_notes": {
+            "title": "Processed Notes",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "processed_notes",
+          "output_path"
+        ],
+        "title": "SyncResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationRequest": {
+        "properties": {
+          "graph_path": {
+            "default": "knowledge_graph.ttl",
+            "description": "Turtle file path",
+            "title": "Graph Path",
+            "type": "string"
+          },
+          "shapes_path": {
+            "default": "src/backend/wikiforge/config/shapes.ttl",
+            "description": "SHACL shapes path",
+            "title": "Shapes Path",
+            "type": "string"
+          }
+        },
+        "title": "ValidationRequest",
+        "type": "object"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "conforms": {
+            "title": "Conforms",
+            "type": "boolean"
+          },
+          "graph_path": {
+            "title": "Graph Path",
+            "type": "string"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "shapes_path": {
+            "title": "Shapes Path",
+            "type": "string"
+          },
+          "violations": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Violations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "conforms",
+          "graph_path",
+          "shapes_path",
+          "report",
+          "violations"
+        ],
+        "title": "ValidationResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "REST API interface for Enterprise Knowledge Graph operations, SHACL validation, and GraphRAG querying.",
+    "title": "Wiki-Forge Knowledge Graph & GraphRAG API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/graph/rag": {
+      "post": {
+        "operationId": "query_rag_api_v1_graph_rag_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RAGQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RAGQueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Query Rag"
+      }
+    },
+    "/api/v1/graph/sync": {
+      "post": {
+        "operationId": "sync_graph_api_v1_graph_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Graph"
+      }
+    },
+    "/api/v1/graph/validate": {
+      "post": {
+        "operationId": "validate_shacl_endpoint_api_v1_graph_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Shacl Endpoint"
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    },
+    "/api/v1/llm/reasoning/stream": {
+      "post": {
+        "operationId": "reasoning_stream_api_v1_llm_reasoning_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasoningRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "is_thinking": {
+                          "type": "boolean"
+                        },
+                        "token": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "token",
+                        "is_thinking"
+                      ],
+                      "title": "ReasoningTokenFrame",
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "done": {
+                          "const": true,
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "done"
+                      ],
+                      "title": "ReasoningDoneFrame",
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "error"
+                      ],
+                      "title": "ReasoningErrorFrame",
+                      "type": "object"
+                    }
+                  ],
+                  "title": "ReasoningStreamFrame"
+                }
+              }
+            },
+            "description": "SSE token stream"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reasoning Stream",
+        "tags": [
+          "LLM"
+        ]
+      }
+    }
+  }
+}

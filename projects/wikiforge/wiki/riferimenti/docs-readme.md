@@ -41,6 +41,7 @@ Dalle basi all'implementazione. Ogni documento rimane leggibile in autonomia.
 | 6 | [Pattern LLM Wiki](../standard/karpathy-llm-wiki.md) | Origine filosofica del progetto e confronto con l'addestramento. |
 | 7 | [Knowledge Engineering](../processi/knowledge-engineering.md) | Ruoli, maturità L1-L4, use case, ontologie e validazione. |
 | 8 | [Specifiche OKF](../standard/okf-spec.md) | Frontmatter, trust tier e indici del formato adottato. |
+| 8b | [Estensioni OKF](../standard/okf-extensions.md) | Ancore `[^src:ID#Lx-Ly]`, gate di verifica, export PROV-O. |
 | 9 | [Schema tipizzato](../standard/schema.md) | Validazione e inferenza dello schema. |
 | 10 | [Procedure Engine](../standard/procedures.md) | Schema TOML, DAG, pause umane e criteri di uscita. |
 | 11 | [Manuale dell'agente](../processi/agent-manual.md) | Operating manual v3.0 per agenti LLM. |
@@ -56,6 +57,7 @@ Dalle basi all'implementazione. Ogni documento rimane leggibile in autonomia.
 | 21 | [Gestione fonti](sources.md) | Cartelle `sources/`, `backup/` e conversione. |
 | 22 | [Changelog](changelog.md) | Storico delle release. |
 | 23 | [Roadmap](roadmap.md) | Stato completato e piano dei miglioramenti aperti. |
+| 24 | [Metadati repository](repo-metadata.md) | Proposta di descrizione e topic GitHub. |
 
 ## Struttura delle cartelle
 
@@ -113,5 +115,9 @@ npm run verify
 git diff --check
 ```
 
-I gate mirati sono `npm run test:coverage`, `npm run test:coverage:semantics` e
-`npm run test:e2e`; il report Playwright viene salvato in `playwright-report/`.
+I numeri citati in `README.md`, `ROADMAP.md` e nei documenti attivi sono generati
+da `scripts/gen_doc_metrics.py` a partire dal manifest: `python3
+scripts/gen_doc_metrics.py --check` li verifica e `check_docs_sync.py` li include
+nel gate. I gate mirati sono `npm run test:coverage`,
+`npm run test:coverage:semantics` e `npm run test:e2e`; il report Playwright viene
+salvato in `playwright-report/`.

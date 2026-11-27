@@ -152,6 +152,32 @@ function buildSnippet(lines: string[], index: number): string {
   return text.length > 480 ? `${text.slice(0, 477)}…` : text;
 }
 
+/** Line-level matches shared by the lexical helper and the retriever port. */
+export function noteSearchLines(
+  note: WikiNote,
+  tokens: string[],
+): { matches: ResearchSearchMatch[]; matchCount: number; bodyScore: number } {
+  const lines = note.content.split(/\r?\n/);
+  const matches: ResearchSearchMatch[] = [];
+  let matchCount = 0;
+  let bodyScore = 0;
+
+  for (let index = 0; index < lines.length; index++) {
+    const lower = lines[index].toLowerCase();
+    let hits = 0;
+    for (const token of tokens) {
+      if (lower.includes(token)) hits++;
+    }
+    if (hits === 0) continue;
+    matchCount++;
+    bodyScore += hits;
+    if (matches.length < 4) {
+      matches.push({ line: index + 1, snippet: buildSnippet(lines, index) });
+    }
+  }
+  return { matches, matchCount, bodyScore };
+}
+
 /**
  * Case-insensitive full-text search with line numbers and 1-line context.
  * A title hit weighs more than a body hit; the whole query as a phrase gets a
@@ -170,7 +196,6 @@ export function searchNotes(notes: WikiNote[], query: string, limit: number = 30
   }
 
   for (const note of notes) {
-    const lines = note.content.split(/\r?\n/);
     const title = note.title.toLowerCase();
     const id = note.id.toLowerCase();
     const tags = note.tags.join(' ').toLowerCase();
@@ -185,22 +210,9 @@ export function searchNotes(notes: WikiNote[], query: string, limit: number = 30
       if (tags.includes(token)) score += 3;
     }
 
-    const matches: ResearchSearchMatch[] = [];
-    let matchCount = 0;
-    for (let index = 0; index < lines.length; index++) {
-      const lower = lines[index].toLowerCase();
-      let hits = 0;
-      for (const token of tokens) {
-        if (lower.includes(token)) hits++;
-      }
-      if (hits === 0) continue;
-      matchCount++;
-      totalMatches++;
-      score += hits;
-      if (matches.length < 4) {
-        matches.push({ line: index + 1, snippet: buildSnippet(lines, index) });
-      }
-    }
+    const { matches, matchCount, bodyScore } = noteSearchLines(note, tokens);
+    score += bodyScore;
+    totalMatches += matchCount;
 
     if (score <= 0) continue;
     results.push({ note: toNoteRef(note), score, matchCount, matches });

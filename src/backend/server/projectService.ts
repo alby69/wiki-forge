@@ -109,6 +109,16 @@ function isPlainObject(value: unknown): value is ConfigObject {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
+function toPlainConfig(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(toPlainConfig);
+  if (!value || typeof value !== 'object' || value instanceof Date) return value;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== null && prototype !== Object.prototype) return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, child]) => [key, toPlainConfig(child)])
+  );
+}
+
 function isProjectEntry(value: unknown): value is ProjectEntry {
   if (!isPlainObject(value)) return false;
   return typeof value.id === 'string' && typeof value.name === 'string' && typeof value.path === 'string';
@@ -302,7 +312,7 @@ export class ProjectService {
 
   private async readConfigObject(configPath: string): Promise<ConfigObject> {
     try {
-      const parsed = toml.parse(await fs.readFile(configPath, 'utf-8')) as unknown;
+      const parsed = toPlainConfig(toml.parse(await fs.readFile(configPath, 'utf-8')) as unknown);
       return isPlainObject(parsed) ? parsed : {};
     } catch {
       return {};
@@ -343,7 +353,7 @@ export class ProjectService {
     let config: ConfigObject | undefined;
     if (sourceRoot) {
       try {
-        const parsed = toml.parse(await fs.readFile(this.getConfigPath(sourceRoot), 'utf-8')) as unknown;
+        const parsed = toPlainConfig(toml.parse(await fs.readFile(this.getConfigPath(sourceRoot), 'utf-8')) as unknown);
         if (isPlainObject(parsed)) config = { ...parsed };
       } catch {
         // No usable root/source config: use the built-in defaults.

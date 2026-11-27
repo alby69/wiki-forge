@@ -28,8 +28,6 @@ from src.backend.wikiforge.state_root import (
     PROCEDURE_STATE,
     PROCEDURE_WIZARD,
     canonical_root,
-    iter_read_paths,
-    resolve_read_path,
 )
 
 
@@ -37,12 +35,12 @@ class ProcedureEngine:
     def __init__(self, repo_root: Path, procedures_dir: Optional[Path] = None):
         self.repo_root = repo_root.resolve()
         self.procedures_dir = (procedures_dir or (self.repo_root / "config" / "procedures")).resolve()
-        self.wikiforge_dir = canonical_root(self.repo_root)
-        self.state_dir = self.wikiforge_dir / PROCEDURE_STATE
-        self.wizard_file = self.wikiforge_dir / PROCEDURE_WIZARD
+        self.state_root_dir = canonical_root(self.repo_root)
+        self.state_dir = self.state_root_dir / PROCEDURE_STATE
+        self.wizard_file = self.state_root_dir / PROCEDURE_WIZARD
 
         self.procedures_dir.mkdir(parents=True, exist_ok=True)
-        self.wikiforge_dir.mkdir(parents=True, exist_ok=True)
+        self.state_root_dir.mkdir(parents=True, exist_ok=True)
         self.state_dir.mkdir(parents=True, exist_ok=True)
 
     def list_procedures(self) -> List[Dict[str, Any]]:
@@ -131,12 +129,8 @@ class ProcedureEngine:
         return self.advance_run(run_id)
 
     def get_run(self, run_id: str) -> Optional[Dict[str, Any]]:
-        state_file = resolve_read_path(
-            self.repo_root,
-            f"{PROCEDURE_STATE}/{run_id}.json",
-            f"state/{run_id}.json",
-        )
-        if state_file is None:
+        state_file = self.state_dir / f"{run_id}.json"
+        if not state_file.is_file():
             return None
         try:
             return json.loads(state_file.read_text(encoding="utf-8"))
@@ -159,11 +153,9 @@ class ProcedureEngine:
 
     def list_runs(self, procedure_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
         runs = []
-        for _name, file_p in iter_read_paths(
-            self.repo_root,
-            f"{PROCEDURE_STATE}/run-*.json",
-            "state/run-*.json",
-        ):
+        for file_p in sorted(self.state_dir.glob("run-*.json")):
+            if not file_p.is_file():
+                continue
             try:
                 data = json.loads(file_p.read_text(encoding="utf-8"))
                 if procedure_id and data.get("procedure_id") != procedure_id:

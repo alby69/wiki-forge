@@ -134,8 +134,8 @@ The command surface is modularized into ten Skills under `skills/`. Load the req
 The CLI (`bin/wf.ts`), the MCP adapter (`bin/mcp.ts`, `npm run mcp`) and
 OpenAPI all consume the generated command manifest
 (`src/shared/api/generated/commandManifest.generated.ts`,
-[`docs/riferimenti/COMMAND_MANIFEST.md`](../riferimenti/COMMAND_MANIFEST.md)): 105 HTTP routes, 158 bus
-handlers, 51 catalogued slash commands / 20 with a dedicated case, 113 MCP tools
+[`docs/riferimenti/COMMAND_MANIFEST.md`](../riferimenti/COMMAND_MANIFEST.md)): 112 HTTP routes, 164 bus
+handlers, 52 catalogued slash commands / 21 with a dedicated case, 120 MCP tools
 and 32 non-blocking gaps. `npm run manifest:check` enforces zero
 `route-without-bus` gaps. `wf mcp` spawns the standalone Node adapter;
 `src/backend/server/mcp_server.py` is only a compatibility shim. No adapter

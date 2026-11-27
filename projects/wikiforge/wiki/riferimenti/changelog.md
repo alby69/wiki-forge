@@ -23,12 +23,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Provenienza per affermazione e verifica delle citazioni (Phase 95) — 2026-11-27
+
+- Nuovo `src/shared/domain/citations.ts`: parser di ancore `[^src:ID#Lx-Ly]` e del blocco `sources:`, `claimStats`, `evaluateCitations` (orphan / missing-source / range / hash) e report con coverage.
+- Gate in `recordHumanVerification`: blocco su ancore orfane, fonti mancanti e righe fuori range; su `setStable` blocca anche coverage sotto `WIKIFORGE_CITATION_MIN_COVERAGE` e hash mismatch; `applyVerification` scrive i baseline `sha256:` nelle fonti.
+- Nuova route `review.citations`, slash `/verify-citations [nota|cartella] [semantic]`, scheda "Citazioni OKF" in Review Studio e `ApiStorage.checkCitations`; verdict LLM opzionale advisory (max 8 ancore).
+- Nuovo `src/backend/wikiforge/semantics/prov_exporter.py` (`ProvGraphExporter`) e `scripts/export_prov.py`: esport PROV-O (Turtle/JSON-LD) con nota come `prov:Entity`, ogni ancora come span derivato e ogni `verified:` come `prov:Activity`.
+- Nuovo `docs/standard/OKF_EXTENSIONS.md` (indicizzato in `docs/README.md`); documentazione e numeri manifest aggiornati (112 route, 166 handler, 52 slash, 21 con case dedicato, 120 MCP, 32 gap).
+- Test: `tests/citations.test.ts` (5 casi) e `tests/python/test_prov_exporter.py` (4 casi).
+- Verifica: `npm run verify` verde; `git diff --check` verde.
+
+### Allineamento documentale e metriche generate (Phase 90) — 2026-11-27
+
+- Nuovo `scripts/gen_doc_metrics.py`: estrae i conteggi dal manifest generato, aggiorna i blocchi `<!-- metrics -->` in README e ARCHITECTURE e verifica che la prosa dei documenti attivi non citi numeri diversi.
+- `check_docs_sync.py` include il nuovo gate; `docs/README.md` indicizza la proposta `docs/riferimenti/REPO_METADATA.md` e documenta il comando di verifica.
+- Conteggi allineati a 111 route HTTP, 164 handler bus, 51 comandi slash (20 con case dedicato), 119 tool MCP e 32 gap noti.
+- ROADMAP: aggiunte le fasi 90–104 (mapping 1:1 dalle fasi 29–43 della specifica, perché le fasi 0–89 sono chiuse) con dashboard, Goal, Deliverables e criteri di accettazione; stato dei componenti opzionali dichiarato nel README.
+- Verifica: `npm run verify` verde con 604 test Node e 173 test Python; `git diff --check` verde.
+
+### Quality gate CI completo e supply chain (Phase 91) — 2026-11-27
+
+- Nuovo `.github/workflows/ci.yml`: `npm run verify` su push/PR con matrice Node 20/22 × Python 3.11/3.12, installazione Playwright/Pandoc e `git diff --check`; job E2E separato con upload del report.
+- Nuovo gate TypeScript: `npm run test:coverage:ts` e `scripts/check_ts_coverage.mjs` con baseline non decrescente fissata a 88.50% e test di regressione; `verify` lo include.
+- Nuovo `.github/workflows/security.yml`: CodeQL, `npm audit`, `pip-audit`, gitleaks, SBOM CycloneDX, hadolint sui tre Dockerfile e Trivy; `.github/dependabot.yml` aggiorna npm, pip e Actions.
+- Aggiunti `CODEOWNERS`, `SECURITY.md`, template issue/PR e badge CI nel README; `vite` 8.4.0 e `smol-toml` 1.9.1 eliminano le advisory high/moderate. `projectService` normalizza gli oggetti TOML a prototipo nullo introdotti da `smol-toml` 1.9.1.
+- Verifica: `npm run verify` verde (608 test Node, 173 Python, coverage TS 88.5%+), `npm audit --audit-level=high` verde (restano 4 low), `git diff --check` verde.
+
+### Chiusura migrazione stato e rimozione fallback (Phase 92) — 2026-11-27
+
+- Rimossi i fallback di lettura da `.wikiforge/` in `state_root.py` e `procedures.py`; l'unico uso funzionale della vecchia radice è ora `scripts/migrate_state_roots.py`.
+- `scripts/migrate_state_roots.py --status` segnala la presenza della radice legacy ed è richiamato in modo non fatale da `entrypoint.sh`; `Dockerfile` e `.dockerignore` non replicano più la vecchia radice.
+- Nuova fixture anonimizzata `tests/fixtures/state_root_v3_legacy/` e test di migrazione/rollback con confronto SHA256 pre/post dei file migrati.
+- Documentazione aggiornata: la radice è unica, il vecchio root è solo oggetto di migrazione esplicita.
+- Verifica: `npm run verify` verde (608 test Node, 178 Python, 1 E2E, TS coverage 92.96%); `grep -rn "\.wikiforge/" src bin scripts --exclude-dir=__pycache__` vuoto; `git diff --check` verde.
+
+### Contratto unico Node↔Python (Phase 93) — 2026-11-27
+
+- Nuovo `scripts/export_python_openapi.py`: esporta deterministicamente lo schema FastAPI in `src/shared/api/generated/python.openapi.json` con supporto `--check`.
+- Nuovo generatore `scripts/gen_python_api_client.mjs` e client tipizzato `src/shared/api/generated/pythonApi.generated.ts`; il proxy `/api/v1/graph/*` e la Config UI usano i tipi generati, senza `fetch` HTTP ad hoc verso Python.
+- Protocolli di streaming condivisi: `src/shared/api/pythonStream.ts` e `src/backend/wikiforge/api/stream_protocol.py`, con fixture e test da entrambi i lati per frame SSE e JSON-lines del reasoning locale.
+- Nuovi script `python-contract` / `python-contract:check`, inclusi in `npm run verify` e nella CI: rinominare un campo della risposta FastAPI fa fallire il gate.
+- Verifica: `npm run verify` verde (TS coverage 93.07%); `git diff --check` verde.
+
+### Retrieval ibrido e valutazione misurabile (Phase 94) — 2026-11-27
+
+- Nuovo `Retriever` port in `src/backend/wikiforge/retrieval/` con BM25 incrementale, fusione RRF, espansione a 1 hop sul grafo e fallback deterministico; layer embeddings opzionale e disattivato di default (`[retrieval.embeddings].enabled=false`), senza nuove dipendenze.
+- `scripts/retrieve.py` e l'adattatore Node in `src/backend/server/retrieval/` collegano `/consult`, `/search`, `/related` e Deep Research al port senza cambiare le shape delle risposte.
+- Harness `tests/eval/`: 50 domande d'oro (30 IT, 20 EN), metriche recall@5 0.9875 (Δ +0.2500), MRR 0.9167 (Δ +0.2596), precisione citazioni 0.305 (Δ +0.0900) e abstention corretta 1.0; report `.wiki-forge/health/eval/latest.json` riassunto nell'Health Score.
+- Nuovo script `eval:check` in `npm run verify` e nella CI: la modalità degrade fallisce il gate.
+- Verifica: `npm run verify` verde (624 test Node, 193 Python, TS coverage 93.10%); `git diff --check` verde.
+
 ### Upload GGUF e attivazione locale dalla Config UI — 2026-11-26
 
 - Nuove operazioni Admin `projects.gguf.list`, `uploadStart`, `uploadChunk`, `uploadFinalize` e `activate`: upload chunked base64 (512 KiB lato UI, sotto il limite JSON di 1 MiB del gateway; 8 MiB limite server, 16 GiB totali via API), validazione basename/magic/dimensione e registro SHA256 in `.wiki-forge/llm/models.json`.
 - File finali in `models/`; l'attivazione aggiorna `[llm.local].enabled`, `[llm.local].model_path` e `[agent.llm].provider = "local"` nella config root e invalida il client LLM cacheato, senza riavvio.
 - Config Manager: sezione **Local GGUF (CPU-only)** nella scheda LLM con elenco modelli, path attivo, caricamento e pulsante **Use**; tutti i call passano da `ApiStorage` e dal bus tipizzato.
-- Baseline aggiornata: 111 route HTTP, 164 handler bus, 118 tool MCP, 32 gap noti invariati; test Node 604/604.
+- Baseline aggiornata: 111 route HTTP, 164 handler bus, 119 tool MCP, 32 gap noti invariati; test Node 604/604.
 - Fix limite gateway: chunk UI ridotto a 512 KiB e condiviso via `src/shared/llm/gguf.ts`, con test di regressione sul limite JSON di 1 MiB.
 - Nuova operazione Admin `projects.gguf.deactivate` e pulsante **Deactivate** nella Config UI: disabilita `[llm.local]`, azzera `model_path`, ripristina il provider precedente (o `opencode`) e invalida il client LLM cacheato senza riavvio Docker. Anche `projects.config.put` invalida il client, rendendo immediato il cambio manuale di provider.
 - `WIKIFORGE_LLM_PROVIDER` forza il provider LLM per ambienti di test: l'E2E usa così il mock OpenCode anche quando la config di lavoro ha un GGUF attivo.

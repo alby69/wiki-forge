@@ -69,6 +69,7 @@ export const COMMAND_CATALOG: CommandCategory[] = [
     commands: [
       { cmd: 'adversarial-review', label: 'Revisione Critica', icon: '⚔️', usage: '[note] [depth=deep]', description: 'Revisione critica delle note con individuazione di contraddizioni.' },
       { cmd: 'verify', label: 'Verifica Umana', icon: '✅', usage: '<note> [reviewer=id] [stable]', description: 'Registra una verifica umana (trust tier 🟢).' },
+      { cmd: 'verify-citations', label: 'Verifica Citazioni', icon: '🧾', usage: '<nota|cartella> [semantic]', description: 'Controlla gli ancore di linea [^src:ID#Lx-Ly]: fonti, righe, sha256 e copertura.' },
       { cmd: 'human-review', label: 'Human Review', icon: '👤', usage: '<note> [reviewer=id] [stable]', description: 'Alias di /verify.' },
       { cmd: 'digest', label: 'Digest', icon: '🧾', usage: '[days=7]', description: 'Riassume i cambiamenti recenti per la revisione.' },
       { cmd: 'diff', label: 'Diff', icon: '🧷', usage: '<file> [ref]', description: 'Confronta le versioni di una nota.' },

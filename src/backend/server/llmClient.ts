@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import type { WikiNote } from '@shared/domain/wiki';
+import { parseLlamaFrames } from '@shared/api/pythonStream';
 import { buildAllowedEnv } from './process/scriptRunner';
 
 export interface LlmConfig {
@@ -166,18 +167,20 @@ export class LlamaCppClient implements LlmClient {
 
       const handleLine = (line: string): void => {
         if (!line.trim()) return;
-        let frame: any;
+        let frames;
         try {
-          frame = JSON.parse(line);
+          frames = parseLlamaFrames(line);
         } catch (_err) {
           return;
         }
-        if (frame.error) {
+        const frame = frames[0];
+        if (!frame) return;
+        if ('error' in frame) {
           clearTimeout(timer);
-          reject(new Error(`Local LLM error: ${String(frame.error)}`));
+          reject(new Error(`Local LLM error: ${frame.error}`));
           return;
         }
-        const delta = String(frame.delta || '');
+        const delta = frame.delta;
         if (!delta) return;
         collected += delta;
         onChunk?.(delta);
