@@ -24,7 +24,8 @@
     "verify": "python3 scripts/check_docs_sync.py && python3 scripts/docs_to_wiki.py --check && python3 scripts/docs_book.py --check && python3 scripts/gen_script_registry.py --check && npm run manifest:check && npm run python-contract:check && npm run typecheck && npm run build && npm test && npm run test:coverage && npm run test:coverage:semantics && npm run test:e2e && PYTHONPATH=.:scripts python3 -m pytest -q tests/python/ && npm run eval:check && npm run test:coverage:ts:check",
     "wf": "node --import tsx bin/wf.ts",
     "mcp": "node --import tsx bin/mcp.ts",
-    "worker": "node --import tsx bin/worker.ts"
+    "worker": "node --import tsx bin/worker.ts",
+    "manifest:gaps": "node --import tsx scripts/gen_manifest_gaps.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

@@ -36,6 +36,11 @@ async function main() {
       console.error(`Command manifest has route-without-bus gaps: ${busGaps.map((gap) => gap.id).join(', ')}`);
       process.exitCode = 1;
     }
+    const GAP_THRESHOLD = 32;
+    if (manifest.gaps.length > GAP_THRESHOLD) {
+      console.error(`Command manifest gaps ${manifest.gaps.length} exceed threshold ${GAP_THRESHOLD}.`);
+      process.exitCode = 1;
+    }
     const stale = [];
     for (const output of outputs) {
       let current = null;

@@ -70,6 +70,7 @@ DOC_MAP: dict[str, str] = {
     "docs/riferimenti/COMMAND_MANIFEST.md": "riferimenti/command-manifest",
     "docs/riferimenti/SOURCES.md": "riferimenti/sources",
     "docs/riferimenti/REPO_METADATA.md": "riferimenti/repo-metadata",
+    "docs/riferimenti/MANIFEST_GAPS.md": "riferimenti/manifest-gaps",
     "docs/riferimenti/mockups/README.md": "riferimenti/mockups",
 }
 
@@ -96,6 +97,7 @@ for _help_id in HELP_IDS:
 ENGLISH_SOURCES = frozenset({
     "docs/architettura/EDITOR_MIGRATION.md",
     "docs/riferimenti/CHANGELOG.md",
+    "docs/riferimenti/MANIFEST_GAPS.md",
     "docs/standard/KARPATHY_LLM_WIKI.md",
     "docs/standard/OKF_SPEC.md",
     "docs/standard/OKF_EXTENSIONS.md",
