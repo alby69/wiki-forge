@@ -56,6 +56,10 @@ export interface Changeset {
   rejected_by?: string;
   /** A3 — present only on changesets staged from a Finding. */
   finding?: ChangesetFinding;
+  /** Phase 96 — risk scoring for sensitive changesets. */
+  riskScore?: number;
+  riskReasons?: string[];
+  requiresConfirmation?: boolean;
   /** A3 — set by `rollback()` after restoring the original bytes. */
   rolled_back_at?: string;
   rolled_back_by?: string;
@@ -137,6 +141,8 @@ export class ChangesetStore {
       });
     }
 
+    const risk = scoreChangeset(processed, this.projectRoot);
+
     const changeset: Changeset = {
       id: `cs-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
       timestamp: new Date().toISOString(),
@@ -148,6 +154,9 @@ export class ChangesetStore {
       edits: processed,
       ...(input.actor ? { actor: input.actor } : {}),
       ...(input.finding ? { finding: input.finding } : {}),
+      riskScore: risk.score,
+      riskReasons: risk.reasons,
+      requiresConfirmation: risk.requiresConfirmation,
     };
     await this.write(changeset);
     return changeset;
@@ -180,10 +189,13 @@ export class ChangesetStore {
   }
 
   /** Apply every edit after human review. Never called by the LLM itself. */
-  async apply(id: string, actor?: string): Promise<{ changesetId: string; appliedFiles: string[] }> {
+  async apply(id: string, actor?: string, confirm = false): Promise<{ changesetId: string; appliedFiles: string[] }> {
     const changeset = await this.get(id);
     if (changeset.status !== 'pending') {
       throw new Error(`Changeset '${id}' is '${changeset.status}', cannot re-apply`);
+    }
+    if (changeset.requiresConfirmation && !confirm) {
+      throw new Error(`Changeset '${changeset.id}' requires explicit confirmation (risk score ${changeset.riskScore})`);
     }
 
     const appliedFiles: string[] = [];
@@ -292,4 +304,36 @@ export class ChangesetStore {
     await this.write(changeset);
     return changeset;
   }
+}
+
+
+function isSensitive(file: string): boolean {
+  return /(^|\/)(AGENT\.md|config\/|scripts\/)/i.test(file)
+    || /\.(toml|json)$/i.test(file);
+}
+
+function scoreChangeset(edits: ChangesetEdit[], projectRoot: string): { score: number; reasons: string[]; requiresConfirmation: boolean } {
+  const reasons: string[] = [];
+  let score = 0;
+  if (edits.length > 5) {
+    score += 5;
+    reasons.push('many files touched');
+  }
+  for (const edit of edits) {
+    score += 1;
+    if (isSensitive(edit.file)) {
+      score += 5;
+      reasons.push(`sensitive path: ${edit.file}`);
+    }
+    if (edit.action === 'delete') {
+      score += 3;
+      reasons.push(`delete: ${edit.file}`);
+    }
+    if (edit.action === 'create') {
+      score += 2;
+      reasons.push(`new file: ${edit.file}`);
+    }
+  }
+  const requiresConfirmation = score >= 5 || edits.some((edit) => isSensitive(edit.file));
+  return { score, reasons: [...new Set(reasons)], requiresConfirmation };
 }

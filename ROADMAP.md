@@ -180,7 +180,7 @@ accettazione verificati e `npm run verify` verde.
 - Una nota `stable` con ancora a righe cancellate non può essere marcata verificata.
 - Test su ancora valida, fonte modificata e riga inesistente.
 
-## Phase 96 — Sicurezza dei contenuti non fidati e prompt injection ⬜ Todo
+## Phase 96 — Sicurezza dei contenuti non fidati e prompt injection ✅ Done
 
 **Goal:** Un documento malevolo caricato nella wiki non deve poter comandare l'IA.
 
@@ -194,6 +194,13 @@ accettazione verificati e `npm run verify` verde.
 **Criteri di accettazione:**
 - Tutti i payload finiscono in "richiede revisione" o vengono neutralizzati.
 - `clip2md` rifiuta `http://169.254.169.254/` e `http://localhost:*`.
+
+**Done:**
+- Nuovo `src/shared/domain/contentSecurity.ts` e `src/backend/wikiforge/security/content_security.py`: detector deterministico di istruzioni nascoste, zero-width, markup nascosto, URL di esfiltrazione; redazione di segreti; `wrapUntrusted`.
+- `clip2md.py` valida l'URL (blocco localhost/private/link-local/metadata) e scrive frontmatter `trust: untrusted` con `risk_flags`; corpo redatto.
+- `LlmClient.buildUserContentWithContext` redige i segreti e delimita con `<untrusted-content>` le note con `trust: untrusted`; system prompt aggiornato con regola di trattare i blocchi come dati.
+- `ChangesetStore` calcola `riskScore`, `riskReasons`, `requiresConfirmation`; `changesets.apply` richiede `confirm` esplicito per changeset a rischio; `autonomy` conferma i propri apply.
+- Suite `tests/security/injection/` con 20 payload IT/EN; test top-level `tests/injection.test.ts` non necessario (nested registrato in `npm test`).
 
 ## Phase 97 — Osservabilità LLM, costi e quote ⬜ Todo
 

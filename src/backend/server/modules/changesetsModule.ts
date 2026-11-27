@@ -95,7 +95,8 @@ export class ChangesetsModule implements DomainModule {
       const actor = this.services.isStrictProvenance()
         ? this.services.provenanceActor(context.principal)
         : undefined;
-      const result = await (await this.store(context.projectId)).apply(pathId(payload), actor);
+      const confirm = payload.confirm === true;
+      const result = await (await this.store(context.projectId)).apply(pathId(payload), actor, confirm);
       for (const file of result.appliedFiles) {
         this.graphEvents?.publish(graphChangedFrame('browser', {
           projectId: context.projectId,

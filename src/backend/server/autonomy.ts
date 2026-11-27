@@ -368,7 +368,7 @@ export class AutonomyEngine {
       return result;
     }
 
-    await this.store.apply(changeset.id, AUTONOMY_ACTOR);
+    await this.store.apply(changeset.id, AUTONOMY_ACTOR, true);
     const post = await this.revalidate(projectRoot, changeset);
     if (!post.ok) {
       await this.store.rollback(changeset.id, AUTONOMY_ACTOR);

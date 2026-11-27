@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sicurezza dei contenuti non fidati e prompt injection (Phase 96) — 2026-11-27
+
+- Nuovi moduli `src/shared/domain/contentSecurity.ts` e `src/backend/wikiforge/security/content_security.py`: detector deterministico di istruzioni nascoste, zero-width, markup nascosto e URL di esfiltrazione; redazione di segreti; `wrapUntrusted`.
+- `clip2md.py` valida l'URL (blocco SSRF: localhost, IP privati, link-local, metadata) e scrive `trust: untrusted` con `risk_flags`; corpo redatto.
+- `LlmClient` redige i segreti e delimita con `<untrusted-content>` le note non fidate; system prompt aggiornato.
+- `ChangesetStore` calcola `riskScore`/`riskReasons`/`requiresConfirmation`; `changesets.apply` richiede `confirm` esplicito; `autonomy` conferma i propri apply.
+- Suite `tests/security/injection/` con 20 payload IT/EN.
+- Verifica: `npm run verify` verde; `git diff --check` verde.
+
 ### Provenienza per affermazione e verifica delle citazioni (Phase 95) — 2026-11-27
 
 - Nuovo `src/shared/domain/citations.ts`: parser di ancore `[^src:ID#Lx-Ly]` e del blocco `sources:`, `claimStats`, `evaluateCitations` (orphan / missing-source / range / hash) e report con coverage.

@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import type { WikiNote } from '@shared/domain/wiki';
 import { parseLlamaFrames } from '@shared/api/pythonStream';
+import { redactSecrets, wrapUntrusted } from '@shared/domain/contentSecurity';
 import { buildAllowedEnv } from './process/scriptRunner';
 
 export interface LlmConfig {
@@ -445,14 +446,20 @@ async function readResponseBodyChunks(
 
 function buildUserContentWithContext(userMessage: string, contextNotes?: WikiNote[]): string {
   if (!contextNotes || contextNotes.length === 0) {
-    return userMessage;
+    return redactSecrets(userMessage);
   }
 
   const contextText = contextNotes
-    .map(n => `--- Note: ${n.title} (ID: [[${n.id}]], Folder: ${n.folder}, Path: ${n.path}) ---\n${n.content}`)
+    .map(n => {
+      const trust = (n.frontmatter as Record<string, unknown> | undefined)?.trust;
+      const body = trust === 'untrusted'
+        ? wrapUntrusted(redactSecrets(n.content))
+        : redactSecrets(n.content);
+      return `--- Note: ${n.title} (ID: [[${n.id}]], Folder: ${n.folder}, Path: ${n.path}) ---\n${body}`;
+    })
     .join('\n\n');
 
-  return `Context notes from Wiki Knowledge Base:\n\n${contextText}\n\nUser Question / Task:\n${userMessage}`;
+  return `Context notes from Wiki Knowledge Base:\n\n${contextText}\n\nUser Question / Task:\n${redactSecrets(userMessage)}`;
 }
 
 function buildFullPromptText(params: LlmCompletionParams): string {
